@@ -68,6 +68,10 @@ JustHTML from Python to MoonBit.
   remain visible on the start-tag token, but in HTML tree construction only
   void elements actually self-close; non-void elements still receive later text
   and children.
+- Some insertion modes can be approximated by a normalization pass while the
+  port is still incremental. Keep those passes explicit and narrow: implicit
+  table row groups/rows are reasonable, but foster parenting and full table
+  error recovery should stay separate slices.
 
 ## Optional Values and Defaults
 

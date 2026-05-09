@@ -403,6 +403,15 @@ fn Parser::close_open_select_item(self : Parser, name : String) -> Unit {
 }
 
 ///|
+fn Parser::close_open_table_cell(self : Parser) -> Unit {
+  if self.has_open_element("td") {
+    ignore(self.close_open_element("td"))
+  } else if self.has_open_element("th") {
+    ignore(self.close_open_element("th"))
+  }
+}
+
+///|
 fn is_heading_element_name(name : StringView) -> Bool {
   match name {
     "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => true
@@ -549,6 +558,8 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.close_open_definition_item(name)
       } else if name == "option" || name == "optgroup" {
         self.close_open_select_item(name)
+      } else if name == "td" || name == "th" {
+        self.close_open_table_cell()
       }
       if is_heading_element_name(name) {
         self.close_current_heading_element()
@@ -1275,6 +1286,7 @@ pub fn parse(
   let parser = Parser::new(html, root, scripting_enabled~)
   parser.parse_all()
   scaffold_document(root)
+  normalize_tables(root)
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {
     raise HtmlError::StrictMode(parser.errors[0])
@@ -1535,6 +1547,7 @@ pub fn parse_fragment(
       }
     None => parser.parse_all()
   }
+  normalize_tables(root)
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {
     raise HtmlError::StrictMode(parser.errors[0])
