@@ -978,19 +978,53 @@ pub fn parse(
 }
 
 ///|
-fn document_has_html_element(root : Node) -> Bool {
+fn document_html_element(root : Node) -> Node? {
   for child in root.children {
     if child.kind == Element && child.name == "html" {
-      return true
+      return Some(child)
     }
   }
-  false
+  None
+}
+
+///|
+fn scaffold_existing_html_element(html : Node) -> Unit {
+  let original = html.children.copy()
+  html.children.clear()
+  let mut head : Node? = None
+  let mut body : Node? = None
+  let body_children : Array[Node] = []
+  for child in original {
+    if child.kind == Element && child.name == "head" && head is None {
+      head = Some(child)
+    } else if child.kind == Element && child.name == "body" && body is None {
+      body = Some(child)
+      let existing = child.children.copy()
+      child.children.clear()
+      for grandchild in existing {
+        body_children.push(grandchild)
+      }
+    } else {
+      body_children.push(child)
+    }
+  }
+  let head_node = head.unwrap_or(element("head"))
+  let body_node = body.unwrap_or(element("body"))
+  html.append_child(head_node)
+  for child in body_children {
+    body_node.append_child(child)
+  }
+  html.append_child(body_node)
 }
 
 ///|
 fn scaffold_document(root : Node) -> Unit {
-  if document_has_html_element(root) {
-    return
+  match document_html_element(root) {
+    Some(html) => {
+      scaffold_existing_html_element(html)
+      return
+    }
+    None => ()
   }
   let original = root.children.copy()
   root.children.clear()

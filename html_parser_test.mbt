@@ -25,6 +25,22 @@ test "parser handles nested tags attributes comments and doctype" {
 }
 
 ///|
+test "document parser scaffolds explicit html children into head and body" {
+  let implicit = @html_parser.parse("<html><p>x</p></html>")
+  assert_eq(
+    implicit.to_html(pretty=false),
+    "<html><head></head><body><p>x</p></body></html>",
+  )
+  let existing = @html_parser.parse(
+    "<html><head><title>T</title></head><p>x</p></html>",
+  )
+  assert_eq(
+    existing.to_html(pretty=false),
+    "<html><head><title>T</title></head><body><p>x</p></body></html>",
+  )
+}
+
+///|
 test "parser and tokenizer preserve doctype external ids" {
   let source = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">"
   let doc = @html_parser.parse(source)
