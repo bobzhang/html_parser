@@ -949,12 +949,20 @@ fn Parser::parse_invalid_tag_open_as_text(self : Parser, start : Int) -> Unit {
 ///|
 fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit {
   let name_start = self.pos
+  if self.current() == Some('=') {
+    self.error_at("unexpected-equals-sign-before-attribute-name", self.pos)
+    ignore(self.advance_char())
+  }
   while !self.is_eof() {
     match self.current() {
       Some(ch) if ch.is_ascii_whitespace() ||
         ch == '=' ||
         ch == '/' ||
         ch == '>' => break
+      Some('<') | Some('"') | Some('\'') => {
+        self.error_at("unexpected-character-in-attribute-name", self.pos)
+        ignore(self.advance_char())
+      }
       Some(_) => ignore(self.advance_char())
       None => ()
     }

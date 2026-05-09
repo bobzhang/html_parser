@@ -179,6 +179,10 @@ JustHTML from Python to MoonBit.
 - A bad slash in a start tag is not a separate MoonBit-only error. `<div /a>`
   reports `unexpected-character-after-solidus-in-tag`, then reconsumes `a` in
   the before-attribute-name state so it becomes a normal empty-valued attribute.
+- Attribute-name diagnostics are shared by tokenizer and tree builder paths.
+  A leading `=` reports `unexpected-equals-sign-before-attribute-name`, while
+  `<`, `"`, and `'` inside the name report
+  `unexpected-character-in-attribute-name` but stay in the stored name.
 - Markup declarations are not just normal tag-open failures. In HTML content,
   malformed `<!...>` declarations become bogus comments after
   `incorrectly-opened-comment`, and `<![CDATA[` also becomes a bogus comment

@@ -452,7 +452,7 @@ fn SourceTokenizer::parse_attribute(
         ch == '=' ||
         ch == '/' ||
         ch == '>' => break
-      Some('<') => {
+      Some('<') | Some('"') | Some('\'') => {
         self.error_at("unexpected-character-in-attribute-name", self.pos)
         ignore(self.advance_char())
       }
