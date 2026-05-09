@@ -204,20 +204,20 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   while !self.is_eof() && !self.starts_with(">") {
     ignore(self.advance_char())
   }
-  let (public_id, system_id) = match
-    self.input.get_view(start=ids_start, end=self.pos) {
-    Some(view) => parse_doctype_external_ids(view)
-    None => (None, None)
+  let external = match self.input.get_view(start=ids_start, end=self.pos) {
+    Some(view) => parse_doctype_external(view, self.starts_with(">"))
+    None =>
+      DoctypeExternalParse::{
+        public_id: None,
+        system_id: None,
+        errors: [],
+        force_quirks: false,
+      }
   }
-  let external_error = match
-    self.input.get_view(start=ids_start, end=self.pos) {
-    Some(view) => doctype_external_identifier_error(view, self.starts_with(">"))
-    None => None
-  }
-  let has_external_error = match external_error {
-    Some(_) => true
-    None => false
-  }
+  let public_id = external.public_id
+  let system_id = external.system_id
+  let has_external_error = !external.errors.is_empty()
+  let eof_doctype = name != "" && !has_external_error && !self.starts_with(">")
   if name == "" {
     if self.starts_with(">") {
       self.error_at("expected-doctype-name-but-got-right-bracket", self.pos)
@@ -225,18 +225,17 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
       self.error_at_eof("eof-in-doctype")
     }
   } else {
-    match external_error {
-      Some(code) => self.error_at(code, self.pos)
-      None => ()
+    for error in external.errors {
+      self.error_at(error.code, ids_start + error.offset)
     }
   }
-  if name != "" && !has_external_error && !self.starts_with(">") {
+  if eof_doctype {
     self.error_at_eof("eof-in-doctype")
   }
   if self.starts_with(">") {
     self.pos += 1
   }
-  let force_quirks = name == "" || has_external_error
+  let force_quirks = name == "" || external.force_quirks || eof_doctype
   self.tokens.push(
     DoctypeToken(DoctypeInfo::{ name, public_id, system_id, force_quirks }),
   )

@@ -132,6 +132,14 @@ JustHTML from Python to MoonBit.
 - After a quoted public identifier, EOF without whitespace before a system
   identifier reports `missing-whitespace-between-doctype-public-and-system-identifiers`;
   an immediate non-quote character reports `unexpected-character-after-doctype-public-identifier`.
+- Doctype external-ID recovery is not a single-error decision. The tokenizer can
+  report a missing separator before a system identifier and then continue into
+  the system identifier state, so keep a list of local-offset errors instead of
+  returning one `String?`.
+- Force-quirks is tied to the tokenizer state, not just to whether an error was
+  reported. `unexpected-character-after-doctype-system-identifier` and missing
+  whitespace before a quoted identifier do not force quirks, while EOF/abrupt
+  identifier states and public-identifier garbage do.
 - Do not normalize empty doctype names to `"html"` in serialization. The builder
   default should create `"html"`, but a parsed empty-name doctype serializes as
   `<!DOCTYPE>`.

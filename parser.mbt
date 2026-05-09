@@ -369,26 +369,26 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
   while !self.is_eof() && !self.starts_with(">") {
     ignore(self.advance_char())
   }
-  let (public_id, system_id) = match
-    self.input.get_view(start=ids_start, end=self.pos) {
-    Some(view) => parse_doctype_external_ids(view)
-    None => (None, None)
+  let external = match self.input.get_view(start=ids_start, end=self.pos) {
+    Some(view) => parse_doctype_external(view, self.starts_with(">"))
+    None =>
+      DoctypeExternalParse::{
+        public_id: None,
+        system_id: None,
+        errors: [],
+        force_quirks: false,
+      }
   }
-  let external_error = match
-    self.input.get_view(start=ids_start, end=self.pos) {
-    Some(view) => doctype_external_identifier_error(view, self.starts_with(">"))
-    None => None
-  }
-  let has_external_error = match external_error {
-    Some(_) => true
-    None => false
-  }
+  let public_id = external.public_id
+  let system_id = external.system_id
+  let has_external_error = !external.errors.is_empty()
+  let eof_doctype = name != "" && !has_external_error && !self.starts_with(">")
   let error_pos = if self.starts_with(">") {
     self.pos
   } else {
     self.eof_error_pos()
   }
-  let force_quirks = name == "" || has_external_error
+  let force_quirks = name == "" || external.force_quirks || eof_doctype
   if name == "" {
     if self.starts_with(">") {
       self.error_at("expected-doctype-name-but-got-right-bracket", error_pos)
@@ -396,12 +396,11 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
       self.error_at_eof("eof-in-doctype")
     }
   } else {
-    match external_error {
-      Some(code) => self.error_at(code, error_pos)
-      None => ()
+    for error in external.errors {
+      self.error_at(error.code, ids_start + error.offset)
     }
   }
-  if name != "" && !has_external_error && !self.starts_with(">") {
+  if eof_doctype {
     self.error_at_eof("eof-in-doctype")
   }
   if self.starts_with(">") {
@@ -1001,29 +1000,14 @@ fn start_tag_ignores_initial_lf(name : StringView) -> Bool {
 }
 
 ///|
-fn view_has_prefix_case_insensitive(
+fn parse_quoted_doctype_value_at(
   input : StringView,
-  prefix : StringView,
-) -> Bool {
-  if input.length() < prefix.length() {
-    false
-  } else {
-    match input.get_view(end=prefix.length()) {
-      Some(view) => view.compare_ignore_ascii_case(prefix) == 0
-      None => false
-    }
-  }
-}
-
-///|
-fn parse_quoted_doctype_value_info(
-  input : StringView,
-) -> (String?, StringView, Bool) {
-  let input = input.trim_start()
-  match input.get_char(0) {
+  start : Int,
+) -> (String?, Int, Bool) {
+  match input.get_char(start) {
     Some('"') | Some('\'') as quote_opt => {
       guard quote_opt is Some(quote)
-      let mut pos = quote.utf16_len()
+      let mut pos = start + quote.utf16_len()
       let value_start = pos
       while pos < input.length() && input.get_char(pos) != Some(quote) {
         match input.get_char(pos) {
@@ -1040,134 +1024,396 @@ fn parse_quoted_doctype_value_info(
         pos += quote.utf16_len()
         closed = true
       }
-      let rest = match input.get_view(start=pos) {
-        Some(view) => view
-        None => ""
-      }
-      (value, rest, closed)
+      (value, pos, closed)
     }
-    _ => (None, input, false)
+    _ => (None, start, false)
   }
 }
 
 ///|
-fn parse_quoted_doctype_value(input : StringView) -> (String?, StringView) {
-  let (value, rest, _) = parse_quoted_doctype_value_info(input)
-  (value, rest)
+fn skip_ascii_whitespace_in_view(input : StringView, start : Int) -> Int {
+  let mut pos = start
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some(ch) if ch.is_ascii_whitespace() => pos += ch.utf16_len()
+      _ => break
+    }
+  }
+  pos
 }
 
 ///|
-fn parse_doctype_external_ids(input : StringView) -> (String?, String?) {
-  let rest = input.trim_start()
-  if view_has_prefix_case_insensitive(rest, "public") {
-    let rest = rest[6:].trim_start()
-    let (public_id, rest) = parse_quoted_doctype_value(rest)
-    let (system_id, _) = parse_quoted_doctype_value(rest)
-    (public_id, system_id)
-  } else if view_has_prefix_case_insensitive(rest, "system") {
-    let rest = rest[6:].trim_start()
-    let (system_id, _) = parse_quoted_doctype_value(rest)
-    (None, system_id)
+fn view_has_prefix_case_insensitive_at(
+  input : StringView,
+  start : Int,
+  prefix : StringView,
+) -> Bool {
+  let end = start + prefix.length()
+  if end > input.length() {
+    false
   } else {
-    (None, None)
+    match input.get_view(start~, end~) {
+      Some(view) => view.compare_ignore_ascii_case(prefix) == 0
+      None => false
+    }
   }
 }
 
 ///|
-fn doctype_identifier_error_after_keyword(
-  after_keyword : StringView,
+fn view_last_char_offset(input : StringView) -> Int {
+  let mut last = 0
+  let mut pos = 0
+  while pos < input.length() {
+    last = pos
+    match input.get_char(pos) {
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  last
+}
+
+///|
+priv struct DoctypeExternalError {
+  code : String
+  offset : Int
+}
+
+///|
+priv struct DoctypeExternalParse {
+  public_id : String?
+  system_id : String?
+  errors : Array[DoctypeExternalError]
+  force_quirks : Bool
+}
+
+///|
+fn push_doctype_external_error(
+  errors : Array[DoctypeExternalError],
+  code : String,
+  offset : Int,
+) -> Unit {
+  errors.push(DoctypeExternalError::{ code, offset })
+}
+
+///|
+fn doctype_after_system_identifier(
+  input : StringView,
+  after_system : Int,
   closed : Bool,
-  missing_identifier_code : String,
-  missing_quote_code : String,
-) -> String? {
-  if closed && after_keyword.trim().is_empty() {
-    return Some(missing_identifier_code)
-  }
-  if !closed && after_keyword.is_empty() {
-    return Some(missing_quote_code)
-  }
-  if !closed && after_keyword.trim().is_empty() {
-    return Some(missing_identifier_code)
-  }
-  match after_keyword.trim_start().get_char(0) {
-    Some('"') | Some('\'') => None
-    _ => Some(missing_quote_code)
+  errors : Array[DoctypeExternalError],
+) -> Bool {
+  let next = skip_ascii_whitespace_in_view(input, after_system)
+  if next >= input.length() {
+    if closed {
+      false
+    } else {
+      push_doctype_external_error(
+        errors,
+        "eof-in-doctype",
+        view_last_char_offset(input),
+      )
+      true
+    }
+  } else {
+    push_doctype_external_error(
+      errors, "unexpected-character-after-doctype-system-identifier", next,
+    )
+    false
   }
 }
 
 ///|
-fn doctype_public_identifier_error(
-  after_keyword : StringView,
+fn parse_doctype_system_identifier_at(
+  input : StringView,
+  quote_pos : Int,
   closed : Bool,
-) -> String? {
-  match
-    doctype_identifier_error_after_keyword(
-      after_keyword, closed, "missing-doctype-public-identifier", "missing-quote-before-doctype-public-identifier",
-    ) {
-    Some(code) => return Some(code)
-    None => ()
-  }
-  let (_, after_public, public_closed) = parse_quoted_doctype_value_info(
-    after_keyword,
+  errors : Array[DoctypeExternalError],
+) -> (String?, Bool) {
+  let (system_id, after_system, system_closed) = parse_quoted_doctype_value_at(
+    input, quote_pos,
   )
-  if !public_closed {
+  if !system_closed {
     if closed {
-      Some("abrupt-doctype-public-identifier")
+      push_doctype_external_error(
+        errors,
+        "abrupt-doctype-system-identifier",
+        input.length(),
+      )
     } else {
-      Some("eof-in-doctype-public-identifier")
+      push_doctype_external_error(
+        errors,
+        "eof-in-doctype-system-identifier",
+        view_last_char_offset(input),
+      )
     }
-  } else if after_public.is_empty() {
-    if closed {
-      None
-    } else {
-      Some("missing-whitespace-between-doctype-public-and-system-identifiers")
-    }
-  } else if after_public.trim().is_empty() {
-    if closed {
-      None
-    } else {
-      Some("missing-quote-before-doctype-system-identifier")
-    }
+    (system_id, true)
   } else {
-    let after_trim = after_public.trim_start()
-    let had_whitespace = after_trim.length() != after_public.length()
-    match after_trim.get_char(0) {
-      Some('"') | Some('\'') =>
-        if had_whitespace {
-          None
+    (
+      system_id,
+      doctype_after_system_identifier(input, after_system, closed, errors),
+    )
+  }
+}
+
+///|
+fn parse_doctype_system_after_keyword(
+  input : StringView,
+  after_keyword : Int,
+  closed : Bool,
+  errors : Array[DoctypeExternalError],
+) -> (String?, Bool) {
+  match input.get_char(after_keyword) {
+    None =>
+      if closed {
+        push_doctype_external_error(
+          errors,
+          "missing-doctype-system-identifier",
+          input.length(),
+        )
+        (None, true)
+      } else {
+        push_doctype_external_error(
+          errors,
+          "missing-quote-before-doctype-system-identifier",
+          after_keyword - 1,
+        )
+        (None, true)
+      }
+    Some(ch) if ch.is_ascii_whitespace() => {
+      let id_pos = skip_ascii_whitespace_in_view(input, after_keyword)
+      if id_pos >= input.length() {
+        push_doctype_external_error(
+          errors,
+          "missing-doctype-system-identifier",
+          if closed {
+            input.length()
+          } else {
+            view_last_char_offset(input)
+          },
+        )
+        (None, true)
+      } else {
+        match input.get_char(id_pos) {
+          Some('"') | Some('\'') =>
+            parse_doctype_system_identifier_at(input, id_pos, closed, errors)
+          _ => {
+            push_doctype_external_error(
+              errors, "missing-quote-before-doctype-system-identifier", id_pos,
+            )
+            (None, true)
+          }
+        }
+      }
+    }
+    Some('"') | Some('\'') => {
+      push_doctype_external_error(
+        errors, "missing-whitespace-after-doctype-public-identifier", after_keyword,
+      )
+      parse_doctype_system_identifier_at(input, after_keyword, closed, errors)
+    }
+    _ => {
+      push_doctype_external_error(
+        errors, "unexpected-character-after-doctype-system-keyword", after_keyword,
+      )
+      (None, true)
+    }
+  }
+}
+
+///|
+fn parse_doctype_after_public_identifier(
+  input : StringView,
+  after_public : Int,
+  closed : Bool,
+  errors : Array[DoctypeExternalError],
+) -> (String?, Bool) {
+  match input.get_char(after_public) {
+    None =>
+      if closed {
+        (None, false)
+      } else {
+        push_doctype_external_error(
+          errors,
+          "missing-whitespace-between-doctype-public-and-system-identifiers",
+          view_last_char_offset(input),
+        )
+        (None, true)
+      }
+    Some(ch) if ch.is_ascii_whitespace() => {
+      let system_pos = skip_ascii_whitespace_in_view(input, after_public)
+      if system_pos >= input.length() {
+        if closed {
+          (None, false)
         } else {
-          Some(
-            "missing-whitespace-between-doctype-public-and-system-identifiers",
+          push_doctype_external_error(
+            errors,
+            "missing-quote-before-doctype-system-identifier",
+            view_last_char_offset(input),
+          )
+          (None, true)
+        }
+      } else {
+        match input.get_char(system_pos) {
+          Some('"') | Some('\'') =>
+            parse_doctype_system_identifier_at(
+              input, system_pos, closed, errors,
+            )
+          _ => {
+            push_doctype_external_error(
+              errors, "missing-quote-before-doctype-system-identifier", system_pos,
+            )
+            (None, true)
+          }
+        }
+      }
+    }
+    Some('"') | Some('\'') => {
+      push_doctype_external_error(
+        errors, "missing-whitespace-between-doctype-public-and-system-identifiers",
+        after_public,
+      )
+      parse_doctype_system_identifier_at(input, after_public, closed, errors)
+    }
+    _ => {
+      push_doctype_external_error(
+        errors, "unexpected-character-after-doctype-public-identifier", after_public,
+      )
+      (None, true)
+    }
+  }
+}
+
+///|
+fn parse_doctype_public_after_keyword(
+  input : StringView,
+  after_keyword : Int,
+  closed : Bool,
+  errors : Array[DoctypeExternalError],
+) -> (String?, String?, Bool) {
+  let mut force_quirks = false
+  let public_pos = match input.get_char(after_keyword) {
+    None =>
+      if closed {
+        push_doctype_external_error(
+          errors,
+          "missing-doctype-public-identifier",
+          input.length(),
+        )
+        force_quirks = true
+        None
+      } else {
+        push_doctype_external_error(
+          errors,
+          "missing-quote-before-doctype-public-identifier",
+          after_keyword - 1,
+        )
+        force_quirks = true
+        None
+      }
+    Some(ch) if ch.is_ascii_whitespace() => {
+      let id_pos = skip_ascii_whitespace_in_view(input, after_keyword)
+      if id_pos >= input.length() {
+        push_doctype_external_error(
+          errors,
+          "missing-doctype-public-identifier",
+          if closed {
+            input.length()
+          } else {
+            view_last_char_offset(input)
+          },
+        )
+        force_quirks = true
+        None
+      } else {
+        match input.get_char(id_pos) {
+          Some('"') | Some('\'') => Some(id_pos)
+          _ => {
+            push_doctype_external_error(
+              errors, "missing-quote-before-doctype-public-identifier", id_pos,
+            )
+            force_quirks = true
+            None
+          }
+        }
+      }
+    }
+    Some('"') | Some('\'') => {
+      push_doctype_external_error(
+        errors, "missing-whitespace-before-doctype-public-identifier", after_keyword,
+      )
+      Some(after_keyword)
+    }
+    _ => {
+      push_doctype_external_error(
+        errors, "unexpected-character-after-doctype-public-keyword", after_keyword,
+      )
+      force_quirks = true
+      None
+    }
+  }
+  match public_pos {
+    None => (None, None, force_quirks)
+    Some(pos) => {
+      let (public_id, after_public, public_closed) = parse_quoted_doctype_value_at(
+        input, pos,
+      )
+      if !public_closed {
+        if closed {
+          push_doctype_external_error(
+            errors,
+            "abrupt-doctype-public-identifier",
+            input.length(),
+          )
+        } else {
+          push_doctype_external_error(
+            errors,
+            "eof-in-doctype-public-identifier",
+            view_last_char_offset(input),
           )
         }
-      _ =>
-        if had_whitespace {
-          Some("missing-quote-before-doctype-system-identifier")
-        } else {
-          Some("unexpected-character-after-doctype-public-identifier")
-        }
+        (public_id, None, true)
+      } else {
+        let (system_id, system_force_quirks) = parse_doctype_after_public_identifier(
+          input, after_public, closed, errors,
+        )
+        (public_id, system_id, force_quirks || system_force_quirks)
+      }
     }
   }
 }
 
 ///|
-fn doctype_external_identifier_error(
+fn parse_doctype_external(
   input : StringView,
   closed : Bool,
-) -> String? {
-  let rest = input.trim_start()
-  if view_has_prefix_case_insensitive(rest, "public") {
-    doctype_public_identifier_error(rest[6:], closed)
-  } else if view_has_prefix_case_insensitive(rest, "system") {
-    doctype_identifier_error_after_keyword(
-      rest[6:],
+) -> DoctypeExternalParse {
+  let errors : Array[DoctypeExternalError] = []
+  let start = skip_ascii_whitespace_in_view(input, 0)
+  let mut public_id : String? = None
+  let mut system_id : String? = None
+  let mut force_quirks = false
+  if view_has_prefix_case_insensitive_at(input, start, "public") {
+    let (parsed_public, parsed_system, force) = parse_doctype_public_after_keyword(
+      input,
+      start + 6,
       closed,
-      "missing-doctype-system-identifier",
-      "missing-quote-before-doctype-system-identifier",
+      errors,
     )
-  } else {
-    None
+    public_id = parsed_public
+    system_id = parsed_system
+    force_quirks = force
+  } else if view_has_prefix_case_insensitive_at(input, start, "system") {
+    let (parsed_system, force) = parse_doctype_system_after_keyword(
+      input,
+      start + 6,
+      closed,
+      errors,
+    )
+    system_id = parsed_system
+    force_quirks = force
   }
+  DoctypeExternalParse::{ public_id, system_id, errors, force_quirks }
 }
 
 ///|

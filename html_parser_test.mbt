@@ -416,6 +416,97 @@ test "parser and tokenizer report post-public-identifier errors" {
 }
 
 ///|
+test "parser and tokenizer report system identifier tail errors" {
+  let system_extra = @html_parser.tokenize(
+    "<!doctype html SYSTEM \"x\"x>",
+    collect_errors=true,
+  )
+  assert_eq(system_extra.errors.length(), 1)
+  assert_eq(
+    system_extra.errors[0].code,
+    "unexpected-character-after-doctype-system-identifier",
+  )
+  guard system_extra.errors[0].column is Some(26) else {
+    fail("expected system identifier tail error at trailing character")
+  }
+  guard system_extra.tokens[0]
+    is @html_parser.HtmlToken::DoctypeToken(system_info) else {
+    fail("expected doctype token")
+  }
+  guard system_info.system_id is Some("x") else { fail("expected system id") }
+  assert_eq(system_info.force_quirks, false)
+  let system_eof = @html_parser.tokenize(
+    "<!doctype html SYSTEM \"x\"",
+    collect_errors=true,
+  )
+  assert_eq(system_eof.errors.length(), 1)
+  assert_eq(system_eof.errors[0].code, "eof-in-doctype")
+  guard system_eof.tokens[0]
+    is @html_parser.HtmlToken::DoctypeToken(system_eof_info) else {
+    fail("expected doctype token")
+  }
+  guard system_eof_info.system_id is Some("x") else {
+    fail("expected system id at EOF")
+  }
+  assert_eq(system_eof_info.force_quirks, true)
+  let public_system_extra = @html_parser.parse(
+    "<!doctype html PUBLIC \"p\" \"s\"x>",
+    collect_errors=true,
+  )
+  assert_eq(
+    public_system_extra.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"p\" \"s\"><html><head></head><body></body></html>",
+  )
+  assert_eq(public_system_extra.errors.length(), 2)
+  assert_eq(
+    public_system_extra.errors[0].code,
+    "unexpected-character-after-doctype-system-identifier",
+  )
+  guard public_system_extra.errors[0].column is Some(30) else {
+    fail("expected public system tail error at trailing character")
+  }
+  assert_eq(public_system_extra.errors[1].code, "unknown-doctype")
+  let fused = @html_parser.tokenize(
+    "<!doctype html PUBLIC \"p\"\"s\"x>",
+    collect_errors=true,
+  )
+  assert_eq(fused.errors.length(), 2)
+  assert_eq(
+    fused.errors[0].code,
+    "missing-whitespace-between-doctype-public-and-system-identifiers",
+  )
+  assert_eq(
+    fused.errors[1].code,
+    "unexpected-character-after-doctype-system-identifier",
+  )
+  guard fused.errors[0].column is Some(26) else {
+    fail("expected missing whitespace error at system quote")
+  }
+  guard fused.errors[1].column is Some(29) else {
+    fail("expected fused system tail error at trailing character")
+  }
+  guard fused.tokens[0] is @html_parser.HtmlToken::DoctypeToken(fused_info) else {
+    fail("expected fused doctype token")
+  }
+  guard fused_info.public_id is Some("p") else { fail("expected public id") }
+  guard fused_info.system_id is Some("s") else { fail("expected system id") }
+  assert_eq(fused_info.force_quirks, false)
+  let immediate_public = @html_parser.parse(
+    "<!doctype html PUBLIC\"x\">",
+    collect_errors=true,
+  )
+  assert_eq(immediate_public.errors.length(), 2)
+  assert_eq(
+    immediate_public.errors[0].code,
+    "missing-whitespace-before-doctype-public-identifier",
+  )
+  guard immediate_public.errors[0].column is Some(22) else {
+    fail("expected missing whitespace before public identifier")
+  }
+  assert_eq(immediate_public.errors[1].code, "unknown-doctype")
+}
+
+///|
 test "document parser reports missing initial doctype" {
   let chars = @html_parser.parse("x", collect_errors=true)
   assert_eq(
