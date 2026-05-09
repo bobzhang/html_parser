@@ -232,23 +232,29 @@ fn Parser::pop_until(self : Parser, name : String, pos : Int) -> Unit {
 }
 
 ///|
-fn Parser::close_open_p_element(self : Parser) -> Unit {
-  let mut has_open_p = false
+fn Parser::close_open_element(self : Parser, name : String) -> Bool {
+  let mut found = false
   for node in self.stack {
-    if node.kind == Element && node.name == "p" {
-      has_open_p = true
+    if node.kind == Element && node.name == name {
+      found = true
     }
   }
-  if !has_open_p {
-    return
+  if !found {
+    return false
   }
   while self.stack.length() > 1 {
     match self.stack.pop() {
-      Some(node) if node.kind == Element && node.name == "p" => break
+      Some(node) if node.kind == Element && node.name == name => break
       Some(_) => ()
       None => break
     }
   }
+  true
+}
+
+///|
+fn Parser::close_open_p_element(self : Parser) -> Unit {
+  ignore(self.close_open_element("p"))
 }
 
 ///|
@@ -278,6 +284,7 @@ fn start_tag_closes_p(name : StringView) -> Bool {
     | "header"
     | "hgroup"
     | "hr"
+    | "li"
     | "main"
     | "menu"
     | "nav"
@@ -341,6 +348,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if start_tag_closes_p(name) {
         self.close_open_p_element()
+      }
+      if name == "li" {
+        ignore(self.close_open_element("li"))
       }
       let node = element(name, attrs~)
       self.current_node().append_child(node)

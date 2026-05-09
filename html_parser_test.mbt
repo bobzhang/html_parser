@@ -98,6 +98,19 @@ test "parser closes open paragraphs before paragraph and block starts" {
 }
 
 ///|
+test "parser closes open list items before repeated li starts" {
+  let fragment = @html_parser.parse_fragment(
+    "<ul><li>one<li><p>two<li>three</ul>",
+  )
+  assert_eq(
+    fragment.to_html(pretty=false),
+    "<ul><li>one</li><li><p>two</p></li><li>three</li></ul>",
+  )
+  let loose = @html_parser.parse_fragment("<li>loose<li>item")
+  assert_eq(loose.to_html(pretty=false), "<li>loose</li><li>item</li>")
+}
+
+///|
 test "strict mode raises on first parse error" {
   let result : Result[@html_parser.ParsedHtml, Error] = try? @html_parser.parse_fragment(
     "<p>open</span>",
