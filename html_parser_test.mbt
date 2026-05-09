@@ -2004,10 +2004,21 @@ test "parser treats script style title textarea content as text" {
   )
   assert_eq(
     doc.to_html(pretty=false),
-    "<script><!--a--<b</script><title>a &lt; b</title>",
+    "<script><!--a--<<b</script><title>a &lt; b</title>",
   )
   assert_eq(doc.query("b").length(), 0)
-  assert_eq(doc.to_text(separator="|", strip=false), "<!--a--<b|a < b")
+  assert_eq(doc.to_text(separator="|", strip=false), "<!--a--<<b|a < b")
+  let escaped_end = @html_parser.parse_fragment("<script><!--a--</script>")
+  assert_eq(escaped_end.to_html(pretty=false), "<script><!--a--<</script>")
+  let comment_end = @html_parser.parse_fragment("<script><!--a--></script>")
+  assert_eq(comment_end.to_html(pretty=false), "<script><!--a--></script>")
+  let raw_after_comment = @html_parser.parse_fragment(
+    "<script><!--a-->x--</script>",
+  )
+  assert_eq(
+    raw_after_comment.to_html(pretty=false),
+    "<script><!--a-->x--</script>",
+  )
 }
 
 ///|
@@ -2075,7 +2086,7 @@ test "parser ignores one initial newline in pre listing and textarea" {
 test "tokenize preserves rawtext and rcdata element contents" {
   let script = @html_parser.tokenize("<script><!--a--<b</script>")
   assert_eq(script.tokens.length(), 4)
-  guard script.tokens[1] is @html_parser.HtmlToken::Characters("<!--a--<b") else {
+  guard script.tokens[1] is @html_parser.HtmlToken::Characters("<!--a--<<b") else {
     fail("expected raw script text")
   }
   guard script.tokens[2] is @html_parser.HtmlToken::Tag(end_script) else {
@@ -2083,6 +2094,26 @@ test "tokenize preserves rawtext and rcdata element contents" {
   }
   assert_true(end_script.kind is @html_parser.TagKind::EndTag)
   assert_eq(end_script.name, "script")
+  let escaped_end = @html_parser.tokenize("<script><!--a--</script>")
+  guard escaped_end.tokens[1] is @html_parser.HtmlToken::Characters("<!--a--<") else {
+    fail("expected escaped script end-tag boundary text")
+  }
+  let comment_end = @html_parser.tokenize("<script><!--a--></script>")
+  guard comment_end.tokens[1] is @html_parser.HtmlToken::Characters("<!--a-->") else {
+    fail("expected script comment close to return to raw text")
+  }
+  let nul_script = @html_parser.tokenize(
+    "<script>a\u{0000}b</script>",
+    collect_errors=true,
+  )
+  guard nul_script.tokens[1] is @html_parser.HtmlToken::Characters("a\u{FFFD}b") else {
+    fail("expected replacement char in script text")
+  }
+  assert_eq(nul_script.errors.length(), 1)
+  assert_eq(nul_script.errors[0].code, "unexpected-null-character")
+  guard nul_script.errors[0].column is Some(10) else {
+    fail("expected script text null at column 10")
+  }
   let textarea = @html_parser.tokenize("<textarea>a &lt; b</textarea>")
   guard textarea.tokens[1] is @html_parser.HtmlToken::Characters("a < b") else {
     fail("expected decoded textarea text")

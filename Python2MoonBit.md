@@ -22,6 +22,11 @@ JustHTML from Python to MoonBit.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.
+- `script` text is not just generic raw text. After `<!--`, the tokenizer can
+  enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
+  leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
+  Keep these states explicit instead of trying to repair the serialized output
+  afterwards.
 - Literal U+0000 handling depends on the tokenizer/parser state. Normal text
   data reports `unexpected-null-character` and drops the character, while
   attribute values and raw/RCDATA text report the same error and replace it

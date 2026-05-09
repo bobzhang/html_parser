@@ -567,6 +567,32 @@ fn SourceTokenizer::parse_quoted_attribute_value(
 }
 
 ///|
+fn SourceTokenizer::decoded_special_text(
+  self : SourceTokenizer,
+  name : StringView,
+  raw : StringView,
+  start : Int,
+  closed : Bool,
+) -> String {
+  let (raw, offset) = if name == "textarea" {
+    strip_one_initial_lf_with_offset(raw)
+  } else {
+    (raw, 0)
+  }
+  if name == "script" {
+    let (text, errors) = decode_script_text(raw, start + offset, closed)
+    for error in errors {
+      self.error_at(error.code, error.offset)
+    }
+    text
+  } else if special_text_decodes_entities(name) {
+    decode_entities(raw, in_attribute=false)
+  } else {
+    normalize_newlines(raw)
+  }
+}
+
+///|
 fn SourceTokenizer::consume_special_text_tokens(
   self : SourceTokenizer,
   name : String,
@@ -575,7 +601,11 @@ fn SourceTokenizer::consume_special_text_tokens(
   if name == "plaintext" {
     match self.input.get_view(start=content_start, end=self.input.length()) {
       Some(view) if !view.is_empty() =>
-        self.tokens.push(Characters(decoded_special_text(name, view)))
+        self.tokens.push(
+          Characters(
+            self.decoded_special_text(name, view, content_start, false),
+          ),
+        )
       _ => ()
     }
     self.error_at("eof-in-text-element", content_start)
@@ -586,7 +616,11 @@ fn SourceTokenizer::consume_special_text_tokens(
     Some(end_start) => {
       match self.input.get_view(start=content_start, end=end_start) {
         Some(view) if !view.is_empty() =>
-          self.tokens.push(Characters(decoded_special_text(name, view)))
+          self.tokens.push(
+            Characters(
+              self.decoded_special_text(name, view, content_start, true),
+            ),
+          )
         _ => ()
       }
       self.pos = end_start
@@ -595,7 +629,11 @@ fn SourceTokenizer::consume_special_text_tokens(
     None => {
       match self.input.get_view(start=content_start, end=self.input.length()) {
         Some(view) if !view.is_empty() =>
-          self.tokens.push(Characters(decoded_special_text(name, view)))
+          self.tokens.push(
+            Characters(
+              self.decoded_special_text(name, view, content_start, false),
+            ),
+          )
         _ => ()
       }
       self.error_at("eof-in-text-element", content_start)
