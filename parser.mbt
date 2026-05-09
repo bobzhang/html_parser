@@ -376,7 +376,7 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
   }
   let external_error = match
     self.input.get_view(start=ids_start, end=self.pos) {
-    Some(view) => doctype_missing_identifier_error(view, self.starts_with(">"))
+    Some(view) => doctype_external_identifier_error(view, self.starts_with(">"))
     None => None
   }
   let has_external_error = match external_error {
@@ -1064,26 +1064,47 @@ fn parse_doctype_external_ids(input : StringView) -> (String?, String?) {
 }
 
 ///|
-fn doctype_missing_identifier_error(
+fn doctype_identifier_error_after_keyword(
+  after_keyword : StringView,
+  closed : Bool,
+  missing_identifier_code : String,
+  missing_quote_code : String,
+) -> String? {
+  if closed && after_keyword.trim().is_empty() {
+    return Some(missing_identifier_code)
+  }
+  if !closed && after_keyword.is_empty() {
+    return Some(missing_quote_code)
+  }
+  if !closed && after_keyword.trim().is_empty() {
+    return Some(missing_identifier_code)
+  }
+  match after_keyword.trim_start().get_char(0) {
+    Some('"') | Some('\'') => None
+    _ => Some(missing_quote_code)
+  }
+}
+
+///|
+fn doctype_external_identifier_error(
   input : StringView,
   closed : Bool,
 ) -> String? {
-  if !closed {
-    return None
-  }
   let rest = input.trim_start()
   if view_has_prefix_case_insensitive(rest, "public") {
-    if rest[6:].trim().is_empty() {
-      Some("missing-doctype-public-identifier")
-    } else {
-      None
-    }
+    doctype_identifier_error_after_keyword(
+      rest[6:],
+      closed,
+      "missing-doctype-public-identifier",
+      "missing-quote-before-doctype-public-identifier",
+    )
   } else if view_has_prefix_case_insensitive(rest, "system") {
-    if rest[6:].trim().is_empty() {
-      Some("missing-doctype-system-identifier")
-    } else {
-      None
-    }
+    doctype_identifier_error_after_keyword(
+      rest[6:],
+      closed,
+      "missing-doctype-system-identifier",
+      "missing-quote-before-doctype-system-identifier",
+    )
   } else {
     None
   }

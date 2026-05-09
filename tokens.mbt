@@ -211,7 +211,7 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   }
   let external_error = match
     self.input.get_view(start=ids_start, end=self.pos) {
-    Some(view) => doctype_missing_identifier_error(view, self.starts_with(">"))
+    Some(view) => doctype_external_identifier_error(view, self.starts_with(">"))
     None => None
   }
   let has_external_error = match external_error {
