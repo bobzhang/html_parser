@@ -168,32 +168,12 @@ fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
 ///|
 fn SourceTokenizer::parse_comment(self : SourceTokenizer) -> Unit {
   self.pos += 4
-  if self.current() == Some('>') {
-    self.error_at("abrupt-closing-of-empty-comment", self.pos)
-    ignore(self.advance_char())
-    self.tokens.push(CommentToken(""))
-    return
+  let scan = scan_comment_data(self.input, self.pos)
+  for error in scan.errors {
+    self.error_at(error.code, error.offset)
   }
-  if self.starts_with("->") {
-    self.error_at("abrupt-closing-of-empty-comment", self.pos + 1)
-    self.pos += 2
-    self.tokens.push(CommentToken(""))
-    return
-  }
-  let data_start = self.pos
-  while !self.is_eof() && !self.starts_with("-->") {
-    ignore(self.advance_char())
-  }
-  let data = match self.input.get_view(start=data_start, end=self.pos) {
-    Some(view) => normalize_newlines(view)
-    None => ""
-  }
-  if self.starts_with("-->") {
-    self.pos += 3
-  } else {
-    self.error_at_eof("eof-in-comment")
-  }
-  self.tokens.push(CommentToken(data))
+  self.pos = scan.end
+  self.tokens.push(CommentToken(scan.data))
 }
 
 ///|

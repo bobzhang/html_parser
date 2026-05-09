@@ -1,0 +1,182 @@
+///|
+priv struct CommentScanError {
+  code : String
+  offset : Int
+}
+
+///|
+priv struct CommentScan {
+  data : String
+  end : Int
+  eof : Bool
+  errors : Array[CommentScanError]
+}
+
+///|
+fn push_comment_scan_error(
+  errors : Array[CommentScanError],
+  code : String,
+  offset : Int,
+) -> Unit {
+  errors.push(CommentScanError::{ code, offset })
+}
+
+///|
+fn write_comment_hyphens(out : StringBuilder, count : Int) -> Unit {
+  if count > 0 {
+    out.write_string("-".repeat(count))
+  }
+}
+
+///|
+fn write_comment_char(
+  out : StringBuilder,
+  input : StringView,
+  pos : Int,
+  ch : Char,
+) -> Int {
+  if ch == '\r' {
+    out.write_char('\n')
+    let next = pos + 1
+    if next < input.length() && input.get_char(next) == Some('\n') {
+      next + 1
+    } else {
+      next
+    }
+  } else {
+    out.write_char(ch)
+    pos + ch.utf16_len()
+  }
+}
+
+///|
+fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
+  let out = StringBuilder::new(size_hint=input.length() - start)
+  let errors : Array[CommentScanError] = []
+  if start >= input.length() {
+    push_comment_scan_error(errors, "eof-in-comment", eof_error_pos(input))
+    return CommentScan::{ data: "", end: input.length(), eof: true, errors }
+  }
+  if input.get_char(start) == Some('>') {
+    push_comment_scan_error(errors, "abrupt-closing-of-empty-comment", start)
+    return CommentScan::{ data: "", end: start + 1, eof: false, errors }
+  }
+  if view_starts_with_at(input, start, "->") {
+    push_comment_scan_error(
+      errors,
+      "abrupt-closing-of-empty-comment",
+      start + 1,
+    )
+    return CommentScan::{ data: "", end: start + 2, eof: false, errors }
+  }
+  let mut pos = start
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some('-') => {
+        let dash_start = pos
+        while pos < input.length() && input.get_char(pos) == Some('-') {
+          pos += 1
+        }
+        let dash_count = pos - dash_start
+        if dash_count >= 2 {
+          match input.get_char(pos) {
+            Some('>') => {
+              write_comment_hyphens(out, dash_count - 2)
+              return CommentScan::{
+                data: out.to_string(),
+                end: pos + 1,
+                eof: false,
+                errors,
+              }
+            }
+            Some('!') =>
+              match input.get_char(pos + 1) {
+                Some('>') => {
+                  write_comment_hyphens(out, dash_count - 2)
+                  push_comment_scan_error(
+                    errors,
+                    "incorrectly-closed-comment",
+                    pos + 1,
+                  )
+                  return CommentScan::{
+                    data: out.to_string(),
+                    end: pos + 2,
+                    eof: false,
+                    errors,
+                  }
+                }
+                Some('\u{0000}') => {
+                  write_comment_hyphens(out, dash_count)
+                  out.write_char('!')
+                  push_comment_scan_error(
+                    errors,
+                    "unexpected-null-character",
+                    pos + 1,
+                  )
+                  out.write_char('\u{FFFD}')
+                  pos += 2
+                }
+                Some(ch) => {
+                  write_comment_hyphens(out, dash_count)
+                  out.write_char('!')
+                  pos = write_comment_char(out, input, pos + 1, ch)
+                }
+                None => {
+                  write_comment_hyphens(out, dash_count - 2)
+                  push_comment_scan_error(
+                    errors,
+                    "eof-in-comment",
+                    eof_error_pos(input),
+                  )
+                  return CommentScan::{
+                    data: out.to_string(),
+                    end: input.length(),
+                    eof: true,
+                    errors,
+                  }
+                }
+              }
+            Some('\u{0000}') => {
+              write_comment_hyphens(out, dash_count - 2)
+              out.write_string("--")
+              push_comment_scan_error(errors, "unexpected-null-character", pos)
+              out.write_char('\u{FFFD}')
+              pos += 1
+            }
+            Some(ch) => {
+              write_comment_hyphens(out, dash_count - 2)
+              push_comment_scan_error(errors, "incorrectly-closed-comment", pos)
+              out.write_string("--")
+              pos = write_comment_char(out, input, pos, ch)
+            }
+            None => {
+              write_comment_hyphens(out, dash_count - 2)
+              push_comment_scan_error(
+                errors,
+                "eof-in-comment",
+                eof_error_pos(input),
+              )
+              return CommentScan::{
+                data: out.to_string(),
+                end: input.length(),
+                eof: true,
+                errors,
+              }
+            }
+          }
+        } else {
+          out.write_char('-')
+        }
+      }
+      Some('\u{0000}') => {
+        push_comment_scan_error(errors, "unexpected-null-character", pos)
+        out.write_char('\u{FFFD}')
+        pos += 1
+      }
+      Some(ch) => pos = write_comment_char(out, input, pos, ch)
+      None => break
+    }
+  }
+  push_comment_scan_error(errors, "eof-in-comment", eof_error_pos(input))
+  CommentScan::{ data: out.to_string(), end: input.length(), eof: true, errors }
+}

@@ -203,17 +203,12 @@ fn find_markup_close(input : StringView, start : Int) -> Int? {
 
 ///|
 fn find_comment_close(input : StringView, start : Int) -> Int? {
-  let mut pos = start + "<!--".length()
-  while pos < input.length() {
-    if view_starts_with_at(input, pos, "-->") {
-      return Some(pos + "-->".length())
-    }
-    match input.get_char(pos) {
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
+  let scan = scan_comment_data(input, start + "<!--".length())
+  if scan.eof {
+    None
+  } else {
+    Some(scan.end)
   }
-  None
 }
 
 ///|
@@ -399,37 +394,12 @@ fn Parser::report_eof_tree_errors(self : Parser) -> Unit {
 ///|
 fn Parser::parse_comment(self : Parser) -> Unit {
   self.pos += 4
-  if self.current() == Some('>') {
-    self.error_at("abrupt-closing-of-empty-comment", self.pos)
-    ignore(self.advance_char())
-    self.current_node().append_child(comment(""))
-    return
+  let scan = scan_comment_data(self.input, self.pos)
+  for error in scan.errors {
+    self.error_at(error.code, error.offset)
   }
-  if self.starts_with("->") {
-    self.error_at("abrupt-closing-of-empty-comment", self.pos + 1)
-    self.pos += 2
-    self.current_node().append_child(comment(""))
-    return
-  }
-  let data_start = self.pos
-  while !self.is_eof() && !self.starts_with("-->") {
-    ignore(self.advance_char())
-  }
-  if self.is_eof() {
-    self.error_at_eof("eof-in-comment")
-    match self.input.get_view(start=data_start, end=self.pos) {
-      Some(view) =>
-        self.current_node().append_child(comment(normalize_newlines(view)))
-      None => ()
-    }
-  } else {
-    match self.input.get_view(start=data_start, end=self.pos) {
-      Some(view) =>
-        self.current_node().append_child(comment(normalize_newlines(view)))
-      None => ()
-    }
-    self.pos += 3
-  }
+  self.pos = scan.end
+  self.current_node().append_child(comment(scan.data))
 }
 
 ///|

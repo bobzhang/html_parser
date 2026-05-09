@@ -194,6 +194,9 @@ JustHTML from Python to MoonBit.
 - Empty comments with abrupt closers are not EOF cases. `<!-->` and `<!--->`
   both emit an empty comment and report `abrupt-closing-of-empty-comment` at the
   closing `>`.
+- Comment end states are not equivalent to searching for the next `-->`.
+  `--!>` closes after `incorrectly-closed-comment`, and `--x` reports the same
+  error before keeping the two hyphens and `x` in the comment data.
 - Markup declarations are not just normal tag-open failures. In HTML content,
   malformed `<!...>` declarations become bogus comments after
   `incorrectly-opened-comment`, and `<![CDATA[` also becomes a bogus comment
