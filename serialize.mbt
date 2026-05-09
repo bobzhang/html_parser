@@ -556,6 +556,19 @@ fn class_contains(value : StringView, needle : StringView) -> Bool {
 }
 
 ///|
+fn class_contains_all(value : StringView, selector : StringView) -> Bool {
+  if selector.is_empty() {
+    return false
+  }
+  for class_name in selector.split(".") {
+    if class_name.is_empty() || !class_contains(value, class_name) {
+      return false
+    }
+  }
+  true
+}
+
+///|
 fn class_token_matches(
   value : StringView,
   start : Int,
@@ -596,15 +609,15 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
     }
   } else if selector.has_prefix(".") {
     match node.attrs.get("class") {
-      Some(Some(value)) => class_contains(value, selector[1:])
+      Some(Some(value)) => class_contains_all(value, selector[1:])
       _ => false
     }
   } else {
     match selector.split_once(".") {
-      Some((tag, class_name)) => {
+      Some((tag, classes)) => {
         let tag_ok = node.name[:] == tag.to_lower()
         let class_ok = match node.attrs.get("class") {
-          Some(Some(value)) => class_contains(value, class_name)
+          Some(Some(value)) => class_contains_all(value, classes)
           _ => false
         }
         tag_ok && class_ok

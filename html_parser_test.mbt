@@ -1001,11 +1001,15 @@ test "fragment context seeds literal text modes" {
 ///|
 test "query supports tag class id and tag class selectors" {
   let doc = @html_parser.parse_fragment(
-    "<div><p id='first' class='intro lead'>One</p><p>Two</p></div>",
+    "<div><p id='first' class='intro lead first'>One</p><p>Two</p></div>",
   )
   assert_eq(doc.query("p").length(), 2)
   assert_eq(doc.query(".intro").length(), 1)
+  assert_eq(doc.query(".intro.first").length(), 1)
+  assert_eq(doc.query(".intro.missing").length(), 0)
   assert_eq(doc.query("#first").length(), 1)
+  assert_eq(doc.query("p.intro.first").length(), 1)
+  assert_eq(doc.query("div.intro").length(), 0)
   let first = doc.query_one("p.lead")
   guard first is Some(node) else { fail("expected p.lead") }
   assert_eq(node.to_text(separator="", strip=false), "One")
@@ -1018,6 +1022,8 @@ test "query supports tag class id and tag class selectors" {
   assert_eq(spaced.query("p.gamma").length(), 1)
   assert_eq(spaced.query(".delta").length(), 1)
   assert_eq(spaced.query(".epsilon").length(), 1)
+  assert_eq(spaced.query(".alpha.epsilon").length(), 1)
+  assert_eq(spaced.query("p.beta.delta").length(), 1)
   assert_eq(spaced.query(".ta").length(), 0)
 }
 

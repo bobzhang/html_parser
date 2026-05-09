@@ -43,6 +43,9 @@ JustHTML from Python to MoonBit.
 - Class selector matching must split class attributes on HTML whitespace
   (`space`, `tab`, `LF`, `FF`, `CR`), not just literal spaces. This matters for
   both parsed attributes and programmatically-created DOM nodes.
+- Compound class selectors such as `.intro.first` and `p.intro.first` are not a
+  single class token; every class fragment after `.` must match one class
+  attribute token.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
