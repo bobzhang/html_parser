@@ -393,11 +393,17 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if is_heading_element_name(name) {
         self.close_current_heading_element()
       }
-      let node = element(name, attrs~)
+      let adjusted_name = if name == "image" {
+        self.error_at("image-start-tag", start)
+        "img"
+      } else {
+        name
+      }
+      let node = element(adjusted_name, attrs~)
       self.current_node().append_child(node)
-      if !self_closing && is_special_text_element(name) {
-        self.consume_special_element_content(node, name)
-      } else if !self_closing && !is_void_element(name) {
+      if !self_closing && is_special_text_element(adjusted_name) {
+        self.consume_special_element_content(node, adjusted_name)
+      } else if !self_closing && !is_void_element(adjusted_name) {
         self.stack.push(node)
       }
     }
