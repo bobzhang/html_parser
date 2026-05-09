@@ -941,6 +941,77 @@ fn Parser::consume_special_element_content(
 }
 
 ///|
+fn is_fragment_raw_text_context(name : StringView) -> Bool {
+  match name {
+    "style" | "textarea" | "title" => true
+    _ => false
+  }
+}
+
+///|
+fn is_fragment_plain_text_context(name : StringView) -> Bool {
+  match name {
+    "plaintext" | "script" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::append_fragment_context_text(
+  self : Parser,
+  raw : StringView,
+  start : Int,
+) -> Unit {
+  if raw.is_empty() {
+    return
+  }
+  let raw = self.replace_null_characters(raw, start)
+  self.root.append_child(text(normalize_newlines(raw)))
+}
+
+///|
+fn Parser::parse_fragment_context(
+  self : Parser,
+  context : FragmentContext,
+) -> Bool {
+  if context.ns is Some(_) {
+    return false
+  }
+  let name = context.tag_name
+  if is_fragment_plain_text_context(name) {
+    match self.input.get_view(start=0, end=self.input.length()) {
+      Some(view) => self.append_fragment_context_text(view, 0)
+      None => ()
+    }
+    self.pos = self.input.length()
+    return true
+  }
+  if is_fragment_raw_text_context(name) {
+    match find_matching_end_tag(self.input, 0, name) {
+      Some(end_start) => {
+        match self.input.get_view(start=0, end=end_start) {
+          Some(view) => self.append_fragment_context_text(view, 0)
+          None => ()
+        }
+        self.pos = end_start
+        self.skip_matching_end_tag()
+        self.error_at("unexpected-end-tag", end_start)
+        self.parse_all()
+      }
+      None => {
+        match self.input.get_view(start=0, end=self.input.length()) {
+          Some(view) => self.append_fragment_context_text(view, 0)
+          None => ()
+        }
+        self.pos = self.input.length()
+      }
+    }
+    return true
+  }
+  false
+}
+
+///|
 fn line_col_at(input : StringView, target : Int) -> (Int, Int) {
   let mut offset = 0
   let mut line = 1
@@ -1284,11 +1355,16 @@ pub fn parse_fragment(
   strict? : Bool = false,
   scripting_enabled? : Bool = true,
 ) -> ParsedHtml raise HtmlError {
-  ignore(context)
   ignore(sanitize)
   let root = fragment()
   let parser = Parser::new(html, root, scripting_enabled~)
-  parser.parse_all()
+  match context {
+    Some(fragment_context) =>
+      if !parser.parse_fragment_context(fragment_context) {
+        parser.parse_all()
+      }
+    None => parser.parse_all()
+  }
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {
     raise HtmlError::StrictMode(parser.errors[0])

@@ -64,6 +64,10 @@ JustHTML from Python to MoonBit.
   that in the MoonBit parser record instead of accepting a public optional
   parameter and then `ignore(...)`-ing it. Flags such as `scripting_enabled`
   can affect tokenizer/tree-builder state transitions.
+- Fragment-context options may need to seed parser/tokenizer state before the
+  first token is read. Do not parse the input normally and try to repair the
+  tree afterwards; contexts like `textarea` and `script` change whether `<` and
+  `&` are markup at all.
 - A function receiving an already optional value, such as a stored `String?`,
   should usually take a normal `arg : String?` parameter. Do not use an
   optional labeled parameter when the caller needs to pass `None` or `Some(...)`

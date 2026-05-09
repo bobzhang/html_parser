@@ -100,6 +100,38 @@ test "parser cursor advances by unicode character length" {
 }
 
 ///|
+test "fragment context seeds literal text modes" {
+  let textarea = @html_parser.parse_fragment(
+    "<b>x</b>&lt;",
+    context=@html_parser.FragmentContext::new("textarea"),
+  )
+  assert_eq(textarea.to_html(pretty=false), "&lt;b&gt;x&lt;/b&gt;&amp;lt;")
+  assert_eq(textarea.to_text(separator="", strip=false), "<b>x</b>&lt;")
+  assert_eq(textarea.query("b").length(), 0)
+  let after_end = @html_parser.parse_fragment(
+    "a</textarea><b>x</b>",
+    context=@html_parser.FragmentContext::new("textarea"),
+    collect_errors=true,
+  )
+  assert_eq(after_end.to_html(pretty=false), "a<b>x</b>")
+  assert_eq(after_end.errors[0].code, "unexpected-end-tag")
+  let script = @html_parser.parse_fragment(
+    "a</script><b>x</b>",
+    context=@html_parser.FragmentContext::new("script"),
+  )
+  assert_eq(
+    script.to_html(pretty=false),
+    "a&lt;/script&gt;&lt;b&gt;x&lt;/b&gt;",
+  )
+  assert_eq(script.query("b").length(), 0)
+  let div = @html_parser.parse_fragment(
+    "<b>x</b>",
+    context=@html_parser.FragmentContext::new("div"),
+  )
+  assert_eq(div.to_html(pretty=false), "<b>x</b>")
+}
+
+///|
 test "query supports tag class id and tag class selectors" {
   let doc = @html_parser.parse_fragment(
     "<div><p id='first' class='intro lead'>One</p><p>Two</p></div>",
