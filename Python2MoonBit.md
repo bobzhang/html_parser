@@ -179,6 +179,9 @@ JustHTML from Python to MoonBit.
 - A bad slash in a start tag is not a separate MoonBit-only error. `<div /a>`
   reports `unexpected-character-after-solidus-in-tag`, then reconsumes `a` in
   the before-attribute-name state so it becomes a normal empty-valued attribute.
+- The self-closing start tag state does not skip whitespace after `/`.
+  `<img />` is self-closing because whitespace appears before `/`, but
+  `<img/ >` reports `unexpected-character-after-solidus-in-tag` at the space.
 - Attribute-name diagnostics are shared by tokenizer and tree builder paths.
   A leading `=` reports `unexpected-equals-sign-before-attribute-name`, while
   `<`, `"`, and `'` inside the name report

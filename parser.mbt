@@ -851,7 +851,6 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
           }
           Some('/') => {
             ignore(self.advance_char())
-            self.skip_ascii_whitespace()
             if self.current() == Some('>') {
               ignore(self.advance_char())
               self_closing = true
