@@ -186,7 +186,14 @@ fn SourceTokenizer::parse_comment(self : SourceTokenizer) -> Unit {
 ///|
 fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   self.pos += "<!doctype".length()
-  self.skip_ascii_whitespace()
+  let missing_before_name = match self.current() {
+    Some('>') | None => None
+    Some(ch) if ch.is_ascii_whitespace() => {
+      self.skip_ascii_whitespace()
+      None
+    }
+    _ => Some(self.pos)
+  }
   let name_start = self.pos
   while !self.is_eof() {
     match self.current() {
@@ -218,6 +225,10 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   let system_id = external.system_id
   let has_external_error = !external.errors.is_empty()
   let eof_doctype = name != "" && !has_external_error && !self.starts_with(">")
+  match missing_before_name {
+    Some(pos) => self.error_at("missing-whitespace-before-doctype-name", pos)
+    None => ()
+  }
   if name == "" {
     if self.starts_with(">") {
       self.error_at("expected-doctype-name-but-got-right-bracket", self.pos)

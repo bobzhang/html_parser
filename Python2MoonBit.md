@@ -136,6 +136,11 @@ JustHTML from Python to MoonBit.
   report a missing separator before a system identifier and then continue into
   the system identifier state, so keep a list of local-offset errors instead of
   returning one `String?`.
+- Doctype whitespace states are not generic `trim_start()`. The tokenizer skips
+  all whitespace before the name, but after the name only the one delimiter
+  character has already been consumed; a second space before `PUBLIC`/`SYSTEM`
+  reports `missing-whitespace-after-doctype-name` and enters bogus-doctype
+  recovery instead of parsing the external IDs.
 - Force-quirks is tied to the tokenizer state, not just to whether an error was
   reported. `unexpected-character-after-doctype-system-identifier` and missing
   whitespace before a quoted identifier do not force quirks, while EOF/abrupt

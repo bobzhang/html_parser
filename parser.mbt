@@ -351,7 +351,14 @@ fn Parser::parse_comment(self : Parser) -> Unit {
 ///|
 fn Parser::parse_doctype(self : Parser) -> Unit {
   self.pos += "<!doctype".length()
-  self.skip_ascii_whitespace()
+  let missing_before_name = match self.current() {
+    Some('>') | None => None
+    Some(ch) if ch.is_ascii_whitespace() => {
+      self.skip_ascii_whitespace()
+      None
+    }
+    _ => Some(self.pos)
+  }
   let name_start = self.pos
   while !self.is_eof() {
     match self.current() {
@@ -389,6 +396,10 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
     self.eof_error_pos()
   }
   let force_quirks = name == "" || external.force_quirks || eof_doctype
+  match missing_before_name {
+    Some(pos) => self.error_at("missing-whitespace-before-doctype-name", pos)
+    None => ()
+  }
   if name == "" {
     if self.starts_with(">") {
       self.error_at("expected-doctype-name-but-got-right-bracket", error_pos)
@@ -1389,29 +1400,42 @@ fn parse_doctype_external(
   closed : Bool,
 ) -> DoctypeExternalParse {
   let errors : Array[DoctypeExternalError] = []
-  let start = skip_ascii_whitespace_in_view(input, 0)
   let mut public_id : String? = None
   let mut system_id : String? = None
   let mut force_quirks = false
-  if view_has_prefix_case_insensitive_at(input, start, "public") {
-    let (parsed_public, parsed_system, force) = parse_doctype_public_after_keyword(
-      input,
-      start + 6,
-      closed,
-      errors,
-    )
-    public_id = parsed_public
-    system_id = parsed_system
-    force_quirks = force
-  } else if view_has_prefix_case_insensitive_at(input, start, "system") {
-    let (parsed_system, force) = parse_doctype_system_after_keyword(
-      input,
-      start + 6,
-      closed,
-      errors,
-    )
-    system_id = parsed_system
-    force_quirks = force
+  match input.get_char(0) {
+    Some(ch) if ch.is_ascii_whitespace() => {
+      let start = ch.utf16_len()
+      if view_has_prefix_case_insensitive_at(input, start, "public") {
+        let (parsed_public, parsed_system, force) = parse_doctype_public_after_keyword(
+          input,
+          start + 6,
+          closed,
+          errors,
+        )
+        public_id = parsed_public
+        system_id = parsed_system
+        force_quirks = force
+      } else if view_has_prefix_case_insensitive_at(input, start, "system") {
+        let (parsed_system, force) = parse_doctype_system_after_keyword(
+          input,
+          start + 6,
+          closed,
+          errors,
+        )
+        system_id = parsed_system
+        force_quirks = force
+      } else {
+        let unexpected = skip_ascii_whitespace_in_view(input, start)
+        if unexpected < input.length() {
+          push_doctype_external_error(
+            errors, "missing-whitespace-after-doctype-name", unexpected,
+          )
+          force_quirks = true
+        }
+      }
+    }
+    _ => ()
   }
   DoctypeExternalParse::{ public_id, system_id, errors, force_quirks }
 }
