@@ -40,6 +40,9 @@ JustHTML from Python to MoonBit.
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids
   escaping an embedded double quote.
+- Class selector matching must split class attributes on HTML whitespace
+  (`space`, `tab`, `LF`, `FF`, `CR`), not just literal spaces. This matters for
+  both parsed attributes and programmatically-created DOM nodes.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

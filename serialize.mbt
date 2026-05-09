@@ -192,7 +192,7 @@ fn rawtext_end_tag_sequence_at(
 fn rawtext_end_tag_boundary(ch : Char?) -> Bool {
   match ch {
     None | Some('>') | Some('/') => true
-    Some(' ') | Some('\t') | Some('\n') | Some('\r') | Some('\u{000C}') => true
+    Some(ch) if is_html_whitespace_char(ch) => true
     _ => false
   }
 }
@@ -534,12 +534,50 @@ pub fn Node::to_text(
 
 ///|
 fn class_contains(value : StringView, needle : StringView) -> Bool {
-  for part in value.split(" ") {
-    if part == needle {
-      return true
+  if needle.is_empty() {
+    return false
+  }
+  let mut token_start = 0
+  let mut pos = 0
+  while pos < value.length() {
+    match value.get_char(pos) {
+      Some(ch) if is_html_whitespace_char(ch) => {
+        if class_token_matches(value, token_start, pos, needle) {
+          return true
+        }
+        pos += ch.utf16_len()
+        token_start = pos
+      }
+      Some(ch) => pos += ch.utf16_len()
+      None => break
     }
   }
-  false
+  class_token_matches(value, token_start, value.length(), needle)
+}
+
+///|
+fn class_token_matches(
+  value : StringView,
+  start : Int,
+  end : Int,
+  needle : StringView,
+) -> Bool {
+  if end <= start {
+    false
+  } else {
+    match value.get_view(start~, end~) {
+      Some(part) => part == needle
+      None => false
+    }
+  }
+}
+
+///|
+fn is_html_whitespace_char(ch : Char) -> Bool {
+  match ch {
+    ' ' | '\t' | '\n' | '\r' | '\u{000C}' => true
+    _ => false
+  }
 }
 
 ///|

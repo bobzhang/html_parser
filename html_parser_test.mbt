@@ -1009,6 +1009,16 @@ test "query supports tag class id and tag class selectors" {
   let first = doc.query_one("p.lead")
   guard first is Some(node) else { fail("expected p.lead") }
   assert_eq(node.to_text(separator="", strip=false), "One")
+  let spaced = @html_parser.fragment(children=[
+    @html_parser.element("p", attrs={
+      "class": Some("alpha\tbeta\ngamma\u{000C}delta\repsilon"),
+    }),
+  ])
+  assert_eq(spaced.query(".beta").length(), 1)
+  assert_eq(spaced.query("p.gamma").length(), 1)
+  assert_eq(spaced.query(".delta").length(), 1)
+  assert_eq(spaced.query(".epsilon").length(), 1)
+  assert_eq(spaced.query(".ta").length(), 0)
 }
 
 ///|
