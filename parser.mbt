@@ -613,7 +613,16 @@ fn is_tag_name_char(ch : Char) -> Bool {
 ///|
 fn is_special_text_element(name : StringView) -> Bool {
   match name {
-    "plaintext" | "script" | "style" | "title" | "textarea" | "xmp" => true
+    "iframe"
+    | "noembed"
+    | "noframes"
+    | "noscript"
+    | "plaintext"
+    | "script"
+    | "style"
+    | "title"
+    | "textarea"
+    | "xmp" => true
     _ => false
   }
 }

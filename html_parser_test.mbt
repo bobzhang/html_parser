@@ -530,6 +530,20 @@ test "parser treats xmp and plaintext content as text" {
 }
 
 ///|
+test "parser treats legacy raw text elements as text" {
+  let doc = @html_parser.parse_fragment(
+    "<iframe><b>x</b></iframe><noembed><i>y</i></noembed><noscript><em>z</em></noscript>",
+  )
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<iframe>&lt;b&gt;x&lt;/b&gt;</iframe><noembed>&lt;i&gt;y&lt;/i&gt;</noembed><noscript>&lt;em&gt;z&lt;/em&gt;</noscript>",
+  )
+  assert_eq(doc.query("b").length(), 0)
+  assert_eq(doc.query("i").length(), 0)
+  assert_eq(doc.query("em").length(), 0)
+}
+
+///|
 test "parser ignores one initial newline in pre listing and textarea" {
   let pre = @html_parser.parse_fragment(
     "<pre>\r\nline</pre><listing>\nitem</listing>",
@@ -565,5 +579,9 @@ test "tokenize preserves rawtext and rcdata element contents" {
   guard plaintext.tokens[1]
     is @html_parser.HtmlToken::Characters("<b>x</b></plaintext>") else {
     fail("expected plaintext through EOF")
+  }
+  let iframe = @html_parser.tokenize("<iframe><b>x</b></iframe>")
+  guard iframe.tokens[1] is @html_parser.HtmlToken::Characters("<b>x</b>") else {
+    fail("expected iframe raw text")
   }
 }
