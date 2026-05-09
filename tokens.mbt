@@ -272,10 +272,9 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
 fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
   let start = self.pos
   self.pos += 2
-  self.skip_ascii_whitespace()
   match self.current() {
     Some('>') => {
-      self.error_at("missing-end-tag-name", self.pos)
+      self.error_at("empty-end-tag", self.pos)
       ignore(self.advance_char())
       return
     }

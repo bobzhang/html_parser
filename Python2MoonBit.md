@@ -170,6 +170,9 @@ JustHTML from Python to MoonBit.
   Report `invalid-first-character-of-tag-name` at the character after `<`, then
   emit the whole run from `<` through the following data characters as text
   instead of splitting out a standalone `<` token.
+- End-tag-open recovery does not skip whitespace. `</>` is an `empty-end-tag`
+  error, while `</ >` reports `invalid-first-character-of-tag-name` at the
+  character after `/` and recovers as a bogus comment whose data starts there.
 - Markup declarations are not just normal tag-open failures. In HTML content,
   malformed `<!...>` declarations become bogus comments after
   `incorrectly-opened-comment`, and `<![CDATA[` also becomes a bogus comment

@@ -777,6 +777,20 @@ test "document parser reports missing initial doctype" {
   guard cdata_then_text.errors[1].column is Some(13) else {
     fail("expected doctype chars after HTML cdata bogus comment")
   }
+  let empty_end = @html_parser.parse("</>", collect_errors=true)
+  assert_eq(
+    empty_end.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  assert_eq(empty_end.errors.length(), 2)
+  assert_eq(empty_end.errors[0].code, "empty-end-tag")
+  assert_eq(empty_end.errors[1].code, "expected-doctype-but-got-eof")
+  guard empty_end.errors[0].column is Some(3) else {
+    fail("expected empty end tag error at >")
+  }
+  guard empty_end.errors[1].column is Some(3) else {
+    fail("expected doctype EOF after empty end tag")
+  }
 }
 
 ///|
@@ -891,6 +905,20 @@ test "collect_errors records malformed markup without raising" {
   assert_eq(invalid_open.errors[0].code, "invalid-first-character-of-tag-name")
   guard invalid_open.errors[0].column is Some(2) else {
     fail("expected invalid tag-open error at second character")
+  }
+  let empty_end = @html_parser.parse_fragment("</>", collect_errors=true)
+  assert_eq(empty_end.to_html(pretty=false), "")
+  assert_eq(empty_end.errors.length(), 1)
+  assert_eq(empty_end.errors[0].code, "empty-end-tag")
+  guard empty_end.errors[0].column is Some(3) else {
+    fail("expected empty end tag error at >")
+  }
+  let invalid_end = @html_parser.parse_fragment("</ >", collect_errors=true)
+  assert_eq(invalid_end.to_html(pretty=false), "<!-- -->")
+  assert_eq(invalid_end.errors.length(), 1)
+  assert_eq(invalid_end.errors[0].code, "invalid-first-character-of-tag-name")
+  guard invalid_end.errors[0].column is Some(3) else {
+    fail("expected invalid end tag error after slash")
   }
 }
 
@@ -1238,7 +1266,19 @@ test "tokenize reports malformed end tag errors when requested" {
   let result = @html_parser.tokenize("</>", collect_errors=true)
   assert_eq(result.tokens.length(), 1)
   assert_eq(result.errors.length(), 1)
-  assert_eq(result.errors[0].code, "missing-end-tag-name")
+  assert_eq(result.errors[0].code, "empty-end-tag")
+  guard result.errors[0].column is Some(3) else {
+    fail("expected empty end tag error at >")
+  }
+  let invalid = @html_parser.tokenize("</ >", collect_errors=true)
+  guard invalid.tokens[0] is @html_parser.HtmlToken::CommentToken(" ") else {
+    fail("expected invalid end tag as bogus comment")
+  }
+  assert_eq(invalid.errors.length(), 1)
+  assert_eq(invalid.errors[0].code, "invalid-first-character-of-tag-name")
+  guard invalid.errors[0].column is Some(3) else {
+    fail("expected invalid end tag error after slash")
+  }
 }
 
 ///|

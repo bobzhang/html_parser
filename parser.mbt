@@ -242,14 +242,23 @@ fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
       Some('<') if view_starts_with_at(self.input, pos, "</") =>
         match find_markup_close(self.input, pos) {
           Some(close) => {
-            let error = self.make_error_at(
-              "expected-doctype-but-got-end-tag", close,
-            )
-            if defer_doctype {
-              return Some(error)
+            let malformed = match self.input.get_char(pos + 2) {
+              Some(ch) if ch == '>' || !is_tag_name_start(ch) => true
+              _ => false
             }
-            self.errors.push(error)
-            return None
+            if malformed {
+              defer_doctype = true
+              pos = close + 1
+            } else {
+              let error = self.make_error_at(
+                "expected-doctype-but-got-end-tag", close,
+              )
+              if defer_doctype {
+                return Some(error)
+              }
+              self.errors.push(error)
+              return None
+            }
           }
           None =>
             return Some(self.make_error_at_eof("expected-doctype-but-got-eof"))
@@ -541,7 +550,24 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
 fn Parser::parse_end_tag(self : Parser) -> Unit {
   let start = self.pos
   self.pos += 2
-  self.skip_ascii_whitespace()
+  match self.current() {
+    Some('>') => {
+      self.error_at("empty-end-tag", self.pos)
+      ignore(self.advance_char())
+      return
+    }
+    Some(ch) if !is_tag_name_start(ch) => {
+      self.error_at("invalid-first-character-of-tag-name", self.pos)
+      self.parse_bogus_comment()
+      return
+    }
+    None => {
+      self.error_at("eof-before-tag-name", self.pos)
+      self.current_node().append_child(text("</"))
+      return
+    }
+    _ => ()
+  }
   let name_start = self.pos
   while !self.is_eof() {
     match self.current() {
