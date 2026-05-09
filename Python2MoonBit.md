@@ -176,6 +176,9 @@ JustHTML from Python to MoonBit.
 - End-tag-open recovery does not skip whitespace. `</>` is an `empty-end-tag`
   error, while `</ >` reports `invalid-first-character-of-tag-name` at the
   character after `/` and recovers as a bogus comment whose data starts there.
+- End tags still run through attribute and self-closing states in the tokenizer.
+  Preserve attributes on end-tag tokens, and treat `/` after the end-tag name as
+  a valid boundary for raw text matching.
 - A bad slash in a start tag is not a separate MoonBit-only error. `<div /a>`
   reports `unexpected-character-after-solidus-in-tag`, then reconsumes `a` in
   the before-attribute-name state so it becomes a normal empty-valued attribute.

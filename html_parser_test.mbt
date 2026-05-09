@@ -1276,6 +1276,49 @@ test "tokenize preserves raw end tags before tree recovery" {
 }
 
 ///|
+test "tokenize preserves end tag attributes and self closing solidus" {
+  let self_closing = @html_parser.tokenize("</div/>", collect_errors=true)
+  guard self_closing.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
+    fail("expected end tag")
+  }
+  assert_true(tag.kind is @html_parser.TagKind::EndTag)
+  assert_eq(tag.name, "div")
+  assert_eq(tag.self_closing, true)
+  assert_eq(self_closing.errors.length(), 0)
+  let attrs = @html_parser.tokenize("</div attr=x>", collect_errors=true)
+  guard attrs.tokens[0] is @html_parser.HtmlToken::Tag(attr_tag) else {
+    fail("expected attributed end tag")
+  }
+  assert_true(attr_tag.kind is @html_parser.TagKind::EndTag)
+  assert_eq(attr_tag.name, "div")
+  guard attr_tag.attrs["attr"] is Some("x") else {
+    fail("expected end tag attr")
+  }
+  assert_eq(attr_tag.self_closing, false)
+  assert_eq(attrs.errors.length(), 0)
+}
+
+///|
+test "parser matches end tags before self closing solidus" {
+  let div = @html_parser.parse_fragment("<div>x</div/>y", collect_errors=true)
+  assert_eq(div.to_html(pretty=false), "<div>x</div>y")
+  assert_eq(div.errors.length(), 0)
+  let script = @html_parser.tokenize("<script>x</script/>after")
+  guard script.tokens[1] is @html_parser.HtmlToken::Characters("x") else {
+    fail("expected script text before slash end tag")
+  }
+  guard script.tokens[2] is @html_parser.HtmlToken::Tag(end_script) else {
+    fail("expected script end tag before slash")
+  }
+  assert_true(end_script.kind is @html_parser.TagKind::EndTag)
+  assert_eq(end_script.name, "script")
+  assert_eq(end_script.self_closing, true)
+  guard script.tokens[3] is @html_parser.HtmlToken::Characters("after") else {
+    fail("expected text after slash end tag")
+  }
+}
+
+///|
 test "tokenize reports malformed end tag errors when requested" {
   let result = @html_parser.tokenize("</>", collect_errors=true)
   assert_eq(result.tokens.length(), 1)

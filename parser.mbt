@@ -556,6 +556,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   while !self.is_eof() {
     match self.current() {
       Some('>') => break
+      Some('/') => break
       Some(ch) if ch.is_ascii_whitespace() => break
       Some(_) => ignore(self.advance_char())
       None => ()
@@ -572,12 +573,31 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if name == "" {
     self.error_at("missing-end-tag-name", start)
   }
-  while !self.is_eof() && !self.starts_with(">") {
-    ignore(self.advance_char())
+  let attrs : Map[String, String?] = {}
+  let mut closed = false
+  while !self.is_eof() {
+    self.skip_ascii_whitespace()
+    match self.current() {
+      Some('>') => {
+        ignore(self.advance_char())
+        closed = true
+        break
+      }
+      Some('/') => {
+        ignore(self.advance_char())
+        if self.current() == Some('>') {
+          ignore(self.advance_char())
+          closed = true
+          break
+        } else {
+          self.error_at("unexpected-character-after-solidus-in-tag", self.pos)
+        }
+      }
+      Some(_) => self.parse_attribute(attrs)
+      None => ()
+    }
   }
-  if self.starts_with(">") {
-    self.pos += 1
-  } else {
+  if !closed {
     self.error_at_eof("eof-in-tag")
     return
   }
@@ -1695,6 +1715,7 @@ fn find_matching_end_tag(
       let after_name = pos + needle.length()
       match input.get_char(after_name) {
         Some('>') => return Some(pos)
+        Some('/') => return Some(pos)
         Some(ch) if ch.is_ascii_whitespace() => return Some(pos)
         _ => ()
       }
