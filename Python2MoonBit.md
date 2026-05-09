@@ -102,6 +102,14 @@ JustHTML from Python to MoonBit.
   `raise` for API misuse or strict-mode failure.
 - Keep parse errors stable by code, line, and column so fixture expectations do
   not depend on message wording.
+- Tree-builder EOF diagnostics are not one error per open stack entry. Match
+  the reference by reporting the first still-open non-implied element, while
+  allowing tags such as `p`, `li`, `option`, and table row/cell wrappers to
+  close implicitly. Unfinished tables are a separate `eof-in-table` case.
+- EOF positions still need character-boundary offsets. Do not compute the
+  location of the final input character with `input.length() - 1`; that can
+  land in the middle of a surrogate pair. Walk by `Char.utf16_len()` and keep
+  the last valid offset.
 
 ## Test Porting
 

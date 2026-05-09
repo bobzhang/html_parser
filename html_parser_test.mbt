@@ -317,6 +317,59 @@ test "parser reports early ancestor end tags after implied end tags" {
 }
 
 ///|
+test "parser reports EOF for unclosed non-implied elements" {
+  let div = @html_parser.parse_fragment("<div>x", collect_errors=true)
+  assert_eq(div.to_html(pretty=false), "<div>x</div>")
+  assert_eq(div.errors.length(), 1)
+  assert_eq(div.errors[0].code, "expected-closing-tag-but-got-eof")
+  guard div.errors[0].column is Some(6) else {
+    fail("expected EOF error at final input column")
+  }
+  let paragraph = @html_parser.parse_fragment("<p>x", collect_errors=true)
+  assert_eq(paragraph.to_html(pretty=false), "<p>x</p>")
+  assert_eq(paragraph.errors.length(), 0)
+  let list = @html_parser.parse_fragment("<ul><li>x", collect_errors=true)
+  assert_eq(list.to_html(pretty=false), "<ul><li>x</li></ul>")
+  assert_eq(list.errors.length(), 1)
+  assert_eq(list.errors[0].code, "expected-closing-tag-but-got-eof")
+  guard list.errors[0].column is Some(9) else {
+    fail("expected list EOF error at final input column")
+  }
+  let doc = @html_parser.parse("<!doctype html><div>x", collect_errors=true)
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body><div>x</div></body></html>",
+  )
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "expected-closing-tag-but-got-eof")
+  let unicode_tail = @html_parser.parse_fragment(
+    "<div>😀",
+    collect_errors=true,
+  )
+  assert_eq(unicode_tail.errors[0].code, "expected-closing-tag-but-got-eof")
+  guard unicode_tail.errors[0].column is Some(6) else {
+    fail("expected EOF position to use the final character boundary")
+  }
+}
+
+///|
+test "parser reports EOF in unfinished tables" {
+  let table = @html_parser.parse_fragment(
+    "<table><tr><td>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    table.to_html(pretty=false),
+    "<table><tbody><tr><td>x</td></tr></tbody></table>",
+  )
+  assert_eq(table.errors.length(), 1)
+  assert_eq(table.errors[0].code, "eof-in-table")
+  guard table.errors[0].column is Some(16) else {
+    fail("expected table EOF error at final input column")
+  }
+}
+
+///|
 test "parser closes open paragraphs before paragraph and block starts" {
   let fragment = @html_parser.parse_fragment("<p>one<p>two<div>three</div>")
   assert_eq(

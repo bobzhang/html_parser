@@ -169,6 +169,60 @@ fn Parser::parse_all(self : Parser) -> Unit {
 }
 
 ///|
+fn Parser::eof_error_pos(self : Parser) -> Int {
+  let mut pos = 0
+  let mut last = 0
+  while pos < self.input.length() {
+    last = pos
+    match self.input.get_char(pos) {
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  last
+}
+
+///|
+fn eof_allows_unclosed_element(name : StringView) -> Bool {
+  match name {
+    "body"
+    | "dd"
+    | "dt"
+    | "head"
+    | "html"
+    | "li"
+    | "optgroup"
+    | "option"
+    | "p"
+    | "rb"
+    | "rp"
+    | "rt"
+    | "rtc"
+    | "tbody"
+    | "td"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::report_eof_tree_errors(self : Parser) -> Unit {
+  if self.has_open_element("table") {
+    self.error_at("eof-in-table", self.eof_error_pos())
+    return
+  }
+  for node in self.stack {
+    if node.kind == Element && !eof_allows_unclosed_element(node.name) {
+      self.error_at("expected-closing-tag-but-got-eof", self.eof_error_pos())
+      return
+    }
+  }
+}
+
+///|
 fn Parser::parse_comment(self : Parser) -> Unit {
   let start = self.pos
   self.pos += 4
@@ -1285,6 +1339,7 @@ pub fn parse(
   let root = document()
   let parser = Parser::new(html, root, scripting_enabled~)
   parser.parse_all()
+  parser.report_eof_tree_errors()
   scaffold_document(root)
   normalize_tables(root)
   let errors = if collect_errors || strict { parser.errors } else { [] }
@@ -1547,6 +1602,7 @@ pub fn parse_fragment(
       }
     None => parser.parse_all()
   }
+  parser.report_eof_tree_errors()
   normalize_tables(root)
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {
