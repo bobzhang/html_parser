@@ -68,3 +68,28 @@ test "parse_bytes decodes utf8 and records encoding" {
   assert_eq(doc.to_html(pretty=false), "<p>bytes</p>")
   guard doc.encoding is Some("utf-8") else { fail("expected utf-8 encoding") }
 }
+
+///|
+test "tokenize exposes stable token data structures" {
+  let result = @html_parser.tokenize("<p class='x'>Hi<br><!--ok--></p>")
+  assert_eq(result.tokens.length(), 6)
+  guard result.tokens[0] is @html_parser.HtmlToken::Tag(start) else {
+    fail("expected start tag")
+  }
+  assert_true(start.kind is @html_parser.TagKind::StartTag)
+  assert_eq(start.name, "p")
+  guard start.attrs["class"] is Some("x") else { fail("expected class attr") }
+  guard result.tokens[1] is @html_parser.HtmlToken::Characters("Hi") else {
+    fail("expected text token")
+  }
+  guard result.tokens[2] is @html_parser.HtmlToken::Tag(br) else {
+    fail("expected br tag")
+  }
+  assert_eq(br.self_closing, true)
+  guard result.tokens[3] is @html_parser.HtmlToken::CommentToken("ok") else {
+    fail("expected comment token")
+  }
+  guard result.tokens[5] is @html_parser.HtmlToken::Eof else {
+    fail("expected EOF")
+  }
+}

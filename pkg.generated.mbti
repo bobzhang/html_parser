@@ -32,6 +32,8 @@ pub fn to_html(Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext,
 
 pub fn to_test_format(Node) -> String
 
+pub fn tokenize(StringView, collect_errors? : Bool) -> TokenizedHtml raise HtmlError
+
 // Errors
 pub(all) suberror HtmlError {
   StrictMode(ParseError)
@@ -39,6 +41,13 @@ pub(all) suberror HtmlError {
 } derive(Eq, @debug.Debug)
 
 // Types and methods
+pub(all) struct DoctypeInfo {
+  name : String
+  public_id : String?
+  system_id : String?
+  force_quirks : Bool
+} derive(Eq, @debug.Debug)
+
 pub(all) struct FragmentContext {
   tag_name : String
   ns : String?
@@ -50,6 +59,14 @@ pub(all) enum HtmlContext {
   JsString
   HtmlAttrValue
   Url
+} derive(Eq, @debug.Debug)
+
+pub(all) enum HtmlToken {
+  Tag(TagToken)
+  Characters(String)
+  CommentToken(String)
+  DoctypeToken(DoctypeInfo)
+  Eof
 } derive(Eq, @debug.Debug)
 
 pub struct Node {
@@ -98,6 +115,23 @@ pub fn ParsedHtml::query_one(Self, StringView) -> Node?
 pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String
 pub fn ParsedHtml::to_markdown(Self, html_passthrough? : Bool) -> String
 pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
+
+pub(all) enum TagKind {
+  StartTag
+  EndTag
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TagToken {
+  kind : TagKind
+  name : String
+  attrs : Map[String, String?]
+  self_closing : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TokenizedHtml {
+  tokens : Array[HtmlToken]
+  errors : Array[ParseError]
+} derive(@debug.Debug)
 
 // Type aliases
 

@@ -9,6 +9,7 @@ The current slice provides:
 - Compact and simple pretty HTML serialization.
 - Text extraction.
 - A tolerant parser for basic documents/fragments.
+- Stable token data structures for early tokenizer harness work.
 - Basic tag, class, id, and `tag.class` queries.
 
 ```mbt check
@@ -21,6 +22,8 @@ test "readme parse fragment example" {
   )
   assert_eq(doc.to_text(separator="", strip=false), "Hello MoonBit")
   assert_eq(doc.query("p.intro").length(), 1)
+  let tokens = tokenize("<p>Hello</p>").tokens
+  assert_eq(tokens.length(), 4)
 }
 ```
 
