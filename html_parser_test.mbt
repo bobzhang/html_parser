@@ -11,6 +11,27 @@ test "builder serializes compact HTML" {
 }
 
 ///|
+test "to_text can separate only block boundaries" {
+  let doc = @html_parser.parse_fragment("<p>hi</p><p>Hello <b>world</b></p>")
+  assert_eq(doc.to_text(separator="\n"), "hi\nHello\nworld")
+  assert_eq(
+    doc.to_text(separator="\n", separator_blocks_only=true),
+    "hi\nHello world",
+  )
+  let br = @html_parser.parse_fragment("<div>A<br>   <span>B</span></div>")
+  assert_eq(br.to_text(separator="|", separator_blocks_only=true), "A|B")
+  let node = @html_parser.element("div", children=[
+    @html_parser.text("  A  "),
+    @html_parser.element("br"),
+    @html_parser.text(" B "),
+  ])
+  assert_eq(
+    node.to_text(separator="|", separator_blocks_only=true, strip=false),
+    "  A  | B ",
+  )
+}
+
+///|
 test "parser handles nested tags attributes comments and doctype" {
   let doc = @html_parser.parse(
     "<!doctype html><p id='x' class=\"intro lead\">Hi &amp; bye<!--ok--></p>",
