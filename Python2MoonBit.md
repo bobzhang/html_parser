@@ -183,6 +183,9 @@ JustHTML from Python to MoonBit.
   A leading `=` reports `unexpected-equals-sign-before-attribute-name`, while
   `<`, `"`, and `'` inside the name report
   `unexpected-character-in-attribute-name` but stay in the stored name.
+- Missing attribute value is a before-attribute-value error after `=`, not a
+  bare-attribute error. `<div attr>` has no `missing-attribute-value`, while
+  `<div attr=>` reports it at the closing `>`.
 - Unquoted attribute values also report without dropping the offending
   character. `"`, `'`, `<`, `=`, and backtick produce
   `unexpected-character-in-unquoted-attribute-value` and remain in the decoded

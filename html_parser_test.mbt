@@ -1611,22 +1611,46 @@ test "tokenize reports selected EOF and null fixture errors" {
 
 ///|
 test "tokenize reports missing attribute value fixture errors" {
-  let simple = @html_parser.tokenize("<div attr>", collect_errors=true)
+  let bare = @html_parser.tokenize("<div attr>", collect_errors=true)
+  guard bare.tokens[0] is @html_parser.HtmlToken::Tag(bare_tag) else {
+    fail("expected div tag")
+  }
+  guard bare_tag.attrs["attr"] is Some("") else {
+    fail("expected empty attr without error")
+  }
+  assert_eq(bare.errors.length(), 0)
+  let simple = @html_parser.tokenize("<div attr=>", collect_errors=true)
   guard simple.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
     fail("expected div tag")
   }
   guard tag.attrs["attr"] is Some("") else { fail("expected empty attr value") }
   assert_eq(simple.errors[0].code, "missing-attribute-value")
-  guard simple.errors[0].column is Some(10) else {
-    fail("expected missing value at column 10")
+  guard simple.errors[0].column is Some(11) else {
+    fail("expected missing value at column 11")
   }
-  let crlf = @html_parser.tokenize("<div attr\r\n>", collect_errors=true)
+  let crlf = @html_parser.tokenize("<div attr=\r\n>", collect_errors=true)
   assert_eq(crlf.errors[0].code, "missing-attribute-value")
   guard crlf.errors[0].line is Some(2) else {
     fail("expected CRLF normalized line")
   }
   guard crlf.errors[0].column is Some(1) else {
     fail("expected CRLF normalized column")
+  }
+}
+
+///|
+test "parser reports missing attribute value after equals only" {
+  let bare = @html_parser.parse_fragment("<div attr>", collect_errors=true)
+  assert_eq(bare.to_html(pretty=false), "<div attr></div>")
+  assert_eq(bare.errors.length(), 1)
+  assert_eq(bare.errors[0].code, "expected-closing-tag-but-got-eof")
+  let missing = @html_parser.parse_fragment("<div attr=>", collect_errors=true)
+  assert_eq(missing.to_html(pretty=false), "<div attr></div>")
+  assert_eq(missing.errors.length(), 2)
+  assert_eq(missing.errors[0].code, "missing-attribute-value")
+  assert_eq(missing.errors[1].code, "expected-closing-tag-but-got-eof")
+  guard missing.errors[0].column is Some(11) else {
+    fail("expected missing value at column 11")
   }
 }
 
@@ -1683,7 +1707,7 @@ test "tokenize reports attribute name fixture errors" {
     fail("expected div tag")
   }
   guard eq_tag.attrs["=abc"] is Some("") else { fail("expected =abc attr") }
-  assert_eq(equals.errors.length(), 2)
+  assert_eq(equals.errors.length(), 1)
   assert_eq(
     equals.errors[0].code,
     "unexpected-equals-sign-before-attribute-name",
@@ -1694,13 +1718,12 @@ test "tokenize reports attribute name fixture errors" {
   guard equals.errors[0].column is Some(1) else {
     fail("expected equals error at column 1")
   }
-  assert_eq(equals.errors[1].code, "missing-attribute-value")
   let invalid_char = @html_parser.tokenize("<div a<b>", collect_errors=true)
   guard invalid_char.tokens[0] is @html_parser.HtmlToken::Tag(bad_tag) else {
     fail("expected div tag")
   }
   guard bad_tag.attrs["a<b"] is Some("") else { fail("expected a<b attr") }
-  assert_eq(invalid_char.errors.length(), 2)
+  assert_eq(invalid_char.errors.length(), 1)
   assert_eq(
     invalid_char.errors[0].code,
     "unexpected-character-in-attribute-name",
@@ -1708,7 +1731,6 @@ test "tokenize reports attribute name fixture errors" {
   guard invalid_char.errors[0].column is Some(7) else {
     fail("expected bad attr char at column 7")
   }
-  assert_eq(invalid_char.errors[1].code, "missing-attribute-value")
   let quote = @html_parser.tokenize("<div a\"b>", collect_errors=true)
   guard quote.tokens[0] is @html_parser.HtmlToken::Tag(quote_tag) else {
     fail("expected div tag")
@@ -1716,12 +1738,11 @@ test "tokenize reports attribute name fixture errors" {
   guard quote_tag.attrs["a\"b"] is Some("") else {
     fail("expected quote in attr name")
   }
-  assert_eq(quote.errors.length(), 2)
+  assert_eq(quote.errors.length(), 1)
   assert_eq(quote.errors[0].code, "unexpected-character-in-attribute-name")
   guard quote.errors[0].column is Some(7) else {
     fail("expected quote attr error at column 7")
   }
-  assert_eq(quote.errors[1].code, "missing-attribute-value")
 }
 
 ///|
@@ -1812,14 +1833,10 @@ test "tokenize recovers invalid self closing start tag fixture case" {
   assert_eq(tag.name, "div")
   assert_eq(tag.self_closing, false)
   guard tag.attrs["a"] is Some("") else { fail("expected recovered a attr") }
-  assert_eq(result.errors.length(), 2)
+  assert_eq(result.errors.length(), 1)
   assert_eq(result.errors[0].code, "unexpected-character-after-solidus-in-tag")
   guard result.errors[0].column is Some(7) else {
     fail("expected invalid self closing char at column 7")
-  }
-  assert_eq(result.errors[1].code, "missing-attribute-value")
-  guard result.errors[1].column is Some(8) else {
-    fail("expected missing attr value at column 8")
   }
   let fragment = @html_parser.parse_fragment("<div /a>", collect_errors=true)
   assert_eq(fragment.to_html(pretty=false), "<div a></div>")

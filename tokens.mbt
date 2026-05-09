@@ -473,11 +473,13 @@ fn SourceTokenizer::parse_attribute(
     if !duplicate {
       attrs[name] = Some("")
     }
-    self.error_at("missing-attribute-value", self.pos)
     return
   }
   ignore(self.advance_char())
   self.skip_ascii_whitespace()
+  if self.current() == Some('>') {
+    self.error_at("missing-attribute-value", self.pos)
+  }
   let value = self.parse_attribute_value()
   if !duplicate {
     attrs[name] = Some(value)

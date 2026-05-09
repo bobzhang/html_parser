@@ -976,6 +976,10 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
   }
   ignore(self.advance_char())
   self.skip_ascii_whitespace()
+  let missing_value = self.current() == Some('>')
+  if missing_value {
+    self.error_at("missing-attribute-value", self.pos)
+  }
   let value = match self.current() {
     Some('"') => self.parse_quoted_attribute_value('"')
     Some('\'') => self.parse_quoted_attribute_value('\'')
@@ -1006,7 +1010,7 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
     }
   }
   if !duplicate {
-    attrs[name] = Some(value)
+    attrs[name] = if missing_value { None } else { Some(value) }
   }
 }
 
