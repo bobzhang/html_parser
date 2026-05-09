@@ -214,6 +214,13 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.current_node().append_child(element("br"))
     return
   }
+  if name == "p" {
+    if !self.close_open_element("p") {
+      self.error_at("unexpected-end-tag", start)
+      self.current_node().append_child(element("p"))
+    }
+    return
+  }
   if name != "" {
     self.pop_until(name, start)
   }
