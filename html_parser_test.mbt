@@ -219,6 +219,45 @@ test "parser and tokenizer preserve doctype external ids" {
 }
 
 ///|
+test "parser and tokenizer handle malformed doctype names" {
+  let missing = @html_parser.parse("<!doctype>", collect_errors=true)
+  assert_eq(
+    missing.to_html(pretty=false),
+    "<!DOCTYPE><html><head></head><body></body></html>",
+  )
+  assert_eq(missing.errors.length(), 2)
+  assert_eq(
+    missing.errors[0].code,
+    "expected-doctype-name-but-got-right-bracket",
+  )
+  assert_eq(missing.errors[1].code, "unknown-doctype")
+  guard missing.errors[0].column is Some(10) else {
+    fail("expected missing doctype name at close bracket")
+  }
+  let missing_token = @html_parser.tokenize("<!doctype>", collect_errors=true)
+  guard missing_token.tokens[0] is @html_parser.HtmlToken::DoctypeToken(info) else {
+    fail("expected doctype token")
+  }
+  assert_eq(info.name, "")
+  assert_eq(info.force_quirks, true)
+  assert_eq(
+    missing_token.errors[0].code,
+    "expected-doctype-name-but-got-right-bracket",
+  )
+  let eof = @html_parser.parse("<!doctype", collect_errors=true)
+  assert_eq(
+    eof.to_html(pretty=false),
+    "<!DOCTYPE><html><head></head><body></body></html>",
+  )
+  assert_eq(eof.errors.length(), 2)
+  assert_eq(eof.errors[0].code, "eof-in-doctype")
+  assert_eq(eof.errors[1].code, "unknown-doctype")
+  guard eof.errors[0].column is Some(9) else {
+    fail("expected doctype EOF at final character")
+  }
+}
+
+///|
 test "document parser reports missing initial doctype" {
   let chars = @html_parser.parse("x", collect_errors=true)
   assert_eq(
@@ -279,6 +318,20 @@ test "parser reports unknown and unexpected doctypes" {
   guard unknown.errors[0].column is Some(14) else {
     fail("expected unknown doctype at close bracket")
   }
+  let unknown_public = @html_parser.parse(
+    "<!doctype html PUBLIC \"x\">",
+    collect_errors=true,
+  )
+  assert_eq(unknown_public.errors.length(), 1)
+  assert_eq(unknown_public.errors[0].code, "unknown-doctype")
+  guard unknown_public.errors[0].column is Some(26) else {
+    fail("expected unknown public doctype at close bracket")
+  }
+  let legacy_system = @html_parser.parse(
+    "<!doctype html SYSTEM \"about:legacy-compat\">",
+    collect_errors=true,
+  )
+  assert_eq(legacy_system.errors.length(), 0)
   let repeated = @html_parser.parse(
     "<!doctype html><!doctype html><p>x",
     collect_errors=true,

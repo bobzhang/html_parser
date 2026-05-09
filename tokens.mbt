@@ -120,6 +120,17 @@ fn SourceTokenizer::error_at(
 }
 
 ///|
+fn SourceTokenizer::error_at_eof(self : SourceTokenizer, code : String) -> Unit {
+  if self.collect_errors {
+    if self.input.is_empty() {
+      self.errors.push(ParseError::new(code, line=1, column=0))
+    } else {
+      self.error_at(code, eof_error_pos(self.input))
+    }
+  }
+}
+
+///|
 fn SourceTokenizer::run(self : SourceTokenizer) -> Unit {
   while !self.is_eof() {
     if self.starts_with("<!--") {
@@ -174,7 +185,6 @@ fn SourceTokenizer::parse_comment(self : SourceTokenizer) -> Unit {
 
 ///|
 fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
-  let start = self.pos
   self.pos += "<!doctype".length()
   self.skip_ascii_whitespace()
   let name_start = self.pos
@@ -188,10 +198,7 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   }
   let name = match self.input.get_view(start=name_start, end=self.pos) {
     Some(view) if !view.is_empty() => lower_ascii(view)
-    _ => {
-      self.error_at("missing-doctype-name", start)
-      ""
-    }
+    _ => ""
   }
   let ids_start = self.pos
   while !self.is_eof() && !self.starts_with(">") {
@@ -202,10 +209,17 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
     Some(view) => parse_doctype_external_ids(view)
     None => (None, None)
   }
+  if name == "" {
+    if self.starts_with(">") {
+      self.error_at("expected-doctype-name-but-got-right-bracket", self.pos)
+    } else {
+      self.error_at_eof("eof-in-doctype")
+    }
+  } else if !self.starts_with(">") {
+    self.error_at_eof("eof-in-doctype")
+  }
   if self.starts_with(">") {
     self.pos += 1
-  } else {
-    self.error_at("eof-in-doctype", start)
   }
   self.tokens.push(
     DoctypeToken(DoctypeInfo::{

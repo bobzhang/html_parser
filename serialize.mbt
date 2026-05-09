@@ -137,10 +137,12 @@ fn node_to_html_compact(node : Node, quote : Char) -> String {
       }
     Comment => "<!--" + serialize_comment_data(node.data) + "-->"
     Doctype => {
-      let name = if node.data == "" { "html" } else { node.data }
       let out = StringBuilder::new()
-      out.write_string("<!DOCTYPE ")
-      out.write_string(name)
+      out.write_string("<!DOCTYPE")
+      if node.data != "" {
+        out.write_char(' ')
+        out.write_string(node.data)
+      }
       match node.public_id {
         Some(value) => {
           out.write_string(" PUBLIC \"")

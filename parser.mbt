@@ -257,11 +257,16 @@ fn Parser::report_initial_doctype_error(self : Parser) -> Unit {
 
 ///|
 fn Parser::eof_error_pos(self : Parser) -> Int {
+  eof_error_pos(self.input)
+}
+
+///|
+fn eof_error_pos(input : StringView) -> Int {
   let mut pos = 0
   let mut last = 0
-  while pos < self.input.length() {
+  while pos < input.length() {
     last = pos
-    match self.input.get_char(pos) {
+    match input.get_char(pos) {
       Some(ch) => pos += ch.utf16_len()
       None => break
     }
@@ -345,7 +350,6 @@ fn Parser::parse_comment(self : Parser) -> Unit {
 
 ///|
 fn Parser::parse_doctype(self : Parser) -> Unit {
-  let start = self.pos
   self.pos += "<!doctype".length()
   self.skip_ascii_whitespace()
   let name_start = self.pos
@@ -359,7 +363,7 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
   }
   let name = match self.input.get_view(start=name_start, end=self.pos) {
     Some(view) if !view.is_empty() => lower_ascii(view)
-    _ => "html"
+    _ => ""
   }
   let ids_start = self.pos
   while !self.is_eof() && !self.starts_with(">") {
@@ -375,10 +379,18 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
   } else {
     self.eof_error_pos()
   }
+  let force_quirks = name == ""
+  if name == "" {
+    if self.starts_with(">") {
+      self.error_at("expected-doctype-name-but-got-right-bracket", error_pos)
+    } else {
+      self.error_at_eof("eof-in-doctype")
+    }
+  } else if !self.starts_with(">") {
+    self.error_at_eof("eof-in-doctype")
+  }
   if self.starts_with(">") {
     self.pos += 1
-  } else {
-    self.error_at("eof-in-doctype", start)
   }
   if self.root.kind == Fragment {
     self.error_at("unexpected-doctype", error_pos)
@@ -388,7 +400,7 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
     self.error_at("unexpected-doctype", error_pos)
     return
   }
-  if name != "html" {
+  if !is_known_doctype(name, public_id, system_id, force_quirks) {
     self.error_at("unknown-doctype", error_pos)
   }
   self.root.append_child(
@@ -400,7 +412,7 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
       name,
       public_id,
       system_id,
-      false,
+      force_quirks,
       [],
     ),
   )
@@ -1033,6 +1045,41 @@ fn parse_doctype_external_ids(input : StringView) -> (String?, String?) {
     (None, system_id)
   } else {
     (None, None)
+  }
+}
+
+///|
+fn is_known_doctype(
+  name : StringView,
+  public_id : String?,
+  system_id : String?,
+  force_quirks : Bool,
+) -> Bool {
+  if force_quirks || name != "html" {
+    return false
+  }
+  match (public_id, system_id) {
+    (None, None) => true
+    (None, Some("about:legacy-compat")) => true
+    (Some("-//W3C//DTD HTML 4.0//EN"), None) => true
+    (
+      Some("-//W3C//DTD HTML 4.0//EN"),
+      Some("http://www.w3.org/TR/REC-html40/strict.dtd"),
+    ) => true
+    (Some("-//W3C//DTD HTML 4.01//EN"), None) => true
+    (
+      Some("-//W3C//DTD HTML 4.01//EN"),
+      Some("http://www.w3.org/TR/html4/strict.dtd"),
+    ) => true
+    (
+      Some("-//W3C//DTD XHTML 1.0 Strict//EN"),
+      Some("http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"),
+    ) => true
+    (
+      Some("-//W3C//DTD XHTML 1.1//EN"),
+      Some("http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd"),
+    ) => true
+    _ => false
   }
 }
 
