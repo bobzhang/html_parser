@@ -222,18 +222,21 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
 ///|
 fn Parser::pop_until(self : Parser, name : String, pos : Int) -> Unit {
   let mut found = false
-  while self.stack.length() > 1 {
-    match self.stack.pop() {
-      Some(node) if node.name == name => {
-        found = true
-        break
-      }
-      Some(_) => ()
-      None => break
+  for node in self.stack {
+    if node.kind == Element && node.name == name {
+      found = true
     }
   }
   if !found {
     self.error_at("unexpected-end-tag", pos)
+    return
+  }
+  while self.stack.length() > 1 {
+    match self.stack.pop() {
+      Some(node) if node.kind == Element && node.name == name => break
+      Some(_) => ()
+      None => break
+    }
   }
 }
 
