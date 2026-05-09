@@ -35,6 +35,10 @@ JustHTML from Python to MoonBit.
   Preserve JSON/JS safety by escaping backslash, selected quote, control
   characters such as backspace/form-feed, `<`, `>`, `&`, and line/paragraph
   separators U+2028/U+2029.
+- Attribute serialization has policy baked into the Python helper: `None`,
+  empty string, and values that match the attribute name case-insensitively are
+  minimized, while quoted values prefer single quotes only when that avoids
+  escaping an embedded double quote.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

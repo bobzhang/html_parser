@@ -11,6 +11,32 @@ test "builder serializes compact HTML" {
 }
 
 ///|
+test "builder serializes minimized and quoted attributes like reference" {
+  let disabled = @html_parser.element("input", attrs={
+    "disabled": Some("DISABLED"),
+  })
+  assert_eq(disabled.to_html(pretty=false), "<input disabled>")
+  let empty = @html_parser.element("div", attrs={ "data-val": Some("") })
+  assert_eq(empty.to_html(pretty=false), "<div data-val></div>")
+  let none = @html_parser.element("div", attrs={ "data-test": None })
+  assert_eq(none.to_html(pretty=false), "<div data-test></div>")
+  let single_quote = @html_parser.element("span", attrs={
+    "title": Some("foo\"bar"),
+  })
+  assert_eq(
+    single_quote.to_html(pretty=false),
+    "<span title='foo\"bar'></span>",
+  )
+  let escaped_double = @html_parser.element("span", attrs={
+    "title": Some("foo'bar\"baz"),
+  })
+  assert_eq(
+    escaped_double.to_html(pretty=false),
+    "<span title=\"foo'bar&quot;baz\"></span>",
+  )
+}
+
+///|
 test "builder neutralizes raw text end tag breakouts" {
   let script = @html_parser.element("script", children=[
     @html_parser.text("</script><img src=x onerror=alert(1)>"),

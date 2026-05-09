@@ -199,6 +199,33 @@ fn rawtext_end_tag_boundary(ch : Char?) -> Bool {
 }
 
 ///|
+fn attr_value_should_minimize(name : StringView, value : StringView) -> Bool {
+  value.is_empty() || value.compare_ignore_ascii_case(name) == 0
+}
+
+///|
+fn choose_attr_quote(value : StringView, preferred : Char) -> Char {
+  if preferred == '\'' {
+    '\''
+  } else if string_contains_char(value, '"') &&
+    !string_contains_char(value, '\'') {
+    '\''
+  } else {
+    '"'
+  }
+}
+
+///|
+fn string_contains_char(value : StringView, needle : Char) -> Bool {
+  for ch in value {
+    if ch == needle {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn serialize_start_tag(node : Node, quote : Char) -> String {
   let out = StringBuilder::new()
   out.write_char('<')
@@ -207,11 +234,13 @@ fn serialize_start_tag(node : Node, quote : Char) -> String {
     out.write_char(' ')
     out.write_string(name)
     match value {
+      Some(v) if attr_value_should_minimize(name, v) => ()
       Some(v) => {
+        let attr_quote = choose_attr_quote(v, quote)
         out.write_char('=')
-        out.write_char(quote)
-        out.write_string(escape_attr_value(v, quote))
-        out.write_char(quote)
+        out.write_char(attr_quote)
+        out.write_string(escape_attr_value(v, attr_quote))
+        out.write_char(attr_quote)
       }
       None => ()
     }
