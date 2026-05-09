@@ -152,13 +152,31 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
     Some(view) if !view.is_empty() => lower_ascii(view)
     _ => "html"
   }
+  let ids_start = self.pos
   while !self.is_eof() && !self.starts_with(">") {
     ignore(self.advance_char())
+  }
+  let (public_id, system_id) = match
+    self.input.get_view(start=ids_start, end=self.pos) {
+    Some(view) => parse_doctype_external_ids(view)
+    None => (None, None)
   }
   if self.starts_with(">") {
     self.pos += 1
   }
-  self.root.append_child(doctype(name~))
+  self.root.append_child(
+    make_node(
+      Doctype,
+      "#doctype",
+      None,
+      {},
+      name,
+      public_id,
+      system_id,
+      false,
+      [],
+    ),
+  )
 }
 
 ///|
@@ -388,6 +406,69 @@ fn decoded_special_text(name : StringView, raw : StringView) -> String {
     decode_entities(raw, in_attribute=false)
   } else {
     normalize_newlines(raw)
+  }
+}
+
+///|
+fn view_has_prefix_case_insensitive(
+  input : StringView,
+  prefix : StringView,
+) -> Bool {
+  if input.length() < prefix.length() {
+    false
+  } else {
+    match input.get_view(end=prefix.length()) {
+      Some(view) => view.compare_ignore_ascii_case(prefix) == 0
+      None => false
+    }
+  }
+}
+
+///|
+fn parse_quoted_doctype_value(input : StringView) -> (String?, StringView) {
+  let input = input.trim_start()
+  match input.get_char(0) {
+    Some('"') | Some('\'') as quote_opt => {
+      guard quote_opt is Some(quote)
+      let mut pos = quote.utf16_len()
+      let value_start = pos
+      while pos < input.length() && input.get_char(pos) != Some(quote) {
+        match input.get_char(pos) {
+          Some(ch) => pos += ch.utf16_len()
+          None => break
+        }
+      }
+      let value = match input.get_view(start=value_start, end=pos) {
+        Some(view) => Some(normalize_newlines(view))
+        None => Some("")
+      }
+      if input.get_char(pos) == Some(quote) {
+        pos += quote.utf16_len()
+      }
+      let rest = match input.get_view(start=pos) {
+        Some(view) => view
+        None => ""
+      }
+      (value, rest)
+    }
+    _ => (None, input)
+  }
+}
+
+///|
+fn parse_doctype_external_ids(input : StringView) -> (String?, String?) {
+  let rest = input.trim_start()
+  if view_has_prefix_case_insensitive(rest, "public") {
+    let rest = rest[6:].trim_start()
+    let (public_id, rest) = parse_quoted_doctype_value(rest)
+    let (system_id, _) = parse_quoted_doctype_value(rest)
+    (public_id, system_id)
+  } else if view_has_prefix_case_insensitive(rest, "system") {
+    let rest = rest[6:].trim_start()
+    let (system_id, _) = parse_quoted_doctype_value(rest)
+    (None, system_id)
+  } else {
+    (None, None)
   }
 }
 

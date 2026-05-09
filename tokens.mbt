@@ -193,8 +193,14 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
       ""
     }
   }
+  let ids_start = self.pos
   while !self.is_eof() && !self.starts_with(">") {
     ignore(self.advance_char())
+  }
+  let (public_id, system_id) = match
+    self.input.get_view(start=ids_start, end=self.pos) {
+    Some(view) => parse_doctype_external_ids(view)
+    None => (None, None)
   }
   if self.starts_with(">") {
     self.pos += 1
@@ -204,8 +210,8 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   self.tokens.push(
     DoctypeToken(DoctypeInfo::{
       name,
-      public_id: None,
-      system_id: None,
+      public_id,
+      system_id,
       force_quirks: name == "",
     }),
   )

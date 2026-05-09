@@ -25,6 +25,37 @@ test "parser handles nested tags attributes comments and doctype" {
 }
 
 ///|
+test "parser and tokenizer preserve doctype external ids" {
+  let source = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">"
+  let doc = @html_parser.parse(source)
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">",
+  )
+  let tokens = @html_parser.tokenize(source)
+  guard tokens.tokens[0] is @html_parser.HtmlToken::DoctypeToken(info) else {
+    fail("expected doctype token")
+  }
+  assert_eq(info.name, "html")
+  guard info.public_id is Some("-//W3C//DTD HTML 4.01//EN") else {
+    fail("expected public id")
+  }
+  guard info.system_id is Some("http://www.w3.org/TR/html4/strict.dtd") else {
+    fail("expected system id")
+  }
+  let system = @html_parser.tokenize(
+    "<!DOCTYPE html SYSTEM \"about:legacy-compat\">",
+  )
+  guard system.tokens[0] is @html_parser.HtmlToken::DoctypeToken(system_info) else {
+    fail("expected system doctype")
+  }
+  guard system_info.public_id is None else { fail("expected no public id") }
+  guard system_info.system_id is Some("about:legacy-compat") else {
+    fail("expected system id")
+  }
+}
+
+///|
 test "parser cursor advances by unicode character length" {
   let doc = @html_parser.parse_fragment("<p>😀 &lt; ok</p>")
   assert_eq(doc.to_html(pretty=false), "<p>😀 &lt; ok</p>")
