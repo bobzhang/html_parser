@@ -1565,10 +1565,7 @@ test "tokenize recovers invalid self closing start tag fixture case" {
   assert_eq(tag.self_closing, false)
   guard tag.attrs["a"] is Some("") else { fail("expected recovered a attr") }
   assert_eq(result.errors.length(), 2)
-  assert_eq(
-    result.errors[0].code,
-    "unexpected-character-in-self-closing-start-tag",
-  )
+  assert_eq(result.errors[0].code, "unexpected-character-after-solidus-in-tag")
   guard result.errors[0].column is Some(7) else {
     fail("expected invalid self closing char at column 7")
   }
@@ -1576,6 +1573,14 @@ test "tokenize recovers invalid self closing start tag fixture case" {
   guard result.errors[1].column is Some(8) else {
     fail("expected missing attr value at column 8")
   }
+  let fragment = @html_parser.parse_fragment("<div /a>", collect_errors=true)
+  assert_eq(fragment.to_html(pretty=false), "<div a></div>")
+  assert_eq(fragment.errors.length(), 2)
+  assert_eq(
+    fragment.errors[0].code,
+    "unexpected-character-after-solidus-in-tag",
+  )
+  assert_eq(fragment.errors[1].code, "expected-closing-tag-but-got-eof")
 }
 
 ///|

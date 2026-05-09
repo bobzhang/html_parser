@@ -874,7 +874,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
               closed = true
               break
             } else {
-              self.error_at("unexpected-solidus-in-tag", self.pos)
+              self.error_at(
+                "unexpected-character-after-solidus-in-tag",
+                self.pos,
+              )
             }
           }
           Some(_) => self.parse_attribute(attrs)
