@@ -129,6 +129,9 @@ JustHTML from Python to MoonBit.
 - Keep small state distinctions in doctype keyword recovery. `PUBLIC>` is a
   missing identifier, but `PUBLIC x>` and `PUBLIC` at EOF are missing quotes
   before the identifier; the system identifier path mirrors the public one.
+- After a quoted public identifier, EOF without whitespace before a system
+  identifier reports `missing-whitespace-between-doctype-public-and-system-identifiers`;
+  an immediate non-quote character reports `unexpected-character-after-doctype-public-identifier`.
 - Do not normalize empty doctype names to `"html"` in serialization. The builder
   default should create `"html"`, but a parsed empty-name doctype serializes as
   `<!DOCTYPE>`.

@@ -1016,7 +1016,9 @@ fn view_has_prefix_case_insensitive(
 }
 
 ///|
-fn parse_quoted_doctype_value(input : StringView) -> (String?, StringView) {
+fn parse_quoted_doctype_value_info(
+  input : StringView,
+) -> (String?, StringView, Bool) {
   let input = input.trim_start()
   match input.get_char(0) {
     Some('"') | Some('\'') as quote_opt => {
@@ -1029,21 +1031,29 @@ fn parse_quoted_doctype_value(input : StringView) -> (String?, StringView) {
           None => break
         }
       }
+      let mut closed = false
       let value = match input.get_view(start=value_start, end=pos) {
         Some(view) => Some(normalize_newlines(view))
         None => Some("")
       }
       if input.get_char(pos) == Some(quote) {
         pos += quote.utf16_len()
+        closed = true
       }
       let rest = match input.get_view(start=pos) {
         Some(view) => view
         None => ""
       }
-      (value, rest)
+      (value, rest, closed)
     }
-    _ => (None, input)
+    _ => (None, input, false)
   }
+}
+
+///|
+fn parse_quoted_doctype_value(input : StringView) -> (String?, StringView) {
+  let (value, rest, _) = parse_quoted_doctype_value_info(input)
+  (value, rest)
 }
 
 ///|
@@ -1086,18 +1096,68 @@ fn doctype_identifier_error_after_keyword(
 }
 
 ///|
+fn doctype_public_identifier_error(
+  after_keyword : StringView,
+  closed : Bool,
+) -> String? {
+  match
+    doctype_identifier_error_after_keyword(
+      after_keyword, closed, "missing-doctype-public-identifier", "missing-quote-before-doctype-public-identifier",
+    ) {
+    Some(code) => return Some(code)
+    None => ()
+  }
+  let (_, after_public, public_closed) = parse_quoted_doctype_value_info(
+    after_keyword,
+  )
+  if !public_closed {
+    if closed {
+      Some("abrupt-doctype-public-identifier")
+    } else {
+      Some("eof-in-doctype-public-identifier")
+    }
+  } else if after_public.is_empty() {
+    if closed {
+      None
+    } else {
+      Some("missing-whitespace-between-doctype-public-and-system-identifiers")
+    }
+  } else if after_public.trim().is_empty() {
+    if closed {
+      None
+    } else {
+      Some("missing-quote-before-doctype-system-identifier")
+    }
+  } else {
+    let after_trim = after_public.trim_start()
+    let had_whitespace = after_trim.length() != after_public.length()
+    match after_trim.get_char(0) {
+      Some('"') | Some('\'') =>
+        if had_whitespace {
+          None
+        } else {
+          Some(
+            "missing-whitespace-between-doctype-public-and-system-identifiers",
+          )
+        }
+      _ =>
+        if had_whitespace {
+          Some("missing-quote-before-doctype-system-identifier")
+        } else {
+          Some("unexpected-character-after-doctype-public-identifier")
+        }
+    }
+  }
+}
+
+///|
 fn doctype_external_identifier_error(
   input : StringView,
   closed : Bool,
 ) -> String? {
   let rest = input.trim_start()
   if view_has_prefix_case_insensitive(rest, "public") {
-    doctype_identifier_error_after_keyword(
-      rest[6:],
-      closed,
-      "missing-doctype-public-identifier",
-      "missing-quote-before-doctype-public-identifier",
-    )
+    doctype_public_identifier_error(rest[6:], closed)
   } else if view_has_prefix_case_insensitive(rest, "system") {
     doctype_identifier_error_after_keyword(
       rest[6:],

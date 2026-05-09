@@ -372,6 +372,50 @@ test "parser and tokenizer report missing doctype identifier quotes" {
 }
 
 ///|
+test "parser and tokenizer report post-public-identifier errors" {
+  let missing_space = @html_parser.parse(
+    "<!doctype html PUBLIC \"x\"",
+    collect_errors=true,
+  )
+  assert_eq(
+    missing_space.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(missing_space.errors.length(), 2)
+  assert_eq(
+    missing_space.errors[0].code,
+    "missing-whitespace-between-doctype-public-and-system-identifiers",
+  )
+  assert_eq(missing_space.errors[1].code, "unknown-doctype")
+  guard missing_space.errors[0].column is Some(25) else {
+    fail("expected missing whitespace error at EOF")
+  }
+  let unexpected = @html_parser.tokenize(
+    "<!doctype html PUBLIC \"x\"x>",
+    collect_errors=true,
+  )
+  assert_eq(
+    unexpected.errors[0].code,
+    "unexpected-character-after-doctype-public-identifier",
+  )
+  guard unexpected.tokens[0] is @html_parser.HtmlToken::DoctypeToken(info) else {
+    fail("expected doctype token")
+  }
+  assert_eq(info.name, "html")
+  guard info.public_id is Some("x") else { fail("expected public id") }
+  assert_eq(info.force_quirks, true)
+  let known = @html_parser.parse(
+    "<!doctype html PUBLIC \"-//W3C//DTD HTML 4.01//EN\"x>",
+    collect_errors=true,
+  )
+  assert_eq(known.errors.length(), 1)
+  assert_eq(
+    known.errors[0].code,
+    "unexpected-character-after-doctype-public-identifier",
+  )
+}
+
+///|
 test "document parser reports missing initial doctype" {
   let chars = @html_parser.parse("x", collect_errors=true)
   assert_eq(
