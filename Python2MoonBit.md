@@ -31,6 +31,10 @@ JustHTML from Python to MoonBit.
   string. Match Python by trimming the text and percent-encoding its UTF-8
   bytes while preserving URL delimiter characters such as `/`, `?`, `&`, and
   `=`.
+- JavaScript-string serialization is not just quote and newline escaping.
+  Preserve JSON/JS safety by escaping backslash, selected quote, control
+  characters such as backspace/form-feed, `<`, `>`, `&`, and line/paragraph
+  separators U+2028/U+2029.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

@@ -58,11 +58,15 @@ fn escape_js_string(value : StringView, quote : Char) -> String {
       '\n' => out.write_string("\\n")
       '\r' => out.write_string("\\r")
       '\t' => out.write_string("\\t")
+      '\u{0008}' => out.write_string("\\b")
+      '\u{000C}' => out.write_string("\\f")
       '"' if quote == '"' => out.write_string("\\\"")
       '\'' if quote == '\'' => out.write_string("\\'")
-      '<' => out.write_string("\\u003C")
-      '>' => out.write_string("\\u003E")
+      '<' => out.write_string("\\u003c")
+      '>' => out.write_string("\\u003e")
       '&' => out.write_string("\\u0026")
+      '\u{2028}' => out.write_string("\\u2028")
+      '\u{2029}' => out.write_string("\\u2029")
       _ => out.write_char(ch)
     }
   }
