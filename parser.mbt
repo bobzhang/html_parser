@@ -1,6 +1,7 @@
 ///|
 priv struct Parser {
   input : StringView
+  scripting_enabled : Bool
   mut pos : Int
   errors : Array[ParseError]
   root : Node
@@ -8,9 +9,13 @@ priv struct Parser {
 }
 
 ///|
-fn Parser::new(input : StringView, root : Node) -> Parser {
+fn Parser::new(
+  input : StringView,
+  root : Node,
+  scripting_enabled~ : Bool,
+) -> Parser {
   let input = strip_leading_bom(input)
-  Parser::{ input, pos: 0, errors: [], root, stack: [root] }
+  Parser::{ input, scripting_enabled, pos: 0, errors: [], root, stack: [root] }
 }
 
 ///|
@@ -556,7 +561,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       let node = element(adjusted_name, attrs~)
       self.current_node().append_child(node)
-      if !self_closing && is_special_text_element(adjusted_name) {
+      if !self_closing && self.is_special_text_element(adjusted_name) {
         self.consume_special_element_content(node, adjusted_name)
       } else if !self_closing && !is_void_element(adjusted_name) {
         self.stack.push(node)
@@ -679,6 +684,15 @@ fn is_tag_name_char(ch : Char) -> Bool {
   ch == '-' ||
   ch == '_' ||
   ch == ':'
+}
+
+///|
+fn Parser::is_special_text_element(self : Parser, name : StringView) -> Bool {
+  if name == "noscript" {
+    self.scripting_enabled
+  } else {
+    is_special_text_element(name)
+  }
 }
 
 ///|
@@ -1185,9 +1199,8 @@ pub fn parse(
   scripting_enabled? : Bool = true,
 ) -> ParsedHtml raise HtmlError {
   ignore(sanitize)
-  ignore(scripting_enabled)
   let root = document()
-  let parser = Parser::new(html, root)
+  let parser = Parser::new(html, root, scripting_enabled~)
   parser.parse_all()
   scaffold_document(root)
   let errors = if collect_errors || strict { parser.errors } else { [] }
@@ -1273,9 +1286,8 @@ pub fn parse_fragment(
 ) -> ParsedHtml raise HtmlError {
   ignore(context)
   ignore(sanitize)
-  ignore(scripting_enabled)
   let root = fragment()
-  let parser = Parser::new(html, root)
+  let parser = Parser::new(html, root, scripting_enabled~)
   parser.parse_all()
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {

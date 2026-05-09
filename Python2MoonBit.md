@@ -60,6 +60,10 @@ JustHTML from Python to MoonBit.
 - Avoid `name? : T?` unless a double option is intentional.
 - Calls must pass optional parameters by label. After the required positional
   arguments, use `foo(value, flag=flag)` rather than `foo(value, flag)`.
+- When a Python constructor carries parse options through object state, mirror
+  that in the MoonBit parser record instead of accepting a public optional
+  parameter and then `ignore(...)`-ing it. Flags such as `scripting_enabled`
+  can affect tokenizer/tree-builder state transitions.
 - A function receiving an already optional value, such as a stored `String?`,
   should usually take a normal `arg : String?` parameter. Do not use an
   optional labeled parameter when the caller needs to pass `None` or `Some(...)`
