@@ -514,6 +514,18 @@ test "parser treats script style title textarea content as text" {
 }
 
 ///|
+test "parser ignores one initial newline in pre listing and textarea" {
+  let pre = @html_parser.parse_fragment(
+    "<pre>\r\nline</pre><listing>\nitem</listing>",
+  )
+  assert_eq(pre.to_html(pretty=false), "<pre>line</pre><listing>item</listing>")
+  let textarea = @html_parser.parse_fragment("<textarea>\nline</textarea>")
+  assert_eq(textarea.to_html(pretty=false), "<textarea>line</textarea>")
+  let title = @html_parser.parse_fragment("<title>\nline</title>")
+  assert_eq(title.to_html(pretty=false), "<title>\nline</title>")
+}
+
+///|
 test "tokenize preserves rawtext and rcdata element contents" {
   let script = @html_parser.tokenize("<script><!--a--<b</script>")
   assert_eq(script.tokens.length(), 4)

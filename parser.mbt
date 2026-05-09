@@ -507,6 +507,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.consume_special_element_content(node, adjusted_name)
       } else if !self_closing && !is_void_element(adjusted_name) {
         self.stack.push(node)
+        if start_tag_ignores_initial_lf(adjusted_name) {
+          self.skip_one_initial_lf()
+        }
       }
     }
     _ => {
@@ -625,10 +628,47 @@ fn special_text_decodes_entities(name : StringView) -> Bool {
 
 ///|
 fn decoded_special_text(name : StringView, raw : StringView) -> String {
+  let raw = if name == "textarea" { strip_one_initial_lf(raw) } else { raw }
   if special_text_decodes_entities(name) {
     decode_entities(raw, in_attribute=false)
   } else {
     normalize_newlines(raw)
+  }
+}
+
+///|
+fn strip_one_initial_lf(input : StringView) -> StringView {
+  match input.get_char(0) {
+    Some('\r') =>
+      if input.get_char(1) == Some('\n') {
+        input[2:]
+      } else {
+        input[1:]
+      }
+    Some('\n') => input[1:]
+    _ => input
+  }
+}
+
+///|
+fn Parser::skip_one_initial_lf(self : Parser) -> Unit {
+  match self.current() {
+    Some('\r') => {
+      self.pos += 1
+      if self.current() == Some('\n') {
+        self.pos += 1
+      }
+    }
+    Some('\n') => self.pos += 1
+    _ => ()
+  }
+}
+
+///|
+fn start_tag_ignores_initial_lf(name : StringView) -> Bool {
+  match name {
+    "pre" | "listing" => true
+    _ => false
   }
 }
 
