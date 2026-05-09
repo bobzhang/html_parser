@@ -169,6 +169,93 @@ fn Parser::parse_all(self : Parser) -> Unit {
 }
 
 ///|
+fn view_starts_with_at(
+  input : StringView,
+  pos : Int,
+  prefix : StringView,
+) -> Bool {
+  let end = pos + prefix.length()
+  match input.get_view(start=pos, end~) {
+    Some(view) => view == prefix
+    None => false
+  }
+}
+
+///|
+fn find_markup_close(input : StringView, start : Int) -> Int? {
+  let mut pos = start
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some('>') => return Some(pos)
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  None
+}
+
+///|
+fn find_comment_close(input : StringView, start : Int) -> Int? {
+  let mut pos = start + "<!--".length()
+  while pos < input.length() {
+    if view_starts_with_at(input, pos, "-->") {
+      return Some(pos + "-->".length())
+    }
+    match input.get_char(pos) {
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  None
+}
+
+///|
+fn Parser::report_initial_doctype_error(self : Parser) -> Unit {
+  let mut pos = 0
+  while pos < self.input.length() {
+    match self.input.get_char(pos) {
+      Some(ch) if ch.is_ascii_whitespace() => pos += ch.utf16_len()
+      Some('<') if view_starts_with_at(self.input, pos, "<!--") =>
+        match find_comment_close(self.input, pos) {
+          Some(end) => pos = end
+          None => return
+        }
+      Some('<') if starts_with_case_insensitive(self.input, pos, "<!doctype") =>
+        return
+      Some('<') if view_starts_with_at(self.input, pos, "</") =>
+        match find_markup_close(self.input, pos) {
+          Some(close) => {
+            self.error_at("expected-doctype-but-got-end-tag", close)
+            return
+          }
+          None => return
+        }
+      Some('<') =>
+        match self.input.get_char(pos + 1) {
+          Some(ch) if is_tag_name_start(ch) =>
+            match find_markup_close(self.input, pos) {
+              Some(close) => {
+                self.error_at("expected-doctype-but-got-start-tag", close)
+                return
+              }
+              None => return
+            }
+          _ => {
+            self.error_at("expected-doctype-but-got-chars", pos)
+            return
+          }
+        }
+      Some(_) => {
+        self.error_at("expected-doctype-but-got-chars", pos)
+        return
+      }
+      None => ()
+    }
+  }
+  self.error_at_eof("expected-doctype-but-got-eof")
+}
+
+///|
 fn Parser::eof_error_pos(self : Parser) -> Int {
   let mut pos = 0
   let mut last = 0
@@ -180,6 +267,15 @@ fn Parser::eof_error_pos(self : Parser) -> Int {
     }
   }
   last
+}
+
+///|
+fn Parser::error_at_eof(self : Parser, code : String) -> Unit {
+  if self.input.is_empty() {
+    self.errors.push(ParseError::new(code, line=1, column=0))
+  } else {
+    self.error_at(code, self.eof_error_pos())
+  }
 }
 
 ///|
@@ -249,6 +345,7 @@ fn Parser::parse_comment(self : Parser) -> Unit {
 
 ///|
 fn Parser::parse_doctype(self : Parser) -> Unit {
+  let start = self.pos
   self.pos += "<!doctype".length()
   self.skip_ascii_whitespace()
   let name_start = self.pos
@@ -273,8 +370,26 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
     Some(view) => parse_doctype_external_ids(view)
     None => (None, None)
   }
+  let error_pos = if self.starts_with(">") {
+    self.pos
+  } else {
+    self.eof_error_pos()
+  }
   if self.starts_with(">") {
     self.pos += 1
+  } else {
+    self.error_at("eof-in-doctype", start)
+  }
+  if self.root.kind == Fragment {
+    self.error_at("unexpected-doctype", error_pos)
+    return
+  }
+  if !self.document_doctype_is_initial() {
+    self.error_at("unexpected-doctype", error_pos)
+    return
+  }
+  if name != "html" {
+    self.error_at("unknown-doctype", error_pos)
   }
   self.root.append_child(
     make_node(
@@ -1338,6 +1453,7 @@ pub fn parse(
   ignore(sanitize)
   let root = document()
   let parser = Parser::new(html, root, scripting_enabled~)
+  parser.report_initial_doctype_error()
   parser.parse_all()
   parser.report_eof_tree_errors()
   scaffold_document(root)
@@ -1438,6 +1554,20 @@ fn append_html_node_contents(
       html_children.push(child)
     }
   }
+}
+
+///|
+fn Parser::document_doctype_is_initial(self : Parser) -> Bool {
+  for child in self.root.children {
+    if child.kind == Comment {
+      ()
+    } else if child.kind == Text && is_whitespace_text_node(child) {
+      ()
+    } else {
+      return false
+    }
+  }
+  true
 }
 
 ///|

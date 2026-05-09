@@ -110,6 +110,14 @@ JustHTML from Python to MoonBit.
   location of the final input character with `input.length() - 1`; that can
   land in the middle of a surrogate pair. Walk by `Char.utf16_len()` and keep
   the last valid offset.
+- Empty-input EOF diagnostics can be a special case. If the reference reports
+  column zero, constructing the `ParseError` directly is clearer than forcing
+  it through a normal source-position helper that is one-based for real
+  characters.
+- Document-mode doctype errors are tree-builder errors, not tokenizer errors.
+  The initial insertion mode ignores leading whitespace and comments, accepts
+  one initial doctype, reports the first real token when that doctype is
+  missing, and treats later or fragment doctypes as `unexpected-doctype`.
 
 ## Test Porting
 

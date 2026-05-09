@@ -219,6 +219,89 @@ test "parser and tokenizer preserve doctype external ids" {
 }
 
 ///|
+test "document parser reports missing initial doctype" {
+  let chars = @html_parser.parse("x", collect_errors=true)
+  assert_eq(
+    chars.to_html(pretty=false),
+    "<html><head></head><body>x</body></html>",
+  )
+  assert_eq(chars.errors.length(), 1)
+  assert_eq(chars.errors[0].code, "expected-doctype-but-got-chars")
+  guard chars.errors[0].column is Some(1) else {
+    fail("expected character doctype error at first column")
+  }
+  let start = @html_parser.parse("<div>x", collect_errors=true)
+  assert_eq(
+    start.to_html(pretty=false),
+    "<html><head></head><body><div>x</div></body></html>",
+  )
+  assert_eq(start.errors.length(), 2)
+  assert_eq(start.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(start.errors[1].code, "expected-closing-tag-but-got-eof")
+  guard start.errors[0].column is Some(5) else {
+    fail("expected start tag doctype error at tag close")
+  }
+  let after_comment = @html_parser.parse("<!--c--><div>x", collect_errors=true)
+  assert_eq(
+    after_comment.to_html(pretty=false),
+    "<!--c--><html><head></head><body><div>x</div></body></html>",
+  )
+  assert_eq(after_comment.errors[0].code, "expected-doctype-but-got-start-tag")
+  guard after_comment.errors[0].column is Some(13) else {
+    fail("expected doctype error after initial comment")
+  }
+  let whitespace_eof = @html_parser.parse("   ", collect_errors=true)
+  assert_eq(
+    whitespace_eof.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  assert_eq(whitespace_eof.errors.length(), 1)
+  assert_eq(whitespace_eof.errors[0].code, "expected-doctype-but-got-eof")
+  guard whitespace_eof.errors[0].column is Some(3) else {
+    fail("expected EOF doctype error at final whitespace")
+  }
+  let empty = @html_parser.parse("", collect_errors=true)
+  assert_eq(empty.errors[0].code, "expected-doctype-but-got-eof")
+  guard empty.errors[0].column is Some(0) else {
+    fail("expected empty input EOF at column zero")
+  }
+}
+
+///|
+test "parser reports unknown and unexpected doctypes" {
+  let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
+  assert_eq(
+    unknown.to_html(pretty=false),
+    "<!DOCTYPE svg><html><head></head><body><p>x</p></body></html>",
+  )
+  assert_eq(unknown.errors.length(), 1)
+  assert_eq(unknown.errors[0].code, "unknown-doctype")
+  guard unknown.errors[0].column is Some(14) else {
+    fail("expected unknown doctype at close bracket")
+  }
+  let repeated = @html_parser.parse(
+    "<!doctype html><!doctype html><p>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    repeated.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body><p>x</p></body></html>",
+  )
+  assert_eq(repeated.errors.length(), 1)
+  assert_eq(repeated.errors[0].code, "unexpected-doctype")
+  guard repeated.errors[0].column is Some(30) else {
+    fail("expected unexpected doctype at second close bracket")
+  }
+  let fragment = @html_parser.parse_fragment(
+    "<!doctype html><p>x",
+    collect_errors=true,
+  )
+  assert_eq(fragment.to_html(pretty=false), "<p>x</p>")
+  assert_eq(fragment.errors.length(), 1)
+  assert_eq(fragment.errors[0].code, "unexpected-doctype")
+}
+
+///|
 test "parser cursor advances by unicode character length" {
   let doc = @html_parser.parse_fragment("<p>😀 &lt; ok</p>")
   assert_eq(doc.to_html(pretty=false), "<p>😀 &lt; ok</p>")
