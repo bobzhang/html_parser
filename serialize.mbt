@@ -64,7 +64,6 @@ fn escape_js_string(value : StringView, quote : Char) -> String {
       '\'' if quote == '\'' => out.write_string("\\'")
       '<' => out.write_string("\\u003c")
       '>' => out.write_string("\\u003e")
-      '&' => out.write_string("\\u0026")
       '\u{2028}' => out.write_string("\\u2028")
       '\u{2029}' => out.write_string("\\u2029")
       _ => out.write_char(ch)

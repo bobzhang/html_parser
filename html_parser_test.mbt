@@ -109,6 +109,11 @@ test "js string serialization context escapes special characters" {
     markup.to_html(pretty=false, context=JsString),
     "\\u003cb\\u003eHi\\u003c/b\\u003e",
   )
+  let amp = @html_parser.parse_fragment("<p>a & b</p>")
+  assert_eq(
+    amp.to_html(pretty=false, context=JsString),
+    "\\u003cp\\u003ea &amp; b\\u003c/p\\u003e",
+  )
   let special = @html_parser.text(
     "\\back\nline\rret\ttab\u{0008}bell\u{000C}form\u{2028}ls\u{2029}ps",
   )

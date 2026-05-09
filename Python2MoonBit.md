@@ -33,8 +33,9 @@ JustHTML from Python to MoonBit.
   `=`.
 - JavaScript-string serialization is not just quote and newline escaping.
   Preserve JSON/JS safety by escaping backslash, selected quote, control
-  characters such as backspace/form-feed, `<`, `>`, `&`, and line/paragraph
-  separators U+2028/U+2029.
+  characters such as backspace/form-feed, `<`, `>`, and line/paragraph
+  separators U+2028/U+2029. Match the reference context exactly: `&` is already
+  HTML-escaped in the serialized markup and is not escaped again for JS.
 - Attribute serialization has policy baked into the Python helper: `None`,
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids
