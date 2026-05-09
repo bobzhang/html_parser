@@ -50,6 +50,10 @@ JustHTML from Python to MoonBit.
 - Prefer one shared predicate/table for parser and tokenizer state categories
   when the HTML standard uses the same set. Duplicating lists such as raw-text
   element names quickly causes parser/tokenizer drift.
+- If an early port uses a post-parse scaffolding pass, keep it stateful enough
+  to mirror insertion modes. Document head elements belong in `<head>` only
+  until body content or an explicit `<body>` has started; after that, the same
+  tags remain in `<body>`.
 
 ## Optional Values and Defaults
 

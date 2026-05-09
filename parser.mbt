@@ -1292,32 +1292,85 @@ fn document_html_element(root : Node) -> Node? {
 }
 
 ///|
+fn is_document_head_element_name(name : StringView) -> Bool {
+  match name {
+    "base"
+    | "basefont"
+    | "bgsound"
+    | "link"
+    | "meta"
+    | "noframes"
+    | "script"
+    | "style"
+    | "title" => true
+    _ => false
+  }
+}
+
+///|
+fn is_whitespace_text_node(node : Node) -> Bool {
+  if node.kind != Text {
+    return false
+  }
+  for ch in node.data {
+    if !ch.is_ascii_whitespace() {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn append_children_to(target : Node, children : Array[Node]) -> Unit {
+  for child in children {
+    target.append_child(child)
+  }
+}
+
+///|
 fn scaffold_existing_html_element(html : Node) -> Unit {
   let original = html.children.copy()
   html.children.clear()
   let mut head : Node? = None
   let mut body : Node? = None
+  let head_children : Array[Node] = []
   let body_children : Array[Node] = []
+  let mut body_started = false
   for child in original {
-    if child.kind == Element && child.name == "head" && head is None {
+    if child.kind == Element &&
+      child.name == "head" &&
+      head is None &&
+      !body_started {
       head = Some(child)
     } else if child.kind == Element && child.name == "body" && body is None {
       body = Some(child)
+      body_started = true
       let existing = child.children.copy()
       child.children.clear()
       for grandchild in existing {
         body_children.push(grandchild)
       }
+    } else if child.kind == Element && child.name == "head" {
+      let existing = child.children.copy()
+      for grandchild in existing {
+        body_children.push(grandchild)
+      }
+    } else if child.kind == Element &&
+      is_document_head_element_name(child.name) &&
+      !body_started {
+      head_children.push(child)
+    } else if is_whitespace_text_node(child) && !body_started {
+      ()
     } else {
+      body_started = true
       body_children.push(child)
     }
   }
   let head_node = head.unwrap_or(element("head"))
   let body_node = body.unwrap_or(element("body"))
   html.append_child(head_node)
-  for child in body_children {
-    body_node.append_child(child)
-  }
+  append_children_to(head_node, head_children)
+  append_children_to(body_node, body_children)
   html.append_child(body_node)
 }
 
@@ -1332,16 +1385,29 @@ fn scaffold_document(root : Node) -> Unit {
   }
   let original = root.children.copy()
   root.children.clear()
+  let head_children : Array[Node] = []
   let body_children : Array[Node] = []
+  let mut body_started = false
   for child in original {
     if child.kind == Doctype {
       root.append_child(child)
+    } else if child.kind == Comment && !body_started && head_children.is_empty() {
+      root.append_child(child)
+    } else if child.kind == Element &&
+      is_document_head_element_name(child.name) &&
+      !body_started {
+      head_children.push(child)
+    } else if child.kind == Comment && !body_started {
+      head_children.push(child)
+    } else if is_whitespace_text_node(child) && !body_started {
+      ()
     } else {
+      body_started = true
       body_children.push(child)
     }
   }
   let html = element("html")
-  html.append_child(element("head"))
+  html.append_child(element("head", children=head_children))
   html.append_child(element("body", children=body_children))
   root.append_child(html)
 }
