@@ -1,0 +1,217 @@
+{"tests": [
+    {
+        "description": "BOM Removal",
+        "input": "\ufeff<div>",
+        "output": [["StartTag", "div", {}]],
+        "discardBom": true
+    },
+    {
+        "description": "CR in chunk",
+        "input": "abc\rdef",
+        "output": [["Character", "abc\ndef"]]
+    },
+    {
+        "description": "Ignore LF",
+        "input": "\r\n",
+        "output": [["Character", "\n"]]
+    },
+    {
+        "description": "Bogus Comment",
+        "input": "<?foo>",
+        "output": [["Comment", "?foo"]]
+    },
+    {
+        "description": "Empty End Tag",
+        "input": "</>",
+        "output": [],
+        "errors": [{"code": "missing-end-tag-name", "line": 1, "col": 3}]
+    },
+    {
+        "description": "Invalid char after </",
+        "input": "</?",
+        "output": [["Comment", "?"]],
+        "errors": [{"code": "invalid-first-character-of-tag-name", "line": 1, "col": 3}]
+    },
+    {
+        "description": "Null character in data state",
+        "input": "a\u0000b",
+        "output": [["Character", "a\u0000b"]],
+        "errors": [{"code": "unexpected-null-character", "line": 1, "col": 2}]
+    },
+    {
+        "description": "EOF after <",
+        "input": "<",
+        "output": [["Character", "<"]],
+        "errors": [{"code": "eof-before-tag-name", "line": 1, "col": 2}]
+    },
+    {
+        "description": "EOF after </",
+        "input": "</",
+        "output": [["Character", "</"]],
+        "errors": [{"code": "eof-before-tag-name", "line": 1, "col": 3}]
+    },
+    {
+        "description": "Script data escaped dash dash null",
+        "input": "<script><!---\u0000",
+        "output": [["StartTag", "script", {}], ["Character", "<!---\ufffd"]],
+        "errors": [{"code": "unexpected-null-character", "line": 1, "col": 14}, {"code": "eof-in-script-html-comment-like-text", "line": 1, "col": 15}]
+    },
+    {
+        "description": "CR after tag name",
+        "input": "<div\r>",
+        "output": [["StartTag", "div", {}]]
+    },
+    {
+        "description": "CR LF before attribute name",
+        "input": "<div\r\nattr>",
+        "output": [["StartTag", "div", {"attr": ""}]],
+        "errors": [{"code": "missing-attribute-value", "line": 2, "col": 5}]
+    },
+    {
+        "description": "CR after attribute name",
+        "input": "<div attr\r>",
+        "output": [["StartTag", "div", {"attr": ""}]],
+        "errors": [{"code": "missing-attribute-value", "line": 1, "col": 10}]
+    },
+    {
+        "description": "CR Space after attribute name",
+        "input": "<div attr\r >",
+        "output": [["StartTag", "div", {"attr": ""}]],
+        "errors": [{"code": "missing-attribute-value", "line": 1, "col": 11}]
+    },
+    {
+        "description": "CR LF after attribute name",
+        "input": "<div attr\r\n>",
+        "output": [["StartTag", "div", {"attr": ""}]],
+        "errors": [{"code": "missing-attribute-value", "line": 2, "col": 1}]
+    },
+    {
+        "description": "CR Tab after attribute name",
+        "input": "<div attr\r\t>",
+        "output": [["StartTag", "div", {"attr": ""}]],
+        "errors": [{"code": "missing-attribute-value", "line": 1, "col": 11}]
+    },
+    {
+        "description": "CR in double quoted attribute value",
+        "input": "<div attr=\"a\rb\">",
+        "output": [["StartTag", "div", {"attr": "a\nb"}]]
+    },
+    {
+        "description": "CR in single quoted attribute value",
+        "input": "<div attr='a\rb'>",
+        "output": [["StartTag", "div", {"attr": "a\nb"}]]
+    },
+    {
+        "description": "Unquoted attribute value long",
+        "input": "<div attr=abc>",
+        "output": [["StartTag", "div", {"attr": "abc"}]]
+    },
+    {
+        "description": "Invalid self closing tag",
+        "input": "<div /a>",
+        "output": [["StartTag", "div", {"a": ""}]],
+        "errors": [{"code": "unexpected-character-in-self-closing-start-tag", "line": 1, "col": 7}, {"code": "missing-attribute-value", "line": 1, "col": 8}]
+    },
+    {
+        "description": "LF after tag name",
+        "input": "<div\n>",
+        "output": [["StartTag", "div", {}]]
+    },
+    {
+        "description": "LF after attribute name",
+        "input": "<div attr\n>",
+        "output": [["StartTag", "div", {"attr": ""}]],
+        "errors": [{"code": "missing-attribute-value", "line": 2, "col": 1}]
+    },
+    {
+        "description": "LF in double quoted attribute value",
+        "input": "<div attr=\"a\nb\">",
+        "output": [["StartTag", "div", {"attr": "a\nb"}]]
+    },
+    {
+        "description": "LF in single quoted attribute value",
+        "input": "<div attr='a\nb'>",
+        "output": [["StartTag", "div", {"attr": "a\nb"}]]
+    },
+    {
+        "description": "CR LF with space before attribute name",
+        "input": "<div \r\n attr>",
+        "output": [["StartTag", "div", {"attr": ""}]],
+        "errors": [{"code": "missing-attribute-value", "line": 2, "col": 7}]
+    },
+    {
+        "description": "Invalid char in attribute name",
+        "input": "<div a<b>",
+        "output": [["StartTag", "div", {"a<b": ""}]],
+        "errors": [{"code": "unexpected-character-in-attribute-name", "line": 1, "col": 7}, {"code": "missing-attribute-value", "line": 1, "col": 9}]
+    },
+    {
+        "description": "CR in comment",
+        "input": "<!-- test\rcomment -->",
+        "output": [["Comment", " test\ncomment "]]
+    },
+    {
+        "description": "Script data escaped dash dash with less-than",
+        "input": "<script><!--a--<b</script>",
+        "output": [["StartTag", "script", {}], ["Character", "<!--a--<<b"], ["EndTag", "script"]]
+    },
+    {
+        "description": "Comment ending with ! followed by CRLF at EOF",
+        "input": "<!----!\r\n",
+        "output": [["Comment", "--!\n"]]
+    },
+    {
+        "description": "CR before = in attr (ignore_lf keeps slow path for normal char)",
+        "input": "<div\r=abc>",
+        "output": [["StartTag", "div", {"=abc": ""}]],
+        "errors": [{"code": "unexpected-equals-sign-before-attribute-name", "line": 2, "col": 2}, {"code": "missing-attribute-value", "line": 2, "col": 6}]
+    },
+    {
+        "description": "Null in script tag name (slow path rawtext emit)",
+        "input": "<script\u0000>x</script>",
+        "output": [["StartTag", "script\ufffd", {}], ["Character", "x"], ["EndTag", "script"]],
+        "errors": [{"code": "unexpected-null-character", "line": 1, "col": 8}]
+    },
+    {
+        "description": "EOF immediately in double quoted attr value",
+        "input": "<div foo=\"",
+        "output": [],
+        "errors": [{"code": "eof-in-tag", "line": 1, "col": 11}]
+    },
+    {
+        "description": "EOF immediately in single quoted attr value",
+        "input": "<div foo='",
+        "output": [],
+        "errors": [{"code": "eof-in-tag", "line": 1, "col": 11}]
+    },
+    {
+        "description": "Null in double quoted attr value",
+        "input": "<div foo=\"a\u0000b\">",
+        "output": [["StartTag", "div", {"foo": "a\ufffdb"}]],
+        "errors": [{"code": "unexpected-null-character", "line": 1, "col": 13}]
+    },
+    {
+        "description": "Null in single quoted attr value",
+        "input": "<div foo='a\u0000b'>",
+        "output": [["StartTag", "div", {"foo": "a\ufffdb"}]],
+        "errors": [{"code": "unexpected-null-character", "line": 1, "col": 13}]
+    },
+    {
+        "description": "Noncharacter in input stream (DATA fast path)",
+        "input": "ab\uFDD0cd",
+        "output": [["Character", "ab\uFDD0cd"]],
+        "collectErrors": true
+    },
+    {
+        "description": "Noncharacter in input stream after newline (column calc)",
+        "input": "a\nb\uFDD0c",
+        "output": [["Character", "a\nb\uFDD0c"]],
+        "collectErrors": true
+    },
+    {
+        "description": "Noncharacter read via _get_char",
+        "input": "<\uFDD0",
+        "output": [["Character", "<\uFDD0"]],
+        "collectErrors": true
+    }
+]}

@@ -1,0 +1,53 @@
+#data
+#xml-coercion
+<!-- normal comment -->
+#errors
+(1,23): expected-doctype-but-got-eof
+
+#document
+| <!--  normal comment  -->
+| <html>
+|   <head>
+|   <body>
+
+
+#data
+#xml-coercion
+<div>normal text</div>
+#errors
+(1,1): expected-doctype-but-got-start-tag
+
+#document
+| <html>
+|   <head>
+|   <body>
+|     <div>
+|       "normal text"
+
+
+#data
+#xml-coercion
+<div>über</div>
+#errors
+(1,1): expected-doctype-but-got-start-tag
+
+#document
+| <html>
+|   <head>
+|   <body>
+|     <div>
+|       "über"
+
+
+#data
+#xml-coercion
+<div>über</div>
+#errors
+(1,1): expected-doctype-but-got-start-tag
+
+#document
+| <html>
+|   <head>
+|   <body>
+|     <div>
+|       "über "
