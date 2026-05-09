@@ -165,7 +165,6 @@ fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
 
 ///|
 fn SourceTokenizer::parse_comment(self : SourceTokenizer) -> Unit {
-  let start = self.pos
   self.pos += 4
   let data_start = self.pos
   while !self.is_eof() && !self.starts_with("-->") {
@@ -178,7 +177,7 @@ fn SourceTokenizer::parse_comment(self : SourceTokenizer) -> Unit {
   if self.starts_with("-->") {
     self.pos += 3
   } else {
-    self.error_at("eof-in-comment", start)
+    self.error_at_eof("eof-in-comment")
   }
   self.tokens.push(CommentToken(data))
 }

@@ -210,7 +210,7 @@ fn find_comment_close(input : StringView, start : Int) -> Int? {
 }
 
 ///|
-fn Parser::report_initial_doctype_error(self : Parser) -> Unit {
+fn Parser::report_initial_doctype_error(self : Parser) -> Bool {
   let mut pos = 0
   while pos < self.input.length() {
     match self.input.get_char(pos) {
@@ -218,17 +218,17 @@ fn Parser::report_initial_doctype_error(self : Parser) -> Unit {
       Some('<') if view_starts_with_at(self.input, pos, "<!--") =>
         match find_comment_close(self.input, pos) {
           Some(end) => pos = end
-          None => return
+          None => return true
         }
       Some('<') if starts_with_case_insensitive(self.input, pos, "<!doctype") =>
-        return
+        return false
       Some('<') if view_starts_with_at(self.input, pos, "</") =>
         match find_markup_close(self.input, pos) {
           Some(close) => {
             self.error_at("expected-doctype-but-got-end-tag", close)
-            return
+            return false
           }
-          None => return
+          None => return true
         }
       Some('<') =>
         match self.input.get_char(pos + 1) {
@@ -236,23 +236,24 @@ fn Parser::report_initial_doctype_error(self : Parser) -> Unit {
             match find_markup_close(self.input, pos) {
               Some(close) => {
                 self.error_at("expected-doctype-but-got-start-tag", close)
-                return
+                return false
               }
-              None => return
+              None => return true
             }
           _ => {
             self.error_at("expected-doctype-but-got-chars", pos)
-            return
+            return false
           }
         }
       Some(_) => {
         self.error_at("expected-doctype-but-got-chars", pos)
-        return
+        return false
       }
       None => ()
     }
   }
   self.error_at_eof("expected-doctype-but-got-eof")
+  false
 }
 
 ///|
@@ -325,14 +326,13 @@ fn Parser::report_eof_tree_errors(self : Parser) -> Unit {
 
 ///|
 fn Parser::parse_comment(self : Parser) -> Unit {
-  let start = self.pos
   self.pos += 4
   let data_start = self.pos
   while !self.is_eof() && !self.starts_with("-->") {
     ignore(self.advance_char())
   }
   if self.is_eof() {
-    self.error_at("eof-in-comment", start)
+    self.error_at_eof("eof-in-comment")
     match self.input.get_view(start=data_start, end=self.pos) {
       Some(view) =>
         self.current_node().append_child(comment(normalize_newlines(view)))
@@ -1969,8 +1969,11 @@ pub fn parse(
   ignore(sanitize)
   let root = document()
   let parser = Parser::new(html, root, scripting_enabled~)
-  parser.report_initial_doctype_error()
+  let defer_initial_doctype_eof = parser.report_initial_doctype_error()
   parser.parse_all()
+  if defer_initial_doctype_eof {
+    parser.error_at_eof("expected-doctype-but-got-eof")
+  }
   parser.report_eof_tree_errors()
   scaffold_document(root)
   normalize_tables(root)

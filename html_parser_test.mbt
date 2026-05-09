@@ -679,6 +679,42 @@ test "document parser reports missing initial doctype" {
   guard empty.errors[0].column is Some(0) else {
     fail("expected empty input EOF at column zero")
   }
+  let unfinished_start = @html_parser.parse("<div foo=\"", collect_errors=true)
+  assert_eq(
+    unfinished_start.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  assert_eq(unfinished_start.errors.length(), 2)
+  assert_eq(unfinished_start.errors[0].code, "eof-in-tag")
+  assert_eq(unfinished_start.errors[1].code, "expected-doctype-but-got-eof")
+  guard unfinished_start.errors[1].column is Some(10) else {
+    fail("expected doctype EOF after unfinished start tag")
+  }
+  let unfinished_end = @html_parser.parse("</span", collect_errors=true)
+  assert_eq(
+    unfinished_end.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  assert_eq(unfinished_end.errors.length(), 2)
+  assert_eq(unfinished_end.errors[0].code, "eof-in-tag")
+  assert_eq(unfinished_end.errors[1].code, "expected-doctype-but-got-eof")
+  guard unfinished_end.errors[1].column is Some(6) else {
+    fail("expected doctype EOF after unfinished end tag")
+  }
+  let unfinished_comment = @html_parser.parse("<!--x", collect_errors=true)
+  assert_eq(
+    unfinished_comment.to_html(pretty=false),
+    "<!--x--><html><head></head><body></body></html>",
+  )
+  assert_eq(unfinished_comment.errors.length(), 2)
+  assert_eq(unfinished_comment.errors[0].code, "eof-in-comment")
+  assert_eq(unfinished_comment.errors[1].code, "expected-doctype-but-got-eof")
+  guard unfinished_comment.errors[0].column is Some(5) else {
+    fail("expected unfinished comment EOF at final character")
+  }
+  guard unfinished_comment.errors[1].column is Some(5) else {
+    fail("expected doctype EOF after unfinished comment")
+  }
 }
 
 ///|
@@ -1203,6 +1239,20 @@ test "tokenize reports selected EOF and null fixture errors" {
   assert_eq(unfinished_end.errors[0].code, "eof-in-tag")
   guard unfinished_end.errors[0].column is Some(6) else {
     fail("expected incomplete end tag EOF at final name character")
+  }
+  let unfinished_comment = @html_parser.tokenize("<!--x", collect_errors=true)
+  assert_eq(unfinished_comment.tokens.length(), 2)
+  guard unfinished_comment.tokens[0]
+    is @html_parser.HtmlToken::CommentToken("x") else {
+    fail("expected comment token before EOF")
+  }
+  guard unfinished_comment.tokens[1] is @html_parser.HtmlToken::Eof else {
+    fail("expected EOF after unfinished comment token")
+  }
+  assert_eq(unfinished_comment.errors.length(), 1)
+  assert_eq(unfinished_comment.errors[0].code, "eof-in-comment")
+  guard unfinished_comment.errors[0].column is Some(5) else {
+    fail("expected unfinished comment EOF at final character")
   }
   let nul_text = @html_parser.tokenize("a\u{0000}b", collect_errors=true)
   guard nul_text.tokens[0] is @html_parser.HtmlToken::Characters("a\u{0000}b") else {
