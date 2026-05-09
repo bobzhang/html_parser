@@ -22,6 +22,11 @@ JustHTML from Python to MoonBit.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.
+- Literal U+0000 handling depends on the tokenizer/parser state. Normal text
+  data reports `unexpected-null-character` and drops the character, while
+  attribute values and raw/RCDATA text report the same error and replace it
+  with U+FFFD. Keep source offsets in UTF-16 code units when reporting the
+  error location.
 
 ## Mutation and Object Shape
 

@@ -62,13 +62,66 @@ fn Parser::current_node(self : Parser) -> Node {
 }
 
 ///|
-fn Parser::append_text(self : Parser, raw : StringView) -> Unit {
+fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if raw.is_empty() {
+    return
+  }
+  let cleaned = self.remove_null_characters(raw, start)
+  if cleaned.is_empty() {
     return
   }
   self
   .current_node()
-  .append_child(text(decode_entities(raw, in_attribute=false)))
+  .append_child(text(decode_entities(cleaned, in_attribute=false)))
+}
+
+///|
+fn Parser::remove_null_characters(
+  self : Parser,
+  raw : StringView,
+  start : Int,
+) -> String {
+  let out = StringBuilder::new(size_hint=raw.length())
+  let mut pos = 0
+  while pos < raw.length() {
+    match raw.get_char(pos) {
+      Some('\u{0000}') => {
+        self.error_at("unexpected-null-character", start + pos)
+        pos += 1
+      }
+      Some(ch) => {
+        out.write_char(ch)
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn Parser::replace_null_characters(
+  self : Parser,
+  raw : StringView,
+  start : Int,
+) -> String {
+  let out = StringBuilder::new(size_hint=raw.length())
+  let mut pos = 0
+  while pos < raw.length() {
+    match raw.get_char(pos) {
+      Some('\u{0000}') => {
+        self.error_at("unexpected-null-character", start + pos)
+        out.write_char('\u{FFFD}')
+        pos += 1
+      }
+      Some(ch) => {
+        out.write_char(ch)
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  out.to_string()
 }
 
 ///|
@@ -101,7 +154,7 @@ fn Parser::parse_all(self : Parser) -> Unit {
           ignore(self.advance_char())
         }
         match self.input.get_view(start~, end=self.pos) {
-          Some(view) => self.append_text(view)
+          Some(view) => self.append_text(view, start)
           None => ()
         }
       }
@@ -194,7 +247,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     }
   }
   let name = match self.input.get_view(start=name_start, end=self.pos) {
-    Some(view) => lower_ascii(view)
+    Some(view) => lower_ascii(self.replace_null_characters(view, name_start))
     None => ""
   }
   if name == "" {
@@ -533,7 +586,7 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
     }
   }
   let name = match self.input.get_view(start=name_start, end=self.pos) {
-    Some(view) => lower_ascii(view)
+    Some(view) => lower_ascii(self.replace_null_characters(view, name_start))
     None => ""
   }
   if name == "" {
@@ -558,6 +611,9 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
       ignore(self.advance_char())
       let start = self.pos
       while !self.is_eof() && self.current() != Some('"') {
+        if self.current() == Some('\u{0000}') {
+          self.error_at("unexpected-null-character", self.pos)
+        }
         ignore(self.advance_char())
       }
       let raw = match self.input.get_view(start~, end=self.pos) {
@@ -573,6 +629,9 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
       ignore(self.advance_char())
       let start = self.pos
       while !self.is_eof() && self.current() != Some('\'') {
+        if self.current() == Some('\u{0000}') {
+          self.error_at("unexpected-null-character", self.pos)
+        }
         ignore(self.advance_char())
       }
       let raw = match self.input.get_view(start~, end=self.pos) {
@@ -589,6 +648,10 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
       while !self.is_eof() {
         match self.current() {
           Some(ch) if ch.is_ascii_whitespace() || ch == '>' => break
+          Some('\u{0000}') => {
+            self.error_at("unexpected-null-character", self.pos)
+            ignore(self.advance_char())
+          }
           Some(_) => ignore(self.advance_char())
           None => ()
         }
@@ -654,17 +717,43 @@ fn decoded_special_text(name : StringView, raw : StringView) -> String {
 }
 
 ///|
-fn strip_one_initial_lf(input : StringView) -> StringView {
+fn Parser::decoded_special_text(
+  self : Parser,
+  name : StringView,
+  raw : StringView,
+  start : Int,
+) -> String {
+  let (raw, offset) = if name == "textarea" {
+    strip_one_initial_lf_with_offset(raw)
+  } else {
+    (raw, 0)
+  }
+  let raw = self.replace_null_characters(raw, start + offset)
+  if special_text_decodes_entities(name) {
+    decode_entities(raw, in_attribute=false)
+  } else {
+    normalize_newlines(raw)
+  }
+}
+
+///|
+fn strip_one_initial_lf_with_offset(input : StringView) -> (StringView, Int) {
   match input.get_char(0) {
     Some('\r') =>
       if input.get_char(1) == Some('\n') {
-        input[2:]
+        (input[2:], 2)
       } else {
-        input[1:]
+        (input[1:], 1)
       }
-    Some('\n') => input[1:]
-    _ => input
+    Some('\n') => (input[1:], 1)
+    _ => (input, 0)
   }
+}
+
+///|
+fn strip_one_initial_lf(input : StringView) -> StringView {
+  let (view, _) = strip_one_initial_lf_with_offset(input)
+  view
 }
 
 ///|
@@ -801,7 +890,10 @@ fn Parser::consume_special_element_content(
   let content_start = self.pos
   if name == "plaintext" {
     match self.input.get_view(start=content_start, end=self.input.length()) {
-      Some(view) => parent.append_child(text(decoded_special_text(name, view)))
+      Some(view) =>
+        parent.append_child(
+          text(self.decoded_special_text(name, view, content_start)),
+        )
       None => ()
     }
     self.error_at("eof-in-text-element", content_start)
@@ -812,7 +904,9 @@ fn Parser::consume_special_element_content(
     Some(end_start) => {
       match self.input.get_view(start=content_start, end=end_start) {
         Some(view) =>
-          parent.append_child(text(decoded_special_text(name, view)))
+          parent.append_child(
+            text(self.decoded_special_text(name, view, content_start)),
+          )
         None => ()
       }
       self.pos = end_start
@@ -821,7 +915,9 @@ fn Parser::consume_special_element_content(
     None => {
       match self.input.get_view(start=content_start, end=self.input.length()) {
         Some(view) =>
-          parent.append_child(text(decoded_special_text(name, view)))
+          parent.append_child(
+            text(self.decoded_special_text(name, view, content_start)),
+          )
         None => ()
       }
       self.error_at("eof-in-text-element", content_start)
