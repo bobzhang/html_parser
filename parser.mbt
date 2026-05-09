@@ -232,6 +232,67 @@ fn Parser::pop_until(self : Parser, name : String, pos : Int) -> Unit {
 }
 
 ///|
+fn Parser::close_open_p_element(self : Parser) -> Unit {
+  let mut has_open_p = false
+  for node in self.stack {
+    if node.kind == Element && node.name == "p" {
+      has_open_p = true
+    }
+  }
+  if !has_open_p {
+    return
+  }
+  while self.stack.length() > 1 {
+    match self.stack.pop() {
+      Some(node) if node.kind == Element && node.name == "p" => break
+      Some(_) => ()
+      None => break
+    }
+  }
+}
+
+///|
+fn start_tag_closes_p(name : StringView) -> Bool {
+  match name {
+    "address"
+    | "article"
+    | "aside"
+    | "blockquote"
+    | "center"
+    | "details"
+    | "dialog"
+    | "dir"
+    | "div"
+    | "dl"
+    | "fieldset"
+    | "figcaption"
+    | "figure"
+    | "footer"
+    | "form"
+    | "h1"
+    | "h2"
+    | "h3"
+    | "h4"
+    | "h5"
+    | "h6"
+    | "header"
+    | "hgroup"
+    | "hr"
+    | "main"
+    | "menu"
+    | "nav"
+    | "ol"
+    | "p"
+    | "pre"
+    | "search"
+    | "section"
+    | "table"
+    | "ul" => true
+    _ => false
+  }
+}
+
+///|
 fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
   let start = self.pos
   self.pos += 1
@@ -277,6 +338,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if !closed {
         self.error_at("eof-in-tag", start)
+      }
+      if start_tag_closes_p(name) {
+        self.close_open_p_element()
       }
       let node = element(name, attrs~)
       self.current_node().append_child(node)
