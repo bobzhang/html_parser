@@ -166,6 +166,10 @@ JustHTML from Python to MoonBit.
   switching recovery modes. For `<?...`, the `?` is both the error location for
   `unexpected-question-mark-instead-of-tag-name` and the first character of the
   bogus comment data.
+- The same reconsume idea applies to invalid tag opens such as `<*foo>`.
+  Report `invalid-first-character-of-tag-name` at the character after `<`, then
+  emit the whole run from `<` through the following data characters as text
+  instead of splitting out a standalone `<` token.
 - Markup declarations are not just normal tag-open failures. In HTML content,
   malformed `<!...>` declarations become bogus comments after
   `incorrectly-opened-comment`, and `<![CDATA[` also becomes a bogus comment

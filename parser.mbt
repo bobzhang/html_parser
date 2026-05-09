@@ -900,9 +900,20 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)
         self.parse_bogus_comment()
       } else {
-        self.error_at("invalid-first-character-of-tag-name", self.pos)
-        self.current_node().append_child(text("<"))
+        self.parse_invalid_tag_open_as_text(start)
       }
+  }
+}
+
+///|
+fn Parser::parse_invalid_tag_open_as_text(self : Parser, start : Int) -> Unit {
+  self.error_at("invalid-first-character-of-tag-name", self.pos)
+  while !self.is_eof() && !self.starts_with("<") {
+    ignore(self.advance_char())
+  }
+  match self.input.get_view(start~, end=self.pos) {
+    Some(view) => self.append_text(view, start)
+    None => ()
   }
 }
 

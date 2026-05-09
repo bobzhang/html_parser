@@ -885,6 +885,13 @@ test "collect_errors records malformed markup without raising" {
   assert_eq(doc.errors.length(), 1)
   assert_eq(doc.errors[0].code, "unexpected-end-tag")
   assert_eq(doc.to_html(pretty=false), "<p>open</p>")
+  let invalid_open = @html_parser.parse_fragment("<*foo>", collect_errors=true)
+  assert_eq(invalid_open.to_html(pretty=false), "&lt;*foo&gt;")
+  assert_eq(invalid_open.errors.length(), 1)
+  assert_eq(invalid_open.errors[0].code, "invalid-first-character-of-tag-name")
+  guard invalid_open.errors[0].column is Some(2) else {
+    fail("expected invalid tag-open error at second character")
+  }
 }
 
 ///|
@@ -1275,6 +1282,19 @@ test "tokenize handles selected bogus comment fixture cases" {
   assert_eq(cdata.errors[0].code, "cdata-in-html-content")
   guard cdata.errors[0].column is Some(9) else {
     fail("expected cdata error at opening bracket")
+  }
+  let invalid_open = @html_parser.tokenize("<*foo>", collect_errors=true)
+  assert_eq(invalid_open.tokens.length(), 2)
+  guard invalid_open.tokens[0] is @html_parser.HtmlToken::Characters("<*foo>") else {
+    fail("expected invalid tag-open sequence as text")
+  }
+  guard invalid_open.tokens[1] is @html_parser.HtmlToken::Eof else {
+    fail("expected EOF after invalid tag-open text")
+  }
+  assert_eq(invalid_open.errors.length(), 1)
+  assert_eq(invalid_open.errors[0].code, "invalid-first-character-of-tag-name")
+  guard invalid_open.errors[0].column is Some(2) else {
+    fail("expected invalid tag-open error at second character")
   }
 }
 

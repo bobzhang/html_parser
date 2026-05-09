@@ -397,9 +397,27 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
         self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)
         self.parse_bogus_comment()
       } else {
-        self.error_at("invalid-first-character-of-tag-name", start)
-        self.tokens.push(Characters("<"))
+        self.parse_invalid_tag_open_as_text(start)
       }
+  }
+}
+
+///|
+fn SourceTokenizer::parse_invalid_tag_open_as_text(
+  self : SourceTokenizer,
+  start : Int,
+) -> Unit {
+  self.error_at("invalid-first-character-of-tag-name", self.pos)
+  while !self.is_eof() && !self.starts_with("<") {
+    if self.current() == Some('\u{0000}') {
+      self.error_at("unexpected-null-character", self.pos)
+    }
+    ignore(self.advance_char())
+  }
+  match self.input.get_view(start~, end=self.pos) {
+    Some(view) if !view.is_empty() =>
+      self.tokens.push(Characters(decode_entities(view, in_attribute=false)))
+    _ => ()
   }
 }
 
