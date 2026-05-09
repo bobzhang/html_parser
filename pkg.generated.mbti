@@ -32,7 +32,7 @@ pub fn to_html(Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext,
 
 pub fn to_test_format(Node) -> String
 
-pub fn tokenize(StringView, collect_errors? : Bool) -> TokenizedHtml raise HtmlError
+pub fn tokenize(StringView, collect_errors? : Bool) -> TokenizedHtml
 
 // Errors
 pub(all) suberror HtmlError {

@@ -85,13 +85,18 @@ test "tokenize exposes stable token data structures" {
   guard result.tokens[2] is @html_parser.HtmlToken::Tag(br) else {
     fail("expected br tag")
   }
-  assert_eq(br.self_closing, true)
+  assert_eq(br.self_closing, false)
   guard result.tokens[3] is @html_parser.HtmlToken::CommentToken("ok") else {
     fail("expected comment token")
   }
   guard result.tokens[5] is @html_parser.HtmlToken::Eof else {
     fail("expected EOF")
   }
+  let explicit = @html_parser.tokenize("<img/>")
+  guard explicit.tokens[0] is @html_parser.HtmlToken::Tag(img) else {
+    fail("expected img tag")
+  }
+  assert_eq(img.self_closing, true)
 }
 
 ///|
@@ -102,4 +107,28 @@ test "entity decoding covers upstream fixture cases" {
   assert_eq(control.to_text(separator="", strip=false), "\u{20AC}")
   let legacy = @html_parser.parse_fragment("&notit; &not &amp")
   assert_eq(legacy.to_text(separator="", strip=false), "¬it; ¬ &")
+}
+
+///|
+test "tokenize preserves raw end tags before tree recovery" {
+  let result = @html_parser.tokenize("<p>open</span>")
+  assert_eq(result.tokens.length(), 4)
+  guard result.tokens[0] is @html_parser.HtmlToken::Tag(start) else {
+    fail("expected p start tag")
+  }
+  assert_true(start.kind is @html_parser.TagKind::StartTag)
+  assert_eq(start.name, "p")
+  guard result.tokens[2] is @html_parser.HtmlToken::Tag(end_tag) else {
+    fail("expected raw span end tag")
+  }
+  assert_true(end_tag.kind is @html_parser.TagKind::EndTag)
+  assert_eq(end_tag.name, "span")
+}
+
+///|
+test "tokenize reports malformed end tag errors when requested" {
+  let result = @html_parser.tokenize("</>", collect_errors=true)
+  assert_eq(result.tokens.length(), 1)
+  assert_eq(result.errors.length(), 1)
+  assert_eq(result.errors[0].code, "missing-end-tag-name")
 }
