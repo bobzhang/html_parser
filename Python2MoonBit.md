@@ -123,6 +123,9 @@ JustHTML from Python to MoonBit.
   `eof-in-doctype`) and produce an empty-name doctype with force-quirks; the
   document tree builder then reports `unknown-doctype`. Fragment parsing keeps
   the tokenizer error but ignores the doctype node after `unexpected-doctype`.
+- Malformed external IDs follow the same split. `PUBLIC>` and `SYSTEM>` report
+  tokenizer errors and set force-quirks, but the serialized node can still be a
+  plain `<!DOCTYPE html>` and should not automatically get `unknown-doctype`.
 - Do not normalize empty doctype names to `"html"` in serialization. The builder
   default should create `"html"`, but a parsed empty-name doctype serializes as
   `<!DOCTYPE>`.

@@ -374,19 +374,34 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
     Some(view) => parse_doctype_external_ids(view)
     None => (None, None)
   }
+  let external_error = match
+    self.input.get_view(start=ids_start, end=self.pos) {
+    Some(view) => doctype_missing_identifier_error(view, self.starts_with(">"))
+    None => None
+  }
+  let has_external_error = match external_error {
+    Some(_) => true
+    None => false
+  }
   let error_pos = if self.starts_with(">") {
     self.pos
   } else {
     self.eof_error_pos()
   }
-  let force_quirks = name == ""
+  let force_quirks = name == "" || has_external_error
   if name == "" {
     if self.starts_with(">") {
       self.error_at("expected-doctype-name-but-got-right-bracket", error_pos)
     } else {
       self.error_at_eof("eof-in-doctype")
     }
-  } else if !self.starts_with(">") {
+  } else {
+    match external_error {
+      Some(code) => self.error_at(code, error_pos)
+      None => ()
+    }
+  }
+  if name != "" && !has_external_error && !self.starts_with(">") {
     self.error_at_eof("eof-in-doctype")
   }
   if self.starts_with(">") {
@@ -400,7 +415,7 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
     self.error_at("unexpected-doctype", error_pos)
     return
   }
-  if !is_known_doctype(name, public_id, system_id, force_quirks) {
+  if !is_known_doctype(name, public_id, system_id) {
     self.error_at("unknown-doctype", error_pos)
   }
   self.root.append_child(
@@ -1049,13 +1064,38 @@ fn parse_doctype_external_ids(input : StringView) -> (String?, String?) {
 }
 
 ///|
+fn doctype_missing_identifier_error(
+  input : StringView,
+  closed : Bool,
+) -> String? {
+  if !closed {
+    return None
+  }
+  let rest = input.trim_start()
+  if view_has_prefix_case_insensitive(rest, "public") {
+    if rest[6:].trim().is_empty() {
+      Some("missing-doctype-public-identifier")
+    } else {
+      None
+    }
+  } else if view_has_prefix_case_insensitive(rest, "system") {
+    if rest[6:].trim().is_empty() {
+      Some("missing-doctype-system-identifier")
+    } else {
+      None
+    }
+  } else {
+    None
+  }
+}
+
+///|
 fn is_known_doctype(
   name : StringView,
   public_id : String?,
   system_id : String?,
-  force_quirks : Bool,
 ) -> Bool {
-  if force_quirks || name != "html" {
+  if name != "html" {
     return false
   }
   match (public_id, system_id) {

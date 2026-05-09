@@ -209,25 +209,36 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
     Some(view) => parse_doctype_external_ids(view)
     None => (None, None)
   }
+  let external_error = match
+    self.input.get_view(start=ids_start, end=self.pos) {
+    Some(view) => doctype_missing_identifier_error(view, self.starts_with(">"))
+    None => None
+  }
+  let has_external_error = match external_error {
+    Some(_) => true
+    None => false
+  }
   if name == "" {
     if self.starts_with(">") {
       self.error_at("expected-doctype-name-but-got-right-bracket", self.pos)
     } else {
       self.error_at_eof("eof-in-doctype")
     }
-  } else if !self.starts_with(">") {
+  } else {
+    match external_error {
+      Some(code) => self.error_at(code, self.pos)
+      None => ()
+    }
+  }
+  if name != "" && !has_external_error && !self.starts_with(">") {
     self.error_at_eof("eof-in-doctype")
   }
   if self.starts_with(">") {
     self.pos += 1
   }
+  let force_quirks = name == "" || has_external_error
   self.tokens.push(
-    DoctypeToken(DoctypeInfo::{
-      name,
-      public_id,
-      system_id,
-      force_quirks: name == "",
-    }),
+    DoctypeToken(DoctypeInfo::{ name, public_id, system_id, force_quirks }),
   )
 }
 

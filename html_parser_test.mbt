@@ -258,6 +258,54 @@ test "parser and tokenizer handle malformed doctype names" {
 }
 
 ///|
+test "parser and tokenizer report missing doctype identifiers" {
+  let public = @html_parser.parse("<!doctype html PUBLIC>", collect_errors=true)
+  assert_eq(
+    public.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body></body></html>",
+  )
+  assert_eq(public.errors.length(), 1)
+  assert_eq(public.errors[0].code, "missing-doctype-public-identifier")
+  guard public.errors[0].column is Some(22) else {
+    fail("expected missing public identifier at close bracket")
+  }
+  let public_token = @html_parser.tokenize(
+    "<!doctype html PUBLIC >",
+    collect_errors=true,
+  )
+  assert_eq(public_token.errors[0].code, "missing-doctype-public-identifier")
+  guard public_token.tokens[0]
+    is @html_parser.HtmlToken::DoctypeToken(public_info) else {
+    fail("expected doctype token")
+  }
+  assert_eq(public_info.name, "html")
+  guard public_info.public_id is None else { fail("expected no public id") }
+  assert_eq(public_info.force_quirks, true)
+  let system = @html_parser.parse("<!doctype html SYSTEM>", collect_errors=true)
+  assert_eq(
+    system.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body></body></html>",
+  )
+  assert_eq(system.errors.length(), 1)
+  assert_eq(system.errors[0].code, "missing-doctype-system-identifier")
+  guard system.errors[0].column is Some(22) else {
+    fail("expected missing system identifier at close bracket")
+  }
+  let system_token = @html_parser.tokenize(
+    "<!doctype html SYSTEM >",
+    collect_errors=true,
+  )
+  assert_eq(system_token.errors[0].code, "missing-doctype-system-identifier")
+  guard system_token.tokens[0]
+    is @html_parser.HtmlToken::DoctypeToken(system_info) else {
+    fail("expected doctype token")
+  }
+  assert_eq(system_info.name, "html")
+  guard system_info.system_id is None else { fail("expected no system id") }
+  assert_eq(system_info.force_quirks, true)
+}
+
+///|
 test "document parser reports missing initial doctype" {
   let chars = @html_parser.parse("x", collect_errors=true)
   assert_eq(
