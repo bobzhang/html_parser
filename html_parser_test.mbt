@@ -1353,6 +1353,46 @@ test "tokenize handles selected bogus comment fixture cases" {
 }
 
 ///|
+test "tokenize reports abrupt closing of empty comments" {
+  let simple = @html_parser.tokenize("<!-->", collect_errors=true)
+  guard simple.tokens[0] is @html_parser.HtmlToken::CommentToken("") else {
+    fail("expected empty comment")
+  }
+  assert_eq(simple.errors.length(), 1)
+  assert_eq(simple.errors[0].code, "abrupt-closing-of-empty-comment")
+  guard simple.errors[0].column is Some(5) else {
+    fail("expected abrupt empty comment at >")
+  }
+  let dash = @html_parser.tokenize("<!--->", collect_errors=true)
+  guard dash.tokens[0] is @html_parser.HtmlToken::CommentToken("") else {
+    fail("expected empty dash comment")
+  }
+  assert_eq(dash.errors.length(), 1)
+  assert_eq(dash.errors[0].code, "abrupt-closing-of-empty-comment")
+  guard dash.errors[0].column is Some(6) else {
+    fail("expected abrupt empty dash comment at >")
+  }
+}
+
+///|
+test "parser reports abrupt closing of empty comments" {
+  let simple = @html_parser.parse_fragment("<!-->", collect_errors=true)
+  assert_eq(simple.to_html(pretty=false), "<!---->")
+  assert_eq(simple.errors.length(), 1)
+  assert_eq(simple.errors[0].code, "abrupt-closing-of-empty-comment")
+  guard simple.errors[0].column is Some(5) else {
+    fail("expected abrupt empty comment at >")
+  }
+  let dash = @html_parser.parse_fragment("<!--->", collect_errors=true)
+  assert_eq(dash.to_html(pretty=false), "<!---->")
+  assert_eq(dash.errors.length(), 1)
+  assert_eq(dash.errors[0].code, "abrupt-closing-of-empty-comment")
+  guard dash.errors[0].column is Some(6) else {
+    fail("expected abrupt empty dash comment at >")
+  }
+}
+
+///|
 test "tokenize reports selected EOF and null fixture errors" {
   let lt = @html_parser.tokenize("<", collect_errors=true)
   guard lt.tokens[0] is @html_parser.HtmlToken::Characters("<") else {

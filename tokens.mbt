@@ -168,6 +168,18 @@ fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
 ///|
 fn SourceTokenizer::parse_comment(self : SourceTokenizer) -> Unit {
   self.pos += 4
+  if self.current() == Some('>') {
+    self.error_at("abrupt-closing-of-empty-comment", self.pos)
+    ignore(self.advance_char())
+    self.tokens.push(CommentToken(""))
+    return
+  }
+  if self.starts_with("->") {
+    self.error_at("abrupt-closing-of-empty-comment", self.pos + 1)
+    self.pos += 2
+    self.tokens.push(CommentToken(""))
+    return
+  }
   let data_start = self.pos
   while !self.is_eof() && !self.starts_with("-->") {
     ignore(self.advance_char())

@@ -191,6 +191,9 @@ JustHTML from Python to MoonBit.
   next attribute is reconsumed. Report `missing-whitespace-between-attributes`
   at that character unless it is `>` or `/`, because `/` enters the self-closing
   recovery path instead.
+- Empty comments with abrupt closers are not EOF cases. `<!-->` and `<!--->`
+  both emit an empty comment and report `abrupt-closing-of-empty-comment` at the
+  closing `>`.
 - Markup declarations are not just normal tag-open failures. In HTML content,
   malformed `<!...>` declarations become bogus comments after
   `incorrectly-opened-comment`, and `<![CDATA[` also becomes a bogus comment

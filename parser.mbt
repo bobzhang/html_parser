@@ -399,6 +399,18 @@ fn Parser::report_eof_tree_errors(self : Parser) -> Unit {
 ///|
 fn Parser::parse_comment(self : Parser) -> Unit {
   self.pos += 4
+  if self.current() == Some('>') {
+    self.error_at("abrupt-closing-of-empty-comment", self.pos)
+    ignore(self.advance_char())
+    self.current_node().append_child(comment(""))
+    return
+  }
+  if self.starts_with("->") {
+    self.error_at("abrupt-closing-of-empty-comment", self.pos + 1)
+    self.pos += 2
+    self.current_node().append_child(comment(""))
+    return
+  }
   let data_start = self.pos
   while !self.is_eof() && !self.starts_with("-->") {
     ignore(self.advance_char())
