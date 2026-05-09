@@ -138,6 +138,19 @@ test "parser closes current heading before another heading start" {
 }
 
 ///|
+test "parser treats br end tags as recovered br elements" {
+  let paragraph = @html_parser.parse_fragment(
+    "<p>one</br>two",
+    collect_errors=true,
+  )
+  assert_eq(paragraph.to_html(pretty=false), "<p>one</p><br>two")
+  assert_eq(paragraph.errors.length(), 1)
+  assert_eq(paragraph.errors[0].code, "unexpected-end-tag")
+  let loose = @html_parser.parse_fragment("a</br>b")
+  assert_eq(loose.to_html(pretty=false), "a<br>b")
+}
+
+///|
 test "strict mode raises on first parse error" {
   let result : Result[@html_parser.ParsedHtml, Error] = try? @html_parser.parse_fragment(
     "<p>open</span>",

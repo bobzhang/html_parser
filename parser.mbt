@@ -208,6 +208,12 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   } else {
     self.error_at("eof-in-tag", start)
   }
+  if name == "br" {
+    self.error_at("unexpected-end-tag", start)
+    self.close_open_p_element()
+    self.current_node().append_child(element("br"))
+    return
+  }
   if name != "" {
     self.pop_until(name, start)
   }
