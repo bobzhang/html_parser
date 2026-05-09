@@ -221,6 +221,10 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     }
     return
   }
+  if is_heading_element_name(name) {
+    self.close_open_heading_element(name, start)
+    return
+  }
   if name != "" {
     self.pop_until(name, start)
   }
@@ -298,6 +302,36 @@ fn Parser::close_current_heading_element(self : Parser) -> Unit {
     Some(node) if node.kind == Element && is_heading_element_name(node.name) =>
       ignore(self.stack.pop())
     _ => ()
+  }
+}
+
+///|
+fn Parser::close_open_heading_element(
+  self : Parser,
+  name : String,
+  pos : Int,
+) -> Unit {
+  let mut found = false
+  for node in self.stack {
+    if node.kind == Element && is_heading_element_name(node.name) {
+      found = true
+    }
+  }
+  if !found {
+    self.error_at("unexpected-end-tag", pos)
+    return
+  }
+  match self.stack.last() {
+    Some(node) if node.kind == Element && node.name == name => ()
+    _ => self.error_at("end-tag-too-early", pos)
+  }
+  while self.stack.length() > 1 {
+    match self.stack.pop() {
+      Some(node) if node.kind == Element && is_heading_element_name(node.name) =>
+        break
+      Some(_) => ()
+      None => break
+    }
   }
 }
 
