@@ -746,6 +746,37 @@ test "document parser reports missing initial doctype" {
   guard question_then_text.errors[1].column is Some(7) else {
     fail("expected doctype chars after closed bogus question-mark comment")
   }
+  let malformed_declaration = @html_parser.parse("<!foo>", collect_errors=true)
+  assert_eq(
+    malformed_declaration.to_html(pretty=false),
+    "<!--foo--><html><head></head><body></body></html>",
+  )
+  assert_eq(malformed_declaration.errors.length(), 2)
+  assert_eq(malformed_declaration.errors[0].code, "incorrectly-opened-comment")
+  assert_eq(
+    malformed_declaration.errors[1].code,
+    "expected-doctype-but-got-eof",
+  )
+  guard malformed_declaration.errors[0].column is Some(2) else {
+    fail("expected malformed declaration error at bang")
+  }
+  guard malformed_declaration.errors[1].column is Some(6) else {
+    fail("expected doctype EOF after malformed declaration")
+  }
+  let cdata_then_text = @html_parser.parse("<![CDATA[]]>x", collect_errors=true)
+  assert_eq(
+    cdata_then_text.to_html(pretty=false),
+    "<!--[CDATA[]]--><html><head></head><body>x</body></html>",
+  )
+  assert_eq(cdata_then_text.errors.length(), 2)
+  assert_eq(cdata_then_text.errors[0].code, "cdata-in-html-content")
+  assert_eq(cdata_then_text.errors[1].code, "expected-doctype-but-got-chars")
+  guard cdata_then_text.errors[0].column is Some(9) else {
+    fail("expected cdata error at opening bracket")
+  }
+  guard cdata_then_text.errors[1].column is Some(13) else {
+    fail("expected doctype chars after HTML cdata bogus comment")
+  }
 }
 
 ///|
@@ -1226,6 +1257,24 @@ test "tokenize handles selected bogus comment fixture cases" {
   )
   guard question.errors[0].column is Some(2) else {
     fail("expected question-mark error at column 2")
+  }
+  let declaration = @html_parser.tokenize("<!foo>", collect_errors=true)
+  guard declaration.tokens[0] is @html_parser.HtmlToken::CommentToken("foo") else {
+    fail("expected malformed declaration as bogus comment")
+  }
+  assert_eq(declaration.errors.length(), 1)
+  assert_eq(declaration.errors[0].code, "incorrectly-opened-comment")
+  guard declaration.errors[0].column is Some(2) else {
+    fail("expected malformed declaration error at bang")
+  }
+  let cdata = @html_parser.tokenize("<![CDATA[x]]>", collect_errors=true)
+  guard cdata.tokens[0] is @html_parser.HtmlToken::CommentToken("[CDATA[x]]") else {
+    fail("expected HTML CDATA as bogus comment")
+  }
+  assert_eq(cdata.errors.length(), 1)
+  assert_eq(cdata.errors[0].code, "cdata-in-html-content")
+  guard cdata.errors[0].column is Some(9) else {
+    fail("expected cdata error at opening bracket")
   }
 }
 

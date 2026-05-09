@@ -156,6 +156,8 @@ fn Parser::parse_all(self : Parser) -> Unit {
             "<!doctype",
           ) {
           self.parse_doctype()
+        } else if self.starts_with("<!") {
+          self.parse_markup_declaration()
         } else {
           self.parse_start_tag_or_text()
         }
@@ -229,6 +231,14 @@ fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
         }
       Some('<') if starts_with_case_insensitive(self.input, pos, "<!doctype") =>
         return None
+      Some('<') if view_starts_with_at(self.input, pos, "<!") => {
+        defer_doctype = true
+        match find_markup_close(self.input, pos) {
+          Some(close) => pos = close + 1
+          None =>
+            return Some(self.make_error_at_eof("expected-doctype-but-got-eof"))
+        }
+      }
       Some('<') if view_starts_with_at(self.input, pos, "</") =>
         match find_markup_close(self.input, pos) {
           Some(close) => {
@@ -415,6 +425,17 @@ fn Parser::parse_bogus_comment(self : Parser) -> Unit {
   if self.current() == Some('>') {
     ignore(self.advance_char())
   }
+}
+
+///|
+fn Parser::parse_markup_declaration(self : Parser) -> Unit {
+  self.pos += 2
+  if self.starts_with("[CDATA[") {
+    self.error_at("cdata-in-html-content", self.pos + "[CDATA[".length() - 1)
+  } else {
+    self.error_at("incorrectly-opened-comment", self.pos - 1)
+  }
+  self.parse_bogus_comment()
 }
 
 ///|

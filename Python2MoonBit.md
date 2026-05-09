@@ -166,6 +166,10 @@ JustHTML from Python to MoonBit.
   switching recovery modes. For `<?...`, the `?` is both the error location for
   `unexpected-question-mark-instead-of-tag-name` and the first character of the
   bogus comment data.
+- Markup declarations are not just normal tag-open failures. In HTML content,
+  malformed `<!...>` declarations become bogus comments after
+  `incorrectly-opened-comment`, and `<![CDATA[` also becomes a bogus comment
+  after `cdata-in-html-content`; the bogus comment data starts after `<!`.
 - Do not normalize empty doctype names to `"html"` in serialization. The builder
   default should create `"html"`, but a parsed empty-name doctype serializes as
   `<!DOCTYPE>`.

@@ -139,6 +139,8 @@ fn SourceTokenizer::run(self : SourceTokenizer) -> Unit {
       self.parse_end_tag()
     } else if starts_with_case_insensitive(self.input, self.pos, "<!doctype") {
       self.parse_doctype()
+    } else if self.starts_with("<!") {
+      self.parse_markup_declaration()
     } else if self.starts_with("<") {
       self.parse_start_tag_or_text()
     } else {
@@ -180,6 +182,17 @@ fn SourceTokenizer::parse_comment(self : SourceTokenizer) -> Unit {
     self.error_at_eof("eof-in-comment")
   }
   self.tokens.push(CommentToken(data))
+}
+
+///|
+fn SourceTokenizer::parse_markup_declaration(self : SourceTokenizer) -> Unit {
+  self.pos += 2
+  if self.starts_with("[CDATA[") {
+    self.error_at("cdata-in-html-content", self.pos + "[CDATA[".length() - 1)
+  } else {
+    self.error_at("incorrectly-opened-comment", self.pos - 1)
+  }
+  self.parse_bogus_comment()
 }
 
 ///|
