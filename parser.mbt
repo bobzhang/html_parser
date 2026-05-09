@@ -368,10 +368,11 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
       None => ()
     }
   }
-  let name = match self.input.get_view(start=name_start, end=self.pos) {
-    Some(view) if !view.is_empty() => lower_ascii(view)
-    _ => ""
-  }
+  let (name, name_errors) = parse_doctype_name_value(
+    self.input,
+    name_start,
+    self.pos,
+  )
   let ids_start = self.pos
   while !self.is_eof() && !self.starts_with(">") {
     ignore(self.advance_char())
@@ -399,6 +400,9 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
   match missing_before_name {
     Some(pos) => self.error_at("missing-whitespace-before-doctype-name", pos)
     None => ()
+  }
+  for error in name_errors {
+    self.error_at(error.code, error.offset)
   }
   if name == "" {
     if self.starts_with(">") {
@@ -1014,6 +1018,7 @@ fn start_tag_ignores_initial_lf(name : StringView) -> Bool {
 fn parse_quoted_doctype_value_at(
   input : StringView,
   start : Int,
+  errors : Array[DoctypeExternalError],
 ) -> (String?, Int, Bool) {
   match input.get_char(start) {
     Some('"') | Some('\'') as quote_opt => {
@@ -1027,10 +1032,7 @@ fn parse_quoted_doctype_value_at(
         }
       }
       let mut closed = false
-      let value = match input.get_view(start=value_start, end=pos) {
-        Some(view) => Some(normalize_newlines(view))
-        None => Some("")
-      }
+      let value = Some(normalize_doctype_value(input, value_start, pos, errors))
       if input.get_char(pos) == Some(quote) {
         pos += quote.utf16_len()
         closed = true
@@ -1068,6 +1070,72 @@ fn view_has_prefix_case_insensitive_at(
       None => false
     }
   }
+}
+
+///|
+fn normalize_doctype_value(
+  input : StringView,
+  start : Int,
+  end : Int,
+  errors : Array[DoctypeExternalError],
+) -> String {
+  let out = StringBuilder::new(size_hint=end - start)
+  let mut pos = start
+  while pos < end {
+    match input.get_char(pos) {
+      Some('\u{0000}') => {
+        push_doctype_external_error(errors, "unexpected-null-character", pos)
+        out.write_char('\u{FFFD}')
+        pos += 1
+      }
+      Some('\r') => {
+        out.write_char('\n')
+        pos += 1
+        if pos < end && input.get_char(pos) == Some('\n') {
+          pos += 1
+        }
+      }
+      Some(ch) => {
+        out.write_char(ch)
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn parse_doctype_name_value(
+  input : StringView,
+  start : Int,
+  end : Int,
+) -> (String, Array[DoctypeExternalError]) {
+  let errors : Array[DoctypeExternalError] = []
+  if start >= end {
+    return ("", errors)
+  }
+  let out = StringBuilder::new(size_hint=end - start)
+  let mut pos = start
+  while pos < end {
+    match input.get_char(pos) {
+      Some('\u{0000}') => {
+        push_doctype_external_error(errors, "unexpected-null-character", pos)
+        out.write_char('\u{FFFD}')
+        pos += 1
+      }
+      Some(ch) => {
+        if ch.is_ascii_uppercase() {
+          out.write_char(ch.to_ascii_lowercase())
+        } else {
+          out.write_char(ch)
+        }
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  (out.to_string(), errors)
 }
 
 ///|
@@ -1142,7 +1210,7 @@ fn parse_doctype_system_identifier_at(
   errors : Array[DoctypeExternalError],
 ) -> (String?, Bool) {
   let (system_id, after_system, system_closed) = parse_quoted_doctype_value_at(
-    input, quote_pos,
+    input, quote_pos, errors,
   )
   if !system_closed {
     if closed {
@@ -1367,7 +1435,7 @@ fn parse_doctype_public_after_keyword(
     None => (None, None, force_quirks)
     Some(pos) => {
       let (public_id, after_public, public_closed) = parse_quoted_doctype_value_at(
-        input, pos,
+        input, pos, errors,
       )
       if !public_closed {
         if closed {

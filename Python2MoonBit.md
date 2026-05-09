@@ -145,6 +145,10 @@ JustHTML from Python to MoonBit.
   reported. `unexpected-character-after-doctype-system-identifier` and missing
   whitespace before a quoted identifier do not force quirks, while EOF/abrupt
   identifier states and public-identifier garbage do.
+- Null-character handling is state-specific inside doctypes too. Names and
+  quoted public/system identifiers report `unexpected-null-character` and store
+  U+FFFD, so a helper that only lowercases or normalizes newlines will silently
+  diverge from the tokenizer.
 - Do not normalize empty doctype names to `"html"` in serialization. The builder
   default should create `"html"`, but a parsed empty-name doctype serializes as
   `<!DOCTYPE>`.

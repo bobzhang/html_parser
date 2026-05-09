@@ -203,10 +203,11 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
       None => ()
     }
   }
-  let name = match self.input.get_view(start=name_start, end=self.pos) {
-    Some(view) if !view.is_empty() => lower_ascii(view)
-    _ => ""
-  }
+  let (name, name_errors) = parse_doctype_name_value(
+    self.input,
+    name_start,
+    self.pos,
+  )
   let ids_start = self.pos
   while !self.is_eof() && !self.starts_with(">") {
     ignore(self.advance_char())
@@ -228,6 +229,9 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   match missing_before_name {
     Some(pos) => self.error_at("missing-whitespace-before-doctype-name", pos)
     None => ()
+  }
+  for error in name_errors {
+    self.error_at(error.code, error.offset)
   }
   if name == "" {
     if self.starts_with(">") {
