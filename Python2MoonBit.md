@@ -46,6 +46,10 @@ JustHTML from Python to MoonBit.
 - Compound class selectors such as `.intro.first` and `p.intro.first` are not a
   single class token; every class fragment after `.` must match one class
   attribute token.
+- The selector fast path still needs parser-like ordering rules. A limited
+  compound selector can start with a tag or `*`, followed by `#id` and `.class`
+  fragments in source order; tag matching is case-insensitive, while id and
+  class matching are case-sensitive.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

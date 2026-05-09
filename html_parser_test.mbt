@@ -1008,11 +1008,18 @@ test "query supports tag class id and tag class selectors" {
   assert_eq(doc.query(".intro.first").length(), 1)
   assert_eq(doc.query(".intro.missing").length(), 0)
   assert_eq(doc.query("#first").length(), 1)
+  assert_eq(doc.query("p#first").length(), 1)
+  assert_eq(doc.query("div#first").length(), 0)
   assert_eq(doc.query("p.intro.first").length(), 1)
   assert_eq(doc.query("div.intro").length(), 0)
+  assert_eq(doc.query("*").length(), 3)
+  assert_eq(doc.query("*.intro").length(), 1)
   let first = doc.query_one("p.lead")
   guard first is Some(node) else { fail("expected p.lead") }
   assert_eq(node.to_text(separator="", strip=false), "One")
+  assert_true(@html_parser.matches(node, "*"))
+  assert_true(@html_parser.matches(node, "p#first.lead"))
+  assert_eq(doc.query("p#first.lead").length(), 1)
   let spaced = @html_parser.fragment(children=[
     @html_parser.element("p", attrs={
       "class": Some("alpha\tbeta\ngamma\u{000C}delta\repsilon"),
@@ -1025,6 +1032,15 @@ test "query supports tag class id and tag class selectors" {
   assert_eq(spaced.query(".alpha.epsilon").length(), 1)
   assert_eq(spaced.query("p.beta.delta").length(), 1)
   assert_eq(spaced.query(".ta").length(), 0)
+  let compound = @html_parser.parse_fragment(
+    "<div id='main' class='container featured'><p>Text</p></div>",
+  )
+  assert_eq(compound.query("div#main").length(), 1)
+  assert_eq(compound.query("span#main").length(), 0)
+  assert_eq(compound.query("*.container").length(), 1)
+  assert_eq(compound.query("div.container#main").length(), 1)
+  assert_eq(compound.query("#main.container.featured").length(), 1)
+  assert_eq(compound.query("div#main.missing").length(), 0)
 }
 
 ///|

@@ -556,19 +556,6 @@ fn class_contains(value : StringView, needle : StringView) -> Bool {
 }
 
 ///|
-fn class_contains_all(value : StringView, selector : StringView) -> Bool {
-  if selector.is_empty() {
-    return false
-  }
-  for class_name in selector.split(".") {
-    if class_name.is_empty() || !class_contains(value, class_name) {
-      return false
-    }
-  }
-  true
-}
-
-///|
 fn class_token_matches(
   value : StringView,
   start : Int,
@@ -594,6 +581,40 @@ fn is_html_whitespace_char(ch : Char) -> Bool {
 }
 
 ///|
+fn next_simple_selector_marker(selector : StringView, start : Int) -> Int {
+  let mut pos = start
+  while pos < selector.length() {
+    match selector.get_char(pos) {
+      Some(ch) if ch == '.' || ch == '#' => return pos
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  selector.length()
+}
+
+///|
+fn tag_selector_matches(node : Node, tag : StringView) -> Bool {
+  tag == "*" || node.name[:] == tag.to_lower()
+}
+
+///|
+fn id_selector_matches(node : Node, id : StringView) -> Bool {
+  match node.attrs.get("id") {
+    Some(Some(value)) => value[:] == id
+    _ => false
+  }
+}
+
+///|
+fn class_selector_matches(node : Node, class_name : StringView) -> Bool {
+  match node.attrs.get("class") {
+    Some(Some(value)) => class_contains(value, class_name)
+    _ => false
+  }
+}
+
+///|
 fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
   if node.kind != Element {
     return false
@@ -602,29 +623,51 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
   if selector.is_empty() {
     return false
   }
-  if selector.has_prefix("#") {
-    match node.attrs.get("id") {
-      Some(Some(value)) => value[:] == selector[1:]
-      _ => false
-    }
-  } else if selector.has_prefix(".") {
-    match node.attrs.get("class") {
-      Some(Some(value)) => class_contains_all(value, selector[1:])
-      _ => false
-    }
-  } else {
-    match selector.split_once(".") {
-      Some((tag, classes)) => {
-        let tag_ok = node.name[:] == tag.to_lower()
-        let class_ok = match node.attrs.get("class") {
-          Some(Some(value)) => class_contains_all(value, classes)
-          _ => false
+  let mut pos = 0
+  match selector.get_char(pos) {
+    Some('*') => {
+      pos += 1
+      if pos < selector.length() {
+        match selector.get_char(pos) {
+          Some('.') | Some('#') => ()
+          _ => return false
         }
-        tag_ok && class_ok
       }
-      None => node.name[:] == selector.to_lower()
     }
+    Some('.') | Some('#') => ()
+    Some(_) => {
+      let end = next_simple_selector_marker(selector, pos)
+      guard selector.get_view(start=pos, end~) is Some(tag) else {
+        return false
+      }
+      if tag.is_empty() || !tag_selector_matches(node, tag) {
+        return false
+      }
+      pos = end
+    }
+    None => return false
   }
+  while pos < selector.length() {
+    guard selector.get_char(pos) is Some(marker) else { return false }
+    if marker != '.' && marker != '#' {
+      return false
+    }
+    let start = pos + marker.utf16_len()
+    let end = next_simple_selector_marker(selector, start)
+    guard selector.get_view(start~, end~) is Some(name) else { return false }
+    if name.is_empty() {
+      return false
+    }
+    if marker == '.' {
+      if !class_selector_matches(node, name) {
+        return false
+      }
+    } else if !id_selector_matches(node, name) {
+      return false
+    }
+    pos = end
+  }
+  true
 }
 
 ///|
