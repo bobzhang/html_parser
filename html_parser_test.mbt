@@ -93,3 +93,13 @@ test "tokenize exposes stable token data structures" {
     fail("expected EOF")
   }
 }
+
+///|
+test "entity decoding covers upstream fixture cases" {
+  let numeric = @html_parser.parse_fragment("&#65")
+  assert_eq(numeric.to_text(separator="", strip=false), "A")
+  let control = @html_parser.parse_fragment("&#x80")
+  assert_eq(control.to_text(separator="", strip=false), "\u{20AC}")
+  let legacy = @html_parser.parse_fragment("&notit; &not &amp")
+  assert_eq(legacy.to_text(separator="", strip=false), "¬it; ¬ &")
+}

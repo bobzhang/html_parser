@@ -13,6 +13,9 @@ JustHTML from Python to MoonBit.
   come from arbitrary code-unit arithmetic, use `get_view(...)` and handle
   `None` instead of assuming the slice is valid.
 - When a parser consumes a `Char`, advance by `ch.utf16_len()`, not by `1`.
+- For numeric HTML entities, use `Int::to_char()` and handle `None` for
+  invalid Unicode scalar values. Do not use unchecked conversion unless the
+  value has already been validated.
 
 ## Mutation and Object Shape
 
