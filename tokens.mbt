@@ -302,7 +302,10 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
               closed = true
               break
             } else {
-              self.error_at("unexpected-solidus-in-tag", self.pos)
+              self.error_at(
+                "unexpected-character-in-self-closing-start-tag",
+                self.pos,
+              )
             }
           }
           Some(_) => self.parse_attribute(attrs)

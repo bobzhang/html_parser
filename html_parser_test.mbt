@@ -243,6 +243,29 @@ test "tokenize reports attribute name fixture errors" {
 }
 
 ///|
+test "tokenize recovers invalid self closing start tag fixture case" {
+  let result = @html_parser.tokenize("<div /a>", collect_errors=true)
+  guard result.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
+    fail("expected div tag")
+  }
+  assert_eq(tag.name, "div")
+  assert_eq(tag.self_closing, false)
+  guard tag.attrs["a"] is Some("") else { fail("expected recovered a attr") }
+  assert_eq(result.errors.length(), 2)
+  assert_eq(
+    result.errors[0].code,
+    "unexpected-character-in-self-closing-start-tag",
+  )
+  guard result.errors[0].column is Some(7) else {
+    fail("expected invalid self closing char at column 7")
+  }
+  assert_eq(result.errors[1].code, "missing-attribute-value")
+  guard result.errors[1].column is Some(8) else {
+    fail("expected missing attr value at column 8")
+  }
+}
+
+///|
 test "tokenize normalizes BOM and CRLF edge cases" {
   let bom = @html_parser.tokenize("\u{FEFF}<div>")
   guard bom.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
