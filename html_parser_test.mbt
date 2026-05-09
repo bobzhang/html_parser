@@ -1353,6 +1353,58 @@ test "tokenize handles selected bogus comment fixture cases" {
 }
 
 ///|
+test "tokenize replaces nulls in bogus comment data" {
+  let question = @html_parser.tokenize("<?a\u{0000}b>", collect_errors=true)
+  guard question.tokens[0]
+    is @html_parser.HtmlToken::CommentToken("?a\u{FFFD}b") else {
+    fail("expected replacement char in question-mark bogus comment")
+  }
+  assert_eq(question.errors.length(), 1)
+  assert_eq(
+    question.errors[0].code,
+    "unexpected-question-mark-instead-of-tag-name",
+  )
+  let declaration = @html_parser.tokenize("<!a\u{0000}b>", collect_errors=true)
+  guard declaration.tokens[0]
+    is @html_parser.HtmlToken::CommentToken("a\u{FFFD}b") else {
+    fail("expected replacement char in malformed declaration")
+  }
+  assert_eq(declaration.errors.length(), 1)
+  assert_eq(declaration.errors[0].code, "incorrectly-opened-comment")
+  let cdata = @html_parser.tokenize(
+    "<![CDATA[a\u{0000}b]]>",
+    collect_errors=true,
+  )
+  guard cdata.tokens[0]
+    is @html_parser.HtmlToken::CommentToken("[CDATA[a\u{FFFD}b]]") else {
+    fail("expected replacement char in HTML CDATA bogus comment")
+  }
+  assert_eq(cdata.errors.length(), 1)
+  assert_eq(cdata.errors[0].code, "cdata-in-html-content")
+}
+
+///|
+test "parser replaces nulls in bogus comment data" {
+  let question = @html_parser.parse_fragment(
+    "<?a\u{0000}b>",
+    collect_errors=true,
+  )
+  assert_eq(question.to_html(pretty=false), "<!--?a\u{FFFD}b-->")
+  assert_eq(question.errors.length(), 1)
+  assert_eq(
+    question.errors[0].code,
+    "unexpected-question-mark-instead-of-tag-name",
+  )
+  let declaration = @html_parser.parse_fragment(
+    "<!a\u{0000}b>",
+    collect_errors=true,
+  )
+  assert_eq(declaration.to_html(pretty=false), "<!--a\u{FFFD}b-->")
+  assert_eq(declaration.errors.length(), 1)
+  assert_eq(declaration.errors[0].code, "incorrectly-opened-comment")
+}
+
+///|
 test "tokenize reports abrupt closing of empty comments" {
   let simple = @html_parser.tokenize("<!-->", collect_errors=true)
   guard simple.tokens[0] is @html_parser.HtmlToken::CommentToken("") else {

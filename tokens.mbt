@@ -419,7 +419,7 @@ fn SourceTokenizer::parse_bogus_comment(self : SourceTokenizer) -> Unit {
     ignore(self.advance_char())
   }
   let data = match self.input.get_view(start=data_start, end=self.pos) {
-    Some(view) => normalize_newlines(view)
+    Some(view) => normalize_bogus_comment_data(view)
     None => ""
   }
   if self.current() == Some('>') {

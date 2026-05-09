@@ -410,7 +410,9 @@ fn Parser::parse_bogus_comment(self : Parser) -> Unit {
   }
   match self.input.get_view(start=data_start, end=self.pos) {
     Some(view) =>
-      self.current_node().append_child(comment(normalize_newlines(view)))
+      self
+      .current_node()
+      .append_child(comment(normalize_bogus_comment_data(view)))
     None => ()
   }
   if self.current() == Some('>') {
@@ -1878,6 +1880,33 @@ fn normalize_newlines(input : StringView) -> String {
   let mut pos = 0
   while pos < input.length() {
     match input.get_char(pos) {
+      Some('\r') => {
+        out.write_char('\n')
+        pos += 1
+        if input.get_char(pos) == Some('\n') {
+          pos += 1
+        }
+      }
+      Some(ch) => {
+        out.write_char(ch)
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn normalize_bogus_comment_data(input : StringView) -> String {
+  let out = StringBuilder::new(size_hint=input.length())
+  let mut pos = 0
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some('\u{0000}') => {
+        out.write_char('\u{FFFD}')
+        pos += 1
+      }
       Some('\r') => {
         out.write_char('\n')
         pos += 1
