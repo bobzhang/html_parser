@@ -187,6 +187,27 @@ test "tokenize reports selected EOF and null fixture errors" {
 }
 
 ///|
+test "tokenize reports missing attribute value fixture errors" {
+  let simple = @html_parser.tokenize("<div attr>", collect_errors=true)
+  guard simple.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
+    fail("expected div tag")
+  }
+  guard tag.attrs["attr"] is Some("") else { fail("expected empty attr value") }
+  assert_eq(simple.errors[0].code, "missing-attribute-value")
+  guard simple.errors[0].column is Some(10) else {
+    fail("expected missing value at column 10")
+  }
+  let crlf = @html_parser.tokenize("<div attr\r\n>", collect_errors=true)
+  assert_eq(crlf.errors[0].code, "missing-attribute-value")
+  guard crlf.errors[0].line is Some(2) else {
+    fail("expected CRLF normalized line")
+  }
+  guard crlf.errors[0].column is Some(1) else {
+    fail("expected CRLF normalized column")
+  }
+}
+
+///|
 test "tokenize normalizes BOM and CRLF edge cases" {
   let bom = @html_parser.tokenize("\u{FEFF}<div>")
   guard bom.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {

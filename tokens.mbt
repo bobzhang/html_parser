@@ -375,6 +375,7 @@ fn SourceTokenizer::parse_attribute(
   self.skip_ascii_whitespace()
   if self.current() != Some('=') {
     attrs[name] = Some("")
+    self.error_at("missing-attribute-value", self.pos)
     return
   }
   ignore(self.advance_char())
