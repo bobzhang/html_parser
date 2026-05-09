@@ -111,6 +111,22 @@ test "parser closes open list items before repeated li starts" {
 }
 
 ///|
+test "parser closes open definition items before repeated dt and dd starts" {
+  let fragment = @html_parser.parse_fragment(
+    "<dl><dt>term<dt>next<dd><p>def<dd>again</dl>",
+  )
+  assert_eq(
+    fragment.to_html(pretty=false),
+    "<dl><dt>term</dt><dt>next</dt><dd><p>def</p></dd><dd>again</dd></dl>",
+  )
+  let loose = @html_parser.parse_fragment("<dt>term<dd>def<dt>next")
+  assert_eq(
+    loose.to_html(pretty=false),
+    "<dt>term</dt><dd>def</dd><dt>next</dt>",
+  )
+}
+
+///|
 test "strict mode raises on first parse error" {
   let result : Result[@html_parser.ParsedHtml, Error] = try? @html_parser.parse_fragment(
     "<p>open</span>",

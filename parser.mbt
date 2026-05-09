@@ -258,6 +258,17 @@ fn Parser::close_open_p_element(self : Parser) -> Unit {
 }
 
 ///|
+fn Parser::close_open_definition_item(self : Parser, name : String) -> Unit {
+  if name == "dd" {
+    ignore(self.close_open_element("dd"))
+    ignore(self.close_open_element("dt"))
+  } else {
+    ignore(self.close_open_element("dt"))
+    ignore(self.close_open_element("dd"))
+  }
+}
+
+///|
 fn start_tag_closes_p(name : StringView) -> Bool {
   match name {
     "address"
@@ -268,8 +279,10 @@ fn start_tag_closes_p(name : StringView) -> Bool {
     | "details"
     | "dialog"
     | "dir"
+    | "dd"
     | "div"
     | "dl"
+    | "dt"
     | "fieldset"
     | "figcaption"
     | "figure"
@@ -351,6 +364,8 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if name == "li" {
         ignore(self.close_open_element("li"))
+      } else if name == "dd" || name == "dt" {
+        self.close_open_definition_item(name)
       }
       let node = element(name, attrs~)
       self.current_node().append_child(node)
