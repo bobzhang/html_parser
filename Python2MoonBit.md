@@ -22,6 +22,11 @@ JustHTML from Python to MoonBit.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.
+- Serializing `script`/`style` text nodes has a security edge case, especially
+  for programmatically-created trees: neutralize matching `</script` or
+  `</style` sequences only when the tag name is followed by EOF, HTML
+  whitespace, `>`, or `/`. Do not escape all `<` characters in raw text, and
+  do not alter non-boundaries such as `</scriptx>`.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

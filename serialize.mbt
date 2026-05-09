@@ -98,6 +98,53 @@ fn serialize_comment_data(value : StringView) -> String {
 }
 
 ///|
+fn neutralize_rawtext_end_tag_sequences(
+  value : StringView,
+  tag_name : StringView,
+) -> String {
+  let needle = "</" + tag_name.to_owned()
+  let out = StringBuilder::new(size_hint=value.length())
+  let mut pos = 0
+  while pos < value.length() {
+    if rawtext_end_tag_sequence_at(value, pos, needle) {
+      out.write_string("&lt;")
+      pos += 1
+    } else {
+      match value.get_char(pos) {
+        Some(ch) => {
+          out.write_char(ch)
+          pos += ch.utf16_len()
+        }
+        None => break
+      }
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn rawtext_end_tag_sequence_at(
+  value : StringView,
+  pos : Int,
+  needle : StringView,
+) -> Bool {
+  if starts_with_case_insensitive(value, pos, needle) {
+    rawtext_end_tag_boundary(value.get_char(pos + needle.length()))
+  } else {
+    false
+  }
+}
+
+///|
+fn rawtext_end_tag_boundary(ch : Char?) -> Bool {
+  match ch {
+    None | Some('>') | Some('/') => true
+    Some(' ') | Some('\t') | Some('\n') | Some('\r') | Some('\u{000C}') => true
+    _ => false
+  }
+}
+
+///|
 fn serialize_start_tag(node : Node, quote : Char) -> String {
   let out = StringBuilder::new()
   out.write_char('<')
@@ -132,7 +179,7 @@ fn node_to_html_compact(node : Node, quote : Char) -> String {
     Text =>
       match node.parent {
         Some(parent) if parent.name == "script" || parent.name == "style" =>
-          node.data
+          neutralize_rawtext_end_tag_sequences(node.data, parent.name)
         _ => escape_text(node.data)
       }
     Comment => "<!--" + serialize_comment_data(node.data) + "-->"

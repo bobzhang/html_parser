@@ -11,6 +11,54 @@ test "builder serializes compact HTML" {
 }
 
 ///|
+test "builder neutralizes raw text end tag breakouts" {
+  let script = @html_parser.element("script", children=[
+    @html_parser.text("</script><img src=x onerror=alert(1)>"),
+  ])
+  let script_root = @html_parser.element("div", children=[script])
+  assert_eq(
+    script_root.to_html(pretty=false),
+    "<div><script>&lt;/script><img src=x onerror=alert(1)></script></div>",
+  )
+  let style = @html_parser.element("style", children=[
+    @html_parser.text("</style><img src=x>"),
+  ])
+  let style_root = @html_parser.element("div", children=[style])
+  assert_eq(
+    style_root.to_html(pretty=false),
+    "<div><style>&lt;/style><img src=x></style></div>",
+  )
+}
+
+///|
+test "raw text serializer only neutralizes matching end tag boundaries" {
+  let non_boundary = @html_parser.element("script", children=[
+    @html_parser.text("</scriptx>ok"),
+  ])
+  assert_eq(non_boundary.to_html(pretty=false), "<script></scriptx>ok</script>")
+  let vertical_tab = @html_parser.element("script", children=[
+    @html_parser.text("</script\u{000B}>ok"),
+  ])
+  assert_eq(
+    vertical_tab.to_html(pretty=false),
+    "<script></script\u{000B}>ok</script>",
+  )
+  let mixed_case = @html_parser.element("script", children=[
+    @html_parser.text("</ScRiPt >x"),
+  ])
+  assert_eq(mixed_case.to_html(pretty=false), "<script>&lt;/ScRiPt >x</script>")
+  let parsed = @html_parser.parse_fragment("<script>a</scriptx>b</script>")
+  assert_eq(parsed.to_html(pretty=false), "<script>a</scriptx>b</script>")
+  let double_escaped = @html_parser.parse_fragment(
+    "<script><!--<script>x</script>y</script>",
+  )
+  assert_eq(
+    double_escaped.to_html(pretty=false),
+    "<script><!--<script>x&lt;/script>y</script>",
+  )
+}
+
+///|
 test "to_text can separate only block boundaries" {
   let doc = @html_parser.parse_fragment("<p>hi</p><p>Hello <b>world</b></p>")
   assert_eq(doc.to_text(separator="\n"), "hi\nHello\nworld")
