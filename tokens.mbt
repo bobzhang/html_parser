@@ -544,6 +544,11 @@ fn SourceTokenizer::parse_quoted_attribute_value(
   }
   if self.current() == Some(quote) {
     ignore(self.advance_char())
+    match self.current() {
+      Some(ch) if !ch.is_ascii_whitespace() && ch != '>' && ch != '/' =>
+        self.error_at("missing-whitespace-between-attributes", self.pos)
+      _ => ()
+    }
   }
   raw
 }

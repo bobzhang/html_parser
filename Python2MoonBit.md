@@ -187,6 +187,10 @@ JustHTML from Python to MoonBit.
   character. `"`, `'`, `<`, `=`, and backtick produce
   `unexpected-character-in-unquoted-attribute-value` and remain in the decoded
   attribute value.
+- After a quoted attribute value, the first non-whitespace character before the
+  next attribute is reconsumed. Report `missing-whitespace-between-attributes`
+  at that character unless it is `>` or `/`, because `/` enters the self-closing
+  recovery path instead.
 - Markup declarations are not just normal tag-open failures. In HTML content,
   malformed `<!...>` declarations become bogus comments after
   `incorrectly-opened-comment`, and `<![CDATA[` also becomes a bogus comment

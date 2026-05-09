@@ -1530,6 +1530,21 @@ test "tokenize reports unquoted attribute value fixture errors" {
 }
 
 ///|
+test "tokenize reports missing whitespace after quoted attribute value" {
+  let result = @html_parser.tokenize("<div a=\"b\"c=d>", collect_errors=true)
+  guard result.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
+    fail("expected div tag")
+  }
+  guard tag.attrs["a"] is Some("b") else { fail("expected quoted attr") }
+  guard tag.attrs["c"] is Some("d") else { fail("expected adjacent attr") }
+  assert_eq(result.errors.length(), 1)
+  assert_eq(result.errors[0].code, "missing-whitespace-between-attributes")
+  guard result.errors[0].column is Some(11) else {
+    fail("expected missing whitespace at adjacent attr name")
+  }
+}
+
+///|
 test "tokenize reports attribute name fixture errors" {
   let equals = @html_parser.tokenize("<div\r=abc>", collect_errors=true)
   guard equals.tokens[0] is @html_parser.HtmlToken::Tag(eq_tag) else {
@@ -1638,6 +1653,21 @@ test "parser reports unquoted attribute value fixture errors" {
   assert_eq(less.errors[1].code, "expected-closing-tag-but-got-eof")
   guard less.errors[0].column is Some(9) else {
     fail("expected unquoted attr value error at column 9")
+  }
+}
+
+///|
+test "parser reports missing whitespace after quoted attribute value" {
+  let result = @html_parser.parse_fragment(
+    "<div a=\"b\"c=d>",
+    collect_errors=true,
+  )
+  assert_eq(result.to_html(pretty=false), "<div a=\"b\" c=\"d\"></div>")
+  assert_eq(result.errors.length(), 2)
+  assert_eq(result.errors[0].code, "missing-whitespace-between-attributes")
+  assert_eq(result.errors[1].code, "expected-closing-tag-but-got-eof")
+  guard result.errors[0].column is Some(11) else {
+    fail("expected missing whitespace at adjacent attr name")
   }
 }
 

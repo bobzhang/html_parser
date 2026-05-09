@@ -993,42 +993,8 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
   ignore(self.advance_char())
   self.skip_ascii_whitespace()
   let value = match self.current() {
-    Some('"') => {
-      ignore(self.advance_char())
-      let start = self.pos
-      while !self.is_eof() && self.current() != Some('"') {
-        if self.current() == Some('\u{0000}') {
-          self.error_at("unexpected-null-character", self.pos)
-        }
-        ignore(self.advance_char())
-      }
-      let raw = match self.input.get_view(start~, end=self.pos) {
-        Some(view) => decode_attribute_value(view)
-        None => ""
-      }
-      if self.current() == Some('"') {
-        ignore(self.advance_char())
-      }
-      raw
-    }
-    Some('\'') => {
-      ignore(self.advance_char())
-      let start = self.pos
-      while !self.is_eof() && self.current() != Some('\'') {
-        if self.current() == Some('\u{0000}') {
-          self.error_at("unexpected-null-character", self.pos)
-        }
-        ignore(self.advance_char())
-      }
-      let raw = match self.input.get_view(start~, end=self.pos) {
-        Some(view) => decode_attribute_value(view)
-        None => ""
-      }
-      if self.current() == Some('\'') {
-        ignore(self.advance_char())
-      }
-      raw
-    }
+    Some('"') => self.parse_quoted_attribute_value('"')
+    Some('\'') => self.parse_quoted_attribute_value('\'')
     _ => {
       let start = self.pos
       while !self.is_eof() {
@@ -1058,6 +1024,31 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
   if !duplicate {
     attrs[name] = Some(value)
   }
+}
+
+///|
+fn Parser::parse_quoted_attribute_value(self : Parser, quote : Char) -> String {
+  ignore(self.advance_char())
+  let start = self.pos
+  while !self.is_eof() && self.current() != Some(quote) {
+    if self.current() == Some('\u{0000}') {
+      self.error_at("unexpected-null-character", self.pos)
+    }
+    ignore(self.advance_char())
+  }
+  let raw = match self.input.get_view(start~, end=self.pos) {
+    Some(view) => decode_attribute_value(view)
+    None => ""
+  }
+  if self.current() == Some(quote) {
+    ignore(self.advance_char())
+    match self.current() {
+      Some(ch) if !ch.is_ascii_whitespace() && ch != '>' && ch != '/' =>
+        self.error_at("missing-whitespace-between-attributes", self.pos)
+      _ => ()
+    }
+  }
+  raw
 }
 
 ///|
