@@ -9,6 +9,7 @@ The current slice provides:
 - Compact and simple pretty HTML serialization.
 - Text extraction.
 - A tolerant parser for basic documents/fragments.
+- Basic document-mode scaffolding with `html/head/body`.
 - Stable token data structures for early tokenizer harness work.
 - Basic tag, class, id, and `tag.class` queries.
 

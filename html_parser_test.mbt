@@ -18,7 +18,7 @@ test "parser handles nested tags attributes comments and doctype" {
   )
   assert_eq(
     doc.to_html(pretty=false),
-    "<!DOCTYPE html><p id=\"x\" class=\"intro lead\">Hi &amp; bye<!--ok--></p>",
+    "<!DOCTYPE html><html><head></head><body><p id=\"x\" class=\"intro lead\">Hi &amp; bye<!--ok--></p></body></html>",
   )
   assert_eq(doc.errors.length(), 0)
   assert_eq(doc.to_text(separator="", strip=false), "Hi & bye")
@@ -30,7 +30,7 @@ test "parser and tokenizer preserve doctype external ids" {
   let doc = @html_parser.parse(source)
   assert_eq(
     doc.to_html(pretty=false),
-    "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">",
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\"><html><head></head><body></body></html>",
   )
   let tokens = @html_parser.tokenize(source)
   guard tokens.tokens[0] is @html_parser.HtmlToken::DoctypeToken(info) else {
@@ -96,7 +96,10 @@ test "strict mode raises on first parse error" {
 test "parse_bytes decodes utf8 and records encoding" {
   let bytes = @utf8.encode("<p>bytes</p>")
   let doc = @html_parser.parse_bytes(bytes)
-  assert_eq(doc.to_html(pretty=false), "<p>bytes</p>")
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<html><head></head><body><p>bytes</p></body></html>",
+  )
   guard doc.encoding is Some("utf-8") else { fail("expected utf-8 encoding") }
 }
 

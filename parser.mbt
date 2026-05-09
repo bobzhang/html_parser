@@ -804,11 +804,43 @@ pub fn parse(
   let root = document()
   let parser = Parser::new(html, root)
   parser.parse_all()
+  scaffold_document(root)
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {
     raise HtmlError::StrictMode(parser.errors[0])
   }
   ParsedHtml::{ root, errors, encoding: None }
+}
+
+///|
+fn document_has_html_element(root : Node) -> Bool {
+  for child in root.children {
+    if child.kind == Element && child.name == "html" {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn scaffold_document(root : Node) -> Unit {
+  if document_has_html_element(root) {
+    return
+  }
+  let original = root.children.copy()
+  root.children.clear()
+  let body_children : Array[Node] = []
+  for child in original {
+    if child.kind == Doctype {
+      root.append_child(child)
+    } else {
+      body_children.push(child)
+    }
+  }
+  let html = element("html")
+  html.append_child(element("head"))
+  html.append_child(element("body", children=body_children))
+  root.append_child(html)
 }
 
 ///|
