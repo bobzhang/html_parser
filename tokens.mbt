@@ -140,6 +140,9 @@ fn SourceTokenizer::run(self : SourceTokenizer) -> Unit {
 fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
   let start = self.pos
   while !self.is_eof() && !self.starts_with("<") {
+    if self.current() == Some('\u{0000}') {
+      self.error_at("unexpected-null-character", self.pos)
+    }
     ignore(self.advance_char())
   }
   match self.input.get_view(start~, end=self.pos) {
@@ -317,7 +320,10 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
       }
     }
     _ =>
-      if self.current() == Some('?') {
+      if self.current() is None {
+        self.error_at("eof-before-tag-name", self.pos)
+        self.tokens.push(Characters("<"))
+      } else if self.current() == Some('?') {
         self.parse_bogus_comment()
       } else {
         self.error_at("invalid-first-character-of-tag-name", start)
@@ -386,12 +392,16 @@ fn SourceTokenizer::parse_attribute_value(self : SourceTokenizer) -> String {
       while !self.is_eof() {
         match self.current() {
           Some(ch) if ch.is_ascii_whitespace() || ch == '>' => break
+          Some('\u{0000}') => {
+            self.error_at("unexpected-null-character", self.pos)
+            ignore(self.advance_char())
+          }
           Some(_) => ignore(self.advance_char())
           None => ()
         }
       }
       match self.input.get_view(start~, end=self.pos) {
-        Some(view) => decode_entities(view, in_attribute=true)
+        Some(view) => decode_attribute_value(view)
         None => ""
       }
     }
@@ -406,10 +416,13 @@ fn SourceTokenizer::parse_quoted_attribute_value(
   ignore(self.advance_char())
   let start = self.pos
   while !self.is_eof() && self.current() != Some(quote) {
+    if self.current() == Some('\u{0000}') {
+      self.error_at("unexpected-null-character", self.pos)
+    }
     ignore(self.advance_char())
   }
   let raw = match self.input.get_view(start~, end=self.pos) {
-    Some(view) => decode_entities(view, in_attribute=true)
+    Some(view) => decode_attribute_value(view)
     None => ""
   }
   if self.current() == Some(quote) {

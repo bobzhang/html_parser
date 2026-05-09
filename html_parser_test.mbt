@@ -148,6 +148,45 @@ test "tokenize handles selected bogus comment fixture cases" {
 }
 
 ///|
+test "tokenize reports selected EOF and null fixture errors" {
+  let lt = @html_parser.tokenize("<", collect_errors=true)
+  guard lt.tokens[0] is @html_parser.HtmlToken::Characters("<") else {
+    fail("expected literal <")
+  }
+  assert_eq(lt.errors[0].code, "eof-before-tag-name")
+  guard lt.errors[0].column is Some(2) else {
+    fail("expected EOF after < at column 2")
+  }
+  let end_open = @html_parser.tokenize("</", collect_errors=true)
+  guard end_open.tokens[0] is @html_parser.HtmlToken::Characters("</") else {
+    fail("expected literal </")
+  }
+  assert_eq(end_open.errors[0].code, "eof-before-tag-name")
+  guard end_open.errors[0].column is Some(3) else {
+    fail("expected EOF after </ at column 3")
+  }
+  let nul_text = @html_parser.tokenize("a\u{0000}b", collect_errors=true)
+  guard nul_text.tokens[0] is @html_parser.HtmlToken::Characters("a\u{0000}b") else {
+    fail("expected null-preserving text")
+  }
+  assert_eq(nul_text.errors[0].code, "unexpected-null-character")
+  guard nul_text.errors[0].column is Some(2) else {
+    fail("expected null text at column 2")
+  }
+  let nul_attr = @html_parser.tokenize(
+    "<div foo=\"a\u{0000}b\">",
+    collect_errors=true,
+  )
+  guard nul_attr.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
+    fail("expected div tag")
+  }
+  guard tag.attrs["foo"] is Some("a\u{FFFD}b") else {
+    fail("expected replacement char in attr")
+  }
+  assert_eq(nul_attr.errors[0].code, "unexpected-null-character")
+}
+
+///|
 test "tokenize normalizes BOM and CRLF edge cases" {
   let bom = @html_parser.tokenize("\u{FEFF}<div>")
   guard bom.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {

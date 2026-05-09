@@ -311,7 +311,7 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
         ignore(self.advance_char())
       }
       let raw = match self.input.get_view(start~, end=self.pos) {
-        Some(view) => decode_entities(view, in_attribute=true)
+        Some(view) => decode_attribute_value(view)
         None => ""
       }
       if self.current() == Some('"') {
@@ -326,7 +326,7 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
         ignore(self.advance_char())
       }
       let raw = match self.input.get_view(start~, end=self.pos) {
-        Some(view) => decode_entities(view, in_attribute=true)
+        Some(view) => decode_attribute_value(view)
         None => ""
       }
       if self.current() == Some('\'') {
@@ -344,7 +344,7 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
         }
       }
       match self.input.get_view(start~, end=self.pos) {
-        Some(view) => decode_entities(view, in_attribute=true)
+        Some(view) => decode_attribute_value(view)
         None => ""
       }
     }
@@ -569,6 +569,12 @@ fn decode_entities(input : StringView, in_attribute~ : Bool) -> String {
     }
   }
   out.to_string()
+}
+
+///|
+fn decode_attribute_value(input : StringView) -> String {
+  let decoded = decode_entities(input, in_attribute=true)
+  decoded.replace_all(old="\u{0000}", new="\u{FFFD}")
 }
 
 ///|
