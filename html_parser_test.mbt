@@ -514,6 +514,22 @@ test "parser treats script style title textarea content as text" {
 }
 
 ///|
+test "parser treats xmp and plaintext content as text" {
+  let xmp = @html_parser.parse_fragment("<xmp><b>x</b></xmp>after")
+  assert_eq(xmp.to_html(pretty=false), "<xmp>&lt;b&gt;x&lt;/b&gt;</xmp>after")
+  assert_eq(xmp.query("b").length(), 0)
+  let plaintext = @html_parser.parse_fragment(
+    "<plaintext><b>x</b></plaintext>after",
+    collect_errors=true,
+  )
+  assert_eq(
+    plaintext.to_html(pretty=false),
+    "<plaintext>&lt;b&gt;x&lt;/b&gt;&lt;/plaintext&gt;after</plaintext>",
+  )
+  assert_eq(plaintext.errors[0].code, "eof-in-text-element")
+}
+
+///|
 test "parser ignores one initial newline in pre listing and textarea" {
   let pre = @html_parser.parse_fragment(
     "<pre>\r\nline</pre><listing>\nitem</listing>",
@@ -540,5 +556,14 @@ test "tokenize preserves rawtext and rcdata element contents" {
   let textarea = @html_parser.tokenize("<textarea>a &lt; b</textarea>")
   guard textarea.tokens[1] is @html_parser.HtmlToken::Characters("a < b") else {
     fail("expected decoded textarea text")
+  }
+  let xmp = @html_parser.tokenize("<xmp><b>x</b></xmp>")
+  guard xmp.tokens[1] is @html_parser.HtmlToken::Characters("<b>x</b>") else {
+    fail("expected xmp raw text")
+  }
+  let plaintext = @html_parser.tokenize("<plaintext><b>x</b></plaintext>")
+  guard plaintext.tokens[1]
+    is @html_parser.HtmlToken::Characters("<b>x</b></plaintext>") else {
+    fail("expected plaintext through EOF")
   }
 }

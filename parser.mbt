@@ -613,7 +613,7 @@ fn is_tag_name_char(ch : Char) -> Bool {
 ///|
 fn is_special_text_element(name : StringView) -> Bool {
   match name {
-    "script" | "style" | "title" | "textarea" => true
+    "plaintext" | "script" | "style" | "title" | "textarea" | "xmp" => true
     _ => false
   }
 }
@@ -782,6 +782,15 @@ fn Parser::consume_special_element_content(
   name : String,
 ) -> Unit {
   let content_start = self.pos
+  if name == "plaintext" {
+    match self.input.get_view(start=content_start, end=self.input.length()) {
+      Some(view) => parent.append_child(text(decoded_special_text(name, view)))
+      None => ()
+    }
+    self.error_at("eof-in-text-element", content_start)
+    self.pos = self.input.length()
+    return
+  }
   match find_matching_end_tag(self.input, self.pos, name) {
     Some(end_start) => {
       match self.input.get_view(start=content_start, end=end_start) {
