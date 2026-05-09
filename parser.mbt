@@ -561,9 +561,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       let node = element(adjusted_name, attrs~)
       self.current_node().append_child(node)
-      if !self_closing && self.is_special_text_element(adjusted_name) {
+      let self_closes_tree = self_closing && is_void_element(adjusted_name)
+      if !self_closes_tree && self.is_special_text_element(adjusted_name) {
         self.consume_special_element_content(node, adjusted_name)
-      } else if !self_closing && !is_void_element(adjusted_name) {
+      } else if !self_closes_tree && !is_void_element(adjusted_name) {
         self.stack.push(node)
         if start_tag_ignores_initial_lf(adjusted_name) {
           self.skip_one_initial_lf()

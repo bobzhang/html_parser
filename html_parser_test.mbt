@@ -370,6 +370,18 @@ test "parser treats image start tags as img elements" {
 }
 
 ///|
+test "parser ignores self closing slash on non void html elements" {
+  let div = @html_parser.parse_fragment("<div/>x")
+  assert_eq(div.to_html(pretty=false), "<div>x</div>")
+  let paragraph = @html_parser.parse_fragment("<p/>x")
+  assert_eq(paragraph.to_html(pretty=false), "<p>x</p>")
+  let script = @html_parser.parse_fragment("<script/>x</script>")
+  assert_eq(script.to_html(pretty=false), "<script>x</script>")
+  let voids = @html_parser.parse_fragment("<br/>x<img/>")
+  assert_eq(voids.to_html(pretty=false), "<br>x<img>")
+}
+
+///|
 test "strict mode raises on first parse error" {
   let result : Result[@html_parser.ParsedHtml, Error] = try? @html_parser.parse_fragment(
     "<p>open</span>",

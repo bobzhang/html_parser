@@ -57,6 +57,10 @@ JustHTML from Python to MoonBit.
 - Document scaffolding also has to preserve explicit root-level `<head>` and
   `<body>` nodes, including attributes on `<body>`. Do not always synthesize
   fresh elements and then nest the parsed ones inside the body.
+- Keep tokenizer flags separate from tree-builder effects. A `/>` slash should
+  remain visible on the start-tag token, but in HTML tree construction only
+  void elements actually self-close; non-void elements still receive later text
+  and children.
 
 ## Optional Values and Defaults
 
