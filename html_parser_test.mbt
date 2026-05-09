@@ -1167,6 +1167,42 @@ test "tokenize reports selected EOF and null fixture errors" {
     fail("expected replacement char in attr")
   }
   assert_eq(nul_attr.errors[0].code, "unexpected-null-character")
+  let nul_attr_name = @html_parser.tokenize(
+    "<div a\u{0000}b='c'>",
+    collect_errors=true,
+  )
+  guard nul_attr_name.tokens[0] is @html_parser.HtmlToken::Tag(attr_name_tag) else {
+    fail("expected div tag")
+  }
+  guard attr_name_tag.attrs["a\u{FFFD}b"] is Some("c") else {
+    fail("expected replacement char in attr name")
+  }
+  assert_eq(nul_attr_name.errors.length(), 1)
+  assert_eq(nul_attr_name.errors[0].code, "unexpected-null-character")
+  guard nul_attr_name.errors[0].column is Some(7) else {
+    fail("expected null attr name at column 7")
+  }
+  let nul_tag_name = @html_parser.tokenize(
+    "<script\u{0000}>x</script>",
+    collect_errors=true,
+  )
+  guard nul_tag_name.tokens[0] is @html_parser.HtmlToken::Tag(start) else {
+    fail("expected script start tag")
+  }
+  assert_eq(start.name, "script\u{FFFD}")
+  guard nul_tag_name.tokens[1] is @html_parser.HtmlToken::Characters("x") else {
+    fail("expected text after null-mutated script tag")
+  }
+  guard nul_tag_name.tokens[2] is @html_parser.HtmlToken::Tag(end_tag) else {
+    fail("expected script end tag")
+  }
+  assert_true(end_tag.kind is @html_parser.TagKind::EndTag)
+  assert_eq(end_tag.name, "script")
+  assert_eq(nul_tag_name.errors.length(), 1)
+  assert_eq(nul_tag_name.errors[0].code, "unexpected-null-character")
+  guard nul_tag_name.errors[0].column is Some(8) else {
+    fail("expected null tag name at column 8")
+  }
 }
 
 ///|

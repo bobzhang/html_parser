@@ -149,6 +149,11 @@ JustHTML from Python to MoonBit.
   quoted public/system identifiers report `unexpected-null-character` and store
   U+FFFD, so a helper that only lowercases or normalizes newlines will silently
   diverge from the tokenizer.
+- Tag and attribute name scanning is broader than a typical identifier parser.
+  After a valid tag-name start, keep consuming until whitespace, `/`, or `>`;
+  U+0000 in tag or attribute names reports `unexpected-null-character` and is
+  stored as U+FFFD. Stopping at an ASCII-name predicate can turn part of the tag
+  name into a bogus attribute and change raw-text behavior.
 - Do not normalize empty doctype names to `"html"` in serialization. The builder
   default should create `"html"`, but a parsed empty-name doctype serializes as
   `<!DOCTYPE>`.

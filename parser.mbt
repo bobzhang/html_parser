@@ -368,7 +368,7 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
       None => ()
     }
   }
-  let (name, name_errors) = parse_doctype_name_value(
+  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
     self.input,
     name_start,
     self.pos,
@@ -461,9 +461,13 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
       None => ()
     }
   }
-  let name = match self.input.get_view(start=name_start, end=self.pos) {
-    Some(view) => lower_ascii(self.replace_null_characters(view, name_start))
-    None => ""
+  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+    self.input,
+    name_start,
+    self.pos,
+  )
+  for error in name_errors {
+    self.error_at(error.code, error.offset)
   }
   if name == "" {
     self.error_at("missing-end-tag-name", start)
@@ -721,13 +725,17 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       let name_start = self.pos
       while !self.is_eof() {
         match self.current() {
-          Some(ch) if is_tag_name_char(ch) => ignore(self.advance_char())
+          Some(ch) if !is_tag_name_end(ch) => ignore(self.advance_char())
           _ => break
         }
       }
-      let name = match self.input.get_view(start=name_start, end=self.pos) {
-        Some(view) => lower_ascii(view)
-        None => ""
+      let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+        self.input,
+        name_start,
+        self.pos,
+      )
+      for error in name_errors {
+        self.error_at(error.code, error.offset)
       }
       let attrs : Map[String, String?] = {}
       let mut self_closing = false
@@ -812,9 +820,13 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
       None => ()
     }
   }
-  let name = match self.input.get_view(start=name_start, end=self.pos) {
-    Some(view) => lower_ascii(self.replace_null_characters(view, name_start))
-    None => ""
+  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+    self.input,
+    name_start,
+    self.pos,
+  )
+  for error in name_errors {
+    self.error_at(error.code, error.offset)
   }
   if name == "" {
     ignore(self.advance_char())
@@ -900,12 +912,8 @@ fn is_tag_name_start(ch : Char) -> Bool {
 }
 
 ///|
-fn is_tag_name_char(ch : Char) -> Bool {
-  ch.is_ascii_alphabetic() ||
-  ch.is_ascii_digit() ||
-  ch == '-' ||
-  ch == '_' ||
-  ch == ':'
+fn is_tag_name_end(ch : Char) -> Bool {
+  ch.is_ascii_whitespace() || ch == '/' || ch == '>'
 }
 
 ///|
@@ -1106,7 +1114,7 @@ fn normalize_doctype_value(
 }
 
 ///|
-fn parse_doctype_name_value(
+fn parse_lower_name_value_replacing_nulls(
   input : StringView,
   start : Int,
   end : Int,

@@ -203,7 +203,7 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
       None => ()
     }
   }
-  let (name, name_errors) = parse_doctype_name_value(
+  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
     self.input,
     name_start,
     self.pos,
@@ -288,9 +288,13 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
       None => ()
     }
   }
-  let name = match self.input.get_view(start=name_start, end=self.pos) {
-    Some(view) => lower_ascii(view)
-    None => ""
+  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+    self.input,
+    name_start,
+    self.pos,
+  )
+  for error in name_errors {
+    self.error_at(error.code, error.offset)
   }
   if name == "" {
     self.error_at("missing-end-tag-name", start)
@@ -319,13 +323,17 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
       let name_start = self.pos
       while !self.is_eof() {
         match self.current() {
-          Some(ch) if is_tag_name_char(ch) => ignore(self.advance_char())
+          Some(ch) if !is_tag_name_end(ch) => ignore(self.advance_char())
           _ => break
         }
       }
-      let name = match self.input.get_view(start=name_start, end=self.pos) {
-        Some(view) => lower_ascii(view)
-        None => ""
+      let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+        self.input,
+        name_start,
+        self.pos,
+      )
+      for error in name_errors {
+        self.error_at(error.code, error.offset)
       }
       let attrs : Map[String, String?] = {}
       let mut self_closing = false
@@ -420,9 +428,13 @@ fn SourceTokenizer::parse_attribute(
       None => ()
     }
   }
-  let name = match self.input.get_view(start=name_start, end=self.pos) {
-    Some(view) => lower_ascii(view)
-    None => ""
+  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+    self.input,
+    name_start,
+    self.pos,
+  )
+  for error in name_errors {
+    self.error_at(error.code, error.offset)
   }
   if name == "" {
     ignore(self.advance_char())
