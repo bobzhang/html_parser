@@ -32,6 +32,20 @@ JustHTML from Python to MoonBit.
 - Keep public structs narrow. Internal tree-building state can be mutable, but
   callers should use methods instead of writing DOM fields directly.
 
+## Package Shape
+
+- Files inside one MoonBit package are compiled together. A private helper in
+  `parser.mbt` is still visible to `tokens.mbt` when both files are in the same
+  directory/package. This is useful for shared parsing tables such as raw-text
+  element names, but it also means a "local" helper can silently affect several
+  implementation files.
+- Python modules often make boundaries obvious through imports. In MoonBit,
+  file names are organizational only; use cohesive helper names and focused
+  tests to make shared behavior explicit.
+- Prefer one shared predicate/table for parser and tokenizer state categories
+  when the HTML standard uses the same set. Duplicating lists such as raw-text
+  element names quickly causes parser/tokenizer drift.
+
 ## Optional Values and Defaults
 
 - Python `None` maps naturally to `T?` in MoonBit data structures.
