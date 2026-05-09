@@ -28,6 +28,10 @@ JustHTML from Python to MoonBit.
   A `<script` token inside escaped script text can also enter double-escaped
   states where an inner `</script>` remains character data. Keep these states
   explicit instead of trying to repair the serialized output afterwards.
+- EOF inside raw/RCDATA/plaintext content is a tree-builder concern in the
+  reference, not a tokenizer error. The tokenizer still emits the character
+  token and EOF; the parser reports the closing-tag EOF error at the final
+  source character.
 - Literal U+0000 handling depends on the tokenizer/parser state. Normal text
   data reports `unexpected-null-character` and drops the character, while
   attribute values and raw/RCDATA text report the same error and replace it

@@ -2041,7 +2041,35 @@ test "parser treats xmp and plaintext content as text" {
     plaintext.to_html(pretty=false),
     "<plaintext>&lt;b&gt;x&lt;/b&gt;&lt;/plaintext&gt;after</plaintext>",
   )
-  assert_eq(plaintext.errors[0].code, "eof-in-text-element")
+  assert_eq(plaintext.errors[0].code, "expected-closing-tag-but-got-eof")
+}
+
+///|
+test "parser reports special text EOF like tree builder" {
+  let script = @html_parser.parse_fragment("<script>x", collect_errors=true)
+  assert_eq(script.to_html(pretty=false), "<script>x</script>")
+  assert_eq(script.errors.length(), 1)
+  assert_eq(script.errors[0].code, "expected-named-closing-tag-but-got-eof")
+  guard script.errors[0].column is Some(9) else {
+    fail("expected script EOF at final text column")
+  }
+  let textarea = @html_parser.parse_fragment(
+    "<textarea>\nx",
+    collect_errors=true,
+  )
+  assert_eq(textarea.to_html(pretty=false), "<textarea>x</textarea>")
+  assert_eq(textarea.errors.length(), 1)
+  assert_eq(textarea.errors[0].code, "expected-closing-tag-but-got-eof")
+  guard textarea.errors[0].line is Some(2) else {
+    fail("expected textarea EOF on second line")
+  }
+  guard textarea.errors[0].column is Some(1) else {
+    fail("expected textarea EOF at final text column")
+  }
+  let xmp = @html_parser.parse_fragment("<xmp>x", collect_errors=true)
+  assert_eq(xmp.errors[0].code, "expected-named-closing-tag-but-got-eof")
+  let iframe = @html_parser.parse_fragment("<iframe>x", collect_errors=true)
+  assert_eq(iframe.errors[0].code, "expected-closing-tag-but-got-eof")
 }
 
 ///|
@@ -2164,4 +2192,23 @@ test "tokenize preserves rawtext and rcdata element contents" {
   guard iframe.tokens[1] is @html_parser.HtmlToken::Characters("<b>x</b>") else {
     fail("expected iframe raw text")
   }
+}
+
+///|
+test "tokenize does not report special text EOF tree errors" {
+  let script = @html_parser.tokenize("<script>x", collect_errors=true)
+  guard script.tokens[1] is @html_parser.HtmlToken::Characters("x") else {
+    fail("expected unclosed script text")
+  }
+  assert_eq(script.errors.length(), 0)
+  let plaintext = @html_parser.tokenize("<plaintext>x", collect_errors=true)
+  guard plaintext.tokens[1] is @html_parser.HtmlToken::Characters("x") else {
+    fail("expected unclosed plaintext text")
+  }
+  assert_eq(plaintext.errors.length(), 0)
+  let title = @html_parser.tokenize("<title>x", collect_errors=true)
+  guard title.tokens[1] is @html_parser.HtmlToken::Characters("x") else {
+    fail("expected unclosed title text")
+  }
+  assert_eq(title.errors.length(), 0)
 }

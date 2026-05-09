@@ -1103,6 +1103,20 @@ fn special_text_decodes_entities(name : StringView) -> Bool {
 }
 
 ///|
+fn special_text_eof_error_code(name : StringView) -> String {
+  match name {
+    "noframes" | "script" | "style" | "title" | "xmp" =>
+      "expected-named-closing-tag-but-got-eof"
+    _ => "expected-closing-tag-but-got-eof"
+  }
+}
+
+///|
+fn Parser::error_at_special_text_eof(self : Parser, name : StringView) -> Unit {
+  self.error_at(special_text_eof_error_code(name), self.eof_error_pos())
+}
+
+///|
 fn Parser::decoded_special_text(
   self : Parser,
   name : StringView,
@@ -1742,7 +1756,7 @@ fn Parser::consume_special_element_content(
         )
       None => ()
     }
-    self.error_at("eof-in-text-element", content_start)
+    self.error_at_special_text_eof(name)
     self.pos = self.input.length()
     return
   }
@@ -1760,7 +1774,7 @@ fn Parser::consume_special_element_content(
         self.skip_matching_end_tag()
       }
       None => {
-        self.error_at("eof-in-text-element", content_start)
+        self.error_at_special_text_eof(name)
         self.pos = self.input.length()
       }
     }
@@ -1786,7 +1800,7 @@ fn Parser::consume_special_element_content(
           )
         None => ()
       }
-      self.error_at("eof-in-text-element", content_start)
+      self.error_at_special_text_eof(name)
       self.pos = self.input.length()
     }
   }

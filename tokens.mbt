@@ -595,7 +595,6 @@ fn SourceTokenizer::consume_special_text_tokens(
         self.tokens.push(Characters(decoded_tokenizer_special_text(name, view)))
       _ => ()
     }
-    self.error_at("eof-in-text-element", content_start)
     self.pos = self.input.length()
     return
   }
@@ -612,10 +611,7 @@ fn SourceTokenizer::consume_special_text_tokens(
         self.pos = end_start
         self.parse_end_tag()
       }
-      None => {
-        self.error_at("eof-in-text-element", content_start)
-        self.pos = self.input.length()
-      }
+      None => self.pos = self.input.length()
     }
     return
   }
@@ -639,7 +635,6 @@ fn SourceTokenizer::consume_special_text_tokens(
           )
         _ => ()
       }
-      self.error_at("eof-in-text-element", content_start)
       self.pos = self.input.length()
     }
   }
