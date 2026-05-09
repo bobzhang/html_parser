@@ -506,6 +506,13 @@ fn SourceTokenizer::parse_attribute_value(self : SourceTokenizer) -> String {
             self.error_at("unexpected-null-character", self.pos)
             ignore(self.advance_char())
           }
+          Some('"') | Some('\'') | Some('<') | Some('=') | Some('`') => {
+            self.error_at(
+              "unexpected-character-in-unquoted-attribute-value",
+              self.pos,
+            )
+            ignore(self.advance_char())
+          }
           Some(_) => ignore(self.advance_char())
           None => ()
         }

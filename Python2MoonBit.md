@@ -183,6 +183,10 @@ JustHTML from Python to MoonBit.
   A leading `=` reports `unexpected-equals-sign-before-attribute-name`, while
   `<`, `"`, and `'` inside the name report
   `unexpected-character-in-attribute-name` but stay in the stored name.
+- Unquoted attribute values also report without dropping the offending
+  character. `"`, `'`, `<`, `=`, and backtick produce
+  `unexpected-character-in-unquoted-attribute-value` and remain in the decoded
+  attribute value.
 - Markup declarations are not just normal tag-open failures. In HTML content,
   malformed `<!...>` declarations become bogus comments after
   `incorrectly-opened-comment`, and `<![CDATA[` also becomes a bogus comment

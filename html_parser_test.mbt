@@ -1499,6 +1499,37 @@ test "tokenize reports missing attribute value fixture errors" {
 }
 
 ///|
+test "tokenize reports unquoted attribute value fixture errors" {
+  let less = @html_parser.tokenize("<div a=b<c>", collect_errors=true)
+  guard less.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
+    fail("expected div tag")
+  }
+  guard tag.attrs["a"] is Some("b<c") else {
+    fail("expected < in unquoted attr value")
+  }
+  assert_eq(less.errors.length(), 1)
+  assert_eq(
+    less.errors[0].code,
+    "unexpected-character-in-unquoted-attribute-value",
+  )
+  guard less.errors[0].column is Some(9) else {
+    fail("expected unquoted attr value error at column 9")
+  }
+  let backtick = @html_parser.tokenize("<div a=b`c>", collect_errors=true)
+  guard backtick.tokens[0] is @html_parser.HtmlToken::Tag(backtick_tag) else {
+    fail("expected div tag")
+  }
+  guard backtick_tag.attrs["a"] is Some("b`c") else {
+    fail("expected backtick in unquoted attr value")
+  }
+  assert_eq(backtick.errors.length(), 1)
+  assert_eq(
+    backtick.errors[0].code,
+    "unexpected-character-in-unquoted-attribute-value",
+  )
+}
+
+///|
 test "tokenize reports attribute name fixture errors" {
   let equals = @html_parser.tokenize("<div\r=abc>", collect_errors=true)
   guard equals.tokens[0] is @html_parser.HtmlToken::Tag(eq_tag) else {
@@ -1592,6 +1623,21 @@ test "parser reports attribute name fixture errors" {
   assert_eq(bad_char.errors[1].code, "expected-closing-tag-but-got-eof")
   guard bad_char.errors[0].column is Some(7) else {
     fail("expected quote attr error at column 7")
+  }
+}
+
+///|
+test "parser reports unquoted attribute value fixture errors" {
+  let less = @html_parser.parse_fragment("<div a=b<c>", collect_errors=true)
+  assert_eq(less.to_html(pretty=false), "<div a=\"b&lt;c\"></div>")
+  assert_eq(less.errors.length(), 2)
+  assert_eq(
+    less.errors[0].code,
+    "unexpected-character-in-unquoted-attribute-value",
+  )
+  assert_eq(less.errors[1].code, "expected-closing-tag-but-got-eof")
+  guard less.errors[0].column is Some(9) else {
+    fail("expected unquoted attr value error at column 9")
   }
 }
 
