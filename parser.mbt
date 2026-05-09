@@ -269,6 +269,23 @@ fn Parser::close_open_definition_item(self : Parser, name : String) -> Unit {
 }
 
 ///|
+fn is_heading_element_name(name : StringView) -> Bool {
+  match name {
+    "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::close_current_heading_element(self : Parser) -> Unit {
+  match self.stack.last() {
+    Some(node) if node.kind == Element && is_heading_element_name(node.name) =>
+      ignore(self.stack.pop())
+    _ => ()
+  }
+}
+
+///|
 fn start_tag_closes_p(name : StringView) -> Bool {
   match name {
     "address"
@@ -366,6 +383,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         ignore(self.close_open_element("li"))
       } else if name == "dd" || name == "dt" {
         self.close_open_definition_item(name)
+      }
+      if is_heading_element_name(name) {
+        self.close_current_heading_element()
       }
       let node = element(name, attrs~)
       self.current_node().append_child(node)

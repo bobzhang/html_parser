@@ -127,6 +127,17 @@ test "parser closes open definition items before repeated dt and dd starts" {
 }
 
 ///|
+test "parser closes current heading before another heading start" {
+  let fragment = @html_parser.parse_fragment("<p>intro<h1>head<h2>next")
+  assert_eq(
+    fragment.to_html(pretty=false),
+    "<p>intro</p><h1>head</h1><h2>next</h2>",
+  )
+  let nested_block = @html_parser.parse_fragment("<h1>head<div>body</div>")
+  assert_eq(nested_block.to_html(pretty=false), "<h1>head<div>body</div></h1>")
+}
+
+///|
 test "strict mode raises on first parse error" {
   let result : Result[@html_parser.ParsedHtml, Error] = try? @html_parser.parse_fragment(
     "<p>open</span>",
