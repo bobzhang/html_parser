@@ -1108,26 +1108,17 @@ fn Parser::decoded_special_text(
   name : StringView,
   raw : StringView,
   start : Int,
-  closed : Bool,
 ) -> String {
   let (raw, offset) = if name == "textarea" {
     strip_one_initial_lf_with_offset(raw)
   } else {
     (raw, 0)
   }
-  if name == "script" {
-    let (text, errors) = decode_script_text(raw, start + offset, closed)
-    for error in errors {
-      self.error_at(error.code, error.offset)
-    }
-    text
+  let raw = self.replace_null_characters(raw, start + offset)
+  if special_text_decodes_entities(name) {
+    decode_entities(raw, in_attribute=false)
   } else {
-    let raw = self.replace_null_characters(raw, start + offset)
-    if special_text_decodes_entities(name) {
-      decode_entities(raw, in_attribute=false)
-    } else {
-      normalize_newlines(raw)
-    }
+    normalize_newlines(raw)
   }
 }
 
@@ -1747,7 +1738,7 @@ fn Parser::consume_special_element_content(
     match self.input.get_view(start=content_start, end=self.input.length()) {
       Some(view) =>
         parent.append_child(
-          text(self.decoded_special_text(name, view, content_start, false)),
+          text(self.decoded_special_text(name, view, content_start)),
         )
       None => ()
     }
@@ -1755,12 +1746,32 @@ fn Parser::consume_special_element_content(
     self.pos = self.input.length()
     return
   }
+  if name == "script" {
+    let scan = scan_script_text(self.input, self.pos)
+    for error in scan.errors {
+      self.error_at(error.code, error.offset)
+    }
+    if !scan.data.is_empty() {
+      parent.append_child(text(scan.data))
+    }
+    match scan.end_start {
+      Some(end_start) => {
+        self.pos = end_start
+        self.skip_matching_end_tag()
+      }
+      None => {
+        self.error_at("eof-in-text-element", content_start)
+        self.pos = self.input.length()
+      }
+    }
+    return
+  }
   match find_matching_end_tag(self.input, self.pos, name) {
     Some(end_start) => {
       match self.input.get_view(start=content_start, end=end_start) {
         Some(view) =>
           parent.append_child(
-            text(self.decoded_special_text(name, view, content_start, true)),
+            text(self.decoded_special_text(name, view, content_start)),
           )
         None => ()
       }
@@ -1771,7 +1782,7 @@ fn Parser::consume_special_element_content(
       match self.input.get_view(start=content_start, end=self.input.length()) {
         Some(view) =>
           parent.append_child(
-            text(self.decoded_special_text(name, view, content_start, false)),
+            text(self.decoded_special_text(name, view, content_start)),
           )
         None => ()
       }

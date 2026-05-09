@@ -2019,6 +2019,13 @@ test "parser treats script style title textarea content as text" {
     raw_after_comment.to_html(pretty=false),
     "<script><!--a-->x--</script>",
   )
+  let double_escaped = @html_parser.parse_fragment(
+    "<script><!--<script>x</script>y</script>",
+  )
+  assert_eq(
+    double_escaped.to_text(separator="|", strip=false),
+    "<!--<script>x</script>y",
+  )
 }
 
 ///|
@@ -2098,6 +2105,10 @@ test "tokenize preserves rawtext and rcdata element contents" {
   guard escaped_end.tokens[1] is @html_parser.HtmlToken::Characters("<!--a--<") else {
     fail("expected escaped script end-tag boundary text")
   }
+  let escaped_eof = @html_parser.tokenize("<script><!--a--<")
+  guard escaped_eof.tokens[1] is @html_parser.HtmlToken::Characters("<!--a--<<") else {
+    fail("expected escaped EOF less-than text")
+  }
   let comment_end = @html_parser.tokenize("<script><!--a--></script>")
   guard comment_end.tokens[1] is @html_parser.HtmlToken::Characters("<!--a-->") else {
     fail("expected script comment close to return to raw text")
@@ -2113,6 +2124,28 @@ test "tokenize preserves rawtext and rcdata element contents" {
   assert_eq(nul_script.errors[0].code, "unexpected-null-character")
   guard nul_script.errors[0].column is Some(10) else {
     fail("expected script text null at column 10")
+  }
+  let double_escaped = @html_parser.tokenize(
+    "<script><!--<script>x</script>y</script>",
+  )
+  guard double_escaped.tokens[1]
+    is @html_parser.HtmlToken::Characters("<!--<script>x</script>y") else {
+    fail("expected inner script end tag to stay in double-escaped text")
+  }
+  guard double_escaped.tokens[2] is @html_parser.HtmlToken::Tag(double_end) else {
+    fail("expected final script end")
+  }
+  assert_eq(double_end.name, "script")
+  let not_double_escaped = @html_parser.tokenize(
+    "<script><!--<scripty>x</script>-->z</script>",
+  )
+  guard not_double_escaped.tokens[1]
+    is @html_parser.HtmlToken::Characters("<!--<scripty>x") else {
+    fail("expected non-script word to avoid double-escaped state")
+  }
+  guard not_double_escaped.tokens[3]
+    is @html_parser.HtmlToken::Characters("-->z") else {
+    fail("expected text after the first script end tag")
   }
   let textarea = @html_parser.tokenize("<textarea>a &lt; b</textarea>")
   guard textarea.tokens[1] is @html_parser.HtmlToken::Characters("a < b") else {
