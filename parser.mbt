@@ -1374,6 +1374,25 @@ fn append_html_node_contents(
 }
 
 ///|
+fn absorb_root_html_siblings(root : Node, html : Node) -> Unit {
+  let original = root.children.copy()
+  root.children.clear()
+  let mut saw_html = false
+  for child in original {
+    if child.kind == Element && child.name == "html" {
+      if saw_html {
+        append_html_node_contents(html, child, html.children)
+      } else {
+        root.append_child(child)
+        saw_html = true
+      }
+    } else {
+      root.append_child(child)
+    }
+  }
+}
+
+///|
 fn scaffold_existing_html_element(html : Node) -> Unit {
   let raw_original = html.children.copy()
   html.children.clear()
@@ -1435,6 +1454,7 @@ fn scaffold_existing_html_element(html : Node) -> Unit {
 fn scaffold_document(root : Node) -> Unit {
   match document_html_element(root) {
     Some(html) => {
+      absorb_root_html_siblings(root, html)
       scaffold_existing_html_element(html)
       return
     }
