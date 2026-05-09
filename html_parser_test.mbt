@@ -126,6 +126,31 @@ test "document parser merges repeated body tags" {
 }
 
 ///|
+test "document parser merges nested repeated html tags" {
+  let nested = @html_parser.parse(
+    "<html lang=en><html dir=ltr><body>x</body></html>",
+  )
+  assert_eq(
+    nested.to_html(pretty=false),
+    "<html lang=\"en\" dir=\"ltr\"><head></head><body>x</body></html>",
+  )
+  let after_body = @html_parser.parse(
+    "<html lang=en><body>x</body><html dir=ltr><body>y</body></html>",
+  )
+  assert_eq(
+    after_body.to_html(pretty=false),
+    "<html lang=\"en\" dir=\"ltr\"><head></head><body>xy</body></html>",
+  )
+  let first_wins = @html_parser.parse(
+    "<html lang=en><html lang=fr dir=ltr><head><title>T</title></head><body>x</body></html>",
+  )
+  assert_eq(
+    first_wins.to_html(pretty=false),
+    "<html lang=\"en\" dir=\"ltr\"><head><title>T</title></head><body>x</body></html>",
+  )
+}
+
+///|
 test "document parser places comments around implicit head like reference" {
   let before = @html_parser.parse("<!--c--><title>T</title><p>x</p>")
   assert_eq(

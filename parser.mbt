@@ -1356,9 +1356,35 @@ fn append_body_node_contents(
 }
 
 ///|
+fn append_html_node_contents(
+  html_node : Node,
+  source : Node,
+  html_children : Array[Node],
+) -> Unit {
+  merge_missing_attrs(html_node, source)
+  let existing = source.children.copy()
+  source.children.clear()
+  for child in existing {
+    if child.kind == Element && child.name == "html" {
+      append_html_node_contents(html_node, child, html_children)
+    } else {
+      html_children.push(child)
+    }
+  }
+}
+
+///|
 fn scaffold_existing_html_element(html : Node) -> Unit {
-  let original = html.children.copy()
+  let raw_original = html.children.copy()
   html.children.clear()
+  let original : Array[Node] = []
+  for child in raw_original {
+    if child.kind == Element && child.name == "html" {
+      append_html_node_contents(html, child, original)
+    } else {
+      original.push(child)
+    }
+  }
   let mut head : Node? = None
   let mut body : Node? = None
   let head_children : Array[Node] = []

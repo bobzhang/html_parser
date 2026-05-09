@@ -60,6 +60,8 @@ JustHTML from Python to MoonBit.
 - Repeated document shell elements need merge rules, not simple nesting. Later
   `<body>` tags contribute missing attributes and their children to the first
   body element.
+- The same first-wins merge applies to nested repeated `<html>` tags: merge
+  missing root attributes, then process the nested html's children in order.
 - Keep tokenizer flags separate from tree-builder effects. A `/>` slash should
   remain visible on the start-tag token, but in HTML tree construction only
   void elements actually self-close; non-void elements still receive later text
