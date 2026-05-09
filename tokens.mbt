@@ -213,6 +213,24 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
   let start = self.pos
   self.pos += 2
   self.skip_ascii_whitespace()
+  match self.current() {
+    Some('>') => {
+      self.error_at("missing-end-tag-name", self.pos)
+      ignore(self.advance_char())
+      return
+    }
+    Some(ch) if !is_tag_name_start(ch) => {
+      self.error_at("invalid-first-character-of-tag-name", self.pos)
+      self.parse_bogus_comment()
+      return
+    }
+    None => {
+      self.error_at("eof-before-tag-name", self.pos)
+      self.tokens.push(Characters("</"))
+      return
+    }
+    _ => ()
+  }
   let name_start = self.pos
   while !self.is_eof() {
     match self.current() {
@@ -298,11 +316,30 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
         self.consume_special_text_tokens(name)
       }
     }
-    _ => {
-      self.error_at("invalid-first-character-of-tag-name", start)
-      self.tokens.push(Characters("<"))
-    }
+    _ =>
+      if self.current() == Some('?') {
+        self.parse_bogus_comment()
+      } else {
+        self.error_at("invalid-first-character-of-tag-name", start)
+        self.tokens.push(Characters("<"))
+      }
   }
+}
+
+///|
+fn SourceTokenizer::parse_bogus_comment(self : SourceTokenizer) -> Unit {
+  let data_start = self.pos
+  while !self.is_eof() && self.current() != Some('>') {
+    ignore(self.advance_char())
+  }
+  let data = match self.input.get_view(start=data_start, end=self.pos) {
+    Some(view) => normalize_newlines(view)
+    None => ""
+  }
+  if self.current() == Some('>') {
+    ignore(self.advance_char())
+  }
+  self.tokens.push(CommentToken(data))
 }
 
 ///|

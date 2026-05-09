@@ -134,6 +134,20 @@ test "tokenize reports malformed end tag errors when requested" {
 }
 
 ///|
+test "tokenize handles selected bogus comment fixture cases" {
+  let processing = @html_parser.tokenize("<?foo>")
+  guard processing.tokens[0] is @html_parser.HtmlToken::CommentToken("?foo") else {
+    fail("expected bogus comment")
+  }
+  let invalid_end = @html_parser.tokenize("</?", collect_errors=true)
+  guard invalid_end.tokens[0] is @html_parser.HtmlToken::CommentToken("?") else {
+    fail("expected invalid end tag as bogus comment")
+  }
+  assert_eq(invalid_end.errors.length(), 1)
+  assert_eq(invalid_end.errors[0].code, "invalid-first-character-of-tag-name")
+}
+
+///|
 test "tokenize normalizes BOM and CRLF edge cases" {
   let bom = @html_parser.tokenize("\u{FEFF}<div>")
   guard bom.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
