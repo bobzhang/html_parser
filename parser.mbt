@@ -243,11 +243,40 @@ fn Parser::pop_until(self : Parser, name : String, pos : Int) -> Unit {
     return
   }
   while self.stack.length() > 1 {
+    match self.stack.last() {
+      Some(node) if node.kind == Element &&
+        node.name != name &&
+        is_implied_end_tag_name(node.name) => ignore(self.stack.pop())
+      _ => break
+    }
+  }
+  match self.stack.last() {
+    Some(node) if node.kind == Element && node.name == name => ()
+    _ => self.error_at("end-tag-too-early", pos)
+  }
+  while self.stack.length() > 1 {
     match self.stack.pop() {
       Some(node) if node.kind == Element && node.name == name => break
       Some(_) => ()
       None => break
     }
+  }
+}
+
+///|
+fn is_implied_end_tag_name(name : StringView) -> Bool {
+  match name {
+    "dd"
+    | "dt"
+    | "li"
+    | "option"
+    | "optgroup"
+    | "p"
+    | "rb"
+    | "rp"
+    | "rt"
+    | "rtc" => true
+    _ => false
   }
 }
 

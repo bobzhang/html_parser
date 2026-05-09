@@ -121,6 +121,23 @@ test "parser creates empty paragraph for stray p end tags" {
 }
 
 ///|
+test "parser reports early ancestor end tags after implied end tags" {
+  let implied = @html_parser.parse_fragment(
+    "<div><p>x</div>after",
+    collect_errors=true,
+  )
+  assert_eq(implied.to_html(pretty=false), "<div><p>x</p></div>after")
+  assert_eq(implied.errors.length(), 0)
+  let early = @html_parser.parse_fragment(
+    "<div><span>x</div>after",
+    collect_errors=true,
+  )
+  assert_eq(early.to_html(pretty=false), "<div><span>x</span></div>after")
+  assert_eq(early.errors.length(), 1)
+  assert_eq(early.errors[0].code, "end-tag-too-early")
+}
+
+///|
 test "parser closes open paragraphs before paragraph and block starts" {
   let fragment = @html_parser.parse_fragment("<p>one<p>two<div>three</div>")
   assert_eq(
