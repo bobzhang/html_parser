@@ -110,6 +110,25 @@ test "document parser promotes explicit root head and body elements" {
 }
 
 ///|
+test "document parser places comments around implicit head like reference" {
+  let before = @html_parser.parse("<!--c--><title>T</title><p>x</p>")
+  assert_eq(
+    before.to_html(pretty=false),
+    "<!--c--><html><head><title>T</title></head><body><p>x</p></body></html>",
+  )
+  let inside = @html_parser.parse("<title>T</title><!--c--><p>x</p>")
+  assert_eq(
+    inside.to_html(pretty=false),
+    "<html><head><title>T</title><!--c--></head><body><p>x</p></body></html>",
+  )
+  let after_body = @html_parser.parse("<p>x</p><!--c--><title>T</title>")
+  assert_eq(
+    after_body.to_html(pretty=false),
+    "<html><head></head><body><p>x</p><!--c--><title>T</title></body></html>",
+  )
+}
+
+///|
 test "parser and tokenizer preserve doctype external ids" {
   let source = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">"
   let doc = @html_parser.parse(source)
