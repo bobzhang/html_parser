@@ -262,7 +262,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       let node = element(name, attrs~)
       self.current_node().append_child(node)
-      if !self_closing && !is_void_element(name) {
+      if !self_closing && is_special_text_element(name) {
+        self.consume_special_element_content(node, name)
+      } else if !self_closing && !is_void_element(name) {
         self.stack.push(node)
       }
     }
@@ -362,6 +364,100 @@ fn is_tag_name_char(ch : Char) -> Bool {
   ch == '-' ||
   ch == '_' ||
   ch == ':'
+}
+
+///|
+fn is_special_text_element(name : StringView) -> Bool {
+  match name {
+    "script" | "style" | "title" | "textarea" => true
+    _ => false
+  }
+}
+
+///|
+fn special_text_decodes_entities(name : StringView) -> Bool {
+  match name {
+    "title" | "textarea" => true
+    _ => false
+  }
+}
+
+///|
+fn decoded_special_text(name : StringView, raw : StringView) -> String {
+  if special_text_decodes_entities(name) {
+    decode_entities(raw, in_attribute=false)
+  } else {
+    normalize_newlines(raw)
+  }
+}
+
+///|
+fn find_matching_end_tag(
+  input : StringView,
+  start : Int,
+  name : StringView,
+) -> Int? {
+  let needle = "</" + name.to_owned()
+  let mut pos = start
+  while pos < input.length() {
+    if starts_with_case_insensitive(input, pos, needle) {
+      let after_name = pos + needle.length()
+      match input.get_char(after_name) {
+        Some('>') => return Some(pos)
+        Some(ch) if ch.is_ascii_whitespace() => return Some(pos)
+        _ => ()
+      }
+    }
+    match input.get_char(pos) {
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  None
+}
+
+///|
+fn Parser::skip_matching_end_tag(self : Parser) -> Unit {
+  self.pos += 2
+  while !self.is_eof() {
+    match self.current() {
+      Some('>') => break
+      Some(_) => ignore(self.advance_char())
+      None => ()
+    }
+  }
+  if self.current() == Some('>') {
+    ignore(self.advance_char())
+  }
+}
+
+///|
+fn Parser::consume_special_element_content(
+  self : Parser,
+  parent : Node,
+  name : String,
+) -> Unit {
+  let content_start = self.pos
+  match find_matching_end_tag(self.input, self.pos, name) {
+    Some(end_start) => {
+      match self.input.get_view(start=content_start, end=end_start) {
+        Some(view) =>
+          parent.append_child(text(decoded_special_text(name, view)))
+        None => ()
+      }
+      self.pos = end_start
+      self.skip_matching_end_tag()
+    }
+    None => {
+      match self.input.get_view(start=content_start, end=self.input.length()) {
+        Some(view) =>
+          parent.append_child(text(decoded_special_text(name, view)))
+        None => ()
+      }
+      self.error_at("eof-in-text-element", content_start)
+      self.pos = self.input.length()
+    }
+  }
 }
 
 ///|

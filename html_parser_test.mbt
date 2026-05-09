@@ -167,3 +167,34 @@ test "parser normalizes leading BOM and CRLF in text comment and attr" {
   assert_eq(doc.to_html(pretty=false), "<p title=\"a\nb\">a\nb<!--x\ny--></p>")
   assert_eq(doc.to_text(separator="", strip=false), "a\nb")
 }
+
+///|
+test "parser treats script style title textarea content as text" {
+  let doc = @html_parser.parse_fragment(
+    "<script><!--a--<b</script><title>a &lt; b</title>",
+  )
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<script><!--a--<b</script><title>a &lt; b</title>",
+  )
+  assert_eq(doc.query("b").length(), 0)
+  assert_eq(doc.to_text(separator="|", strip=false), "<!--a--<b|a < b")
+}
+
+///|
+test "tokenize preserves rawtext and rcdata element contents" {
+  let script = @html_parser.tokenize("<script><!--a--<b</script>")
+  assert_eq(script.tokens.length(), 4)
+  guard script.tokens[1] is @html_parser.HtmlToken::Characters("<!--a--<b") else {
+    fail("expected raw script text")
+  }
+  guard script.tokens[2] is @html_parser.HtmlToken::Tag(end_script) else {
+    fail("expected script end")
+  }
+  assert_true(end_script.kind is @html_parser.TagKind::EndTag)
+  assert_eq(end_script.name, "script")
+  let textarea = @html_parser.tokenize("<textarea>a &lt; b</textarea>")
+  guard textarea.tokens[1] is @html_parser.HtmlToken::Characters("a < b") else {
+    fail("expected decoded textarea text")
+  }
+}

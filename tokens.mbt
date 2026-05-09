@@ -294,6 +294,9 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
       self.tokens.push(
         Tag(TagToken::{ kind: StartTag, name, attrs, self_closing }),
       )
+      if !self_closing && is_special_text_element(name) {
+        self.consume_special_text_tokens(name)
+      }
     }
     _ => {
       self.error_at("invalid-first-character-of-tag-name", start)
@@ -376,4 +379,32 @@ fn SourceTokenizer::parse_quoted_attribute_value(
     ignore(self.advance_char())
   }
   raw
+}
+
+///|
+fn SourceTokenizer::consume_special_text_tokens(
+  self : SourceTokenizer,
+  name : String,
+) -> Unit {
+  let content_start = self.pos
+  match find_matching_end_tag(self.input, self.pos, name) {
+    Some(end_start) => {
+      match self.input.get_view(start=content_start, end=end_start) {
+        Some(view) if !view.is_empty() =>
+          self.tokens.push(Characters(decoded_special_text(name, view)))
+        _ => ()
+      }
+      self.pos = end_start
+      self.parse_end_tag()
+    }
+    None => {
+      match self.input.get_view(start=content_start, end=self.input.length()) {
+        Some(view) if !view.is_empty() =>
+          self.tokens.push(Characters(decoded_special_text(name, view)))
+        _ => ()
+      }
+      self.error_at("eof-in-text-element", content_start)
+      self.pos = self.input.length()
+    }
+  }
 }
