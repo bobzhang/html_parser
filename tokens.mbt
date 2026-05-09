@@ -60,6 +60,7 @@ fn SourceTokenizer::new(
   input : StringView,
   collect_errors~ : Bool,
 ) -> SourceTokenizer {
+  let input = strip_leading_bom(input)
   SourceTokenizer::{ input, collect_errors, pos: 0, tokens: [], errors: [] }
 }
 
@@ -157,7 +158,7 @@ fn SourceTokenizer::parse_comment(self : SourceTokenizer) -> Unit {
     ignore(self.advance_char())
   }
   let data = match self.input.get_view(start=data_start, end=self.pos) {
-    Some(view) => view.to_owned()
+    Some(view) => normalize_newlines(view)
     None => ""
   }
   if self.starts_with("-->") {

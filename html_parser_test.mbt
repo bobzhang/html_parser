@@ -132,3 +132,38 @@ test "tokenize reports malformed end tag errors when requested" {
   assert_eq(result.errors.length(), 1)
   assert_eq(result.errors[0].code, "missing-end-tag-name")
 }
+
+///|
+test "tokenize normalizes BOM and CRLF edge cases" {
+  let bom = @html_parser.tokenize("\u{FEFF}<div>")
+  guard bom.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
+    fail("expected div start tag")
+  }
+  assert_eq(tag.name, "div")
+  let text = @html_parser.tokenize("abc\r\ndef\rghi")
+  guard text.tokens[0] is @html_parser.HtmlToken::Characters(data) else {
+    fail("expected character token")
+  }
+  assert_eq(data, "abc\ndef\nghi")
+  let comment = @html_parser.tokenize("<!-- a\rb -->")
+  guard comment.tokens[0] is @html_parser.HtmlToken::CommentToken(data) else {
+    fail("expected comment")
+  }
+  assert_eq(data, " a\nb ")
+  let attr = @html_parser.tokenize("<div title=\"a\rb\">")
+  guard attr.tokens[0] is @html_parser.HtmlToken::Tag(attr_tag) else {
+    fail("expected attr tag")
+  }
+  guard attr_tag.attrs["title"] is Some("a\nb") else {
+    fail("expected normalized attr")
+  }
+}
+
+///|
+test "parser normalizes leading BOM and CRLF in text comment and attr" {
+  let doc = @html_parser.parse_fragment(
+    "\u{FEFF}<p title='a\rb'>a\r\nb<!--x\ry--></p>",
+  )
+  assert_eq(doc.to_html(pretty=false), "<p title=\"a\nb\">a\nb<!--x\ny--></p>")
+  assert_eq(doc.to_text(separator="", strip=false), "a\nb")
+}

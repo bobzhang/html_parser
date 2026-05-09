@@ -9,6 +9,7 @@ priv struct Parser {
 
 ///|
 fn Parser::new(input : StringView, root : Node) -> Parser {
+  let input = strip_leading_bom(input)
   Parser::{ input, pos: 0, errors: [], root, stack: [root] }
 }
 
@@ -120,12 +121,14 @@ fn Parser::parse_comment(self : Parser) -> Unit {
   if self.is_eof() {
     self.error_at("eof-in-comment", start)
     match self.input.get_view(start=data_start, end=self.pos) {
-      Some(view) => self.current_node().append_child(comment(view))
+      Some(view) =>
+        self.current_node().append_child(comment(normalize_newlines(view)))
       None => ()
     }
   } else {
     match self.input.get_view(start=data_start, end=self.pos) {
-      Some(view) => self.current_node().append_child(comment(view))
+      Some(view) =>
+        self.current_node().append_child(comment(normalize_newlines(view)))
       None => ()
     }
     self.pos += 3
@@ -366,31 +369,84 @@ fn line_col_at(input : StringView, target : Int) -> (Int, Int) {
   let mut offset = 0
   let mut line = 1
   let mut col = 1
-  for ch in input {
-    if offset >= target {
-      break
+  while offset < target && offset < input.length() {
+    match input.get_char(offset) {
+      Some('\r') => {
+        line += 1
+        col = 1
+        offset += 1
+        if offset < target && input.get_char(offset) == Some('\n') {
+          offset += 1
+        }
+      }
+      Some('\n') => {
+        line += 1
+        col = 1
+        offset += 1
+      }
+      Some(ch) => {
+        col += 1
+        offset += ch.utf16_len()
+      }
+      None => break
     }
-    if ch == '\n' {
-      line += 1
-      col = 1
-    } else {
-      col += 1
-    }
-    offset += ch.utf16_len()
   }
   (line, col)
 }
 
 ///|
-fn starts_with_case_insensitive(
+fn strip_leading_bom(input : StringView) -> StringView {
+  if input.has_prefix("\u{FEFF}") {
+    input[1:]
+  } else {
+    input
+  }
+}
+
+///|
+fn normalize_newlines(input : StringView) -> String {
+  let out = StringBuilder::new(size_hint=input.length())
+  let mut pos = 0
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some('\r') => {
+        out.write_char('\n')
+        pos += 1
+        if input.get_char(pos) == Some('\n') {
+          pos += 1
+        }
+      }
+      Some(ch) => {
+        out.write_char(ch)
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn write_normalized_char(
   input : StringView,
   pos : Int,
-  prefix : StringView,
-) -> Bool {
-  let end = pos + prefix.length()
-  match input.get_view(start=pos, end~) {
-    Some(view) => view.compare_ignore_ascii_case(prefix) == 0
-    None => false
+  out : StringBuilder,
+) -> Int {
+  match input.get_char(pos) {
+    Some('\r') => {
+      out.write_char('\n')
+      let next = pos + 1
+      if input.get_char(next) == Some('\n') {
+        next + 1
+      } else {
+        next
+      }
+    }
+    Some(ch) => {
+      out.write_char(ch)
+      pos + ch.utf16_len()
+    }
+    None => pos
   }
 }
 
@@ -412,14 +468,24 @@ fn decode_entities(input : StringView, in_attribute~ : Bool) -> String {
             pos += 1
           }
         }
-      Some(ch) => {
-        out.write_char(ch)
-        pos += ch.utf16_len()
-      }
+      Some(_) => pos = write_normalized_char(input, pos, out)
       None => break
     }
   }
   out.to_string()
+}
+
+///|
+fn starts_with_case_insensitive(
+  input : StringView,
+  pos : Int,
+  prefix : StringView,
+) -> Bool {
+  let end = pos + prefix.length()
+  match input.get_view(start=pos, end~) {
+    Some(view) => view.compare_ignore_ascii_case(prefix) == 0
+    None => false
+  }
 }
 
 ///|
