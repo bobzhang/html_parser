@@ -567,20 +567,43 @@ fn SourceTokenizer::parse_quoted_attribute_value(
 }
 
 ///|
-fn decoded_tokenizer_special_text(
+fn SourceTokenizer::decoded_special_text(
+  self : SourceTokenizer,
   name : StringView,
   raw : StringView,
+  start : Int,
 ) -> String {
-  let (raw, _) = if name == "textarea" {
-    strip_one_initial_lf_with_offset(raw)
-  } else {
-    (raw, 0)
-  }
+  let raw = self.replace_special_text_nulls(raw, start)
   if special_text_decodes_entities(name) {
     decode_entities(raw, in_attribute=false)
   } else {
     normalize_newlines(raw)
   }
+}
+
+///|
+fn SourceTokenizer::replace_special_text_nulls(
+  self : SourceTokenizer,
+  raw : StringView,
+  start : Int,
+) -> String {
+  let out = StringBuilder::new(size_hint=raw.length())
+  let mut pos = 0
+  while pos < raw.length() {
+    match raw.get_char(pos) {
+      Some('\u{0000}') => {
+        self.error_at("unexpected-null-character", start + pos)
+        out.write_char('\u{FFFD}')
+        pos += 1
+      }
+      Some(ch) => {
+        out.write_char(ch)
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  out.to_string()
 }
 
 ///|
@@ -592,7 +615,9 @@ fn SourceTokenizer::consume_special_text_tokens(
   if name == "plaintext" {
     match self.input.get_view(start=content_start, end=self.input.length()) {
       Some(view) if !view.is_empty() =>
-        self.tokens.push(Characters(decoded_tokenizer_special_text(name, view)))
+        self.tokens.push(
+          Characters(self.decoded_special_text(name, view, content_start)),
+        )
       _ => ()
     }
     self.pos = self.input.length()
@@ -620,7 +645,7 @@ fn SourceTokenizer::consume_special_text_tokens(
       match self.input.get_view(start=content_start, end=end_start) {
         Some(view) if !view.is_empty() =>
           self.tokens.push(
-            Characters(decoded_tokenizer_special_text(name, view)),
+            Characters(self.decoded_special_text(name, view, content_start)),
           )
         _ => ()
       }
@@ -631,7 +656,7 @@ fn SourceTokenizer::consume_special_text_tokens(
       match self.input.get_view(start=content_start, end=self.input.length()) {
         Some(view) if !view.is_empty() =>
           self.tokens.push(
-            Characters(decoded_tokenizer_special_text(name, view)),
+            Characters(self.decoded_special_text(name, view, content_start)),
           )
         _ => ()
       }

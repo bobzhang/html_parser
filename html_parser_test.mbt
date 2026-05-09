@@ -2153,6 +2153,35 @@ test "tokenize preserves rawtext and rcdata element contents" {
   guard nul_script.errors[0].column is Some(10) else {
     fail("expected script text null at column 10")
   }
+  let nul_style = @html_parser.tokenize(
+    "<style>a\u{0000}b</style>",
+    collect_errors=true,
+  )
+  guard nul_style.tokens[1] is @html_parser.HtmlToken::Characters("a\u{FFFD}b") else {
+    fail("expected replacement char in style text")
+  }
+  assert_eq(nul_style.errors.length(), 1)
+  assert_eq(nul_style.errors[0].code, "unexpected-null-character")
+  let nul_title = @html_parser.tokenize(
+    "<title>a\u{0000} &lt; b</title>",
+    collect_errors=true,
+  )
+  guard nul_title.tokens[1]
+    is @html_parser.HtmlToken::Characters("a\u{FFFD} < b") else {
+    fail("expected replacement char and entity decoding in title text")
+  }
+  assert_eq(nul_title.errors.length(), 1)
+  assert_eq(nul_title.errors[0].code, "unexpected-null-character")
+  let nul_plaintext = @html_parser.tokenize(
+    "<plaintext>a\u{0000}b",
+    collect_errors=true,
+  )
+  guard nul_plaintext.tokens[1]
+    is @html_parser.HtmlToken::Characters("a\u{FFFD}b") else {
+    fail("expected replacement char in plaintext")
+  }
+  assert_eq(nul_plaintext.errors.length(), 1)
+  assert_eq(nul_plaintext.errors[0].code, "unexpected-null-character")
   let double_escaped = @html_parser.tokenize(
     "<script><!--<script>x</script>y</script>",
   )
@@ -2178,6 +2207,10 @@ test "tokenize preserves rawtext and rcdata element contents" {
   let textarea = @html_parser.tokenize("<textarea>a &lt; b</textarea>")
   guard textarea.tokens[1] is @html_parser.HtmlToken::Characters("a < b") else {
     fail("expected decoded textarea text")
+  }
+  let textarea_lf = @html_parser.tokenize("<textarea>\nline</textarea>")
+  guard textarea_lf.tokens[1] is @html_parser.HtmlToken::Characters("\nline") else {
+    fail("expected tokenizer to preserve textarea leading newline")
   }
   let xmp = @html_parser.tokenize("<xmp><b>x</b></xmp>")
   guard xmp.tokens[1] is @html_parser.HtmlToken::Characters("<b>x</b>") else {
