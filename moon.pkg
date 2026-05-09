@@ -1,0 +1,7 @@
+import {
+  "moonbitlang/core/encoding/utf8" @utf8,
+}
+
+import {
+  "moonbitlang/core/encoding/utf8" @utf8,
+} for "test"

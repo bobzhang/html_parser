@@ -1,0 +1,611 @@
+///|
+priv struct Parser {
+  input : StringView
+  mut pos : Int
+  errors : Array[ParseError]
+  root : Node
+  stack : Array[Node]
+}
+
+///|
+fn Parser::new(input : StringView, root : Node) -> Parser {
+  Parser::{ input, pos: 0, errors: [], root, stack: [root] }
+}
+
+///|
+fn Parser::current(self : Parser) -> Char? {
+  self.input.get_char(self.pos)
+}
+
+///|
+fn Parser::is_eof(self : Parser) -> Bool {
+  self.pos >= self.input.length()
+}
+
+///|
+fn Parser::advance_char(self : Parser) -> Char? {
+  match self.current() {
+    Some(ch) => {
+      self.pos += ch.utf16_len()
+      Some(ch)
+    }
+    None => None
+  }
+}
+
+///|
+fn Parser::starts_with(self : Parser, prefix : StringView) -> Bool {
+  let end = self.pos + prefix.length()
+  match self.input.get_view(start=self.pos, end~) {
+    Some(view) => view == prefix
+    None => false
+  }
+}
+
+///|
+fn Parser::skip_ascii_whitespace(self : Parser) -> Unit {
+  while !self.is_eof() {
+    match self.current() {
+      Some(ch) if ch.is_ascii_whitespace() => ignore(self.advance_char())
+      _ => return
+    }
+  }
+}
+
+///|
+fn Parser::current_node(self : Parser) -> Node {
+  match self.stack.last() {
+    Some(node) => node
+    None => self.root
+  }
+}
+
+///|
+fn Parser::append_text(self : Parser, raw : StringView) -> Unit {
+  if raw.is_empty() {
+    return
+  }
+  self
+  .current_node()
+  .append_child(text(decode_entities(raw, in_attribute=false)))
+}
+
+///|
+fn Parser::error_at(self : Parser, code : String, pos : Int) -> Unit {
+  let (line, column) = line_col_at(self.input, pos)
+  self.errors.push(ParseError::new(code, line~, column~))
+}
+
+///|
+fn Parser::parse_all(self : Parser) -> Unit {
+  while !self.is_eof() {
+    let start = self.pos
+    match self.current() {
+      Some('<') =>
+        if self.starts_with("<!--") {
+          self.parse_comment()
+        } else if self.starts_with("</") {
+          self.parse_end_tag()
+        } else if starts_with_case_insensitive(
+            self.input,
+            self.pos,
+            "<!doctype",
+          ) {
+          self.parse_doctype()
+        } else {
+          self.parse_start_tag_or_text()
+        }
+      Some(_) => {
+        while !self.is_eof() && !self.starts_with("<") {
+          ignore(self.advance_char())
+        }
+        match self.input.get_view(start~, end=self.pos) {
+          Some(view) => self.append_text(view)
+          None => ()
+        }
+      }
+      None => ()
+    }
+  }
+}
+
+///|
+fn Parser::parse_comment(self : Parser) -> Unit {
+  let start = self.pos
+  self.pos += 4
+  let data_start = self.pos
+  while !self.is_eof() && !self.starts_with("-->") {
+    ignore(self.advance_char())
+  }
+  if self.is_eof() {
+    self.error_at("eof-in-comment", start)
+    match self.input.get_view(start=data_start, end=self.pos) {
+      Some(view) => self.current_node().append_child(comment(view))
+      None => ()
+    }
+  } else {
+    match self.input.get_view(start=data_start, end=self.pos) {
+      Some(view) => self.current_node().append_child(comment(view))
+      None => ()
+    }
+    self.pos += 3
+  }
+}
+
+///|
+fn Parser::parse_doctype(self : Parser) -> Unit {
+  self.pos += "<!doctype".length()
+  self.skip_ascii_whitespace()
+  let name_start = self.pos
+  while !self.is_eof() {
+    match self.current() {
+      Some('>') => break
+      Some(ch) if ch.is_ascii_whitespace() => break
+      Some(_) => ignore(self.advance_char())
+      None => ()
+    }
+  }
+  let name = match self.input.get_view(start=name_start, end=self.pos) {
+    Some(view) if !view.is_empty() => lower_ascii(view)
+    _ => "html"
+  }
+  while !self.is_eof() && !self.starts_with(">") {
+    ignore(self.advance_char())
+  }
+  if self.starts_with(">") {
+    self.pos += 1
+  }
+  self.root.append_child(doctype(name~))
+}
+
+///|
+fn Parser::parse_end_tag(self : Parser) -> Unit {
+  let start = self.pos
+  self.pos += 2
+  self.skip_ascii_whitespace()
+  let name_start = self.pos
+  while !self.is_eof() {
+    match self.current() {
+      Some('>') => break
+      Some(ch) if ch.is_ascii_whitespace() => break
+      Some(_) => ignore(self.advance_char())
+      None => ()
+    }
+  }
+  let name = match self.input.get_view(start=name_start, end=self.pos) {
+    Some(view) => lower_ascii(view)
+    None => ""
+  }
+  if name == "" {
+    self.error_at("missing-end-tag-name", start)
+  }
+  while !self.is_eof() && !self.starts_with(">") {
+    ignore(self.advance_char())
+  }
+  if self.starts_with(">") {
+    self.pos += 1
+  } else {
+    self.error_at("eof-in-tag", start)
+  }
+  if name != "" {
+    self.pop_until(name, start)
+  }
+}
+
+///|
+fn Parser::pop_until(self : Parser, name : String, pos : Int) -> Unit {
+  let mut found = false
+  while self.stack.length() > 1 {
+    match self.stack.pop() {
+      Some(node) if node.name == name => {
+        found = true
+        break
+      }
+      Some(_) => ()
+      None => break
+    }
+  }
+  if !found {
+    self.error_at("unexpected-end-tag", pos)
+  }
+}
+
+///|
+fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
+  let start = self.pos
+  self.pos += 1
+  match self.current() {
+    Some(ch) if is_tag_name_start(ch) => {
+      let name_start = self.pos
+      while !self.is_eof() {
+        match self.current() {
+          Some(ch) if is_tag_name_char(ch) => ignore(self.advance_char())
+          _ => break
+        }
+      }
+      let name = match self.input.get_view(start=name_start, end=self.pos) {
+        Some(view) => lower_ascii(view)
+        None => ""
+      }
+      let attrs : Map[String, String?] = {}
+      let mut self_closing = false
+      let mut closed = false
+      while !self.is_eof() {
+        self.skip_ascii_whitespace()
+        match self.current() {
+          Some('>') => {
+            ignore(self.advance_char())
+            closed = true
+            break
+          }
+          Some('/') => {
+            ignore(self.advance_char())
+            self.skip_ascii_whitespace()
+            if self.current() == Some('>') {
+              ignore(self.advance_char())
+              self_closing = true
+              closed = true
+              break
+            } else {
+              self.error_at("unexpected-solidus-in-tag", self.pos)
+            }
+          }
+          Some(_) => self.parse_attribute(attrs)
+          None => ()
+        }
+      }
+      if !closed {
+        self.error_at("eof-in-tag", start)
+      }
+      let node = element(name, attrs~)
+      self.current_node().append_child(node)
+      if !self_closing && !is_void_element(name) {
+        self.stack.push(node)
+      }
+    }
+    _ => {
+      self.error_at("eof-before-tag-name", start)
+      self.current_node().append_child(text("<"))
+    }
+  }
+}
+
+///|
+fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit {
+  let name_start = self.pos
+  while !self.is_eof() {
+    match self.current() {
+      Some(ch) if ch.is_ascii_whitespace() ||
+        ch == '=' ||
+        ch == '/' ||
+        ch == '>' => break
+      Some(_) => ignore(self.advance_char())
+      None => ()
+    }
+  }
+  let name = match self.input.get_view(start=name_start, end=self.pos) {
+    Some(view) => lower_ascii(view)
+    None => ""
+  }
+  if name == "" {
+    ignore(self.advance_char())
+    return
+  }
+  self.skip_ascii_whitespace()
+  if self.current() != Some('=') {
+    attrs[name] = None
+    return
+  }
+  ignore(self.advance_char())
+  self.skip_ascii_whitespace()
+  let value = match self.current() {
+    Some('"') => {
+      ignore(self.advance_char())
+      let start = self.pos
+      while !self.is_eof() && self.current() != Some('"') {
+        ignore(self.advance_char())
+      }
+      let raw = match self.input.get_view(start~, end=self.pos) {
+        Some(view) => decode_entities(view, in_attribute=true)
+        None => ""
+      }
+      if self.current() == Some('"') {
+        ignore(self.advance_char())
+      }
+      raw
+    }
+    Some('\'') => {
+      ignore(self.advance_char())
+      let start = self.pos
+      while !self.is_eof() && self.current() != Some('\'') {
+        ignore(self.advance_char())
+      }
+      let raw = match self.input.get_view(start~, end=self.pos) {
+        Some(view) => decode_entities(view, in_attribute=true)
+        None => ""
+      }
+      if self.current() == Some('\'') {
+        ignore(self.advance_char())
+      }
+      raw
+    }
+    _ => {
+      let start = self.pos
+      while !self.is_eof() {
+        match self.current() {
+          Some(ch) if ch.is_ascii_whitespace() || ch == '>' => break
+          Some(_) => ignore(self.advance_char())
+          None => ()
+        }
+      }
+      match self.input.get_view(start~, end=self.pos) {
+        Some(view) => decode_entities(view, in_attribute=true)
+        None => ""
+      }
+    }
+  }
+  attrs[name] = Some(value)
+}
+
+///|
+fn is_tag_name_start(ch : Char) -> Bool {
+  ch.is_ascii_alphabetic()
+}
+
+///|
+fn is_tag_name_char(ch : Char) -> Bool {
+  ch.is_ascii_alphabetic() ||
+  ch.is_ascii_digit() ||
+  ch == '-' ||
+  ch == '_' ||
+  ch == ':'
+}
+
+///|
+fn line_col_at(input : StringView, target : Int) -> (Int, Int) {
+  let mut offset = 0
+  let mut line = 1
+  let mut col = 1
+  for ch in input {
+    if offset >= target {
+      break
+    }
+    if ch == '\n' {
+      line += 1
+      col = 1
+    } else {
+      col += 1
+    }
+    offset += ch.utf16_len()
+  }
+  (line, col)
+}
+
+///|
+fn starts_with_case_insensitive(
+  input : StringView,
+  pos : Int,
+  prefix : StringView,
+) -> Bool {
+  let end = pos + prefix.length()
+  match input.get_view(start=pos, end~) {
+    Some(view) => view.compare_ignore_ascii_case(prefix) == 0
+    None => false
+  }
+}
+
+///|
+fn decode_entities(input : StringView, in_attribute~ : Bool) -> String {
+  ignore(in_attribute)
+  let out = StringBuilder::new(size_hint=input.length())
+  let mut pos = 0
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some('&') =>
+        match consume_entity(input, pos) {
+          Some((value, next)) => {
+            out.write_string(value)
+            pos = next
+          }
+          None => {
+            out.write_char('&')
+            pos += 1
+          }
+        }
+      Some(ch) => {
+        out.write_char(ch)
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn consume_entity(input : StringView, start : Int) -> (String, Int)? {
+  let rest = input[start:]
+  if rest.has_prefix("&amp;") {
+    Some(("&", start + 5))
+  } else if rest.has_prefix("&lt;") {
+    Some(("<", start + 4))
+  } else if rest.has_prefix("&gt;") {
+    Some((">", start + 4))
+  } else if rest.has_prefix("&quot;") {
+    Some(("\"", start + 6))
+  } else if rest.has_prefix("&apos;") {
+    Some(("'", start + 6))
+  } else if rest.has_prefix("&nbsp;") {
+    Some((" ", start + 6))
+  } else if rest.has_prefix("&not;") {
+    Some(("¬", start + 5))
+  } else if rest.has_prefix("&not") {
+    Some(("¬", start + 4))
+  } else if rest.has_prefix("&#") {
+    consume_numeric_entity(input, start)
+  } else {
+    None
+  }
+}
+
+///|
+fn consume_numeric_entity(input : StringView, start : Int) -> (String, Int)? {
+  let mut pos = start + 2
+  let mut base = 10
+  if pos < input.length() {
+    match input.get_char(pos) {
+      Some('x') | Some('X') => {
+        base = 16
+        pos += 1
+      }
+      _ => ()
+    }
+  }
+  let digits_start = pos
+  let mut value = 0
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some(ch) => {
+        let digit = digit_value(ch)
+        if digit < 0 || digit >= base {
+          break
+        }
+        value = value * base + digit
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  if pos == digits_start {
+    return None
+  }
+  if pos < input.length() && input.get_char(pos) == Some(';') {
+    pos += 1
+  }
+  match value.to_char() {
+    Some(ch) => Some((ch.to_string(), pos))
+    None => Some(("\u{FFFD}", pos))
+  }
+}
+
+///|
+fn digit_value(ch : Char) -> Int {
+  if ch >= '0' && ch <= '9' {
+    ch.to_int() - ('0' : Int)
+  } else if ch >= 'a' && ch <= 'f' {
+    ch.to_int() - ('a' : Int) + 10
+  } else if ch >= 'A' && ch <= 'F' {
+    ch.to_int() - ('A' : Int) + 10
+  } else {
+    -1
+  }
+}
+
+///|
+pub fn parse(
+  html : StringView,
+  sanitize? : Bool = true,
+  collect_errors? : Bool = false,
+  strict? : Bool = false,
+  scripting_enabled? : Bool = true,
+) -> ParsedHtml raise HtmlError {
+  ignore(sanitize)
+  ignore(scripting_enabled)
+  let root = document()
+  let parser = Parser::new(html, root)
+  parser.parse_all()
+  let errors = if collect_errors || strict { parser.errors } else { [] }
+  if strict && !parser.errors.is_empty() {
+    raise HtmlError::StrictMode(parser.errors[0])
+  }
+  ParsedHtml::{ root, errors, encoding: None }
+}
+
+///|
+pub fn parse_fragment(
+  html : StringView,
+  context? : FragmentContext,
+  sanitize? : Bool = true,
+  collect_errors? : Bool = false,
+  strict? : Bool = false,
+  scripting_enabled? : Bool = true,
+) -> ParsedHtml raise HtmlError {
+  ignore(context)
+  ignore(sanitize)
+  ignore(scripting_enabled)
+  let root = fragment()
+  let parser = Parser::new(html, root)
+  parser.parse_all()
+  let errors = if collect_errors || strict { parser.errors } else { [] }
+  if strict && !parser.errors.is_empty() {
+    raise HtmlError::StrictMode(parser.errors[0])
+  }
+  ParsedHtml::{ root, errors, encoding: None }
+}
+
+///|
+pub fn parse_bytes(
+  input : BytesView,
+  encoding? : String,
+  sanitize? : Bool = true,
+  collect_errors? : Bool = false,
+  strict? : Bool = false,
+  scripting_enabled? : Bool = true,
+) -> ParsedHtml raise HtmlError {
+  let decoded = @utf8.decode_lossy(input, ignore_bom=true)
+  let parsed = parse(
+    decoded,
+    sanitize~,
+    collect_errors~,
+    strict~,
+    scripting_enabled~,
+  )
+  ParsedHtml::{
+    root: parsed.root,
+    errors: parsed.errors,
+    encoding: Some(encoding.unwrap_or("utf-8")),
+  }
+}
+
+///|
+pub fn ParsedHtml::to_html(
+  self : ParsedHtml,
+  pretty? : Bool = true,
+  indent_size? : Int = 2,
+  context? : HtmlContext = Html,
+  quote? : Char = '"',
+) -> String {
+  self.root.to_html(pretty~, indent_size~, context~, quote~)
+}
+
+///|
+pub fn ParsedHtml::to_text(
+  self : ParsedHtml,
+  separator? : String = " ",
+  strip? : Bool = true,
+  separator_blocks_only? : Bool = false,
+) -> String {
+  self.root.to_text(separator~, strip~, separator_blocks_only~)
+}
+
+///|
+pub fn ParsedHtml::to_markdown(
+  self : ParsedHtml,
+  html_passthrough? : Bool = false,
+) -> String {
+  ignore(html_passthrough)
+  self.to_text(separator="\n\n", strip=true)
+}
+
+///|
+pub fn ParsedHtml::query(
+  self : ParsedHtml,
+  selector : StringView,
+) -> Array[Node] {
+  self.root.query(selector)
+}
+
+///|
+pub fn ParsedHtml::query_one(self : ParsedHtml, selector : StringView) -> Node? {
+  self.root.query_one(selector)
+}

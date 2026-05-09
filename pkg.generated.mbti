@@ -1,0 +1,105 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/html_parser"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn comment(StringView) -> Node
+
+pub fn doctype(name? : String, public_id? : String, system_id? : String, force_quirks? : Bool) -> Node
+
+pub fn document(children? : Array[Node]) -> Node
+
+pub fn element(StringView, attrs? : Map[String, String?], children? : Array[Node], ns? : String) -> Node
+
+pub fn fragment(children? : Array[Node]) -> Node
+
+pub fn matches(Node, StringView) -> Bool
+
+pub fn parse(StringView, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool) -> ParsedHtml raise HtmlError
+
+pub fn parse_bytes(BytesView, encoding? : String, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool) -> ParsedHtml raise HtmlError
+
+pub fn parse_fragment(StringView, context? : FragmentContext, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool) -> ParsedHtml raise HtmlError
+
+pub fn query(Node, StringView) -> Array[Node]
+
+pub fn text(StringView) -> Node
+
+pub fn to_html(Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String
+
+pub fn to_test_format(Node) -> String
+
+// Errors
+pub(all) suberror HtmlError {
+  StrictMode(ParseError)
+  InvalidSerialization(String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) struct FragmentContext {
+  tag_name : String
+  ns : String?
+} derive(Eq, @debug.Debug)
+pub fn FragmentContext::new(StringView, ns? : String) -> Self
+
+pub(all) enum HtmlContext {
+  Html
+  JsString
+  HtmlAttrValue
+  Url
+} derive(Eq, @debug.Debug)
+
+pub struct Node {
+  // private fields
+} derive(@debug.Debug)
+pub fn Node::append_child(Self, Self) -> Unit
+pub fn Node::attrs(Self) -> Map[String, String?]
+pub fn Node::children(Self) -> Array[Self]
+pub fn Node::clone_node(Self, deep? : Bool, override_attrs? : Map[String, String?]) -> Self
+pub fn Node::data(Self) -> String
+pub fn Node::has_child_nodes(Self) -> Bool
+pub fn Node::kind(Self) -> NodeKind
+pub fn Node::name(Self) -> String
+pub fn Node::namespace_uri(Self) -> String?
+pub fn Node::query(Self, StringView) -> Array[Self]
+pub fn Node::query_one(Self, StringView) -> Self?
+pub fn Node::text(Self) -> String
+pub fn Node::to_html(Self, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String
+pub fn Node::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
+
+pub(all) enum NodeKind {
+  Document
+  Fragment
+  Element
+  Text
+  Comment
+  Doctype
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ParseError {
+  code : String
+  line : Int?
+  column : Int?
+  category : String
+  message : String
+} derive(Eq, @debug.Debug)
+pub fn ParseError::new(String, line? : Int, column? : Int, category? : String, message? : String) -> Self
+
+pub struct ParsedHtml {
+  root : Node
+  errors : Array[ParseError]
+  encoding : String?
+} derive(@debug.Debug)
+pub fn ParsedHtml::query(Self, StringView) -> Array[Node]
+pub fn ParsedHtml::query_one(Self, StringView) -> Node?
+pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String
+pub fn ParsedHtml::to_markdown(Self, html_passthrough? : Bool) -> String
+pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
+
+// Type aliases
+
+// Traits
+

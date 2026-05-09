@@ -30,6 +30,12 @@ JustHTML from Python to MoonBit.
 - Optional parameters with defaults use `name? : T = default`; inside the
   function this is plain `T`.
 - Avoid `name? : T?` unless a double option is intentional.
+- Calls must pass optional parameters by label. After the required positional
+  arguments, use `foo(value, flag=flag)` rather than `foo(value, flag)`.
+- A function receiving an already optional value, such as a stored `String?`,
+  should usually take a normal `arg : String?` parameter. Do not use an
+  optional labeled parameter when the caller needs to pass `None` or `Some(...)`
+  through directly.
 
 ## Errors
 
