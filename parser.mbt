@@ -131,8 +131,13 @@ fn Parser::replace_null_characters(
 
 ///|
 fn Parser::error_at(self : Parser, code : String, pos : Int) -> Unit {
+  self.errors.push(self.make_error_at(code, pos))
+}
+
+///|
+fn Parser::make_error_at(self : Parser, code : String, pos : Int) -> ParseError {
   let (line, column) = line_col_at(self.input, pos)
-  self.errors.push(ParseError::new(code, line~, column~))
+  ParseError::new(code, line~, column~)
 }
 
 ///|
@@ -210,50 +215,93 @@ fn find_comment_close(input : StringView, start : Int) -> Int? {
 }
 
 ///|
-fn Parser::report_initial_doctype_error(self : Parser) -> Bool {
+fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
   let mut pos = 0
+  let mut defer_doctype = false
   while pos < self.input.length() {
     match self.input.get_char(pos) {
       Some(ch) if ch.is_ascii_whitespace() => pos += ch.utf16_len()
       Some('<') if view_starts_with_at(self.input, pos, "<!--") =>
         match find_comment_close(self.input, pos) {
           Some(end) => pos = end
-          None => return true
+          None =>
+            return Some(self.make_error_at_eof("expected-doctype-but-got-eof"))
         }
       Some('<') if starts_with_case_insensitive(self.input, pos, "<!doctype") =>
-        return false
+        return None
       Some('<') if view_starts_with_at(self.input, pos, "</") =>
         match find_markup_close(self.input, pos) {
           Some(close) => {
-            self.error_at("expected-doctype-but-got-end-tag", close)
-            return false
+            let error = self.make_error_at(
+              "expected-doctype-but-got-end-tag", close,
+            )
+            if defer_doctype {
+              return Some(error)
+            }
+            self.errors.push(error)
+            return None
           }
-          None => return true
+          None =>
+            return Some(self.make_error_at_eof("expected-doctype-but-got-eof"))
         }
       Some('<') =>
         match self.input.get_char(pos + 1) {
           Some(ch) if is_tag_name_start(ch) =>
             match find_markup_close(self.input, pos) {
               Some(close) => {
-                self.error_at("expected-doctype-but-got-start-tag", close)
-                return false
+                let error = self.make_error_at(
+                  "expected-doctype-but-got-start-tag", close,
+                )
+                if defer_doctype {
+                  return Some(error)
+                }
+                self.errors.push(error)
+                return None
               }
-              None => return true
+              None =>
+                return Some(
+                  self.make_error_at_eof("expected-doctype-but-got-eof"),
+                )
             }
+          Some('?') => {
+            defer_doctype = true
+            match find_markup_close(self.input, pos) {
+              Some(close) => pos = close + 1
+              None =>
+                return Some(
+                  self.make_error_at_eof("expected-doctype-but-got-eof"),
+                )
+            }
+          }
           _ => {
-            self.error_at("expected-doctype-but-got-chars", pos)
-            return false
+            let error = self.make_error_at(
+              "expected-doctype-but-got-chars", pos,
+            )
+            if defer_doctype {
+              return Some(error)
+            }
+            self.errors.push(error)
+            return None
           }
         }
       Some(_) => {
-        self.error_at("expected-doctype-but-got-chars", pos)
-        return false
+        let error = self.make_error_at("expected-doctype-but-got-chars", pos)
+        if defer_doctype {
+          return Some(error)
+        }
+        self.errors.push(error)
+        return None
       }
       None => ()
     }
   }
-  self.error_at_eof("expected-doctype-but-got-eof")
-  false
+  let error = self.make_error_at_eof("expected-doctype-but-got-eof")
+  if defer_doctype {
+    Some(error)
+  } else {
+    self.errors.push(error)
+    None
+  }
 }
 
 ///|
@@ -277,10 +325,15 @@ fn eof_error_pos(input : StringView) -> Int {
 
 ///|
 fn Parser::error_at_eof(self : Parser, code : String) -> Unit {
+  self.errors.push(self.make_error_at_eof(code))
+}
+
+///|
+fn Parser::make_error_at_eof(self : Parser, code : String) -> ParseError {
   if self.input.is_empty() {
-    self.errors.push(ParseError::new(code, line=1, column=0))
+    ParseError::new(code, line=1, column=0)
   } else {
-    self.error_at(code, self.eof_error_pos())
+    self.make_error_at(code, self.eof_error_pos())
   }
 }
 
@@ -345,6 +398,22 @@ fn Parser::parse_comment(self : Parser) -> Unit {
       None => ()
     }
     self.pos += 3
+  }
+}
+
+///|
+fn Parser::parse_bogus_comment(self : Parser) -> Unit {
+  let data_start = self.pos
+  while !self.is_eof() && self.current() != Some('>') {
+    ignore(self.advance_char())
+  }
+  match self.input.get_view(start=data_start, end=self.pos) {
+    Some(view) =>
+      self.current_node().append_child(comment(normalize_newlines(view)))
+    None => ()
+  }
+  if self.current() == Some('>') {
+    ignore(self.advance_char())
   }
 }
 
@@ -802,10 +871,17 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         }
       }
     }
-    _ => {
-      self.error_at("eof-before-tag-name", start)
-      self.current_node().append_child(text("<"))
-    }
+    _ =>
+      if self.current() is None {
+        self.error_at("eof-before-tag-name", start)
+        self.current_node().append_child(text("<"))
+      } else if self.current() == Some('?') {
+        self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)
+        self.parse_bogus_comment()
+      } else {
+        self.error_at("invalid-first-character-of-tag-name", self.pos)
+        self.current_node().append_child(text("<"))
+      }
   }
 }
 
@@ -1969,10 +2045,11 @@ pub fn parse(
   ignore(sanitize)
   let root = document()
   let parser = Parser::new(html, root, scripting_enabled~)
-  let defer_initial_doctype_eof = parser.report_initial_doctype_error()
+  let deferred_initial_doctype_error = parser.report_initial_doctype_error()
   parser.parse_all()
-  if defer_initial_doctype_eof {
-    parser.error_at_eof("expected-doctype-but-got-eof")
+  match deferred_initial_doctype_error {
+    Some(error) => parser.errors.push(error)
+    None => ()
   }
   parser.report_eof_tree_errors()
   scaffold_document(root)

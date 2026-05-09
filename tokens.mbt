@@ -381,6 +381,7 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
         self.error_at("eof-before-tag-name", self.pos)
         self.tokens.push(Characters("<"))
       } else if self.current() == Some('?') {
+        self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)
         self.parse_bogus_comment()
       } else {
         self.error_at("invalid-first-character-of-tag-name", start)

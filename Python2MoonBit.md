@@ -162,6 +162,10 @@ JustHTML from Python to MoonBit.
   first significant construct is an unfinished comment or tag, report that
   tokenizer/tree-builder EOF error first, then report
   `expected-doctype-but-got-eof` at the same EOF location.
+- Python's tokenizer states sometimes reconsume the current character when
+  switching recovery modes. For `<?...`, the `?` is both the error location for
+  `unexpected-question-mark-instead-of-tag-name` and the first character of the
+  bogus comment data.
 - Do not normalize empty doctype names to `"html"` in serialization. The builder
   default should create `"html"`, but a parsed empty-name doctype serializes as
   `<!DOCTYPE>`.

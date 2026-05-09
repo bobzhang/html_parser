@@ -715,6 +715,37 @@ test "document parser reports missing initial doctype" {
   guard unfinished_comment.errors[1].column is Some(5) else {
     fail("expected doctype EOF after unfinished comment")
   }
+  let bogus_question = @html_parser.parse("<?foo", collect_errors=true)
+  assert_eq(
+    bogus_question.to_html(pretty=false),
+    "<!--?foo--><html><head></head><body></body></html>",
+  )
+  assert_eq(bogus_question.errors.length(), 2)
+  assert_eq(
+    bogus_question.errors[0].code,
+    "unexpected-question-mark-instead-of-tag-name",
+  )
+  assert_eq(bogus_question.errors[1].code, "expected-doctype-but-got-eof")
+  guard bogus_question.errors[0].column is Some(2) else {
+    fail("expected question-mark error at column 2")
+  }
+  guard bogus_question.errors[1].column is Some(5) else {
+    fail("expected doctype EOF after bogus question-mark comment")
+  }
+  let question_then_text = @html_parser.parse("<?foo>x", collect_errors=true)
+  assert_eq(
+    question_then_text.to_html(pretty=false),
+    "<!--?foo--><html><head></head><body>x</body></html>",
+  )
+  assert_eq(question_then_text.errors.length(), 2)
+  assert_eq(
+    question_then_text.errors[0].code,
+    "unexpected-question-mark-instead-of-tag-name",
+  )
+  assert_eq(question_then_text.errors[1].code, "expected-doctype-but-got-chars")
+  guard question_then_text.errors[1].column is Some(7) else {
+    fail("expected doctype chars after closed bogus question-mark comment")
+  }
 }
 
 ///|
@@ -1184,6 +1215,18 @@ test "tokenize handles selected bogus comment fixture cases" {
   }
   assert_eq(invalid_end.errors.length(), 1)
   assert_eq(invalid_end.errors[0].code, "invalid-first-character-of-tag-name")
+  let question = @html_parser.tokenize("<?foo>", collect_errors=true)
+  guard question.tokens[0] is @html_parser.HtmlToken::CommentToken("?foo") else {
+    fail("expected question-mark markup as bogus comment")
+  }
+  assert_eq(question.errors.length(), 1)
+  assert_eq(
+    question.errors[0].code,
+    "unexpected-question-mark-instead-of-tag-name",
+  )
+  guard question.errors[0].column is Some(2) else {
+    fail("expected question-mark error at column 2")
+  }
 }
 
 ///|
