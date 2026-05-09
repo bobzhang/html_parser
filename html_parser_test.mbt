@@ -59,6 +59,24 @@ test "raw text serializer only neutralizes matching end tag boundaries" {
 }
 
 ///|
+test "url serialization context uses text content and utf8 percent encoding" {
+  let text = @html_parser.text(" https://example.com/foo bar ")
+  assert_eq(
+    text.to_html(pretty=false, context=Url),
+    "https://example.com/foo%20bar",
+  )
+  let div = @html_parser.element("div", children=[
+    @html_parser.text("  /path/to/thing?q=a b  "),
+  ])
+  assert_eq(div.to_html(pretty=false, context=Url), "/path/to/thing?q=a%20b")
+  let unicode = @html_parser.text("caf\u{00E9}/\u{2603}?x=1&y=two words%")
+  assert_eq(
+    unicode.to_html(pretty=false, context=Url),
+    "caf%C3%A9/%E2%98%83?x=1&y=two%20words%25",
+  )
+}
+
+///|
 test "to_text can separate only block boundaries" {
   let doc = @html_parser.parse_fragment("<p>hi</p><p>Hello <b>world</b></p>")
   assert_eq(doc.to_text(separator="\n"), "hi\nHello\nworld")

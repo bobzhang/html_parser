@@ -71,18 +71,68 @@ fn escape_js_string(value : StringView, quote : Char) -> String {
 
 ///|
 fn percent_encode_url(value : StringView) -> String {
-  let out = StringBuilder::new(size_hint=value.length())
-  for ch in value {
-    match ch {
-      ' ' => out.write_string("%20")
-      '"' => out.write_string("%22")
-      '<' => out.write_string("%3C")
-      '>' => out.write_string("%3E")
-      '`' => out.write_string("%60")
-      _ => out.write_char(ch)
+  let bytes = @utf8.encode(value)
+  let out = StringBuilder::new(size_hint=bytes.length())
+  for index in 0..<bytes.length() {
+    let byte = bytes[index]
+    if is_url_safe_byte(byte) {
+      out.write_char(byte.to_char())
+    } else {
+      write_percent_encoded_byte(out, byte)
     }
   }
   out.to_string()
+}
+
+///|
+fn is_url_safe_byte(byte : Byte) -> Bool {
+  let value = byte.to_int()
+  (value >= 0x41 && value <= 0x5A) ||
+  (value >= 0x61 && value <= 0x7A) ||
+  (value >= 0x30 && value <= 0x39) ||
+  value == 0x2F ||
+  value == 0x3A ||
+  value == 0x40 ||
+  value == 0x3F ||
+  value == 0x26 ||
+  value == 0x3D ||
+  value == 0x23 ||
+  value == 0x2B ||
+  value == 0x2D ||
+  value == 0x2E ||
+  value == 0x5F ||
+  value == 0x7E
+}
+
+///|
+fn write_percent_encoded_byte(out : StringBuilder, byte : Byte) -> Unit {
+  let value = byte.to_int()
+  out.write_char('%')
+  out.write_char(hex_digit_upper(value / 16))
+  out.write_char(hex_digit_upper(value % 16))
+}
+
+///|
+fn hex_digit_upper(value : Int) -> Char {
+  match value {
+    0 => '0'
+    1 => '1'
+    2 => '2'
+    3 => '3'
+    4 => '4'
+    5 => '5'
+    6 => '6'
+    7 => '7'
+    8 => '8'
+    9 => '9'
+    10 => 'A'
+    11 => 'B'
+    12 => 'C'
+    13 => 'D'
+    14 => 'E'
+    15 => 'F'
+    _ => '0'
+  }
 }
 
 ///|
@@ -277,17 +327,22 @@ pub fn Node::to_html(
   context? : HtmlContext = Html,
   quote? : Char = '"',
 ) -> String {
-  let quote_char = if quote == '\'' { '\'' } else { '"' }
-  let html = if pretty {
-    node_to_html_pretty(self, 0, indent_size, quote_char)
-  } else {
-    node_to_html_compact(self, quote_char)
-  }
   match context {
-    Html => html
-    JsString => escape_js_string(html, quote_char)
-    HtmlAttrValue => escape_attr_value(html, quote_char)
-    Url => percent_encode_url(html)
+    Url => percent_encode_url(self.to_text().trim())
+    _ => {
+      let quote_char = if quote == '\'' { '\'' } else { '"' }
+      let html = if pretty {
+        node_to_html_pretty(self, 0, indent_size, quote_char)
+      } else {
+        node_to_html_compact(self, quote_char)
+      }
+      match context {
+        Html => html
+        JsString => escape_js_string(html, quote_char)
+        HtmlAttrValue => escape_attr_value(html, quote_char)
+        Url => html
+      }
+    }
   }
 }
 

@@ -27,6 +27,10 @@ JustHTML from Python to MoonBit.
   `</style` sequences only when the tag name is followed by EOF, HTML
   whitespace, `>`, or `/`. Do not escape all `<` characters in raw text, and
   do not alter non-boundaries such as `</scriptx>`.
+- URL serialization context is based on text content, not the serialized markup
+  string. Match Python by trimming the text and percent-encoding its UTF-8
+  bytes while preserving URL delimiter characters such as `/`, `?`, `&`, and
+  `=`.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
