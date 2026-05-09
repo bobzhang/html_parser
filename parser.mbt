@@ -318,6 +318,33 @@ fn Parser::close_open_definition_item(self : Parser, name : String) -> Unit {
 }
 
 ///|
+fn Parser::has_open_element(self : Parser, name : String) -> Bool {
+  for node in self.stack {
+    if node.kind == Element && node.name == name {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn Parser::close_current_element_if_name(self : Parser, name : String) -> Unit {
+  match self.stack.last() {
+    Some(node) if node.kind == Element && node.name == name =>
+      ignore(self.stack.pop())
+    _ => ()
+  }
+}
+
+///|
+fn Parser::close_open_select_item(self : Parser, name : String) -> Unit {
+  self.close_current_element_if_name("option")
+  if name == "optgroup" && self.has_open_element("select") {
+    self.close_current_element_if_name("optgroup")
+  }
+}
+
+///|
 fn is_heading_element_name(name : StringView) -> Bool {
   match name {
     "h1" | "h2" | "h3" | "h4" | "h5" | "h6" => true
@@ -462,6 +489,8 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         ignore(self.close_open_element("li"))
       } else if name == "dd" || name == "dt" {
         self.close_open_definition_item(name)
+      } else if name == "option" || name == "optgroup" {
+        self.close_open_select_item(name)
       }
       if is_heading_element_name(name) {
         self.close_current_heading_element()

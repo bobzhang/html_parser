@@ -181,6 +181,24 @@ test "parser closes open definition items before repeated dt and dd starts" {
 }
 
 ///|
+test "parser closes repeated option and select optgroup starts" {
+  let options = @html_parser.parse_fragment(
+    "<select><option>one<option>two</select>",
+  )
+  assert_eq(
+    options.to_html(pretty=false),
+    "<select><option>one</option><option>two</option></select>",
+  )
+  let groups = @html_parser.parse_fragment(
+    "<select><optgroup><option>one<optgroup><option>two</select>",
+  )
+  assert_eq(
+    groups.to_html(pretty=false),
+    "<select><optgroup><option>one</option></optgroup><optgroup><option>two</option></optgroup></select>",
+  )
+}
+
+///|
 test "parser closes current heading before another heading start" {
   let fragment = @html_parser.parse_fragment("<p>intro<h1>head<h2>next")
   assert_eq(
