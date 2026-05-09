@@ -829,6 +829,26 @@ test "parser reports early ancestor end tags after implied end tags" {
 
 ///|
 test "parser reports EOF for unclosed non-implied elements" {
+  let unfinished_start = @html_parser.parse_fragment(
+    "<div foo=\"",
+    collect_errors=true,
+  )
+  assert_eq(unfinished_start.to_html(pretty=false), "")
+  assert_eq(unfinished_start.errors.length(), 1)
+  assert_eq(unfinished_start.errors[0].code, "eof-in-tag")
+  guard unfinished_start.errors[0].column is Some(10) else {
+    fail("expected incomplete start tag EOF at final quote")
+  }
+  let unfinished_end = @html_parser.parse_fragment(
+    "<p>x</span",
+    collect_errors=true,
+  )
+  assert_eq(unfinished_end.to_html(pretty=false), "<p>x</p>")
+  assert_eq(unfinished_end.errors.length(), 1)
+  assert_eq(unfinished_end.errors[0].code, "eof-in-tag")
+  guard unfinished_end.errors[0].column is Some(10) else {
+    fail("expected incomplete end tag EOF at final name character")
+  }
   let div = @html_parser.parse_fragment("<div>x", collect_errors=true)
   assert_eq(div.to_html(pretty=false), "<div>x</div>")
   assert_eq(div.errors.length(), 1)
@@ -1147,6 +1167,42 @@ test "tokenize reports selected EOF and null fixture errors" {
   assert_eq(end_open.errors[0].code, "eof-before-tag-name")
   guard end_open.errors[0].column is Some(3) else {
     fail("expected EOF after </ at column 3")
+  }
+  let unfinished_start = @html_parser.tokenize(
+    "<div foo=\"",
+    collect_errors=true,
+  )
+  assert_eq(unfinished_start.tokens.length(), 1)
+  guard unfinished_start.tokens[0] is @html_parser.HtmlToken::Eof else {
+    fail("expected only EOF token for incomplete quoted tag")
+  }
+  assert_eq(unfinished_start.errors.length(), 1)
+  assert_eq(unfinished_start.errors[0].code, "eof-in-tag")
+  guard unfinished_start.errors[0].column is Some(10) else {
+    fail("expected incomplete quoted tag EOF at final quote")
+  }
+  let unfinished_unquoted = @html_parser.tokenize(
+    "<div foo=bar",
+    collect_errors=true,
+  )
+  assert_eq(unfinished_unquoted.tokens.length(), 1)
+  guard unfinished_unquoted.tokens[0] is @html_parser.HtmlToken::Eof else {
+    fail("expected only EOF token for incomplete unquoted tag")
+  }
+  assert_eq(unfinished_unquoted.errors.length(), 1)
+  assert_eq(unfinished_unquoted.errors[0].code, "eof-in-tag")
+  guard unfinished_unquoted.errors[0].column is Some(12) else {
+    fail("expected incomplete unquoted tag EOF at final value character")
+  }
+  let unfinished_end = @html_parser.tokenize("</span", collect_errors=true)
+  assert_eq(unfinished_end.tokens.length(), 1)
+  guard unfinished_end.tokens[0] is @html_parser.HtmlToken::Eof else {
+    fail("expected only EOF token for incomplete end tag")
+  }
+  assert_eq(unfinished_end.errors.length(), 1)
+  assert_eq(unfinished_end.errors[0].code, "eof-in-tag")
+  guard unfinished_end.errors[0].column is Some(6) else {
+    fail("expected incomplete end tag EOF at final name character")
   }
   let nul_text = @html_parser.tokenize("a\u{0000}b", collect_errors=true)
   guard nul_text.tokens[0] is @html_parser.HtmlToken::Characters("a\u{0000}b") else {

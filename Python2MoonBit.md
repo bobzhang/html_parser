@@ -154,6 +154,10 @@ JustHTML from Python to MoonBit.
   U+0000 in tag or attribute names reports `unexpected-null-character` and is
   stored as U+FFFD. Stopping at an ASCII-name predicate can turn part of the tag
   name into a bogus attribute and change raw-text behavior.
+- EOF inside an ordinary start or end tag is not a best-effort partial tag. The
+  tokenizer reports `eof-in-tag` at the final input character and emits no
+  partial tag token; the tree builder likewise must not create or close a node
+  from the unfinished markup.
 - Do not normalize empty doctype names to `"html"` in serialization. The builder
   default should create `"html"`, but a parsed empty-name doctype serializes as
   `<!DOCTYPE>`.

@@ -478,7 +478,8 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.starts_with(">") {
     self.pos += 1
   } else {
-    self.error_at("eof-in-tag", start)
+    self.error_at_eof("eof-in-tag")
+    return
   }
   if name == "br" {
     self.error_at("unexpected-end-tag", start)
@@ -765,7 +766,8 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         }
       }
       if !closed {
-        self.error_at("eof-in-tag", start)
+        self.error_at_eof("eof-in-tag")
+        return
       }
       if start_tag_closes_p(name) {
         self.close_open_p_element()

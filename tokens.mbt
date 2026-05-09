@@ -305,7 +305,8 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
   if self.starts_with(">") {
     self.pos += 1
   } else {
-    self.error_at("eof-in-tag", start)
+    self.error_at_eof("eof-in-tag")
+    return
   }
   if name != "" {
     self.tokens.push(
@@ -366,7 +367,8 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
         }
       }
       if !closed {
-        self.error_at("eof-in-tag", start)
+        self.error_at_eof("eof-in-tag")
+        return
       }
       self.tokens.push(
         Tag(TagToken::{ kind: StartTag, name, attrs, self_closing }),
