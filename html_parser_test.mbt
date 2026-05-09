@@ -443,6 +443,28 @@ test "tokenize reports attribute name fixture errors" {
 }
 
 ///|
+test "parser and tokenizer keep first duplicate attribute value" {
+  let doc = @html_parser.parse_fragment(
+    "<p id=first id=second class=a class=b>text</p>",
+    collect_errors=true,
+  )
+  assert_eq(doc.to_html(pretty=false), "<p id=\"first\" class=\"a\">text</p>")
+  assert_eq(doc.errors.length(), 2)
+  assert_eq(doc.errors[0].code, "duplicate-attribute")
+  assert_eq(doc.errors[1].code, "duplicate-attribute")
+  let tokens = @html_parser.tokenize("<div a=1 a=2 a=3>", collect_errors=true)
+  guard tokens.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
+    fail("expected div tag")
+  }
+  guard tag.attrs["a"] is Some("1") else {
+    fail("expected first duplicate value")
+  }
+  assert_eq(tokens.errors.length(), 2)
+  assert_eq(tokens.errors[0].code, "duplicate-attribute")
+  assert_eq(tokens.errors[1].code, "duplicate-attribute")
+}
+
+///|
 test "tokenize recovers invalid self closing start tag fixture case" {
   let result = @html_parser.tokenize("<div /a>", collect_errors=true)
   guard result.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {

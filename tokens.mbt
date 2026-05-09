@@ -389,15 +389,24 @@ fn SourceTokenizer::parse_attribute(
     ignore(self.advance_char())
     return
   }
+  let duplicate = attrs.contains(name)
+  if duplicate {
+    self.error_at("duplicate-attribute", name_start)
+  }
   self.skip_ascii_whitespace()
   if self.current() != Some('=') {
-    attrs[name] = Some("")
+    if !duplicate {
+      attrs[name] = Some("")
+    }
     self.error_at("missing-attribute-value", self.pos)
     return
   }
   ignore(self.advance_char())
   self.skip_ascii_whitespace()
-  attrs[name] = Some(self.parse_attribute_value())
+  let value = self.parse_attribute_value()
+  if !duplicate {
+    attrs[name] = Some(value)
+  }
 }
 
 ///|

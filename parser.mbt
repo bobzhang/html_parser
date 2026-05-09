@@ -540,9 +540,15 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
     ignore(self.advance_char())
     return
   }
+  let duplicate = attrs.contains(name)
+  if duplicate {
+    self.error_at("duplicate-attribute", name_start)
+  }
   self.skip_ascii_whitespace()
   if self.current() != Some('=') {
-    attrs[name] = None
+    if !duplicate {
+      attrs[name] = None
+    }
     return
   }
   ignore(self.advance_char())
@@ -593,7 +599,9 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
       }
     }
   }
-  attrs[name] = Some(value)
+  if !duplicate {
+    attrs[name] = Some(value)
+  }
 }
 
 ///|
