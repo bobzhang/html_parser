@@ -562,7 +562,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
       return
     }
     None => {
-      self.error_at("eof-before-tag-name", self.pos)
+      self.error_at_eof("eof-before-tag-name")
       self.current_node().append_child(text("</"))
       return
     }
@@ -920,7 +920,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
     }
     _ =>
       if self.current() is None {
-        self.error_at("eof-before-tag-name", start)
+        self.error_at_eof("eof-before-tag-name")
         self.current_node().append_child(text("<"))
       } else if self.current() == Some('?') {
         self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)

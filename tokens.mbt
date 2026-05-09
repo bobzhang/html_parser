@@ -284,7 +284,7 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
       return
     }
     None => {
-      self.error_at("eof-before-tag-name", self.pos)
+      self.error_at_eof("eof-before-tag-name")
       self.tokens.push(Characters("</"))
       return
     }
@@ -390,7 +390,7 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
     }
     _ =>
       if self.current() is None {
-        self.error_at("eof-before-tag-name", self.pos)
+        self.error_at_eof("eof-before-tag-name")
         self.tokens.push(Characters("<"))
       } else if self.current() == Some('?') {
         self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)

@@ -920,6 +920,20 @@ test "collect_errors records malformed markup without raising" {
   guard invalid_end.errors[0].column is Some(3) else {
     fail("expected invalid end tag error after slash")
   }
+  let lt = @html_parser.parse_fragment("<", collect_errors=true)
+  assert_eq(lt.to_html(pretty=false), "&lt;")
+  assert_eq(lt.errors.length(), 1)
+  assert_eq(lt.errors[0].code, "eof-before-tag-name")
+  guard lt.errors[0].column is Some(1) else {
+    fail("expected bare < EOF at the < character")
+  }
+  let end_open = @html_parser.parse_fragment("</", collect_errors=true)
+  assert_eq(end_open.to_html(pretty=false), "&lt;/")
+  assert_eq(end_open.errors.length(), 1)
+  assert_eq(end_open.errors[0].code, "eof-before-tag-name")
+  guard end_open.errors[0].column is Some(2) else {
+    fail("expected bare </ EOF at the slash")
+  }
 }
 
 ///|
@@ -1345,16 +1359,16 @@ test "tokenize reports selected EOF and null fixture errors" {
     fail("expected literal <")
   }
   assert_eq(lt.errors[0].code, "eof-before-tag-name")
-  guard lt.errors[0].column is Some(2) else {
-    fail("expected EOF after < at column 2")
+  guard lt.errors[0].column is Some(1) else {
+    fail("expected bare < EOF at the < character")
   }
   let end_open = @html_parser.tokenize("</", collect_errors=true)
   guard end_open.tokens[0] is @html_parser.HtmlToken::Characters("</") else {
     fail("expected literal </")
   }
   assert_eq(end_open.errors[0].code, "eof-before-tag-name")
-  guard end_open.errors[0].column is Some(3) else {
-    fail("expected EOF after </ at column 3")
+  guard end_open.errors[0].column is Some(2) else {
+    fail("expected bare </ EOF at the slash")
   }
   let unfinished_start = @html_parser.tokenize(
     "<div foo=\"",
