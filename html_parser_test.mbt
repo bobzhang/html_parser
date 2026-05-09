@@ -85,6 +85,31 @@ test "document parser routes initial head elements into head" {
 }
 
 ///|
+test "document parser promotes explicit root head and body elements" {
+  let doc = @html_parser.parse(
+    "<head><title>T</title></head><body class=x><p>p</p></body>",
+  )
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<html><head><title>T</title></head><body class=\"x\"><p>p</p></body></html>",
+  )
+  let extra_head = @html_parser.parse(
+    "<head><meta charset=utf-8></head><title>T</title><body><p>p</p></body>",
+  )
+  assert_eq(
+    extra_head.to_html(pretty=false),
+    "<html><head><meta charset=\"utf-8\"><title>T</title></head><body><p>p</p></body></html>",
+  )
+  let late_head_item = @html_parser.parse(
+    "<body class=x><p>p</p></body><title>T</title>",
+  )
+  assert_eq(
+    late_head_item.to_html(pretty=false),
+    "<html><head></head><body class=\"x\"><p>p</p><title>T</title></body></html>",
+  )
+}
+
+///|
 test "parser and tokenizer preserve doctype external ids" {
   let source = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">"
   let doc = @html_parser.parse(source)

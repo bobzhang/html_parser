@@ -54,6 +54,9 @@ JustHTML from Python to MoonBit.
   to mirror insertion modes. Document head elements belong in `<head>` only
   until body content or an explicit `<body>` has started; after that, the same
   tags remain in `<body>`.
+- Document scaffolding also has to preserve explicit root-level `<head>` and
+  `<body>` nodes, including attributes on `<body>`. Do not always synthesize
+  fresh elements and then nest the parsed ones inside the body.
 
 ## Optional Values and Defaults
 

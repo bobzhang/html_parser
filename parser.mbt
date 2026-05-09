@@ -1385,14 +1385,34 @@ fn scaffold_document(root : Node) -> Unit {
   }
   let original = root.children.copy()
   root.children.clear()
+  let mut head : Node? = None
+  let mut body : Node? = None
   let head_children : Array[Node] = []
   let body_children : Array[Node] = []
   let mut body_started = false
   for child in original {
     if child.kind == Doctype {
       root.append_child(child)
+    } else if child.kind == Element &&
+      child.name == "head" &&
+      head is None &&
+      !body_started {
+      head = Some(child)
+    } else if child.kind == Element && child.name == "body" && body is None {
+      body = Some(child)
+      body_started = true
+      let existing = child.children.copy()
+      child.children.clear()
+      for grandchild in existing {
+        body_children.push(grandchild)
+      }
     } else if child.kind == Comment && !body_started && head_children.is_empty() {
       root.append_child(child)
+    } else if child.kind == Element && child.name == "head" {
+      let existing = child.children.copy()
+      for grandchild in existing {
+        body_children.push(grandchild)
+      }
     } else if child.kind == Element &&
       is_document_head_element_name(child.name) &&
       !body_started {
@@ -1407,8 +1427,12 @@ fn scaffold_document(root : Node) -> Unit {
     }
   }
   let html = element("html")
-  html.append_child(element("head", children=head_children))
-  html.append_child(element("body", children=body_children))
+  let head_node = head.unwrap_or(element("head"))
+  let body_node = body.unwrap_or(element("body"))
+  html.append_child(head_node)
+  append_children_to(head_node, head_children)
+  append_children_to(body_node, body_children)
+  html.append_child(body_node)
   root.append_child(html)
 }
 
