@@ -1329,6 +1329,33 @@ fn append_children_to(target : Node, children : Array[Node]) -> Unit {
 }
 
 ///|
+fn merge_missing_attrs(target : Node, source : Node) -> Unit {
+  for name, value in source.attrs {
+    if !target.attrs.contains(name) {
+      target.attrs[name] = value
+    }
+  }
+}
+
+///|
+fn append_body_node_contents(
+  body_node : Node,
+  source : Node,
+  body_children : Array[Node],
+) -> Unit {
+  merge_missing_attrs(body_node, source)
+  let existing = source.children.copy()
+  source.children.clear()
+  for child in existing {
+    if child.kind == Element && child.name == "body" {
+      append_body_node_contents(body_node, child, body_children)
+    } else {
+      body_children.push(child)
+    }
+  }
+}
+
+///|
 fn scaffold_existing_html_element(html : Node) -> Unit {
   let original = html.children.copy()
   html.children.clear()
@@ -1346,11 +1373,14 @@ fn scaffold_existing_html_element(html : Node) -> Unit {
     } else if child.kind == Element && child.name == "body" && body is None {
       body = Some(child)
       body_started = true
-      let existing = child.children.copy()
-      child.children.clear()
-      for grandchild in existing {
-        body_children.push(grandchild)
+      append_body_node_contents(child, child, body_children)
+    } else if child.kind == Element && child.name == "body" {
+      match body {
+        Some(body_node) =>
+          append_body_node_contents(body_node, child, body_children)
+        None => body_children.push(child)
       }
+      body_started = true
     } else if child.kind == Element && child.name == "head" {
       let existing = child.children.copy()
       for grandchild in existing {
@@ -1402,11 +1432,14 @@ fn scaffold_document(root : Node) -> Unit {
     } else if child.kind == Element && child.name == "body" && body is None {
       body = Some(child)
       body_started = true
-      let existing = child.children.copy()
-      child.children.clear()
-      for grandchild in existing {
-        body_children.push(grandchild)
+      append_body_node_contents(child, child, body_children)
+    } else if child.kind == Element && child.name == "body" {
+      match body {
+        Some(body_node) =>
+          append_body_node_contents(body_node, child, body_children)
+        None => body_children.push(child)
       }
+      body_started = true
     } else if child.kind == Comment && !body_started && head_children.is_empty() {
       root.append_child(child)
     } else if child.kind == Element && child.name == "head" {

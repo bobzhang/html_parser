@@ -110,6 +110,22 @@ test "document parser promotes explicit root head and body elements" {
 }
 
 ///|
+test "document parser merges repeated body tags" {
+  let repeated = @html_parser.parse(
+    "<body class=a><p>one</p><body id=b><p>two</p>",
+  )
+  assert_eq(
+    repeated.to_html(pretty=false),
+    "<html><head></head><body class=\"a\" id=\"b\"><p>one</p><p>two</p></body></html>",
+  )
+  let first_wins = @html_parser.parse("<body class=a><body class=b id=x>text")
+  assert_eq(
+    first_wins.to_html(pretty=false),
+    "<html><head></head><body class=\"a\" id=\"x\">text</body></html>",
+  )
+}
+
+///|
 test "document parser places comments around implicit head like reference" {
   let before = @html_parser.parse("<!--c--><title>T</title><p>x</p>")
   assert_eq(
