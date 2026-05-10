@@ -977,6 +977,9 @@ JustHTML from Python to MoonBit.
   `raise` for API misuse or strict-mode failure.
 - Keep parse errors stable by code, line, and column so fixture expectations do
   not depend on message wording.
+- Thread both token start and close offsets through parser handlers. Several
+  tree-builder diagnostics, especially end-tag recovery such as extra
+  `</frameset>`, report at the closing `>` rather than at the opening `<`.
 - Noncharacter input-stream errors are state-sensitive. Report
   `noncharacter-in-input-stream` while scanning data-state text and invalid
   tag-open recovery, but do not put it in a low-level `advance_char` helper or

@@ -2239,7 +2239,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_foreign_content_end_tag(name, start) {
     return
   }
-  if self.handle_document_frameset_end_tag(name, start) {
+  if self.handle_document_frameset_end_tag(name, tag_close_pos) {
     return
   }
   if self.handle_template_detached_column_group_end_tag(name, start) {
@@ -2439,7 +2439,7 @@ fn Parser::handle_before_html_end_tag(
 fn Parser::handle_document_frameset_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  tag_close_pos : Int,
 ) -> Bool {
   if self.is_fragment_parser() && !self.fragment_context_html {
     return false
@@ -2448,13 +2448,13 @@ fn Parser::handle_document_frameset_end_tag(
     if name == "html" {
       ()
     } else if name == "frameset" {
-      self.error_at("unexpected-token-after-frameset", start)
+      self.error_at("unexpected-token-after-frameset", tag_close_pos)
     } else if self.after_frameset_ignored_depth > 0 {
-      self.error_at("unexpected-token-in-frameset", start)
+      self.error_at("unexpected-token-in-frameset", tag_close_pos)
       self.after_frameset_ignored_depth -= 1
     } else {
-      self.error_at("unexpected-token-after-frameset", start)
-      self.error_at("unexpected-token-in-frameset", start)
+      self.error_at("unexpected-token-after-frameset", tag_close_pos)
+      self.error_at("unexpected-token-in-frameset", tag_close_pos)
     }
     return true
   }
@@ -2467,7 +2467,7 @@ fn Parser::handle_document_frameset_end_tag(
       self.after_frameset = true
     }
   } else {
-    self.error_at("unexpected-token-in-frameset", start)
+    self.error_at("unexpected-token-in-frameset", tag_close_pos)
   }
   true
 }
