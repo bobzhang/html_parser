@@ -311,6 +311,97 @@ test "sanitize_dom filters attributes and dangerous URLs" {
 }
 
 ///|
+test "sanitize_dom can collect and raise unsafe findings" {
+  let collect_policy = @html_parser.SanitizationPolicy::new(
+    ["p", "a"],
+    allowed_attributes={ "p": [], "a": ["href"] },
+    unsafe_handling=Collect,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<p foo=1>safe<script>bad</script><a href='javascript:alert(1)'>bad</a></p><!--x-->",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy=collect_policy).to_html(
+      pretty=false,
+    ),
+    "<p>safe<a>bad</a></p>",
+  )
+  let errors = collect_policy.collected_security_errors()
+  assert_eq(errors.length(), 4)
+  assert_eq(errors[0].code, "unsafe-html")
+  assert_eq(errors[0].category, "security")
+  collect_policy.reset_collected_security_errors()
+  assert_eq(collect_policy.collected_security_errors().length(), 0)
+
+  let raise_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": [] },
+    unsafe_handling=Raise,
+  )
+  let unsafe_fragment = @html_parser.parse_fragment(
+    "<p foo=1>safe</p>",
+    sanitize=false,
+  )
+  let result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    unsafe_fragment.root,
+    policy=raise_policy,
+  )
+  match result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(
+        message, "Unsafe attribute 'foo' on <p> was dropped because it is not allowed",
+      )
+    _ => fail("expected sanitize_dom to raise UnsafeHtml")
+  }
+}
+
+///|
+test "sanitize_dom collects rawtext and foreign integration findings" {
+  let rawtext_policy = @html_parser.SanitizationPolicy::new(
+    ["style"],
+    allowed_attributes={ "style": [] },
+    drop_content_tags=[],
+    unsafe_handling=Collect,
+  )
+  let rawtext = @html_parser.fragment(children=[
+    @html_parser.element("style", children=[
+      @html_parser.text("</style><b>x</b>"),
+    ]),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(rawtext, policy=rawtext_policy).to_html(
+      pretty=false,
+    ),
+    "<style>&lt;/style><b>x</b></style>",
+  )
+  let rawtext_errors = rawtext_policy.collected_security_errors()
+  assert_eq(rawtext_errors.length(), 1)
+  assert_eq(rawtext_errors[0].category, "security")
+
+  let foreign_policy = @html_parser.SanitizationPolicy::new(
+    ["svg", "title", "script"],
+    allowed_attributes={ "svg": [], "title": [], "script": [] },
+    drop_foreign_namespaces=false,
+    drop_content_tags=[],
+    unsafe_handling=Collect,
+  )
+  let foreign = @html_parser.parse_fragment(
+    "<svg><title>Hello<script>bad</script></title></svg>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(foreign.root, policy=foreign_policy).to_html(
+      pretty=false,
+    ),
+    "<svg><title>Hello</title></svg>",
+  )
+  let foreign_errors = foreign_policy.collected_security_errors()
+  assert_eq(foreign_errors.length(), 1)
+  assert_eq(foreign_errors[0].category, "security")
+}
+
+///|
 test "sanitize_dom strips invisible unicode from text and attributes" {
   let invisible = "\u{FE00}\u{E0100}\u{200B}\u{202E}\u{E000}"
   let fragment = @html_parser.parse_fragment(

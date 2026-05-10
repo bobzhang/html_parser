@@ -30,7 +30,7 @@ pub fn parse_fragment(StringView, context? : FragmentContext, sanitize? : Bool, 
 
 pub fn query(Node, StringView) -> Array[Node]
 
-pub fn sanitize_dom(Node, policy? : SanitizationPolicy) -> Node
+pub fn sanitize_dom(Node, policy? : SanitizationPolicy) -> Node raise HtmlError
 
 pub fn text(StringView) -> Node
 
@@ -44,6 +44,7 @@ pub fn tokenize(StringView, collect_errors? : Bool, xml_coercion? : Bool) -> Tok
 pub(all) suberror HtmlError {
   StrictMode(ParseError)
   InvalidSerialization(String)
+  UnsafeHtml(String)
 } derive(Eq, @debug.Debug)
 
 // Types and methods
@@ -136,7 +137,9 @@ pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_b
 pub struct SanitizationPolicy {
   // private fields
 } derive(@debug.Debug)
-pub fn SanitizationPolicy::new(Array[String], allowed_attributes? : Map[String, Array[String]], drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling, force_link_rel? : Array[String], allowed_css_properties? : Array[String], strip_invisible_unicode? : Bool) -> Self
+pub fn SanitizationPolicy::collected_security_errors(Self) -> Array[ParseError]
+pub fn SanitizationPolicy::new(Array[String], allowed_attributes? : Map[String, Array[String]], drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling, force_link_rel? : Array[String], allowed_css_properties? : Array[String], strip_invisible_unicode? : Bool, unsafe_handling? : UnsafeHandling) -> Self
+pub fn SanitizationPolicy::reset_collected_security_errors(Self) -> Unit
 
 pub(all) enum TagKind {
   StartTag
@@ -154,6 +157,12 @@ pub(all) struct TokenizedHtml {
   tokens : Array[HtmlToken]
   errors : Array[ParseError]
 } derive(@debug.Debug)
+
+pub(all) enum UnsafeHandling {
+  Strip
+  Raise
+  Collect
+} derive(Eq, @debug.Debug)
 
 // Type aliases
 

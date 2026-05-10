@@ -6,6 +6,13 @@ pub(all) enum DisallowedTagHandling {
 } derive(Debug, Eq)
 
 ///|
+pub(all) enum UnsafeHandling {
+  Strip
+  Raise
+  Collect
+} derive(Debug, Eq)
+
+///|
 pub struct SanitizationPolicy {
   priv allowed_tags : Set[String]
   priv allowed_attributes : Map[String, Set[String]]
@@ -17,6 +24,8 @@ pub struct SanitizationPolicy {
   priv force_link_rel : Array[String]
   priv allowed_css_properties : Set[String]
   priv strip_invisible_unicode : Bool
+  priv unsafe_handling : UnsafeHandling
+  priv security_errors : Array[ParseError]
 } derive(Debug)
 
 ///|
@@ -83,6 +92,7 @@ pub fn SanitizationPolicy::new(
   force_link_rel? : Array[String] = [],
   allowed_css_properties? : Array[String] = [],
   strip_invisible_unicode? : Bool = true,
+  unsafe_handling? : UnsafeHandling = Strip,
 ) -> SanitizationPolicy {
   {
     allowed_tags: sanitized_string_set(allowed_tags),
@@ -95,6 +105,37 @@ pub fn SanitizationPolicy::new(
     force_link_rel: sanitized_string_list(force_link_rel),
     allowed_css_properties: sanitized_string_set(allowed_css_properties),
     strip_invisible_unicode,
+    unsafe_handling,
+    security_errors: [],
+  }
+}
+
+///|
+pub fn SanitizationPolicy::reset_collected_security_errors(
+  self : SanitizationPolicy,
+) -> Unit {
+  self.security_errors.clear()
+}
+
+///|
+pub fn SanitizationPolicy::collected_security_errors(
+  self : SanitizationPolicy,
+) -> Array[ParseError] {
+  self.security_errors.copy()
+}
+
+///|
+fn SanitizationPolicy::handle_unsafe(
+  self : SanitizationPolicy,
+  message : String,
+) -> Unit raise HtmlError {
+  match self.unsafe_handling {
+    Strip => ()
+    Raise => raise UnsafeHtml(message)
+    Collect =>
+      self.security_errors.push(
+        ParseError::new("unsafe-html", category="security", message~),
+      )
   }
 }
 
@@ -203,7 +244,7 @@ fn escape_child_at(
   parent : Node,
   index : Int,
   policy : SanitizationPolicy,
-) -> Int {
+) -> Int raise HtmlError {
   let child = parent.children[index]
   let start_tag = serialize_start_tag(child, '"')
   let end_tag = escaped_end_tag_for(child)
@@ -720,10 +761,18 @@ fn merge_forced_link_rel(node : Node, policy : SanitizationPolicy) -> Unit {
 }
 
 ///|
-fn sanitize_meta_refresh_content(node : Node) -> Unit {
+fn sanitize_meta_refresh_content(
+  node : Node,
+  policy : SanitizationPolicy,
+) -> Unit raise HtmlError {
   match node.attrs.get("http-equiv") {
-    Some(Some(value)) if lower_ascii(value[:].trim()) == "refresh" =>
+    Some(Some(value)) if lower_ascii(value[:].trim()) == "refresh" &&
+      node.attrs.contains("content") => {
+      policy.handle_unsafe(
+        "Unsafe URL in attribute 'content' on <meta> refresh was dropped",
+      )
       node.attrs.remove("content")
+    }
     _ => ()
   }
 }
@@ -732,13 +781,20 @@ fn sanitize_meta_refresh_content(node : Node) -> Unit {
 fn sanitize_element_attributes(
   node : Node,
   policy : SanitizationPolicy,
-) -> Unit {
+) -> Unit raise HtmlError {
   let tag_name = sanitize_node_name(node)
   let effectively_foreign = node_is_effectively_foreign(node)
   let keys = node.attrs.keys().to_array()
   for key in keys {
     let attr_name = lower_ascii(key[:])
     if !policy_allows_attribute(policy, tag_name, attr_name) {
+      policy.handle_unsafe(
+        "Unsafe attribute '" +
+        attr_name +
+        "' on <" +
+        tag_name +
+        "> was dropped because it is not allowed",
+      )
       node.attrs.remove(key)
     } else {
       match node.attrs.get(key) {
@@ -761,13 +817,31 @@ fn sanitize_element_attributes(
                 node.attrs.remove(key)
                 node.attrs[attr_name] = Some(cleaned)
               }
-            None => node.attrs.remove(key)
+            None => {
+              policy.handle_unsafe(
+                "Unsafe attribute '" +
+                attr_name +
+                "' on <" +
+                tag_name +
+                "> was dropped",
+              )
+              node.attrs.remove(key)
+            }
           }
         }
         Some(None) if attr_name == "href" ||
           attr_name == "src" ||
           attr_name == "style" ||
-          is_unsupported_url_like_attr(attr_name) => node.attrs.remove(key)
+          is_unsupported_url_like_attr(attr_name) => {
+          policy.handle_unsafe(
+            "Unsafe attribute '" +
+            attr_name +
+            "' on <" +
+            tag_name +
+            "> was dropped",
+          )
+          node.attrs.remove(key)
+        }
         Some(value) =>
           if attr_name != key {
             node.attrs.remove(key)
@@ -778,7 +852,7 @@ fn sanitize_element_attributes(
     }
   }
   if tag_name == "meta" {
-    sanitize_meta_refresh_content(node)
+    sanitize_meta_refresh_content(node, policy)
   }
   if tag_name == "a" {
     merge_forced_link_rel(node, policy)
@@ -832,7 +906,7 @@ fn foreign_text_integration_namespace(node : Node) -> String? {
 fn sanitize_foreign_text_integration_children(
   node : Node,
   policy : SanitizationPolicy,
-) -> Bool {
+) -> Bool raise HtmlError {
   guard foreign_text_integration_namespace(node) is Some(ns) else {
     return false
   }
@@ -856,7 +930,12 @@ fn sanitize_foreign_text_integration_children(
           node.append_child(child)
         }
       }
-      _ => ()
+      _ =>
+        policy.handle_unsafe(
+          "Unsafe HTML child inside foreign integration point <" +
+          sanitize_node_name(node) +
+          "> was dropped",
+        )
     }
   }
   true
@@ -866,7 +945,7 @@ fn sanitize_foreign_text_integration_children(
 fn sanitize_rawtext_element_children(
   node : Node,
   policy : SanitizationPolicy,
-) -> Bool {
+) -> Bool raise HtmlError {
   guard rawtext_serialization_element_name(node) is Some(tag_name) else {
     return false
   }
@@ -893,7 +972,10 @@ fn sanitize_rawtext_element_children(
         text_children.push(child)
         text_parts.push(data)
       }
-      _ => ()
+      _ =>
+        policy.handle_unsafe(
+          "Unsafe non-text child inside <" + tag_name + "> was dropped",
+        )
     }
   }
   if text_children.is_empty() {
@@ -903,9 +985,19 @@ fn sanitize_rawtext_element_children(
   let sanitized_text = neutralize_rawtext_end_tag_sequences(
     combined_text, tag_name,
   )
+  if sanitized_text != combined_text {
+    policy.handle_unsafe(
+      "Unsafe raw text inside <" +
+      tag_name +
+      "> contains a closing tag sequence",
+    )
+  }
   if tag_name == "style" &&
     sanitized_text != "" &&
     css_value_may_load_external_resource(sanitized_text) {
+    policy.handle_unsafe(
+      "Unsafe CSS inside <style> contains resource-loading constructs",
+    )
     return true
   }
   if sanitized_text == combined_text && !text_changed {
@@ -922,7 +1014,7 @@ fn sanitize_rawtext_element_children(
 fn sanitize_container_children(
   parent : Node,
   policy : SanitizationPolicy,
-) -> Unit {
+) -> Unit raise HtmlError {
   let mut index = 0
   while index < parent.children.length() {
     let child = parent.children[index]
@@ -936,12 +1028,14 @@ fn sanitize_container_children(
       }
       Comment =>
         if policy.drop_comments {
+          policy.handle_unsafe("Unsafe comment was dropped")
           remove_child_at(parent, index)
         } else {
           index += 1
         }
       Doctype =>
         if policy.drop_doctype {
+          policy.handle_unsafe("Unsafe doctype was dropped")
           remove_child_at(parent, index)
         } else {
           index += 1
@@ -949,13 +1043,31 @@ fn sanitize_container_children(
       Element => {
         let tag_name = sanitize_node_name(child)
         if policy.drop_foreign_namespaces && node_is_effectively_foreign(child) {
+          policy.handle_unsafe(
+            "Unsafe tag '" +
+            tag_name +
+            "' was dropped because it is in a foreign namespace",
+          )
           remove_child_at(parent, index)
         } else if !policy.drop_foreign_namespaces &&
           sanitize_node_is_active_foreign_content(child) {
+          policy.handle_unsafe(
+            "Unsafe tag '" +
+            tag_name +
+            "' was dropped because it can mutate foreign content",
+          )
           remove_child_at(parent, index)
         } else if policy.drop_content_tags.contains(tag_name) {
+          policy.handle_unsafe(
+            "Unsafe tag '" + tag_name + "' was dropped with its content",
+          )
           remove_child_at(parent, index)
         } else if !policy.allowed_tags.contains(tag_name) {
+          policy.handle_unsafe(
+            "Unsafe tag '" +
+            tag_name +
+            "' was dropped because it is not allowed",
+          )
           match policy.disallowed_tag_handling {
             Drop => remove_child_at(parent, index)
             Escape => {
@@ -987,7 +1099,10 @@ fn sanitize_container_children(
 }
 
 ///|
-pub fn sanitize_dom(node : Node, policy? : SanitizationPolicy) -> Node {
+pub fn sanitize_dom(
+  node : Node,
+  policy? : SanitizationPolicy,
+) -> Node raise HtmlError {
   let policy = match policy {
     Some(value) => value
     None =>

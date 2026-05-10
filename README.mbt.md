@@ -22,7 +22,9 @@ The current slice provides:
   allowlist simple inline CSS properties while stripping invisible Unicode and
   hardening allowed raw-text, foreign text-integration, active foreign contents,
   foreign URL-function attributes, meta refresh contents, and base URL rewrites.
-  Unsupported URL-like attributes are conservatively dropped.
+  Unsupported URL-like attributes are conservatively dropped. Policies can keep
+  the default strip behavior, collect security findings, or raise on the first
+  unsafe construct.
 - Initial Markdown conversion for text, paragraphs, headings, inline
   formatting, links, code, lists, blockquotes, and raw HTML passthrough.
 

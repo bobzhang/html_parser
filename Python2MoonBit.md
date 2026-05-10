@@ -338,6 +338,11 @@ JustHTML from Python to MoonBit.
   scheme while ignoring ASCII controls/whitespace in the scheme area, but keep
   the original value when it is allowed; protocol-relative links are rewritten
   only when the rule says to resolve them.
+- Python's `unsafe_handling` string mode maps more safely to a MoonBit enum.
+  Keep `Strip` as the no-op default, make `Collect` append `ParseError` values
+  with `category="security"`, and make `Raise` use a typed `HtmlError` variant
+  so callers can handle sanitizer failures with `try?` instead of string
+  matching.
 - Python's parser defaults to sanitizing; this staged MoonBit port keeps parser
   defaults unsanitized while raw tree-builder parity tests are still being
   migrated. Because MoonBit optional arguments do not distinguish omitted

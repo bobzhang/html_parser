@@ -40,6 +40,7 @@ pub fn ParseError::new(
 pub(all) suberror HtmlError {
   StrictMode(ParseError)
   InvalidSerialization(String)
+  UnsafeHtml(String)
 } derive(Debug, Eq)
 
 ///|
