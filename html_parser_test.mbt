@@ -3771,7 +3771,7 @@ test "query treats pseudo selector names case insensitively" {
 ///|
 test "query supports contains pseudo selector" {
   let doc = @html_parser.parse_fragment(
-    "<div id='a'><button>click me</button></div><div id='b'><button>do not click</button></div><div id='c'><span>click</span> me</div><div id='joined'><span>a</span><span>b</span></div><div id='spaced'><span>a</span> <span>b</span></div><p> padded </p>",
+    "<div id='a'><button>click me</button></div><div id='b'><button>do not click</button></div><div id='c'><span>click</span> me</div><div id='joined'><span>a</span><span>b</span></div><div id='spaced'><span>a</span> <span>b</span></div><p> padded </p><span>a)b</span><span>a(b</span>",
   )
   assert_eq(doc.query("button:contains(\"click me\")").length(), 1)
   assert_eq(doc.query("button:contains(click)").length(), 2)
@@ -3785,6 +3785,8 @@ test "query supports contains pseudo selector" {
   assert_eq(doc.query("#joined:contains(\"ab\")").length(), 0)
   assert_eq(doc.query("p:contains(\"padded\")").length(), 1)
   assert_eq(doc.query("p:contains(\" padded \")").length(), 0)
+  assert_eq(doc.query("span:contains('a)b')").length(), 0)
+  assert_eq(doc.query("span:contains('a(b')").length(), 0)
   guard doc.query_one("#a") is Some(first) else { fail("expected first div") }
   assert_true(@html_parser.matches(first, "div:contains(\"click me\")"))
 }

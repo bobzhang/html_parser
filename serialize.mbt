@@ -1203,12 +1203,24 @@ fn contains_text(node : Node, arg : StringView) -> Bool {
 fn functional_pseudo_parts(name : StringView) -> (StringView, StringView)? {
   match name.split_once("(") {
     Some((pseudo_name, rest)) => {
-      if !rest.has_suffix(")") {
-        return None
+      let mut depth = 1
+      let mut pos = 0
+      while pos < rest.length() {
+        guard rest.get_char(pos) is Some(ch) else { return None }
+        if ch == '(' {
+          depth += 1
+        } else if ch == ')' {
+          depth -= 1
+          if depth == 0 {
+            if pos + ch.utf16_len() != rest.length() {
+              return None
+            }
+            return Some((pseudo_name, rest[0:pos]))
+          }
+        }
+        pos += ch.utf16_len()
       }
-      let end = rest.length() - 1
-      guard rest.get_view(start=0, end~) is Some(arg) else { return None }
-      Some((pseudo_name, arg))
+      None
     }
     None => None
   }
