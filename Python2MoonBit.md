@@ -464,7 +464,10 @@ JustHTML from Python to MoonBit.
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone. Deep clones should use an
   explicit stack rather than recursive calls so programmatically-created deep
-  trees do not depend on backend stack limits.
+  trees do not depend on backend stack limits. Python exposes both in-place
+  `sanitize_dom` and clone-returning `sanitize`; in MoonBit, spell the clone
+  path explicitly as `node.clone_node(deep=true)` followed by `sanitize_dom`,
+  and test that the source tree is unchanged after sanitizing the clone.
 - Class selector matching must split class attributes on HTML whitespace
   (`space`, `tab`, `LF`, `FF`, `CR`), not just literal spaces. This matters for
   both parsed attributes and programmatically-created DOM nodes.
