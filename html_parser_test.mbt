@@ -297,6 +297,37 @@ test "sanitize_dom custom policy keeps comments and can drop subtrees" {
 }
 
 ///|
+test "sanitize_dom handles standalone text comment and doctype roots" {
+  assert_eq(@html_parser.sanitize_dom(@html_parser.text("x")).to_html(), "x")
+  let keep_policy = @html_parser.SanitizationPolicy::new(
+    [],
+    allowed_attributes={},
+    drop_comments=false,
+    drop_doctype=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(@html_parser.comment("x"), policy=keep_policy).to_html(
+      pretty=false,
+    ),
+    "<!--x-->",
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(@html_parser.doctype(), policy=keep_policy).to_html(
+      pretty=false,
+    ),
+    "<!DOCTYPE html>",
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(@html_parser.comment("x")).to_html(pretty=false),
+    "",
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(@html_parser.doctype()).to_html(pretty=false),
+    "",
+  )
+}
+
+///|
 test "sanitize_dom escape handling emits disallowed tags as text" {
   let fragment = @html_parser.parse_fragment(
     "<b>Hello <sarcasm title='tone' onclick=x><i onclick=y>world</i><script>bad</script></sarcasm></b>",

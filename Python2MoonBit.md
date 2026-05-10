@@ -379,6 +379,9 @@ JustHTML from Python to MoonBit.
   and update every parent pointer. Default-policy and document-policy behavior
   differ: the document policy keeps the document shell and doctype, while the
   regular default policy unwraps document scaffolding and drops doctype nodes.
+  Standalone non-container roots such as `Text`, `Comment`, and `Doctype`
+  still need the same policy decisions, so wrap them in a temporary fragment
+  during sanitization and unwrap the result afterwards.
 - Sanitizer policies contain mutable lookup tables in MoonBit (`Set`/`Map`), so
   default policy helpers should return fresh policy values rather than sharing
   one global object across tests. URL checks should inspect the normalized
