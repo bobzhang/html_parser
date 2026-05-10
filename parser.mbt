@@ -9,6 +9,7 @@ priv struct Parser {
   stack : Array[Node]
   mut form_element : Node?
   mut frameset_ok : Bool
+  mut frameset_reprocesses_in_body_mode : Bool
   mut before_html_phase : Bool
   mut after_frameset : Bool
   mut after_frameset_ignored_depth : Int
@@ -53,6 +54,7 @@ fn Parser::new(
     stack: [root],
     form_element: None,
     frameset_ok: root.kind == Document,
+    frameset_reprocesses_in_body_mode: false,
     before_html_phase: root.kind == Document,
     after_frameset: false,
     after_frameset_ignored_depth: 0,
@@ -170,6 +172,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     ignore(self.stack.pop())
   }
   if self.uses_document_frameset_rules() &&
+    !self.frameset_reprocesses_in_body_mode &&
     (self.after_frameset || self.has_open_element("frameset")) {
     let whitespace = ascii_whitespace_chars_only(cleaned)
     if self.after_frameset &&
@@ -2461,6 +2464,16 @@ fn Parser::handle_document_frameset_end_tag(
   if !self.has_open_element("frameset") {
     return false
   }
+  if self.frameset_reprocesses_in_body_mode {
+    if name != "frameset" {
+      return false
+    }
+    ignore(self.close_open_element("frameset"))
+    if !self.has_open_element("frameset") {
+      self.frameset_reprocesses_in_body_mode = false
+    }
+    return true
+  }
   if name == "frameset" {
     ignore(self.close_open_element("frameset"))
     if !self.has_open_element("frameset") {
@@ -3644,15 +3657,78 @@ fn Parser::col_start_tag_is_ignored_outside_table(
 }
 
 ///|
+fn document_body_start_tag_preserves_frameset_ok(
+  name : StringView,
+  attrs : Map[String, String?],
+) -> Bool {
+  match name {
+    "a"
+    | "address"
+    | "article"
+    | "aside"
+    | "b"
+    | "big"
+    | "blockquote"
+    | "center"
+    | "code"
+    | "details"
+    | "dialog"
+    | "dir"
+    | "div"
+    | "dl"
+    | "em"
+    | "fieldset"
+    | "figcaption"
+    | "figure"
+    | "font"
+    | "footer"
+    | "header"
+    | "hgroup"
+    | "i"
+    | "main"
+    | "math"
+    | "menu"
+    | "nav"
+    | "nobr"
+    | "ol"
+    | "optgroup"
+    | "option"
+    | "p"
+    | "param"
+    | "rb"
+    | "rp"
+    | "rt"
+    | "rtc"
+    | "s"
+    | "search"
+    | "section"
+    | "small"
+    | "source"
+    | "strike"
+    | "strong"
+    | "summary"
+    | "svg"
+    | "track"
+    | "tt"
+    | "u"
+    | "ul" => true
+    "input" => input_attrs_type_is_hidden(attrs)
+    _ => false
+  }
+}
+
+///|
 fn Parser::document_start_tag_preserves_frameset_ok(
   self : Parser,
   name : StringView,
+  attrs : Map[String, String?],
 ) -> Bool {
   (self.is_fragment_parser() && !self.fragment_context_html) ||
   name == "html" ||
   name == "head" ||
   name == "frameset" ||
-  is_document_head_element_name(name)
+  is_document_head_element_name(name) ||
+  document_body_start_tag_preserves_frameset_ok(name, attrs)
 }
 
 ///|
@@ -3665,12 +3741,93 @@ fn Parser::insert_empty_frameset_child(
 }
 
 ///|
+fn detach_removed_frameset_replacement_child(
+  parent : Node,
+  child : Node,
+) -> Unit {
+  match child.parent {
+    Some(current) if physical_equal(current, parent) => child.parent = None
+    _ => ()
+  }
+}
+
+///|
+fn child_is_preserved_before_implicit_frameset_body(
+  child : Node,
+  saw_head_content : Bool,
+) -> (Bool, Bool) {
+  match child.kind {
+    Doctype | Comment => (true, saw_head_content)
+    Element if child.name == "head" || is_document_head_element_name(child.name) =>
+      (true, true)
+    Text if is_whitespace_text_node(child) =>
+      (saw_head_content, saw_head_content)
+    _ => (false, saw_head_content)
+  }
+}
+
+///|
+fn replace_implicit_body_children_for_frameset(parent : Node) -> Unit {
+  let original = parent.children.copy()
+  parent.children.clear()
+  let mut saw_head_content = false
+  let mut body_started = false
+  for child in original {
+    if body_started {
+      detach_removed_frameset_replacement_child(parent, child)
+      continue
+    }
+    let (preserve, next_saw_head_content) = child_is_preserved_before_implicit_frameset_body(
+      child, saw_head_content,
+    )
+    saw_head_content = next_saw_head_content
+    if preserve {
+      parent.append_child(child)
+    } else {
+      body_started = true
+      detach_removed_frameset_replacement_child(parent, child)
+    }
+  }
+}
+
+///|
+fn Parser::frameset_replacement_parent(self : Parser) -> Node {
+  match self.open_html_element() {
+    Some(html) => html
+    None => self.root
+  }
+}
+
+///|
+fn Parser::reset_stack_to_frameset_replacement_parent(
+  self : Parser,
+  parent : Node,
+) -> Unit {
+  self.stack.clear()
+  self.stack.push(self.root)
+  if !physical_equal(parent, self.root) {
+    self.stack.push(parent)
+  }
+}
+
+///|
+fn Parser::prepare_document_frameset_replacement(self : Parser) -> Bool {
+  let parent = self.frameset_replacement_parent()
+  if node_has_direct_element_child(parent, "body") {
+    return false
+  }
+  replace_implicit_body_children_for_frameset(parent)
+  self.reset_stack_to_frameset_replacement_parent(parent)
+  true
+}
+
+///|
 fn Parser::handle_document_frameset_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
   self_closing : Bool,
-  start : Int,
+  tag_close_pos : Int,
 ) -> Bool {
   if self.is_fragment_parser() && !self.fragment_context_html {
     return false
@@ -3679,14 +3836,30 @@ fn Parser::handle_document_frameset_start_tag(
     if name == "noframes" {
       return false
     }
-    self.error_at("unexpected-token-after-frameset", start)
-    self.error_at("unexpected-token-in-frameset", start)
+    self.error_at("unexpected-token-after-frameset", tag_close_pos)
+    self.error_at("unexpected-token-in-frameset", tag_close_pos)
     if !self_closing && !is_void_element(name) {
       self.after_frameset_ignored_depth += 1
     }
     return true
   }
-  if self.has_open_element("frameset") {
+  if self.frameset_reprocesses_in_body_mode && self.has_open_element("frameset") {
+    match name {
+      "html" => {
+        self.error_at("unexpected-start-tag", tag_close_pos)
+        match self.open_html_element() {
+          Some(html) => merge_missing_attrs_from_map(html, attrs)
+          None => ()
+        }
+        true
+      }
+      "frame" | "frameset" => {
+        self.error_at("unexpected-start-tag-ignored", tag_close_pos)
+        true
+      }
+      _ => false
+    }
+  } else if self.has_open_element("frameset") {
     match name {
       "frameset" => {
         self.insert_element_maybe_push(name, attrs, true)
@@ -3697,14 +3870,26 @@ fn Parser::handle_document_frameset_start_tag(
         true
       }
       "noframes" => false
+      "html" => {
+        self.error_at("unexpected-start-tag", tag_close_pos)
+        match self.open_html_element() {
+          Some(html) => merge_missing_attrs_from_map(html, attrs)
+          None => ()
+        }
+        self.frameset_reprocesses_in_body_mode = true
+        true
+      }
       _ => {
-        self.error_at("unexpected-token-in-frameset", start)
+        self.error_at("unexpected-token-in-frameset", tag_close_pos)
         true
       }
     }
   } else if name == "frameset" {
     if !self.frameset_ok {
-      self.error_at("unexpected-start-tag-ignored", start)
+      self.error_at("unexpected-start-tag-ignored", tag_close_pos)
+      true
+    } else if !self.prepare_document_frameset_replacement() {
+      self.error_at("unexpected-start-tag-ignored", tag_close_pos)
       true
     } else {
       self.insert_element_maybe_push(name, attrs, true)
@@ -3920,7 +4105,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         return
       }
       if self.handle_document_frameset_start_tag(
-          name, attrs, self_closing, start,
+          name, attrs, self_closing, tag_close_pos,
         ) {
         return
       }
@@ -4044,7 +4229,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if is_heading_element_name(name) {
         self.close_current_heading_element()
       }
-      if !self.document_start_tag_preserves_frameset_ok(name) {
+      if !self.document_start_tag_preserves_frameset_ok(name, attrs) {
         self.frameset_ok = false
       }
       let node_ns = self.start_tag_namespace(name)

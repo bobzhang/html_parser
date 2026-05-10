@@ -223,12 +223,24 @@ JustHTML from Python to MoonBit.
   attribute.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
+  Python's `frameset_ok` flag is not simply "no start tags have appeared":
+  paragraph, formatting, and block starts such as `<p>` or `<figure>` can still
+  be discarded when a later `<frameset>` replaces the implicit body, while
+  text, explicit `<body>`, headings, tables, forms, and most void elements make
+  a later frameset ignored. If the MoonBit port defers creating the implicit
+  `<body>` until scaffolding, the `<frameset>` handler must still remove those
+  earlier implicit-body children and reset the stack before inserting the
+  frameset.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside
   the open frameset are ignored immediately and their matching end tags report
   `unexpected-token-in-frameset` too. Non-whitespace tokens after the final
   `</frameset>` are ignored with
   `unexpected-token-after-frameset`; ordinary tags also report the reprocessed
-  `unexpected-token-in-frameset`, while `<noframes>` remains allowed.
+  `unexpected-token-in-frameset`, while `<noframes>` remains allowed. A start
+  `<html>` inside an open frameset is another special case: Python reports
+  `unexpected-start-tag` and reprocesses it through body-mode rules, so a
+  following `<frameset>` or `<frame>` is ignored as a body-mode start rather
+  than inserted as a nested frameset child.
 - Some start tags have their own scope rules even when they look like ordinary
   elements. A repeated `<button>` searches default scope, reports
   `unexpected-start-tag-implies-end-tag`, closes the previous button, and then
