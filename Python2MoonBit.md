@@ -946,6 +946,11 @@ JustHTML from Python to MoonBit.
   than Python's mode-only fragment context. A matching `</tbody>`/`</thead>`/
   `</tfoot>` also reports `unexpected-end-tag` and must not close that synthetic
   wrapper.
+- Active formatting still participates in table-fragment foster parenting.
+  In a `table` fragment context, `<a><tr>x</tr></a>` returns an empty fostered
+  anchor plus a reconstructed anchor around the row text, and `</a>` still takes
+  the table-voodoo/adoption-agency error path. Do not skip formatting
+  reconstruction just because the synthetic table wrapper is later unwrapped.
 - A `tr` fragment context adds one more synthetic wrapper level. Direct cells
   are returned as fragment children, while top-level row/table structural starts
   are ignored with `unexpected-start-tag-implies-end-tag`. Non-table starts in
