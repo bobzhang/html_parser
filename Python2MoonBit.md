@@ -308,7 +308,9 @@ JustHTML from Python to MoonBit.
   `unexpected-end-tag-implies-table-voodoo`. Table mode has narrow exceptions:
   `<input type=hidden>` and `<form>` stay inside `table`/row-group contexts
   with `unexpected-hidden-input-in-table` or `unexpected-form-in-table`, while
-  row/cell/caption contexts use the normal body/table-cell behavior.
+  row/cell/caption contexts use the normal body/table-cell behavior. `<style>`
+  and `<script>` also stay in the current table context without foster-parenting
+  errors.
 
 ## Optional Values and Defaults
 

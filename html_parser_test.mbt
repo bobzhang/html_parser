@@ -2743,6 +2743,40 @@ test "parser handles hidden input and form starts in table context" {
 }
 
 ///|
+test "parser keeps style and script starts in table context" {
+  let style = @html_parser.parse_fragment(
+    "<table><style>x</style></table>",
+    collect_errors=true,
+  )
+  assert_eq(style.to_html(pretty=false), "<table><style>x</style></table>")
+  assert_eq(style.errors.length(), 0)
+  let script = @html_parser.parse_fragment(
+    "<table><script>x</script></table>",
+    collect_errors=true,
+  )
+  assert_eq(script.to_html(pretty=false), "<table><script>x</script></table>")
+  assert_eq(script.errors.length(), 0)
+  let section = @html_parser.parse_fragment(
+    "<table><tbody><style>x</style></tbody></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    section.to_html(pretty=false),
+    "<table><tbody><style>x</style></tbody></table>",
+  )
+  assert_eq(section.errors.length(), 0)
+  let row = @html_parser.parse_fragment(
+    "<table><tr><style>x</style></tr></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    row.to_html(pretty=false),
+    "<table><tbody><tr><style>x</style></tr></tbody></table>",
+  )
+  assert_eq(row.errors.length(), 0)
+}
+
+///|
 test "parser ignores table structure starts outside table" {
   let cell = @html_parser.parse_fragment("<td>x</td>", collect_errors=true)
   assert_eq(cell.to_html(pretty=false), "x")

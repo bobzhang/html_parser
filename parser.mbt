@@ -326,6 +326,9 @@ fn Parser::report_foster_parented_table_context_text(
 
 ///|
 fn Parser::table_start_foster_mode(self : Parser, name : StringView) -> Int {
+  if name == "style" || name == "script" {
+    return 0
+  }
   if is_table_internal_start_name(name) {
     return 0
   }
