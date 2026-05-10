@@ -11,7 +11,10 @@ The current slice provides:
 - A tolerant parser for basic documents/fragments.
 - Basic document-mode scaffolding with `html/head/body`.
 - Stable token data structures for early tokenizer harness work.
-- Basic tag, class, id, and `tag.class` queries.
+- CSS-style DOM queries for tag, class, id, attributes, combinators, selector
+  lists, and common pseudo selectors.
+- Byte input parsing with supported transport labels, BOM sniffing, and
+  meta-charset prescan.
 
 ```mbt check
 ///|
@@ -28,6 +31,15 @@ test "readme parse fragment example" {
 }
 ```
 
-Full HTML5 tree construction, sanitization, transforms, selectors, linkify,
-encoding sniffing, streaming, Markdown, and CLI compatibility are planned as
-separate passing slices.
+```mbt check
+///|
+test "readme parse bytes example" {
+  let bytes = @utf8.encode("<meta charset=utf-8><p>\u{20AC}</p>")
+  let doc = parse_bytes(bytes)
+  guard doc.encoding is Some("utf-8") else { fail("expected utf-8 encoding") }
+  assert_eq(doc.to_text(separator="", strip=false), "\u{20AC}")
+}
+```
+
+Full HTML5 tree construction, sanitization, transforms, linkify, streaming,
+Markdown parity, and CLI compatibility are planned as separate passing slices.
