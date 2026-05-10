@@ -585,12 +585,36 @@ fn next_simple_selector_marker(selector : StringView, start : Int) -> Int {
   let mut pos = start
   while pos < selector.length() {
     match selector.get_char(pos) {
-      Some(ch) if ch == '.' || ch == '#' => return pos
+      Some(ch) if ch == '.' || ch == '#' || ch == '[' => return pos
       Some(ch) => pos += ch.utf16_len()
       None => break
     }
   }
   selector.length()
+}
+
+///|
+fn find_attribute_selector_end(selector : StringView, start : Int) -> Int? {
+  let mut pos = start + 1
+  let mut quote : Char? = None
+  while pos < selector.length() {
+    match selector.get_char(pos) {
+      Some(ch) => {
+        match quote {
+          Some(q) => if ch == q { quote = None }
+          None =>
+            if ch == '"' || ch == '\'' {
+              quote = Some(ch)
+            } else if ch == ']' {
+              return Some(pos)
+            }
+        }
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  None
 }
 
 ///|
@@ -615,6 +639,66 @@ fn class_selector_matches(node : Node, class_name : StringView) -> Bool {
 }
 
 ///|
+fn attribute_value_by_name(node : Node, attr_name : StringView) -> String? {
+  let wanted = lower_ascii(attr_name)
+  for name, value in node.attrs {
+    if lower_ascii(name[:]) == wanted {
+      return Some(
+        match value {
+          Some(text) => text
+          None => ""
+        },
+      )
+    }
+  }
+  None
+}
+
+///|
+fn quoted_attribute_selector_value(value : StringView) -> StringView? {
+  let value = value.trim()
+  if value.length() < 2 {
+    return Some(value)
+  }
+  let end = value.length() - 1
+  match (value.get_char(0), value.get_char(end)) {
+    (Some('"'), Some('"')) | (Some('\''), Some('\'')) =>
+      value.get_view(start=1, end~)
+    _ => Some(value)
+  }
+}
+
+///|
+fn attribute_selector_matches(node : Node, selector : StringView) -> Bool {
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return false
+  }
+  match selector.split_once("=") {
+    Some((name, expected)) => {
+      let name = name.trim()
+      if name.is_empty() ||
+        name.has_suffix("~") ||
+        name.has_suffix("|") ||
+        name.has_suffix("^") ||
+        name.has_suffix("$") ||
+        name.has_suffix("*") {
+        return false
+      }
+      guard quoted_attribute_selector_value(expected) is Some(expected) else {
+        return false
+      }
+      match attribute_value_by_name(node, name) {
+        Some(actual) => actual[:] == expected
+        None => false
+      }
+    }
+    None =>
+      !selector.is_empty() && attribute_value_by_name(node, selector) is Some(_)
+  }
+}
+
+///|
 fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
   if node.kind != Element {
     return false
@@ -629,12 +713,12 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
       pos += 1
       if pos < selector.length() {
         match selector.get_char(pos) {
-          Some('.') | Some('#') => ()
+          Some('.') | Some('#') | Some('[') => ()
           _ => return false
         }
       }
     }
-    Some('.') | Some('#') => ()
+    Some('.') | Some('#') | Some('[') => ()
     Some(_) => {
       let end = next_simple_selector_marker(selector, pos)
       guard selector.get_view(start=pos, end~) is Some(tag) else {
@@ -649,6 +733,19 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
   }
   while pos < selector.length() {
     guard selector.get_char(pos) is Some(marker) else { return false }
+    if marker == '[' {
+      guard find_attribute_selector_end(selector, pos) is Some(end) else {
+        return false
+      }
+      guard selector.get_view(start=pos + 1, end~) is Some(attribute) else {
+        return false
+      }
+      if !attribute_selector_matches(node, attribute) {
+        return false
+      }
+      pos = end + 1
+      continue
+    }
     if marker != '.' && marker != '#' {
       return false
     }

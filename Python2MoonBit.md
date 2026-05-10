@@ -50,6 +50,10 @@ JustHTML from Python to MoonBit.
   compound selector can start with a tag or `*`, followed by `#id` and `.class`
   fragments in source order; tag matching is case-insensitive, while id and
   class matching are case-sensitive.
+- Attribute selector names are case-insensitive in HTML, even for
+  programmatically-created nodes whose attribute map may contain uppercase
+  keys. Normalize names for matching, but keep exact attribute values
+  case-sensitive.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
