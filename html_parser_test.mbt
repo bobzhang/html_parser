@@ -7564,6 +7564,52 @@ test "tree builder matches Python reference foreign integration branch fixtures"
 }
 
 ///|
+test "tree builder matches Python reference nested foreign breakout branch fixtures" {
+  let math = @html_parser.parse(
+    "<math><annotation-xml foo=\"bar\"><div>test</div></annotation-xml></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(math.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math annotation-xml>\n|         foo=\"bar\"\n|     <div>\n|       \"test\"",
+  )
+  assert_eq(math.errors.length(), 4)
+  assert_eq(math.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(math.errors[1].code, "unexpected-html-element-in-foreign-content")
+  assert_eq(math.errors[2].code, "unexpected-end-tag")
+  assert_eq(math.errors[3].code, "unexpected-end-tag")
+  guard math.errors[1].column is Some(37) else {
+    fail("expected MathML annotation breakout at div start close")
+  }
+  guard math.errors[2].column is Some(64) else {
+    fail("expected annotation-xml end recovery at close bracket")
+  }
+  guard math.errors[3].column is Some(71) else {
+    fail("expected math end recovery at close bracket")
+  }
+  let svg = @html_parser.parse(
+    "<svg><g><rect><circle><path><div>text</div></path></circle></rect></g></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(svg.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <svg svg>\n|       <svg g>\n|         <svg rect>\n|           <svg circle>\n|             <svg path>\n|     <div>\n|       \"text\"",
+  )
+  assert_eq(svg.errors.length(), 7)
+  assert_eq(svg.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(svg.errors[1].code, "unexpected-html-element-in-foreign-content")
+  for index in 2..<svg.errors.length() {
+    assert_eq(svg.errors[index].code, "unexpected-end-tag")
+  }
+  guard svg.errors[1].column is Some(33) else {
+    fail("expected nested SVG breakout at div start close")
+  }
+  guard svg.errors[6].column is Some(76) else {
+    fail("expected final SVG end recovery at close bracket")
+  }
+}
+
+///|
 test "parser adjusts SVG edge names and foreign attributes" {
   let svg = @html_parser.parse_fragment(
     "<svg><altglyph attributetype='xml' xlink:actuate='onLoad'></altglyph><femerge><femergenode></femergenode></femerge><radialgradient gradienttransform='r'></radialgradient></svg>",
