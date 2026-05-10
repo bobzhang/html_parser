@@ -435,7 +435,10 @@ JustHTML from Python to MoonBit.
   obfuscated CSS comments, and legacy loader functions conservatively. The
   dedicated CSS `url(...)` sanitizer should reject any `/*` comment in the
   value, even a closed trailing comment, because it only supports plain URL
-  function tokens.
+  function tokens. Treat malformed URL-function syntax as unsafe too:
+  backslashes, control or DEL characters, empty URLs, missing delimiters, or
+  unexpected non-separator text after `)` should drop that declaration rather
+  than trying to repair it.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone. Deep clones should use an
