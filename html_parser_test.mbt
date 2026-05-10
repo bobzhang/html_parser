@@ -1036,6 +1036,38 @@ test "sanitize_dom drops active foreign integration points during stabilization"
 }
 
 ///|
+test "sanitize_dom can return fragment after foreign stabilization" {
+  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
+    @html_parser.UrlPolicyRule::new(
+      "img",
+      "src",
+      @html_parser.UrlRule::new(
+        allowed_schemes=[],
+        allow_relative=true,
+        resolve_protocol_relative=None,
+      ),
+    ),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["svg", "img"],
+    allowed_attributes={ "img": ["src"] },
+    url_policy~,
+    drop_foreign_namespaces=false,
+    drop_content_tags=[],
+  )
+  let parsed = @html_parser.parse_fragment(
+    "<foo><svg></svg><img src onerror=1></foo>",
+    sanitize=false,
+  )
+  guard parsed.root.children().get(0) is Some(foo) else {
+    fail("expected foo root child")
+  }
+  let sanitized = @html_parser.sanitize_dom(foo, policy~)
+  assert_true(sanitized.kind() is Fragment)
+  assert_eq(sanitized.to_html(pretty=false), "<svg></svg><img>")
+}
+
+///|
 test "sanitize_dom drops foreign url function attributes without url policy" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["svg", "rect"],

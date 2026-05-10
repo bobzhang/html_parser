@@ -157,6 +157,10 @@ JustHTML from Python to MoonBit.
   that same broader predicate for `drop_foreign_namespaces`. Run this check
   before disallowed-tag unwrap/escape handling so active integration points are
   removed as whole subtrees during stabilization.
+- Sanitizing a standalone non-container root can still produce a document
+  fragment. If a disallowed root unwraps to multiple surviving children, match
+  Python by returning the fragment wrapper instead of forcing one replacement
+  node or assuming the returned node kind matches the input.
 - Treat SVG paint/filter attributes as URL-capable even though they do not look
   like `href`/`src`. For effective foreign nodes, allowlisted attributes such as
   `fill`, `filter`, `mask`, and marker attributes still need conservative
