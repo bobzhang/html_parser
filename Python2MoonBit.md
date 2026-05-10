@@ -24,6 +24,9 @@ JustHTML from Python to MoonBit.
   UTF-16 BOMs must be detected first, decoded with explicit endianness, and the
   resulting `ParsedHtml.encoding` should report the detected or transport
   label.
+- HTML's default byte fallback is Windows-1252, not UTF-8. Latin-1 labels such
+  as `iso-8859-1` also normalize to Windows-1252, and UTF-7 labels should be
+  rejected by normalizing them to Windows-1252.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.

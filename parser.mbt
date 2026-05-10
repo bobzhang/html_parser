@@ -2468,6 +2468,14 @@ fn has_utf16be_bom(input : BytesView) -> Bool {
 }
 
 ///|
+fn has_utf8_bom(input : BytesView) -> Bool {
+  input.length() >= 3 &&
+  input[0] == b'\xef' &&
+  input[1] == b'\xbb' &&
+  input[2] == b'\xbf'
+}
+
+///|
 fn decode_utf16le_lossy(input : BytesView) -> String {
   @utf16.decode_lossy(input, ignore_bom=true)
 }
@@ -2487,6 +2495,24 @@ fn decode_utf16_lossy(input : BytesView) -> String {
 }
 
 ///|
+fn decode_windows1252_lossy(input : BytesView) -> String {
+  let out = StringBuilder::new(size_hint=input.length())
+  for index in 0..<input.length() {
+    let value = input[index].to_int()
+    let code = if value >= 0x80 && value <= 0x9F {
+      html_numeric_entity_replacement(value)
+    } else {
+      value
+    }
+    match code.to_char() {
+      Some(ch) => out.write_char(ch)
+      None => out.write_char('\u{FFFD}')
+    }
+  }
+  out.to_string()
+}
+
+///|
 fn decode_html_bytes(input : BytesView, encoding : String?) -> (String, String) {
   match encoding {
     Some(label) => {
@@ -2497,6 +2523,17 @@ fn decode_html_bytes(input : BytesView, encoding : String?) -> (String, String) 
         match trimmed.to_lower() {
           "utf-8" | "utf8" =>
             (@utf8.decode_lossy(input, ignore_bom=true), "utf-8")
+          "utf-7" | "utf7" | "x-utf-7" =>
+            (decode_windows1252_lossy(input), "windows-1252")
+          "iso-8859-1"
+          | "iso8859-1"
+          | "latin1"
+          | "latin-1"
+          | "l1"
+          | "cp819"
+          | "ibm819" => (decode_windows1252_lossy(input), "windows-1252")
+          "windows-1252" | "windows1252" | "cp1252" | "x-cp1252" =>
+            (decode_windows1252_lossy(input), "windows-1252")
           "utf-16" | "utf16" => (decode_utf16_lossy(input), "utf-16")
           "utf-16le" | "utf16le" => (decode_utf16le_lossy(input), "utf-16le")
           "utf-16be" | "utf16be" => (decode_utf16be_lossy(input), "utf-16be")
@@ -2509,8 +2546,10 @@ fn decode_html_bytes(input : BytesView, encoding : String?) -> (String, String) 
         (decode_utf16le_lossy(input), "utf-16le")
       } else if has_utf16be_bom(input) {
         (decode_utf16be_lossy(input), "utf-16be")
-      } else {
+      } else if has_utf8_bom(input) {
         (@utf8.decode_lossy(input, ignore_bom=true), "utf-8")
+      } else {
+        (decode_windows1252_lossy(input), "windows-1252")
       }
   }
 }

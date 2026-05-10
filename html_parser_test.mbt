@@ -1721,14 +1721,56 @@ test "strict mode raises on first parse error" {
 }
 
 ///|
-test "parse_bytes decodes utf8 and records encoding" {
+test "parse_bytes decodes explicit utf8 and records encoding" {
   let bytes = @utf8.encode("<p>bytes</p>")
-  let doc = @html_parser.parse_bytes(bytes)
+  let doc = @html_parser.parse_bytes(bytes, encoding="utf-8")
   assert_eq(
     doc.to_html(pretty=false),
     "<html><head></head><body><p>bytes</p></body></html>",
   )
   guard doc.encoding is Some("utf-8") else { fail("expected utf-8 encoding") }
+}
+
+///|
+test "parse_bytes defaults to windows1252 and normalizes compatible labels" {
+  let bytes = b"\x3c\x70\x3e\x80\x3c\x2f\x70\x3e"
+  let doc = @html_parser.parse_bytes(bytes)
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<html><head></head><body><p>\u{20AC}</p></body></html>",
+  )
+  guard doc.encoding is Some("windows-1252") else {
+    fail("expected default windows-1252 encoding")
+  }
+  let latin1 = @html_parser.parse_bytes(bytes, encoding="iso-8859-1")
+  assert_eq(
+    latin1.to_html(pretty=false),
+    "<html><head></head><body><p>\u{20AC}</p></body></html>",
+  )
+  guard latin1.encoding is Some("windows-1252") else {
+    fail("expected latin1 label to normalize to windows-1252")
+  }
+  let utf7 = @html_parser.parse_bytes(bytes, encoding="utf7")
+  assert_eq(
+    utf7.to_html(pretty=false),
+    "<html><head></head><body><p>\u{20AC}</p></body></html>",
+  )
+  guard utf7.encoding is Some("windows-1252") else {
+    fail("expected utf7 label to normalize to windows-1252")
+  }
+}
+
+///|
+test "parse_bytes sniffs utf8 bom before windows1252 fallback" {
+  let bytes = b"\xef\xbb\xbf\x3c\x70\x3e\x62\x6f\x6d\x3c\x2f\x70\x3e"
+  let doc = @html_parser.parse_bytes(bytes)
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<html><head></head><body><p>bom</p></body></html>",
+  )
+  guard doc.encoding is Some("utf-8") else {
+    fail("expected utf-8 bom encoding")
+  }
 }
 
 ///|
