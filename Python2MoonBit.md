@@ -394,6 +394,10 @@ JustHTML from Python to MoonBit.
   whole URL. Strip userinfo and port for matching, accept bracketed IPv6 by
   matching the inner host, and reject malformed bracket hosts or backslashes
   before applying the allowlist.
+- URL attribute checks must run after attribute entity decoding. A URL that
+  matches the scheme and host allowlists is still unsafe when the decoded value
+  contains C0 controls, DEL, or a backslash, so reject those values before
+  handling, proxying, or serializing the attribute.
 - Python's `unsafe_handling` string mode maps more safely to a MoonBit enum.
   Keep `Strip` as the no-op default, make `Collect` append `ParseError` values
   with `category="security"`, and make `Raise` use a typed `HtmlError` variant
