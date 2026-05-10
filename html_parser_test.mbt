@@ -4861,6 +4861,20 @@ test "tree builder matches reference legacy loose doctype fixture" {
 }
 
 ///|
+test "tree builder matches reference MathML text form-feed fixture" {
+  let doc = @html_parser.parse(
+    "<math><mi>\u{000C}text</mi></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math mi>\n|         \" text\"",
+  )
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+}
+
+///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(
@@ -7359,7 +7373,7 @@ test "parser reports invalid codepoints in foreign text" {
     "<svg>a\u{0000}\u{000C}</svg>",
     collect_errors=true,
   )
-  assert_eq(svg.to_html(pretty=false), "<svg>a�\u{000C}</svg>")
+  assert_eq(svg.to_html(pretty=false), "<svg>a� </svg>")
   assert_eq(svg.errors.length(), 2)
   assert_eq(svg.errors[0].code, "unexpected-null-character")
   assert_eq(svg.errors[1].code, "invalid-codepoint-in-foreign-content")
@@ -7369,7 +7383,7 @@ test "parser reports invalid codepoints in foreign text" {
   )
   assert_eq(
     math_text_integration.to_html(pretty=false),
-    "<math><mi>\u{000C}text</mi></math>",
+    "<math><mi> text</mi></math>",
   )
   assert_eq(math_text_integration.errors.length(), 1)
   assert_eq(math_text_integration.errors[0].code, "unexpected-null-character")

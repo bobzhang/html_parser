@@ -138,6 +138,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   } else {
     self.remove_null_characters(raw, start)
   }
+  cleaned = normalize_tree_builder_text(cleaned[:])
   if cleaned.is_empty() {
     return
   }
@@ -209,7 +210,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   for error in decoded_result.errors {
     self.error_at(error.code, start + error.offset)
   }
-  let decoded = decoded_result.data
+  let decoded = normalize_tree_builder_text(decoded_result.data[:])
   let data = if self.xml_coercion {
     coerce_text_for_xml(decoded[:])
   } else {
@@ -755,9 +756,7 @@ fn Parser::handle_column_group_text(
     if has_non_whitespace {
       let whitespace = leading_ascii_whitespace(cleaned)
       if !whitespace.is_empty() {
-        current.append_child(
-          text(decode_entities(whitespace[:], in_attribute=false)),
-        )
+        current.append_child(text(decode_entities_for_tree_text(whitespace[:])))
       }
       ignore(self.pop_current_element_if_name("colgroup"))
       let non_whitespace = cleaned[whitespace.length():]
@@ -775,9 +774,9 @@ fn Parser::handle_column_group_text(
       }
       self
       .current_node()
-      .append_child(text(decode_entities(non_whitespace, in_attribute=false)))
+      .append_child(text(decode_entities_for_tree_text(non_whitespace)))
     } else {
-      current.append_child(text(decode_entities(cleaned, in_attribute=false)))
+      current.append_child(text(decode_entities_for_tree_text(cleaned)))
       ignore(self.pop_current_element_if_name("colgroup"))
       if in_template_table_context {
         self.template_table_context_mode = true
@@ -823,7 +822,7 @@ fn Parser::handle_fragment_context_colgroup_text(
   if !whitespace.is_empty() {
     self
     .current_node()
-    .append_child(text(decode_entities(whitespace[:], in_attribute=false)))
+    .append_child(text(decode_entities_for_tree_text(whitespace[:])))
   }
   true
 }
@@ -845,7 +844,7 @@ fn Parser::handle_template_column_group_text(
   if !whitespace.is_empty() {
     self
     .current_node()
-    .append_child(text(decode_entities(whitespace[:], in_attribute=false)))
+    .append_child(text(decode_entities_for_tree_text(whitespace[:])))
   }
   self.error_at("unexpected-characters-in-template-column-group", start)
   true
@@ -1614,6 +1613,25 @@ fn ascii_whitespace_chars_only(value : StringView) -> String {
 }
 
 ///|
+fn normalize_tree_builder_text(value : StringView) -> String {
+  let out = StringBuilder::new(size_hint=value.length())
+  for ch in value {
+    if ch == '\u{000C}' {
+      out.write_char(' ')
+    } else {
+      out.write_char(ch)
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn decode_entities_for_tree_text(value : StringView) -> String {
+  let decoded = decode_entities(value, in_attribute=false)
+  normalize_tree_builder_text(decoded[:])
+}
+
+///|
 fn Parser::remove_null_characters(
   self : Parser,
   raw : StringView,
@@ -2027,6 +2045,7 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
         self.remove_null_characters(view, start)
       }
       if !cleaned.is_empty() {
+        let cleaned = normalize_tree_builder_text(cleaned[:])
         let data = if self.xml_coercion {
           coerce_text_for_xml(cleaned[:])
         } else {
@@ -4305,6 +4324,7 @@ fn Parser::decoded_special_text(
   } else {
     normalize_newlines(raw)
   }
+  let data = normalize_tree_builder_text(data[:])
   if self.xml_coercion {
     coerce_text_for_xml(data[:])
   } else {
@@ -5012,10 +5032,11 @@ fn Parser::consume_special_element_content(
       self.error_at(error.code, error.offset)
     }
     if !scan.data.is_empty() {
+      let scan_data = normalize_tree_builder_text(scan.data[:])
       let data = if self.xml_coercion {
-        coerce_text_for_xml(scan.data[:])
+        coerce_text_for_xml(scan_data[:])
       } else {
-        scan.data
+        scan_data
       }
       parent.append_child(text(data))
     }
@@ -5102,6 +5123,7 @@ fn Parser::append_fragment_context_text(
   }
   let raw = self.replace_null_characters(raw, start)
   let data = normalize_newlines(raw)
+  let data = normalize_tree_builder_text(data[:])
   let data = if self.xml_coercion { coerce_text_for_xml(data[:]) } else { data }
   self.root.append_child(text(data))
 }

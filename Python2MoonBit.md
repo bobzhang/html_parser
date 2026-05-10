@@ -1128,6 +1128,10 @@ JustHTML from Python to MoonBit.
   out of default parsing, and when enabled apply it after entity decoding for
   text-like tokens: form feed becomes a space, XML noncharacters become U+FFFD,
   and comment data rewrites `--` to `- -`.
+- Tree building has a separate text normalization step: appended DOM text maps
+  form feed to a normal space even when XML coercion is off. Keep tokenizer
+  tests separate from parser/tree-builder tests so the opt-in tokenizer behavior
+  does not hide the always-on DOM text normalization.
 - After a quoted attribute value, the first non-whitespace character before the
   next attribute is reconsumed. Report `missing-whitespace-between-attributes`
   at that character unless it is `>` or `/`, because `/` enters the self-closing
