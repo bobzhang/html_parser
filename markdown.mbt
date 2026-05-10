@@ -411,7 +411,32 @@ fn markdown_percent_encode_link_destination(value : StringView) -> String {
 ///|
 fn markdown_link_destination_byte_is_safe(byte : Byte) -> Bool {
   let value = byte.to_int()
-  value >= 0x21 && value <= 0x7E && value != 0x3C && value != 0x3E
+  (value >= 0x41 && value <= 0x5A) ||
+  (value >= 0x61 && value <= 0x7A) ||
+  (value >= 0x30 && value <= 0x39) ||
+  value == 0x3A ||
+  value == 0x2F ||
+  value == 0x3F ||
+  value == 0x23 ||
+  value == 0x5B ||
+  value == 0x5D ||
+  value == 0x40 ||
+  value == 0x21 ||
+  value == 0x24 ||
+  value == 0x26 ||
+  value == 0x27 ||
+  value == 0x2A ||
+  value == 0x2B ||
+  value == 0x2C ||
+  value == 0x3B ||
+  value == 0x3D ||
+  value == 0x25 ||
+  value == 0x2D ||
+  value == 0x2E ||
+  value == 0x5F ||
+  value == 0x7E ||
+  value == 0x28 ||
+  value == 0x29
 }
 
 ///|

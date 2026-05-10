@@ -87,6 +87,9 @@ JustHTML from Python to MoonBit.
   generated `[text](href)` does not contain block Markdown or blank lines.
   It still preserves inline code and raw table HTML, skips `<hr>`, and ignores
   non-`li` children when flattening lists.
+- Markdown link destinations use Python `quote(..., safe=...)` semantics only
+  after wrapping is required. Keep the safe-byte set explicit; printable bytes
+  such as quotes and backslashes still need percent-encoding inside `<...>`.
 - Attribute serialization has policy baked into the Python helper: `None`,
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids
