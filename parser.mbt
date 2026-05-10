@@ -2513,6 +2513,305 @@ fn decode_windows1252_lossy(input : BytesView) -> String {
 }
 
 ///|
+fn is_ascii_whitespace_byte(byte : Byte) -> Bool {
+  match byte.to_int() {
+    0x09 | 0x0A | 0x0C | 0x0D | 0x20 => true
+    _ => false
+  }
+}
+
+///|
+fn ascii_lower_value(value : Int) -> Int {
+  if value >= 0x41 && value <= 0x5A {
+    value + 0x20
+  } else {
+    value
+  }
+}
+
+///|
+fn is_ascii_alpha_byte(byte : Byte) -> Bool {
+  let value = ascii_lower_value(byte.to_int())
+  value >= 0x61 && value <= 0x7A
+}
+
+///|
+fn skip_ascii_whitespace_bytes(input : BytesView, pos : Int) -> Int {
+  let mut pos = pos
+  while pos < input.length() && is_ascii_whitespace_byte(input[pos]) {
+    pos += 1
+  }
+  pos
+}
+
+///|
+fn ascii_lower_bytes(input : BytesView, start : Int, end : Int) -> String {
+  let out = StringBuilder::new(size_hint=end - start)
+  for index in start..<end {
+    let value = input[index].to_int()
+    if value < 0x80 {
+      match ascii_lower_value(value).to_char() {
+        Some(ch) => out.write_char(ch)
+        None => ()
+      }
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn strip_ascii_whitespace_bytes(
+  input : BytesView,
+  start : Int,
+  end : Int,
+) -> (Int, Int) {
+  let mut start = start
+  let mut end = end
+  while start < end && is_ascii_whitespace_byte(input[start]) {
+    start += 1
+  }
+  while end > start && is_ascii_whitespace_byte(input[end - 1]) {
+    end -= 1
+  }
+  (start, end)
+}
+
+///|
+fn normalize_supported_html_encoding_label(label : StringView) -> String? {
+  let label = label.trim().to_lower()
+  if label.is_empty() {
+    return None
+  }
+  match label {
+    "utf-8" | "utf8" => Some("utf-8")
+    "utf-7" | "utf7" | "x-utf-7" => Some("windows-1252")
+    "iso-8859-1"
+    | "iso8859-1"
+    | "latin1"
+    | "latin-1"
+    | "l1"
+    | "cp819"
+    | "ibm819" => Some("windows-1252")
+    "windows-1252" | "windows1252" | "cp1252" | "x-cp1252" =>
+      Some("windows-1252")
+    "utf-16" | "utf16" => Some("utf-16")
+    "utf-16le" | "utf16le" => Some("utf-16le")
+    "utf-16be" | "utf16be" => Some("utf-16be")
+    _ => None
+  }
+}
+
+///|
+fn normalize_meta_html_encoding_label(label : StringView) -> String? {
+  match normalize_supported_html_encoding_label(label) {
+    Some("utf-16") | Some("utf-16le") | Some("utf-16be") => Some("utf-8")
+    other => other
+  }
+}
+
+///|
+fn decode_supported_html_encoding(
+  input : BytesView,
+  encoding : String,
+) -> (String, String) {
+  match encoding {
+    "utf-8" => (@utf8.decode_lossy(input, ignore_bom=true), "utf-8")
+    "windows-1252" => (decode_windows1252_lossy(input), "windows-1252")
+    "utf-16" => (decode_utf16_lossy(input), "utf-16")
+    "utf-16le" => (decode_utf16le_lossy(input), "utf-16le")
+    "utf-16be" => (decode_utf16be_lossy(input), "utf-16be")
+    _ => (decode_windows1252_lossy(input), "windows-1252")
+  }
+}
+
+///|
+fn starts_html_comment_at(input : BytesView, pos : Int) -> Bool {
+  pos + 3 < input.length() &&
+  input[pos] == b'<' &&
+  input[pos + 1] == b'!' &&
+  input[pos + 2] == b'-' &&
+  input[pos + 3] == b'-'
+}
+
+///|
+fn find_html_comment_end(input : BytesView, pos : Int, limit : Int) -> Int? {
+  let mut pos = pos
+  while pos + 2 < limit {
+    if input[pos] == b'-' && input[pos + 1] == b'-' && input[pos + 2] == b'>' {
+      return Some(pos + 3)
+    }
+    pos += 1
+  }
+  None
+}
+
+///|
+fn skip_byte_tag(input : BytesView, pos : Int, limit : Int) -> Int {
+  let mut pos = pos
+  let mut quote : Byte? = None
+  while pos < limit {
+    let byte = input[pos]
+    match quote {
+      Some(expected) => if byte == expected { quote = None }
+      None =>
+        if byte == b'"' || byte == b'\'' {
+          quote = Some(byte)
+        } else if byte == b'>' {
+          return pos + 1
+        }
+    }
+    pos += 1
+  }
+  limit
+}
+
+///|
+fn parse_meta_tag_declared_encoding(
+  input : BytesView,
+  tag_start : Int,
+  pos : Int,
+  limit : Int,
+) -> (String?, Int) {
+  let mut pos = pos
+  let mut charset : (Int, Int)? = None
+  while pos < limit {
+    let byte = input[pos]
+    if byte == b'>' {
+      match charset {
+        Some((start, end)) => {
+          let label = ascii_lower_bytes(input, start, end)
+          return (normalize_meta_html_encoding_label(label[:]), pos + 1)
+        }
+        None => return (None, pos + 1)
+      }
+    }
+    if byte == b'<' {
+      return (None, tag_start + 1)
+    }
+    if is_ascii_whitespace_byte(byte) || byte == b'/' {
+      pos += 1
+      continue
+    }
+    let name_start = pos
+    while pos < limit {
+      let value = input[pos].to_int()
+      if is_ascii_whitespace_byte(input[pos]) ||
+        value == 0x3D ||
+        value == 0x3E ||
+        value == 0x2F ||
+        value == 0x3C {
+        break
+      }
+      pos += 1
+    }
+    let attr_name = ascii_lower_bytes(input, name_start, pos)
+    pos = skip_ascii_whitespace_bytes(input, pos)
+    let mut value_range : (Int, Int)? = None
+    if pos < limit && input[pos] == b'=' {
+      pos += 1
+      pos = skip_ascii_whitespace_bytes(input, pos)
+      if pos >= limit {
+        return (None, tag_start + 1)
+      }
+      if input[pos] == b'"' || input[pos] == b'\'' {
+        let quote = input[pos]
+        pos += 1
+        let value_start = pos
+        while pos < limit && input[pos] != quote {
+          pos += 1
+        }
+        if pos >= limit {
+          return (None, tag_start + 1)
+        }
+        value_range = Some((value_start, pos))
+        pos += 1
+      } else {
+        let value_start = pos
+        while pos < limit {
+          let value = input[pos].to_int()
+          if is_ascii_whitespace_byte(input[pos]) ||
+            value == 0x3E ||
+            value == 0x3C {
+            break
+          }
+          pos += 1
+        }
+        value_range = Some((value_start, pos))
+      }
+    }
+    if attr_name == "charset" {
+      match value_range {
+        Some((start, end)) => {
+          let (start, end) = strip_ascii_whitespace_bytes(input, start, end)
+          if start < end {
+            charset = Some((start, end))
+          }
+        }
+        None => ()
+      }
+    }
+  }
+  (None, tag_start + 1)
+}
+
+///|
+fn prescan_meta_charset(input : BytesView) -> String? {
+  let scan_limit = if input.length() < 65536 { input.length() } else { 65536 }
+  let mut pos = 0
+  let mut non_comment = 0
+  while pos < scan_limit && non_comment < 1024 {
+    if input[pos] != b'<' {
+      pos += 1
+      non_comment += 1
+      continue
+    }
+    if starts_html_comment_at(input, pos) {
+      match find_html_comment_end(input, pos + 4, scan_limit) {
+        Some(next) => {
+          pos = next
+          continue
+        }
+        None => return None
+      }
+    }
+    let mut tag_pos = pos + 1
+    if tag_pos < scan_limit && input[tag_pos] == b'/' {
+      let next = skip_byte_tag(input, pos, scan_limit)
+      non_comment += next - pos
+      pos = next
+      continue
+    }
+    if tag_pos >= scan_limit || !is_ascii_alpha_byte(input[tag_pos]) {
+      pos += 1
+      non_comment += 1
+      continue
+    }
+    let name_start = tag_pos
+    while tag_pos < scan_limit && is_ascii_alpha_byte(input[tag_pos]) {
+      tag_pos += 1
+    }
+    let tag_name = ascii_lower_bytes(input, name_start, tag_pos)
+    if tag_name != "meta" {
+      let next = skip_byte_tag(input, pos, scan_limit)
+      non_comment += next - pos
+      pos = next
+      continue
+    }
+    let (encoding, next) = parse_meta_tag_declared_encoding(
+      input, pos, tag_pos, scan_limit,
+    )
+    match encoding {
+      Some(_) => return encoding
+      None => {
+        non_comment += next - pos
+        pos = next
+      }
+    }
+  }
+  None
+}
+
+///|
 fn decode_html_bytes(input : BytesView, encoding : String?) -> (String, String) {
   match encoding {
     Some(label) => {
@@ -2520,24 +2819,10 @@ fn decode_html_bytes(input : BytesView, encoding : String?) -> (String, String) 
       if trimmed.is_empty() {
         decode_html_bytes(input, None)
       } else {
-        match trimmed.to_lower() {
-          "utf-8" | "utf8" =>
-            (@utf8.decode_lossy(input, ignore_bom=true), "utf-8")
-          "utf-7" | "utf7" | "x-utf-7" =>
-            (decode_windows1252_lossy(input), "windows-1252")
-          "iso-8859-1"
-          | "iso8859-1"
-          | "latin1"
-          | "latin-1"
-          | "l1"
-          | "cp819"
-          | "ibm819" => (decode_windows1252_lossy(input), "windows-1252")
-          "windows-1252" | "windows1252" | "cp1252" | "x-cp1252" =>
-            (decode_windows1252_lossy(input), "windows-1252")
-          "utf-16" | "utf16" => (decode_utf16_lossy(input), "utf-16")
-          "utf-16le" | "utf16le" => (decode_utf16le_lossy(input), "utf-16le")
-          "utf-16be" | "utf16be" => (decode_utf16be_lossy(input), "utf-16be")
-          _ => (@utf8.decode_lossy(input, ignore_bom=true), trimmed.to_owned())
+        match normalize_supported_html_encoding_label(trimmed) {
+          Some(encoding) => decode_supported_html_encoding(input, encoding)
+          None =>
+            (@utf8.decode_lossy(input, ignore_bom=true), trimmed.to_owned())
         }
       }
     }
@@ -2549,7 +2834,10 @@ fn decode_html_bytes(input : BytesView, encoding : String?) -> (String, String) 
       } else if has_utf8_bom(input) {
         (@utf8.decode_lossy(input, ignore_bom=true), "utf-8")
       } else {
-        (decode_windows1252_lossy(input), "windows-1252")
+        match prescan_meta_charset(input) {
+          Some(encoding) => decode_supported_html_encoding(input, encoding)
+          None => (decode_windows1252_lossy(input), "windows-1252")
+        }
       }
   }
 }

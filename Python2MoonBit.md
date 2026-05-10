@@ -27,6 +27,9 @@ JustHTML from Python to MoonBit.
 - HTML's default byte fallback is Windows-1252, not UTF-8. Latin-1 labels such
   as `iso-8859-1` also normalize to Windows-1252, and UTF-7 labels should be
   rejected by normalizing them to Windows-1252.
+- Encoding prescan works on raw bytes, not decoded text. Skip comments and
+  quoted attributes in non-`meta` tags before trusting a `<meta charset=...>`
+  declaration, and normalize meta-declared UTF-16 labels back to UTF-8.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.

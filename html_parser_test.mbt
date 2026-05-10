@@ -1774,6 +1774,44 @@ test "parse_bytes sniffs utf8 bom before windows1252 fallback" {
 }
 
 ///|
+test "parse_bytes prescans direct meta charset" {
+  let utf8 = b"\x3c\x6d\x65\x74\x61\x20\x63\x68\x61\x72\x73\x65\x74\x3d\x75\x74\x66\x2d\x38\x3e\x3c\x70\x3e\xe2\x82\xac\x3c\x2f\x70\x3e"
+  let doc = @html_parser.parse_bytes(utf8)
+  assert_eq(doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard doc.encoding is Some("utf-8") else {
+    fail("expected meta utf-8 encoding")
+  }
+  let quoted = b"\x3c\x6d\x65\x74\x61\x20\x63\x68\x61\x72\x73\x65\x74\x3d\x22\x6c\x61\x74\x69\x6e\x31\x22\x3e\x3c\x70\x3e\x80\x3c\x2f\x70\x3e"
+  let quoted_doc = @html_parser.parse_bytes(quoted)
+  assert_eq(quoted_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard quoted_doc.encoding is Some("windows-1252") else {
+    fail("expected meta latin1 to normalize to windows-1252")
+  }
+  let meta_utf16 = b"\x3c\x6d\x65\x74\x61\x20\x63\x68\x61\x72\x73\x65\x74\x3d\x75\x74\x66\x2d\x31\x36\x3e\x3c\x70\x3e\x6f\x6b\x3c\x2f\x70\x3e"
+  let meta_utf16_doc = @html_parser.parse_bytes(meta_utf16)
+  assert_eq(meta_utf16_doc.to_text(separator="", strip=false), "ok")
+  guard meta_utf16_doc.encoding is Some("utf-8") else {
+    fail("expected meta utf-16 declaration to become utf-8")
+  }
+}
+
+///|
+test "parse_bytes meta prescan skips comments and quoted non-meta tags" {
+  let comment = b"\x3c\x21\x2d\x2d\x20\x3c\x6d\x65\x74\x61\x20\x63\x68\x61\x72\x73\x65\x74\x3d\x75\x74\x66\x2d\x38\x3e\x20\x2d\x2d\x3e\x3c\x70\x3e\x80\x3c\x2f\x70\x3e"
+  let comment_doc = @html_parser.parse_bytes(comment)
+  assert_eq(comment_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard comment_doc.encoding is Some("windows-1252") else {
+    fail("expected charset inside comment to be ignored")
+  }
+  let quoted_tag = b"\x3c\x70\x20\x74\x69\x74\x6c\x65\x3d\x22\x78\x3e\x3c\x6d\x65\x74\x61\x20\x63\x68\x61\x72\x73\x65\x74\x3d\x75\x74\x66\x2d\x38\x22\x3e\x3c\x2f\x70\x3e\x3c\x70\x3e\x80\x3c\x2f\x70\x3e"
+  let quoted_tag_doc = @html_parser.parse_bytes(quoted_tag)
+  assert_eq(quoted_tag_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard quoted_tag_doc.encoding is Some("windows-1252") else {
+    fail("expected meta-like bytes inside non-meta tag attribute to be ignored")
+  }
+}
+
+///|
 test "parse_bytes decodes utf16 bom and explicit encodings" {
   let little = b"\xff\xfe\x3c\x00\x70\x00\x3e\x00\x68\x00\x69\x00\x3c\x00\x2f\x00\x70\x00\x3e\x00"
   let little_doc = @html_parser.parse_bytes(little)
