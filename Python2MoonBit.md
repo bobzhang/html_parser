@@ -679,6 +679,10 @@ JustHTML from Python to MoonBit.
   end-tag parser so `unexpected-character-after-solidus-in-tag`, `eof-in-tag`,
   and tree-builder EOF diagnostics are reported at the same cursor positions as
   Python.
+- Ordinary end tags use the same recovery states after the matched name.
+  `</div/foo>` closes the open `div` but reports the bad solidus at the first
+  recovered attribute character; `</d\u{0000}iv>` replaces the null before tree
+  matching, so it becomes an unexpected end tag rather than a close for `div`.
 - A bad slash in a start tag is not a separate MoonBit-only error. `<div /a>`
   reports `unexpected-character-after-solidus-in-tag`, then reconsumes `a` in
   the before-attribute-name state so it becomes a normal empty-valued attribute.

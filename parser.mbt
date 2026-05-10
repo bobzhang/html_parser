@@ -2199,6 +2199,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.error_at_eof("eof-in-tag")
     return
   }
+  let tag_close_pos = self.pos - 1
   self.flush_deferred_initial_doctype_error()
   if self.handle_before_html_end_tag(name, self.pos - 1) {
     return
@@ -2251,14 +2252,14 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   }
   self.report_table_context_end_tag_voodoo(name, start)
   if name == "br" {
-    self.error_at("unexpected-end-tag", start)
+    self.error_at("unexpected-end-tag", tag_close_pos)
     self.close_open_p_element()
     self.insert_body_mode_node(element("br"))
     return
   }
   if name == "p" {
     if !self.close_open_element("p") {
-      self.error_at("unexpected-end-tag", start)
+      self.error_at("unexpected-end-tag", tag_close_pos)
       self.insert_body_mode_node(element("p"))
     }
     return
@@ -2286,7 +2287,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   if name != "" {
-    self.pop_until(name, start)
+    self.pop_until(name, tag_close_pos)
   }
 }
 
