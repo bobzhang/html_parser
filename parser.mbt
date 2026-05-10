@@ -10,6 +10,7 @@ priv struct Parser {
   mut frameset_ok : Bool
   mut after_frameset : Bool
   mut after_frameset_ignored_depth : Int
+  foster_parented_start_error_nodes : Array[Node]
 }
 
 ///|
@@ -30,6 +31,7 @@ fn Parser::new(
     frameset_ok: root.kind == Document,
     after_frameset: false,
     after_frameset_ignored_depth: 0,
+    foster_parented_start_error_nodes: [],
   }
 }
 
@@ -109,6 +111,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if self.foster_parent_table_text(cleaned, start) {
     return
   }
+  self.report_foster_parented_table_context_text(cleaned, start)
   self
   .current_node()
   .append_child(text(decode_entities(cleaned, in_attribute=false)))
@@ -118,6 +121,31 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
 fn is_table_text_foster_target(name : StringView) -> Bool {
   match name {
     "table" | "tbody" | "tfoot" | "thead" | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn is_table_start_foster_target(name : StringView) -> Bool {
+  match name {
+    "table" | "tbody" | "tfoot" | "thead" | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn is_table_internal_start_name(name : StringView) -> Bool {
+  match name {
+    "caption"
+    | "col"
+    | "colgroup"
+    | "tbody"
+    | "td"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "tr"
+    | "table" => true
     _ => false
   }
 }
@@ -199,6 +227,126 @@ fn Parser::foster_parent_table_text(
     Some(parent) => parent.insert_child_before(fostered, table)
     None => self.root.append_child(fostered)
   }
+  true
+}
+
+///|
+fn Parser::table_context_without_cell_or_caption(self : Parser) -> Int {
+  let table_index = self.last_open_table_index()
+  if table_index < 0 || self.table_text_is_inside_cell_or_caption(table_index) {
+    -1
+  } else {
+    table_index
+  }
+}
+
+///|
+fn Parser::report_foster_parented_table_context_text(
+  self : Parser,
+  cleaned : StringView,
+  start : Int,
+) -> Unit {
+  if !text_has_non_ascii_whitespace(cleaned) {
+    return
+  }
+  let table_index = self.table_context_without_cell_or_caption()
+  if table_index < 0 {
+    return
+  }
+  let current = self.current_node()
+  if current.kind == Element && is_table_text_foster_target(current.name) {
+    return
+  }
+  ignore(self.report_foster_parenting_character_errors(cleaned, start))
+}
+
+///|
+fn Parser::table_start_foster_mode(self : Parser, name : StringView) -> Int {
+  if is_table_internal_start_name(name) {
+    return 0
+  }
+  let table_index = self.table_context_without_cell_or_caption()
+  if table_index < 0 {
+    return 0
+  }
+  let current = self.current_node()
+  if current.kind != Element || !is_table_start_foster_target(current.name) {
+    return 0
+  }
+  if current.name == "tr" {
+    1
+  } else {
+    2
+  }
+}
+
+///|
+fn Parser::insert_node_before_open_table(
+  self : Parser,
+  node : Node,
+  table_index : Int,
+) -> Unit {
+  let table = self.stack[table_index]
+  match table.parent {
+    Some(parent) => parent.insert_child_before(node, table)
+    None => self.root.append_child(node)
+  }
+}
+
+///|
+fn Parser::append_start_tag_node(
+  self : Parser,
+  node : Node,
+  name : StringView,
+  start : Int,
+) -> Unit {
+  let foster_mode = self.table_start_foster_mode(name)
+  if foster_mode == 0 {
+    self.current_node().append_child(node)
+    return
+  }
+  if foster_mode == 2 {
+    self.error_at("foster-parenting-start-tag", start)
+    self.foster_parented_start_error_nodes.push(node)
+  }
+  self.insert_node_before_open_table(node, self.last_open_table_index())
+}
+
+///|
+fn Parser::remove_foster_parented_start_error_node(
+  self : Parser,
+  target : Node,
+) -> Bool {
+  let mut index = 0
+  while index < self.foster_parented_start_error_nodes.length() {
+    if physical_equal(self.foster_parented_start_error_nodes[index], target) {
+      ignore(self.foster_parented_start_error_nodes.remove(index))
+      return true
+    }
+    index += 1
+  }
+  false
+}
+
+///|
+fn Parser::handle_foster_parented_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  let table_index = self.table_context_without_cell_or_caption()
+  if table_index < 0 {
+    return false
+  }
+  let target_index = self.last_stack_index_of(name)
+  if target_index <= table_index {
+    return false
+  }
+  let target = self.stack[target_index]
+  if self.remove_foster_parented_start_error_node(target) {
+    self.error_at("unexpected-end-tag-implies-table-voodoo", start)
+  }
+  self.pop_until(name, start)
   true
 }
 
@@ -745,6 +893,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   if self.handle_document_frameset_end_tag(name, start) {
+    return
+  }
+  if self.handle_foster_parented_end_tag(name, start) {
     return
   }
   if name == "br" {
@@ -1764,7 +1915,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if adjusted_name == "form" {
         self.form_element = Some(node)
       }
-      self.current_node().append_child(node)
+      self.append_start_tag_node(node, adjusted_name, start)
       let self_closes_tree = self_closing && is_void_element(adjusted_name)
       let inserts_empty_nonvoid = self.start_tag_inserts_empty_nonvoid(
         adjusted_name,
