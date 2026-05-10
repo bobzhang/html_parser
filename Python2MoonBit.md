@@ -313,6 +313,12 @@ JustHTML from Python to MoonBit.
   when `allowed_attributes["a"]` does not include it, then existing rel tokens
   are split on HTML whitespace, lowercased, deduplicated in order, and merged
   with the forced tokens.
+- Inline `style` sanitization is a second allowlist after attribute
+  allowlisting. A policy that allows the `style` attribute but leaves
+  `allowed_css_properties` empty should still drop `style`; only declarations
+  with valid, explicitly allowed ASCII property names survive, and values that
+  may load resources (`url(...)`, `image-set(...)`, CSS escapes, obfuscated CSS
+  comments, and legacy loader functions) should be rejected conservatively.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone.

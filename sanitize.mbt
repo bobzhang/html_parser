@@ -15,6 +15,7 @@ pub struct SanitizationPolicy {
   priv drop_content_tags : Set[String]
   priv disallowed_tag_handling : DisallowedTagHandling
   priv force_link_rel : Array[String]
+  priv allowed_css_properties : Set[String]
 } derive(Debug)
 
 ///|
@@ -79,6 +80,7 @@ pub fn SanitizationPolicy::new(
   drop_content_tags? : Array[String] = ["script", "style"],
   disallowed_tag_handling? : DisallowedTagHandling = Unwrap,
   force_link_rel? : Array[String] = [],
+  allowed_css_properties? : Array[String] = [],
 ) -> SanitizationPolicy {
   {
     allowed_tags: sanitized_string_set(allowed_tags),
@@ -89,6 +91,7 @@ pub fn SanitizationPolicy::new(
     drop_content_tags: sanitized_string_set(drop_content_tags),
     disallowed_tag_handling,
     force_link_rel: sanitized_string_list(force_link_rel),
+    allowed_css_properties: sanitized_string_set(allowed_css_properties),
   }
 }
 
@@ -369,6 +372,178 @@ fn sanitize_url_attribute_value(
 }
 
 ///|
+fn is_valid_css_property_name(name : StringView) -> Bool {
+  if name.is_empty() {
+    return false
+  }
+  for ch in name {
+    if ch.is_ascii_alphabetic() || (ch >= '0' && ch <= '9') || ch == '-' {
+      continue
+    }
+    return false
+  }
+  true
+}
+
+///|
+fn css_safety_normalize(value : StringView) -> String? {
+  let out = StringBuilder::new(size_hint=value.length())
+  let mut pos = 0
+  while pos < value.length() {
+    match value.get_char(pos) {
+      Some('\\') => return None
+      Some('/') if value.get_char(pos + 1) == Some('*') => {
+        pos += 2
+        let mut closed = false
+        while pos < value.length() {
+          if value.get_char(pos) == Some('*') &&
+            value.get_char(pos + 1) == Some('/') {
+            pos += 2
+            closed = true
+            break
+          }
+          match value.get_char(pos) {
+            Some(ch) => pos += ch.utf16_len()
+            None => break
+          }
+        }
+        if !closed {
+          return None
+        }
+      }
+      Some(ch) if is_url_ignored_scheme_char(ch) => pos += ch.utf16_len()
+      Some(ch) => {
+        if ch.is_ascii_uppercase() {
+          out.write_char(ch.to_ascii_lowercase())
+        } else {
+          out.write_char(ch)
+        }
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  Some(out.to_string())
+}
+
+///|
+fn css_value_may_load_external_resource(value : StringView) -> Bool {
+  match css_safety_normalize(value) {
+    None => true
+    Some(normalized) =>
+      string_view_contains(normalized[:], "@import") ||
+      string_view_contains(normalized[:], "url(") ||
+      string_view_contains(normalized[:], "image-set(") ||
+      string_view_contains(normalized[:], "expression(") ||
+      string_view_contains(normalized[:], "progid:") ||
+      string_view_contains(normalized[:], "alphaimageloader") ||
+      string_view_contains(normalized[:], "behavior:") ||
+      string_view_contains(normalized[:], "-moz-binding")
+  }
+}
+
+///|
+fn style_declaration_colon(declaration : StringView) -> Int? {
+  let mut pos = 0
+  while pos < declaration.length() {
+    match declaration.get_char(pos) {
+      Some(':') => return Some(pos)
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  None
+}
+
+///|
+fn sanitize_style_declaration(
+  declaration : StringView,
+  policy : SanitizationPolicy,
+) -> String? {
+  let declaration = declaration.trim()
+  if declaration.is_empty() {
+    return None
+  }
+  guard style_declaration_colon(declaration) is Some(colon) else { return None }
+  guard declaration.get_view(start=0, end=colon) is Some(prop_view) else {
+    return None
+  }
+  let prop = lower_ascii(prop_view.trim())
+  if !is_valid_css_property_name(prop) ||
+    !policy.allowed_css_properties.contains(prop) {
+    return None
+  }
+  guard declaration.get_view(start=colon + 1, end=declaration.length())
+    is Some(value_view) else {
+    return None
+  }
+  let value = value_view.trim()
+  if value.is_empty() || css_value_may_load_external_resource(value) {
+    return None
+  }
+  Some(prop + ": " + value.to_owned())
+}
+
+///|
+fn sanitize_inline_style_value(
+  policy : SanitizationPolicy,
+  value : String,
+) -> String? {
+  if policy.allowed_css_properties.is_empty() || value == "" {
+    return None
+  }
+  let view = value[:]
+  let parts : Array[String] = []
+  let mut start = 0
+  let mut pos = 0
+  while pos < view.length() {
+    match view.get_char(pos) {
+      Some(';') => {
+        match view.get_view(start~, end=pos) {
+          Some(declaration) =>
+            match sanitize_style_declaration(declaration, policy) {
+              Some(part) => parts.push(part)
+              None => ()
+            }
+          None => ()
+        }
+        pos += 1
+        start = pos
+      }
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  match view.get_view(start~, end=view.length()) {
+    Some(declaration) =>
+      match sanitize_style_declaration(declaration, policy) {
+        Some(part) => parts.push(part)
+        None => ()
+      }
+    None => ()
+  }
+  if parts.is_empty() {
+    None
+  } else {
+    Some(parts.join("; "))
+  }
+}
+
+///|
+fn sanitize_attribute_value(
+  policy : SanitizationPolicy,
+  tag_name : String,
+  attr_name : String,
+  value : String,
+) -> String? {
+  if attr_name == "style" {
+    sanitize_inline_style_value(policy, value)
+  } else {
+    sanitize_url_attribute_value(tag_name, attr_name, value)
+  }
+}
+
+///|
 fn push_html_whitespace_tokens(
   tokens : Array[String],
   value : StringView,
@@ -429,7 +604,7 @@ fn sanitize_element_attributes(
     } else {
       match node.attrs.get(key) {
         Some(Some(value)) =>
-          match sanitize_url_attribute_value(tag_name, attr_name, value) {
+          match sanitize_attribute_value(policy, tag_name, attr_name, value) {
             Some(cleaned) =>
               if cleaned != value || attr_name != key {
                 node.attrs.remove(key)
@@ -437,8 +612,9 @@ fn sanitize_element_attributes(
               }
             None => node.attrs.remove(key)
           }
-        Some(None) if attr_name == "href" || attr_name == "src" =>
-          node.attrs.remove(key)
+        Some(None) if attr_name == "href" ||
+          attr_name == "src" ||
+          attr_name == "style" => node.attrs.remove(key)
         Some(value) =>
           if attr_name != key {
             node.attrs.remove(key)

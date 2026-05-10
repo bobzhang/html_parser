@@ -336,6 +336,41 @@ test "sanitize_dom force_link_rel permits and merges anchor rel tokens" {
 }
 
 ///|
+test "sanitize_dom filters inline style declarations by property allowlist" {
+  let no_css = @html_parser.parse_fragment(
+    "<p style='color: red'>x</p>",
+    sanitize=false,
+  )
+  let no_css_policy = @html_parser.SanitizationPolicy::new(["p"], allowed_attributes={
+    "*": [],
+    "p": ["style"],
+  })
+  assert_eq(
+    @html_parser.sanitize_dom(no_css.root, policy=no_css_policy).to_html(
+      pretty=false,
+    ),
+    "<p>x</p>",
+  )
+  let styled = @html_parser.parse_fragment(
+    "<p style='color; co_lor: red; margin: 0; COLOR: red; font-weight: 700; background-image: url(/x.png); width: expression(alert(1))'>ok</p><p style>empty</p><p STYLE='color: blue; text-align: center; background-image: u/**/rl(/x.png)'>case</p>",
+    sanitize=false,
+  )
+  let style_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "*": [], "p": ["style"] },
+    allowed_css_properties=[
+      "color", "font-weight", "background-image", "width", "text-align",
+    ],
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(styled.root, policy=style_policy).to_html(
+      pretty=false,
+    ),
+    "<p style=\"color: red; font-weight: 700\">ok</p><p>empty</p><p style=\"color: blue; text-align: center\">case</p>",
+  )
+}
+
+///|
 test "sanitize_dom handles standalone nodes and url edge cases" {
   let allowed = @html_parser.element(
     "p",
