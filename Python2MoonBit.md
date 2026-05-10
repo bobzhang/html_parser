@@ -392,7 +392,9 @@ JustHTML from Python to MoonBit.
   Keep `Strip` as the no-op default, make `Collect` append `ParseError` values
   with `category="security"`, and make `Raise` use a typed `HtmlError` variant
   so callers can handle sanitizer failures with `try?` instead of string
-  matching.
+  matching. Cover standalone disallowed roots too; the wrapper used by
+  `sanitize_dom` for non-container nodes must still raise on the tag rejection
+  before any "return one child or fragment" cleanup can hide it.
 - Python constants such as `CSS_PRESET_TEXT` often contain immutable
   collections. MoonBit `Array` values are mutable, and public uppercase values
   are not idiomatic, so expose presets as lowercase functions returning fresh

@@ -357,6 +357,30 @@ test "sanitize_dom can collect and raise unsafe findings" {
 }
 
 ///|
+test "sanitize_dom raises for disallowed standalone root" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={},
+    unsafe_handling=Raise,
+  )
+  let fragment = @html_parser.parse_fragment("<x-foo></x-foo>", sanitize=false)
+  guard fragment.root.children().get(0) is Some(root) else {
+    fail("expected standalone root")
+  }
+  let result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    root,
+    policy~,
+  )
+  match result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(
+        message, "Unsafe tag 'x-foo' was dropped because it is not allowed",
+      )
+    _ => fail("expected sanitize_dom to raise UnsafeHtml")
+  }
+}
+
+///|
 test "sanitize_dom collects rawtext and foreign integration findings" {
   let rawtext_policy = @html_parser.SanitizationPolicy::new(
     ["style"],
