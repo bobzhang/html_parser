@@ -320,7 +320,10 @@ JustHTML from Python to MoonBit.
   a row group still normalizes into an implied row, but it must report
   `unexpected-cell-in-table-body` once for the missing `<tr>`. The later
   `</table>` should close through any open cell/row/row-group/table frames
-  without adding the generic `end-tag-too-early` error.
+  without adding the generic `end-tag-too-early` error. Row-group mode also
+  reprocesses structural table starts: a nested `<tbody>`, `<thead>`,
+  `<tfoot>`, `<caption>`, or `<colgroup>` first closes the current row group so
+  the new element becomes a table child, not a row-group child.
 
 ## Optional Values and Defaults
 
