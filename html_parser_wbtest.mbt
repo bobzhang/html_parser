@@ -65,6 +65,29 @@ test "query deduplicates shared nodes and ignores traversal cycles" {
 }
 
 ///|
+test "sanitize_dom clears mixed-case style rawtext resource loads" {
+  let policy = SanitizationPolicy::new(
+    ["style"],
+    allowed_attributes={ "style": [] },
+    drop_content_tags=[],
+  )
+  let style = make_node(
+    Element,
+    "StYlE",
+    Some("html"),
+    {},
+    "",
+    None,
+    None,
+    false,
+    [text("@import 'https://evil.example/x.css';")],
+  )
+  let clean = sanitize_dom(style, policy~)
+  assert_eq(clean.to_html(pretty=false), "<StYlE></StYlE>")
+  assert_eq(clean.children.length(), 0)
+}
+
+///|
 fn assert_script_scan(
   value : StringView,
   expected : String,

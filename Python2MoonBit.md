@@ -219,6 +219,9 @@ JustHTML from Python to MoonBit.
   `</script`/`</style`, drop any non-text children that were created
   programmatically, and clear allowed `<style>` contents if the CSS contains
   resource-loading constructs such as `@import`, `url(`, or `image-set(`.
+  Make sanitizer decisions on normalized tag names while leaving the node's
+  stored spelling alone; a programmatic `StYlE` node should still be cleared for
+  unsafe CSS and serialize back as `StYlE`.
 - The sanitizer's invisible-Unicode stripping applies to text nodes and
   attribute values before later checks. Keep the strip table aligned with the
   Python regex: zero-width/bidi controls, variation selectors, FEFF, BMP
