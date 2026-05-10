@@ -154,7 +154,9 @@ JustHTML from Python to MoonBit.
   `animate`, `set`, `foreignObject`, and `annotation-xml` when the node is
   effectively foreign. "Effectively foreign" includes non-HTML namespaces and
   programmatic HTML-namespace descendants under an `svg` or `math` root; use
-  that same broader predicate for `drop_foreign_namespaces`.
+  that same broader predicate for `drop_foreign_namespaces`. Run this check
+  before disallowed-tag unwrap/escape handling so active integration points are
+  removed as whole subtrees during stabilization.
 - Treat SVG paint/filter attributes as URL-capable even though they do not look
   like `href`/`src`. For effective foreign nodes, allowlisted attributes such as
   `fill`, `filter`, `mask`, and marker attributes still need conservative
