@@ -311,6 +311,41 @@ test "sanitize_dom filters attributes and dangerous URLs" {
 }
 
 ///|
+test "sanitize_dom strips invisible unicode from text and attributes" {
+  let invisible = "\u{FE00}\u{E0100}\u{200B}\u{202E}\u{E000}"
+  let fragment = @html_parser.parse_fragment(
+    "<p title=\"a" +
+    invisible +
+    "b\">a" +
+    invisible +
+    "b<a href=\"java\u{200B}script:alert(1)\">x</a></p>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root).to_html(pretty=false),
+    "<p title=\"ab\">ab<a>x</a></p>",
+  )
+}
+
+///|
+test "sanitize_dom can preserve invisible unicode by policy" {
+  let invisible = "\u{FE00}\u{200B}\u{202E}\u{E000}"
+  let fragment = @html_parser.parse_fragment(
+    "<p title=\"a" + invisible + "b\">a" + invisible + "b</p>",
+    sanitize=false,
+  )
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": ["title"] },
+    strip_invisible_unicode=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<p title=\"a" + invisible + "b\">a" + invisible + "b</p>",
+  )
+}
+
+///|
 test "sanitize_dom force_link_rel permits and merges anchor rel tokens" {
   let default_rel = @html_parser.parse_fragment(
     "<a href='/x' rel='noopener'>x</a>",
@@ -400,7 +435,7 @@ test "sanitize_dom hardens allowed rawtext element contents" {
 test "sanitize_dom filters allowed style rawtext resource loads" {
   let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
   let fragment = @html_parser.parse_fragment(
-    "<style>@import \"https://evil.example/x.css\"; body{background:url(/x.png)}</style><style>body{color:red}</style>",
+    "<style>body{background:u\u{200B}rl(/x.png)}</style><style>body{color:red}</style>",
     sanitize=false,
   )
   assert_eq(

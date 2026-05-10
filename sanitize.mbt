@@ -16,6 +16,7 @@ pub struct SanitizationPolicy {
   priv disallowed_tag_handling : DisallowedTagHandling
   priv force_link_rel : Array[String]
   priv allowed_css_properties : Set[String]
+  priv strip_invisible_unicode : Bool
 } derive(Debug)
 
 ///|
@@ -81,6 +82,7 @@ pub fn SanitizationPolicy::new(
   disallowed_tag_handling? : DisallowedTagHandling = Unwrap,
   force_link_rel? : Array[String] = [],
   allowed_css_properties? : Array[String] = [],
+  strip_invisible_unicode? : Bool = true,
 ) -> SanitizationPolicy {
   {
     allowed_tags: sanitized_string_set(allowed_tags),
@@ -92,6 +94,7 @@ pub fn SanitizationPolicy::new(
     disallowed_tag_handling,
     force_link_rel: sanitized_string_list(force_link_rel),
     allowed_css_properties: sanitized_string_set(allowed_css_properties),
+    strip_invisible_unicode,
   }
 }
 
@@ -372,6 +375,56 @@ fn sanitize_url_attribute_value(
 }
 
 ///|
+fn is_invisible_unicode_char(ch : Char) -> Bool {
+  let code = ch.to_int()
+  code == 0x061C ||
+  (code >= 0x200B && code <= 0x200F) ||
+  (code >= 0x202A && code <= 0x202E) ||
+  (code >= 0x2060 && code <= 0x2069) ||
+  (code >= 0xFE00 && code <= 0xFE0F) ||
+  code == 0xFEFF ||
+  (code >= 0xE000 && code <= 0xF8FF) ||
+  (code >= 0xE0100 && code <= 0xE01EF) ||
+  (code >= 0xF0000 && code <= 0xFFFFD) ||
+  (code >= 0x100000 && code <= 0x10FFFD)
+}
+
+///|
+fn strip_invisible_unicode(value : String) -> String {
+  let out = StringBuilder::new(size_hint=value.length())
+  let mut changed = false
+  for ch in value {
+    if is_invisible_unicode_char(ch) {
+      changed = true
+    } else {
+      out.write_char(ch)
+    }
+  }
+  if changed {
+    out.to_string()
+  } else {
+    value
+  }
+}
+
+///|
+fn sanitized_text_node_data(
+  node : Node,
+  policy : SanitizationPolicy,
+) -> String? {
+  if policy.strip_invisible_unicode && node.data != "" {
+    let stripped = strip_invisible_unicode(node.data)
+    if stripped != node.data {
+      Some(stripped)
+    } else {
+      None
+    }
+  } else {
+    None
+  }
+}
+
+///|
 fn is_valid_css_property_name(name : StringView) -> Bool {
   if name.is_empty() {
     return false
@@ -603,15 +656,21 @@ fn sanitize_element_attributes(
       node.attrs.remove(key)
     } else {
       match node.attrs.get(key) {
-        Some(Some(value)) =>
+        Some(Some(raw_value)) => {
+          let value = if policy.strip_invisible_unicode {
+            strip_invisible_unicode(raw_value)
+          } else {
+            raw_value
+          }
           match sanitize_attribute_value(policy, tag_name, attr_name, value) {
             Some(cleaned) =>
-              if cleaned != value || attr_name != key {
+              if cleaned != raw_value || attr_name != key {
                 node.attrs.remove(key)
                 node.attrs[attr_name] = Some(cleaned)
               }
             None => node.attrs.remove(key)
           }
+        }
         Some(None) if attr_name == "href" ||
           attr_name == "src" ||
           attr_name == "style" => node.attrs.remove(key)
@@ -639,7 +698,10 @@ fn rawtext_serialization_element_name(node : Node) -> String? {
 }
 
 ///|
-fn sanitize_rawtext_element_children(node : Node) -> Bool {
+fn sanitize_rawtext_element_children(
+  node : Node,
+  policy : SanitizationPolicy,
+) -> Bool {
   guard rawtext_serialization_element_name(node) is Some(tag_name) else {
     return false
   }
@@ -647,14 +709,24 @@ fn sanitize_rawtext_element_children(node : Node) -> Bool {
   node.children.clear()
   let text_children : Array[Node] = []
   let text_parts : Array[String] = []
+  let mut text_changed = false
   for child in original {
     if child.parent is Some(parent) && physical_equal(parent, node) {
       child.parent = None
     }
     match child.kind {
       Text => {
+        let data = if policy.strip_invisible_unicode {
+          let stripped = strip_invisible_unicode(child.data)
+          if stripped != child.data {
+            text_changed = true
+          }
+          stripped
+        } else {
+          child.data
+        }
         text_children.push(child)
-        text_parts.push(child.data)
+        text_parts.push(data)
       }
       _ => ()
     }
@@ -671,7 +743,7 @@ fn sanitize_rawtext_element_children(node : Node) -> Bool {
     css_value_may_load_external_resource(sanitized_text) {
     return true
   }
-  if sanitized_text == combined_text {
+  if sanitized_text == combined_text && !text_changed {
     for child in text_children {
       node.append_child(child)
     }
@@ -690,7 +762,13 @@ fn sanitize_container_children(
   while index < parent.children.length() {
     let child = parent.children[index]
     match child.kind {
-      Text => index += 1
+      Text => {
+        match sanitized_text_node_data(child, policy) {
+          Some(stripped) => ignore(parent.replace_child(text(stripped), child))
+          None => ()
+        }
+        index += 1
+      }
       Comment =>
         if policy.drop_comments {
           remove_child_at(parent, index)
@@ -725,7 +803,7 @@ fn sanitize_container_children(
           }
         } else {
           sanitize_element_attributes(child, policy)
-          if !sanitize_rawtext_element_children(child) {
+          if !sanitize_rawtext_element_children(child, policy) {
             sanitize_container_children(child, policy)
           }
           index += 1
