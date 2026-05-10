@@ -1175,12 +1175,27 @@ fn unquote_pseudo_arg(arg : StringView) -> String? {
 }
 
 ///|
+fn selector_text_content(node : Node) -> String {
+  if node.kind == Text {
+    return node.data[:].trim().to_owned()
+  }
+  let parts : Array[String] = []
+  for child in node.children {
+    let text = selector_text_content(child)
+    if text != "" {
+      parts.push(text)
+    }
+  }
+  parts.join(" ")
+}
+
+///|
 fn contains_text(node : Node, arg : StringView) -> Bool {
   guard unquote_pseudo_arg(arg) is Some(needle) else { return false }
   if needle == "" {
     return true
   }
-  let text = node.to_text(separator="", strip=false)
+  let text = selector_text_content(node)
   string_view_contains(text[:], needle[:])
 }
 

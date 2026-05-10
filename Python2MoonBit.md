@@ -375,6 +375,10 @@ JustHTML from Python to MoonBit.
 - `:contains(...)` is a non-standard pseudo-class in the reference. It is
   case-sensitive, uses descendant text content, accepts quoted or unquoted
   arguments, and a quoted empty string matches every element.
+- The reference's selector text content is not the same as MoonBit
+  `to_text(separator="")`: it strips each text node and joins non-empty
+  descendant chunks with spaces, so adjacent children `<span>a</span><span>b</span>`
+  match `:contains("a b")`, not `:contains("ab")`.
 - Quoted `:contains(...)` arguments use only minimal Python-style unescaping:
   escaped matching quotes and doubled backslashes collapse, other backslash
   sequences stay literal, and a trailing backslash remains part of the needle.
