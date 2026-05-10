@@ -1128,6 +1128,22 @@ test "query supports descendant selectors" {
 }
 
 ///|
+test "query supports child selectors" {
+  let doc = @html_parser.parse_fragment(
+    "<div id='main'><h1>Top</h1><section><h1>Nested</h1><a href='x'>Link</a></section><span data-name='a > b'>Span</span></div>",
+  )
+  assert_eq(doc.query("div > h1").length(), 1)
+  assert_eq(doc.query("div>h1").length(), 1)
+  assert_eq(doc.query("#main > section > a").length(), 1)
+  assert_eq(doc.query("#main > a").length(), 0)
+  assert_eq(doc.query("div > [data-name='a > b']").length(), 1)
+  assert_eq(doc.query("div > section a").length(), 1)
+  guard doc.query_one("a") is Some(link) else { fail("expected link") }
+  assert_true(@html_parser.matches(link, "#main > section > a"))
+  assert_eq(@html_parser.matches(link, "#main > a"), false)
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)

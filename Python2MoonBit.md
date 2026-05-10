@@ -66,6 +66,10 @@ JustHTML from Python to MoonBit.
   match the target node, then walk parent links to satisfy each ancestor
   selector. Split descendant whitespace only outside attribute brackets and
   quoted attribute values.
+- Child combinators use the same right-to-left shape, but the next selector to
+  the left must match the immediate parent. Whitespace around `>` is syntax,
+  not a descendant combinator, and `>` inside quoted attribute values must be
+  ignored by the splitter.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

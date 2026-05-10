@@ -878,16 +878,39 @@ fn selector_list_part(
 }
 
 ///|
-fn split_descendant_selector(selector : StringView) -> Array[StringView]? {
+priv enum SelectorCombinator {
+  DescendantCombinator
+  ChildCombinator
+} derive(Eq)
+
+///|
+fn push_complex_selector_part(
+  parts : Array[StringView],
+  combinators : Array[SelectorCombinator],
+  part : StringView,
+  pending : SelectorCombinator,
+) -> Unit {
+  if !parts.is_empty() {
+    combinators.push(pending)
+  }
+  parts.push(part)
+}
+
+///|
+fn split_complex_selector(
+  selector : StringView,
+) -> (Array[StringView], Array[SelectorCombinator])? {
   let selector = selector.trim()
   if selector.is_empty() {
     return None
   }
   let parts : Array[StringView] = []
+  let combinators : Array[SelectorCombinator] = []
   let mut start = 0
   let mut pos = 0
   let mut bracket_depth = 0
   let mut quote : Char? = None
+  let mut pending = DescendantCombinator
   while pos < selector.length() {
     match selector.get_char(pos) {
       Some(ch) => {
@@ -902,9 +925,23 @@ fn split_descendant_selector(selector : StringView) -> Array[StringView]? {
               bracket_depth -= 1
             } else if bracket_depth == 0 && is_html_whitespace_char(ch) {
               match selector_list_part(selector, start, pos) {
-                Some(part) => parts.push(part)
+                Some(part) => {
+                  push_complex_selector_part(parts, combinators, part, pending)
+                  pending = DescendantCombinator
+                }
                 None => ()
               }
+              start = pos + ch.utf16_len()
+            } else if bracket_depth == 0 && ch == '>' {
+              match selector_list_part(selector, start, pos) {
+                Some(part) =>
+                  push_complex_selector_part(parts, combinators, part, pending)
+                None =>
+                  if parts.is_empty() || pending == ChildCombinator {
+                    return None
+                  }
+              }
+              pending = ChildCombinator
               start = pos + ch.utf16_len()
             }
         }
@@ -914,19 +951,21 @@ fn split_descendant_selector(selector : StringView) -> Array[StringView]? {
     }
   }
   match selector_list_part(selector, start, selector.length()) {
-    Some(part) => parts.push(part)
-    None => ()
+    Some(part) => push_complex_selector_part(parts, combinators, part, pending)
+    None => return None
   }
   if parts.is_empty() {
     None
   } else {
-    Some(parts)
+    Some((parts, combinators))
   }
 }
 
 ///|
 fn matches_complex_selector(node : Node, selector : StringView) -> Bool {
-  guard split_descendant_selector(selector) is Some(parts) else { return false }
+  guard split_complex_selector(selector) is Some((parts, combinators)) else {
+    return false
+  }
   let last_index = parts.length() - 1
   if !matches_simple_selector(node, parts[last_index]) {
     return false
@@ -935,17 +974,31 @@ fn matches_complex_selector(node : Node, selector : StringView) -> Bool {
   let mut cursor = node.parent
   while needed >= 0 {
     let wanted = parts[needed]
-    let mut found = false
-    while !found {
-      match cursor {
-        Some(ancestor) => {
-          cursor = ancestor.parent
-          if matches_simple_selector(ancestor, wanted) {
-            found = true
+    match combinators[needed] {
+      DescendantCombinator => {
+        let mut found = false
+        while !found {
+          match cursor {
+            Some(ancestor) => {
+              cursor = ancestor.parent
+              if matches_simple_selector(ancestor, wanted) {
+                found = true
+              }
+            }
+            None => return false
           }
         }
-        None => return false
       }
+      ChildCombinator =>
+        match cursor {
+          Some(ancestor) => {
+            if !matches_simple_selector(ancestor, wanted) {
+              return false
+            }
+            cursor = ancestor.parent
+          }
+          None => return false
+        }
     }
     needed -= 1
   }
