@@ -544,6 +544,20 @@ test "sanitize_dom reports valueless url and style attributes" {
 
 ///|
 test "sanitize_dom can collect and raise unsafe findings" {
+  let safe_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": [] },
+    unsafe_handling=Collect,
+  )
+  let safe_fragment = @html_parser.parse_fragment("<p>ok</p>", sanitize=false)
+  assert_eq(
+    @html_parser.sanitize_dom(safe_fragment.root, policy=safe_policy).to_html(
+      pretty=false,
+    ),
+    "<p>ok</p>",
+  )
+  assert_eq(safe_policy.collected_security_errors().length(), 0)
+
   let collect_policy = @html_parser.SanitizationPolicy::new(
     ["p", "a"],
     allowed_attributes={ "p": [], "a": ["href"] },
