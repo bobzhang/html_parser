@@ -347,8 +347,16 @@ fn Parser::report_unexpected_table_body_cell_start(
   name : String,
   start : Int,
 ) -> Unit {
+  let current = self.current_node()
   if (name == "td" || name == "th") &&
-    self.current_is_table_or_section_context() {
+    (
+      self.current_is_table_or_section_context() ||
+      (
+        self.in_template_content_without_inner_table() &&
+        current.kind == Element &&
+        is_table_or_section_context(current.name)
+      )
+    ) {
     self.error_at("unexpected-cell-in-table-body", start)
   }
 }
@@ -648,18 +656,38 @@ fn Parser::handle_column_group_text(
   let has_non_whitespace = text_has_non_ascii_whitespace(cleaned)
   let current = self.current_node()
   if current.kind == Element && current.name == "colgroup" {
+    let in_template_table_context = self.in_template_content_without_inner_table()
     self.error_at("unexpected-characters-in-column-group", start)
     if has_non_whitespace {
+      let whitespace = leading_ascii_whitespace(cleaned)
+      if !whitespace.is_empty() {
+        current.append_child(
+          text(decode_entities(whitespace[:], in_attribute=false)),
+        )
+      }
       ignore(self.pop_current_element_if_name("colgroup"))
-      if self.foster_parent_table_text(cleaned, start) {
+      let non_whitespace = cleaned[whitespace.length():]
+      let non_whitespace_start = start + whitespace.length()
+      if in_template_table_context {
+        self.template_table_context_mode = true
+        ignore(
+          self.report_foster_parenting_character_errors(
+            non_whitespace, non_whitespace_start,
+          ),
+        )
+      }
+      if self.foster_parent_table_text(non_whitespace, non_whitespace_start) {
         return true
       }
       self
       .current_node()
-      .append_child(text(decode_entities(cleaned, in_attribute=false)))
+      .append_child(text(decode_entities(non_whitespace, in_attribute=false)))
     } else {
       current.append_child(text(decode_entities(cleaned, in_attribute=false)))
       ignore(self.pop_current_element_if_name("colgroup"))
+      if in_template_table_context {
+        self.template_table_context_mode = true
+      }
     }
     return true
   }
@@ -1308,9 +1336,19 @@ fn Parser::handle_table_structural_end_tag(
 }
 
 ///|
-fn template_table_context_end_tag_reports_voodoo(name : StringView) -> Bool {
+fn template_table_context_end_tag_defers_voodoo(name : StringView) -> Bool {
   match name {
     "colgroup" | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn template_table_context_section_end_tag_reports_unexpected(
+  name : StringView,
+) -> Bool {
+  match name {
+    "tbody" | "tfoot" | "thead" => true
     _ => false
   }
 }
@@ -1321,12 +1359,18 @@ fn Parser::handle_template_table_context_end_tag(
   name : String,
   start : Int,
 ) -> Bool {
-  if !self.in_template_content_without_inner_table() ||
-    !template_table_context_end_tag_reports_voodoo(name) {
+  if !self.in_template_content_without_inner_table() {
     return false
   }
-  if self.close_open_element(name) {
-    self.error_at("unexpected-end-tag-implies-table-voodoo", start)
+  if template_table_context_end_tag_defers_voodoo(name) &&
+    self.close_open_element(name) {
+    self.template_table_context_mode = true
+    return true
+  }
+  if template_table_context_section_end_tag_reports_unexpected(name) &&
+    self.close_open_element(name) {
+    self.error_at("unexpected-end-tag", start)
+    self.template_table_context_mode = true
     return true
   }
   false

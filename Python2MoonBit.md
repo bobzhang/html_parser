@@ -565,6 +565,10 @@ JustHTML from Python to MoonBit.
   template-specific column-group error. If an unrelated end tag exits that
   state, keep enough synthetic table-mode state to report the reprocessed
   table-voodoo diagnostics on following end tags.
+- The same hidden template table-mode state matters after explicit structural
+  closes. `</tr>` and `</colgroup>` inside `<template>` close their element but
+  defer the table-voodoo error to `</template>`, while `</tbody>`, `</thead>`,
+  and `</tfoot>` also report `unexpected-end-tag` at their own close.
 
 ## Test Porting
 
