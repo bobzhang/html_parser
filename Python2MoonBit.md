@@ -79,6 +79,8 @@ JustHTML from Python to MoonBit.
 - Link text uses a distinct Markdown traversal. The reference flattens
   paragraphs, lists, blockquotes, and `<br>` inside `<a>` into spaces so the
   generated `[text](href)` does not contain block Markdown or blank lines.
+  It still preserves inline code and raw table HTML, skips `<hr>`, and ignores
+  non-`li` children when flattening lists.
 - Attribute serialization has policy baked into the Python helper: `None`,
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids

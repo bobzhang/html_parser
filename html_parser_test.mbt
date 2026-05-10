@@ -223,6 +223,8 @@ test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
     links.to_markdown(),
     "[x](<https://e.com/a(b)c>) [y](<https://e.com/a%20b>)",
   )
+  let no_href = @html_parser.parse_fragment("<p><a>text</a></p>")
+  assert_eq(no_href.to_markdown(), "[text]")
   let script = @html_parser.element("div", children=[
     @html_parser.element("script", attrs={ "data-x": Some("1&2") }),
   ])
@@ -263,6 +265,36 @@ test "to_markdown flattens block content inside links" {
     ],
   )
   assert_eq(blocks.to_markdown(), "[Q One Two](https://e.com)")
+  let table_link = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.element("hr"),
+      @html_parser.element("h2", children=[@html_parser.text("T")]),
+      @html_parser.element("pre", children=[@html_parser.text("code")]),
+      @html_parser.element("table", children=[
+        @html_parser.element("tr", children=[
+          @html_parser.element("td", children=[@html_parser.text("A")]),
+        ]),
+      ]),
+    ],
+  )
+  assert_eq(
+    table_link.to_markdown(),
+    "[T`code`<table><tr><td>A</td></tr></table>](https://e.com)",
+  )
+  let filtered = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.element("blockquote"),
+      @html_parser.element("ul", children=[
+        @html_parser.text("\n"),
+        @html_parser.element("li", children=[@html_parser.text("One")]),
+      ]),
+    ],
+  )
+  assert_eq(filtered.to_markdown(), "[One](https://e.com)")
 }
 
 ///|
