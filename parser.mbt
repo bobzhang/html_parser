@@ -2940,7 +2940,11 @@ fn Parser::handle_html_fragment_shell_start_tag(
         true
       }
     "html" =>
-      if self.current_node_allows_html_fragment_body() {
+      if self.fragment_context_html_after_body {
+        self.fragment_context_html_after_body = false
+        self.error_at("unexpected-start-tag", start)
+        true
+      } else if self.current_node_allows_html_fragment_body() {
         false
       } else {
         self.error_at("unexpected-start-tag", start)

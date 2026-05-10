@@ -421,7 +421,9 @@ JustHTML from Python to MoonBit.
   non-whitespace text before `<body>` starts body content, and a closed nested
   before-body `<html>` shell moves the reference into after-body handling, so a
   later `<body>` reports both `unexpected-token-after-body` and
-  `unexpected-start-tag`.
+  `unexpected-start-tag`. A later `<html>` shell can still be checked against
+  the nested shell's before-body children: report `unexpected-start-tag`, then
+  keep scaffolding head/body children normally.
 - Treat an explicit HTML namespace on `FragmentContext` the same as the default
   namespace. `FragmentContext("table", namespace="html")` still uses table
   fragment insertion mode; the namespace value should not make it fall back to

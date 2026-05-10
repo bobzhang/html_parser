@@ -2279,6 +2279,17 @@ test "fragment context seeds html insertion mode" {
     "unexpected-token-after-body",
   )
   assert_eq(nested_html_before_body.errors[1].code, "unexpected-start-tag")
+  let nested_html_shell = @html_parser.parse_fragment(
+    "<html><title>T</title></html><html><p>x",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_html_shell.to_html(pretty=false),
+    "<head><title>T</title></head><body><p>x</p></body>",
+  )
+  assert_eq(nested_html_shell.errors.length(), 1)
+  assert_eq(nested_html_shell.errors[0].code, "unexpected-start-tag")
   let table = @html_parser.parse_fragment(
     "<table><tr><td>x</td></tr></table>",
     context=@html_parser.FragmentContext::new("html"),
