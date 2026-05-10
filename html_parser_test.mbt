@@ -3033,6 +3033,36 @@ test "parser assigns namespaces and adjusted names for foreign content" {
     fail("expected integrated div")
   }
   assert_true(integrated_div.namespace_uri() is Some("html"))
+  let plain_encoding = @html_parser.parse_fragment(
+    "<math><annotation-xml encoding='text/plain'><div></div></annotation-xml></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    plain_encoding.to_html(pretty=false),
+    "<math><annotation-xml encoding=\"text/plain\"></annotation-xml></math><div></div>",
+  )
+  assert_eq(plain_encoding.errors.length(), 3)
+  assert_eq(
+    plain_encoding.errors[0].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(plain_encoding.errors[1].code, "unexpected-end-tag")
+  assert_eq(plain_encoding.errors[2].code, "unexpected-end-tag")
+  let missing_encoding = @html_parser.parse_fragment(
+    "<math><annotation-xml><div>test</div></annotation-xml></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    missing_encoding.to_html(pretty=false),
+    "<math><annotation-xml></annotation-xml></math><div>test</div>",
+  )
+  assert_eq(missing_encoding.errors.length(), 3)
+  assert_eq(
+    missing_encoding.errors[0].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(missing_encoding.errors[1].code, "unexpected-end-tag")
+  assert_eq(missing_encoding.errors[2].code, "unexpected-end-tag")
 }
 
 ///|

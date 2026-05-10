@@ -445,6 +445,9 @@ JustHTML from Python to MoonBit.
 - Repeated `<html>` start tags are not normal element insertion. Once the
   document html element exists, report `unexpected-start-tag`, merge only
   missing attributes onto the existing html node, and drop the token.
+- Foreign-content integration points depend on attributes, not just tag names.
+  MathML `annotation-xml` integrates HTML only for `encoding` values like
+  `text/html`; missing or other values still break HTML starts out of MathML.
 - Select insertion mode has element-specific recovery. Some starts, such as
   `aside`, are parse-error tokens that should be ignored while their following
   text still belongs to the open `select`.
