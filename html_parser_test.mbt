@@ -1812,6 +1812,40 @@ test "parse_bytes meta prescan skips comments and quoted non-meta tags" {
 }
 
 ///|
+test "parse_bytes prescans http equiv content charset" {
+  let utf8 = @utf8.encode(
+    "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"><p>\u{20AC}</p>",
+  )
+  let doc = @html_parser.parse_bytes(utf8)
+  assert_eq(doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard doc.encoding is Some("utf-8") else {
+    fail("expected http-equiv content charset utf-8")
+  }
+  let single_quoted = @utf8.encode(
+    "<meta content=\"TEXT/HTML; CHARSET='UTF-8'\" http-equiv=\"content-type\"><p>\u{20AC}</p>",
+  )
+  let single_quoted_doc = @html_parser.parse_bytes(single_quoted)
+  assert_eq(single_quoted_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard single_quoted_doc.encoding is Some("utf-8") else {
+    fail("expected quoted content charset utf-8")
+  }
+  let invalid_direct = @utf8.encode(
+    "<meta charset=bogus http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"><p>\u{20AC}</p>",
+  )
+  let invalid_direct_doc = @html_parser.parse_bytes(invalid_direct)
+  assert_eq(invalid_direct_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard invalid_direct_doc.encoding is Some("utf-8") else {
+    fail("expected http-equiv charset after invalid direct charset")
+  }
+  let invalid = b"<meta http-equiv=\"Content-Type\" content=\"text/html; charset=bogus\"><p>\x80</p>"
+  let invalid_doc = @html_parser.parse_bytes(invalid)
+  assert_eq(invalid_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard invalid_doc.encoding is Some("windows-1252") else {
+    fail("expected invalid http-equiv charset to fall back")
+  }
+}
+
+///|
 test "parse_bytes decodes utf16 bom and explicit encodings" {
   let little = b"\xff\xfe\x3c\x00\x70\x00\x3e\x00\x68\x00\x69\x00\x3c\x00\x2f\x00\x70\x00\x3e\x00"
   let little_doc = @html_parser.parse_bytes(little)

@@ -2577,6 +2577,39 @@ fn strip_ascii_whitespace_bytes(
 }
 
 ///|
+fn ascii_lower_content_bytes(
+  input : BytesView,
+  start : Int,
+  end : Int,
+) -> String {
+  let out = StringBuilder::new(size_hint=end - start)
+  for index in start..<end {
+    let value = if is_ascii_whitespace_byte(input[index]) {
+      0x20
+    } else {
+      ascii_lower_value(input[index].to_int())
+    }
+    if value < 0x80 {
+      match value.to_char() {
+        Some(ch) => out.write_char(ch)
+        None => ()
+      }
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn byte_range_ascii_lower_eq(
+  input : BytesView,
+  start : Int,
+  end : Int,
+  expected : StringView,
+) -> Bool {
+  ascii_lower_bytes(input, start, end)[:] == expected
+}
+
+///|
 fn normalize_supported_html_encoding_label(label : StringView) -> String? {
   let label = label.trim().to_lower()
   if label.is_empty() {
@@ -2606,6 +2639,78 @@ fn normalize_meta_html_encoding_label(label : StringView) -> String? {
   match normalize_supported_html_encoding_label(label) {
     Some("utf-16") | Some("utf-16le") | Some("utf-16be") => Some("utf-8")
     other => other
+  }
+}
+
+///|
+fn extract_charset_from_content_bytes(
+  input : BytesView,
+  start : Int,
+  end : Int,
+) -> String? {
+  let content = ascii_lower_content_bytes(input, start, end)
+  guard content.find("charset") is Some(found) else { return None }
+  let mut pos = found + "charset".length()
+  while pos < content.length() {
+    guard content.get_char(pos) is Some(ch) else { return None }
+    if !ch.is_ascii_whitespace() {
+      break
+    }
+    pos += ch.utf16_len()
+  }
+  guard content.get_char(pos) is Some('=') else { return None }
+  pos += 1
+  while pos < content.length() {
+    guard content.get_char(pos) is Some(ch) else { return None }
+    if !ch.is_ascii_whitespace() {
+      break
+    }
+    pos += ch.utf16_len()
+  }
+  if pos >= content.length() {
+    return None
+  }
+  let mut quote : Char? = None
+  match content.get_char(pos) {
+    Some('"') => {
+      quote = Some('"')
+      pos += 1
+    }
+    Some('\'') => {
+      quote = Some('\'')
+      pos += 1
+    }
+    _ => ()
+  }
+  let value_start = pos
+  while pos < content.length() {
+    guard content.get_char(pos) is Some(ch) else { return None }
+    match quote {
+      Some(expected) =>
+        if ch == expected {
+          guard content.get_view(start=value_start, end=pos) is Some(label) else {
+            return None
+          }
+          return normalize_meta_html_encoding_label(label)
+        }
+      None =>
+        if ch.is_ascii_whitespace() || ch == ';' {
+          guard content.get_view(start=value_start, end=pos) is Some(label) else {
+            return None
+          }
+          return normalize_meta_html_encoding_label(label)
+        }
+    }
+    pos += ch.utf16_len()
+  }
+  match quote {
+    Some(_) => None
+    None => {
+      guard content.get_view(start=value_start, end=pos) is Some(label) else {
+        return None
+      }
+      normalize_meta_html_encoding_label(label)
+    }
   }
 }
 
@@ -2674,15 +2779,36 @@ fn parse_meta_tag_declared_encoding(
 ) -> (String?, Int) {
   let mut pos = pos
   let mut charset : (Int, Int)? = None
+  let mut http_equiv : (Int, Int)? = None
+  let mut content : (Int, Int)? = None
   while pos < limit {
     let byte = input[pos]
     if byte == b'>' {
       match charset {
         Some((start, end)) => {
           let label = ascii_lower_bytes(input, start, end)
-          return (normalize_meta_html_encoding_label(label[:]), pos + 1)
+          match normalize_meta_html_encoding_label(label[:]) {
+            Some(encoding) => return (Some(encoding), pos + 1)
+            None => ()
+          }
         }
-        None => return (None, pos + 1)
+        None => ()
+      }
+      match (http_equiv, content) {
+        (Some((http_start, http_end)), Some((content_start, content_end))) => {
+          if byte_range_ascii_lower_eq(
+              input, http_start, http_end, "content-type",
+            ) {
+            return (
+              extract_charset_from_content_bytes(
+                input, content_start, content_end,
+              ),
+              pos + 1,
+            )
+          }
+          return (None, pos + 1)
+        }
+        _ => return (None, pos + 1)
       }
     }
     if byte == b'<' {
@@ -2745,6 +2871,26 @@ fn parse_meta_tag_declared_encoding(
           let (start, end) = strip_ascii_whitespace_bytes(input, start, end)
           if start < end {
             charset = Some((start, end))
+          }
+        }
+        None => ()
+      }
+    } else if attr_name == "http-equiv" {
+      match value_range {
+        Some((start, end)) => {
+          let (start, end) = strip_ascii_whitespace_bytes(input, start, end)
+          if start < end {
+            http_equiv = Some((start, end))
+          }
+        }
+        None => ()
+      }
+    } else if attr_name == "content" {
+      match value_range {
+        Some((start, end)) => {
+          let (start, end) = strip_ascii_whitespace_bytes(input, start, end)
+          if start < end {
+            content = Some((start, end))
           }
         }
         None => ()

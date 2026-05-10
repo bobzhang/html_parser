@@ -30,6 +30,10 @@ JustHTML from Python to MoonBit.
 - Encoding prescan works on raw bytes, not decoded text. Skip comments and
   quoted attributes in non-`meta` tags before trusting a `<meta charset=...>`
   declaration, and normalize meta-declared UTF-16 labels back to UTF-8.
+- The `http-equiv="Content-Type"` path is also byte-level. Extract `charset`
+  from the `content` attribute after ASCII lowercasing and whitespace
+  normalization; quoted, unquoted, and invalid/unterminated charset values have
+  different fallback behavior.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.
