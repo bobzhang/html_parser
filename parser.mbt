@@ -1147,7 +1147,13 @@ fn eof_allows_unclosed_element(name : StringView) -> Bool {
 
 ///|
 fn Parser::report_eof_tree_errors(self : Parser) -> Unit {
-  if self.has_open_element("table") {
+  let table_index = self.last_open_table_index()
+  let caption_index = self.last_stack_index_of("caption")
+  if table_index >= 0 && caption_index > table_index {
+    self.error_at("expected-closing-tag-but-got-eof", self.eof_error_pos())
+    return
+  }
+  if table_index >= 0 {
     self.error_at("eof-in-table", self.eof_error_pos())
     return
   }
