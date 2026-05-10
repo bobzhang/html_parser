@@ -331,6 +331,12 @@ JustHTML from Python to MoonBit.
   caption, colgroup, col, or table at the right level. Cell mode adds one more
   layer: starts for another cell or a table structural element first close the
   current `td`/`th`, then the same row/row-group reprocessing rules apply.
+  Caption mode follows that reprocessing pattern too: starts for table
+  structure close the open `caption` with
+  `unexpected-start-tag-implies-end-tag`, then the token continues in table
+  context. `</table>` closes the caption silently before closing the table,
+  while `</tbody>`, `</tfoot>`, and `</thead>` inside a caption are just
+  `unexpected-end-tag` errors and leave the caption open.
   Column-group text is another special case: report
   `unexpected-characters-in-column-group`; non-whitespace is then reprocessed as
   table text and foster-parented, while whitespace stays in the colgroup.

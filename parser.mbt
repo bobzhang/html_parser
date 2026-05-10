@@ -624,6 +624,70 @@ fn Parser::close_current_column_group_for_end(
 }
 
 ///|
+fn caption_start_closes_current_caption(name : StringView) -> Bool {
+  match name {
+    "caption"
+    | "col"
+    | "colgroup"
+    | "table"
+    | "tbody"
+    | "td"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::close_current_caption_for_start(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if !caption_start_closes_current_caption(name) {
+    return false
+  }
+  let table_index = self.last_open_table_index()
+  let caption_index = self.last_stack_index_of("caption")
+  if table_index < 0 || caption_index <= table_index {
+    return false
+  }
+  self.error_at("unexpected-start-tag-implies-end-tag", start)
+  ignore(self.close_open_element("caption"))
+  true
+}
+
+///|
+fn Parser::handle_caption_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  let table_index = self.last_open_table_index()
+  let caption_index = self.last_stack_index_of("caption")
+  if table_index < 0 || caption_index <= table_index {
+    return false
+  }
+  match name {
+    "caption" => {
+      ignore(self.close_open_element("caption"))
+      true
+    }
+    "tbody" | "tfoot" | "thead" => {
+      self.error_at("unexpected-end-tag", start)
+      true
+    }
+    "table" => {
+      ignore(self.close_open_element("caption"))
+      false
+    }
+    _ => false
+  }
+}
+
+///|
 fn table_context_end_tag_uses_table_voodoo(name : StringView) -> Bool {
   match name {
     "body"
@@ -1285,6 +1349,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   self.close_current_column_group_for_end(name)
+  if self.handle_caption_end_tag(name, start) {
+    return
+  }
   if self.handle_table_context_ignored_end_tag(name, start) {
     return
   }
@@ -2266,6 +2333,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at("unexpected-start-tag-ignored", start)
         return
       }
+      ignore(self.close_current_caption_for_start(name, start))
       self.close_current_column_group_for_start(name, start)
       if self.handle_table_context_hidden_input_or_form_start(
           name, attrs, start,

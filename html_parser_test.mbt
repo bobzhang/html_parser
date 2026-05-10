@@ -2932,6 +2932,91 @@ test "parser closes cells before table structure starts" {
 }
 
 ///|
+test "parser closes captions before table structure starts and ends" {
+  let row = @html_parser.parse_fragment(
+    "<table><caption>x<tr><td>y</td></tr></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    row.to_html(pretty=false),
+    "<table><caption>x</caption><tbody><tr><td>y</td></tr></tbody></table>",
+  )
+  assert_eq(row.errors.length(), 1)
+  assert_eq(row.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  let row_group = @html_parser.parse_fragment(
+    "<table><caption>x<tbody><tr><td>y</td></tr></tbody></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    row_group.to_html(pretty=false),
+    "<table><caption>x</caption><tbody><tr><td>y</td></tr></tbody></table>",
+  )
+  assert_eq(row_group.errors.length(), 1)
+  assert_eq(row_group.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  let caption = @html_parser.parse_fragment(
+    "<table><caption>x<caption>y</caption></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    caption.to_html(pretty=false),
+    "<table><caption>x</caption><caption>y</caption></table>",
+  )
+  assert_eq(caption.errors.length(), 1)
+  assert_eq(caption.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  let col = @html_parser.parse_fragment(
+    "<table><caption>x<col></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    col.to_html(pretty=false),
+    "<table><caption>x</caption><colgroup><col></colgroup></table>",
+  )
+  assert_eq(col.errors.length(), 1)
+  assert_eq(col.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  let cell = @html_parser.parse_fragment(
+    "<table><caption>x<td>y</td></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    cell.to_html(pretty=false),
+    "<table><caption>x</caption><tbody><tr><td>y</td></tr></tbody></table>",
+  )
+  assert_eq(cell.errors.length(), 2)
+  assert_eq(cell.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(cell.errors[1].code, "unexpected-cell-in-table-body")
+  let nested_table = @html_parser.parse_fragment(
+    "<table><caption>x<table><tr><td>y</td></tr></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_table.to_html(pretty=false),
+    "<table><caption>x</caption></table><table><tbody><tr><td>y</td></tr></tbody></table>",
+  )
+  assert_eq(nested_table.errors.length(), 2)
+  assert_eq(nested_table.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(nested_table.errors[1].code, "unexpected-start-tag-implies-end-tag")
+  let table_end = @html_parser.parse_fragment(
+    "<table><caption>x</table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    table_end.to_html(pretty=false),
+    "<table><caption>x</caption></table>",
+  )
+  assert_eq(table_end.errors.length(), 0)
+  let row_group_end = @html_parser.parse_fragment(
+    "<table><caption>x</tbody></caption></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    row_group_end.to_html(pretty=false),
+    "<table><caption>x</caption></table>",
+  )
+  assert_eq(row_group_end.errors.length(), 1)
+  assert_eq(row_group_end.errors[0].code, "unexpected-end-tag")
+}
+
+///|
 test "parser closes current table before nested table starts" {
   let direct = @html_parser.parse_fragment(
     "<table><table><tr><td>x</td></tr></table>",
