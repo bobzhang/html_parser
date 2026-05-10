@@ -2777,6 +2777,103 @@ fn Parser::active_formatting_index(self : Parser, name : StringView) -> Int {
 }
 
 ///|
+fn formatting_attrs_equal(
+  left : Map[String, String?],
+  right : Map[String, String?],
+) -> Bool {
+  for name, value in left {
+    match right.get(name) {
+      Some(other) if other == value => ()
+      _ => return false
+    }
+  }
+  for name, _ in right {
+    if !left.contains(name) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn Parser::active_formatting_duplicate_index(
+  self : Parser,
+  name : StringView,
+  attrs : Map[String, String?],
+) -> Int {
+  let target = name.to_owned()
+  let mut first_match = -1
+  let mut match_count = 0
+  let mut index = 0
+  while index < self.active_formatting.length() {
+    let entry = self.active_formatting[index]
+    if entry.name == target && formatting_attrs_equal(entry.attrs, attrs) {
+      if first_match < 0 {
+        first_match = index
+      }
+      match_count += 1
+    }
+    index += 1
+  }
+  if match_count >= 3 {
+    first_match
+  } else {
+    -1
+  }
+}
+
+///|
+fn Parser::remove_last_active_formatting_by_name(
+  self : Parser,
+  name : StringView,
+) -> Unit {
+  let target = name.to_owned()
+  let mut index = self.active_formatting.length()
+  while index > 0 {
+    index -= 1
+    if self.active_formatting[index].name == target {
+      self.remove_active_formatting_index(index)
+      return
+    }
+  }
+}
+
+///|
+fn Parser::remove_last_open_element_by_name(
+  self : Parser,
+  name : StringView,
+) -> Unit {
+  let target = name.to_owned()
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element && node.name == target {
+      ignore(self.stack.remove(index))
+      return
+    }
+  }
+}
+
+///|
+fn Parser::prepare_active_formatting_start(
+  self : Parser,
+  name : StringView,
+  start : Int,
+) -> Unit {
+  if name == "a" && self.active_formatting_index(name) >= 0 {
+    self.error_at("unexpected-start-tag-implies-end-tag", start)
+    self.adoption_agency(name, start)
+    self.remove_last_active_formatting_by_name(name)
+    self.remove_last_open_element_by_name(name)
+  } else if name == "nobr" && self.has_open_element_in_default_scope("nobr") {
+    self.adoption_agency(name, start)
+    self.remove_last_active_formatting_by_name(name)
+    self.remove_last_open_element_by_name(name)
+  }
+}
+
+///|
 fn Parser::active_formatting_index_by_node(self : Parser, target : Node) -> Int {
   let mut index = self.active_formatting.length()
   while index > 0 {
@@ -4607,10 +4704,13 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if !self.document_start_tag_preserves_frameset_ok(name, attrs) {
         self.frameset_ok = false
       }
+      let node_ns = self.start_tag_namespace(name)
+      if node_ns == "html" {
+        self.prepare_active_formatting_start(name, start)
+      }
       if !start_tag_closes_p(name) {
         self.reconstruct_active_formatting_elements()
       }
-      let node_ns = self.start_tag_namespace(name)
       let adjusted_name = if node_ns == "html" {
         if name == "image" {
           self.error_at("image-start-tag", start)
@@ -4654,6 +4754,13 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         !inserts_empty_nonvoid {
         self.stack.push(node)
         if node_ns == "html" && active_formatting_element_name(adjusted_name) {
+          let duplicate_index = self.active_formatting_duplicate_index(
+            adjusted_name,
+            node.attrs,
+          )
+          if duplicate_index >= 0 {
+            self.remove_active_formatting_index(duplicate_index)
+          }
           self.append_active_formatting_entry(node)
         }
         if node_ns == "html" && start_tag_ignores_initial_lf(adjusted_name) {
