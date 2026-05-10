@@ -8403,6 +8403,37 @@ test "parser closes repeated option and select optgroup starts" {
 }
 
 ///|
+test "tree builder matches Python reference select optgroup branch fixtures" {
+  let nested_group = @html_parser.parse(
+    "<select><optgroup><option>1</option></optgroup></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(nested_group.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       <optgroup>\n|         <option>\n|           \"1\"",
+  )
+  assert_eq(nested_group.errors.length(), 1)
+  assert_eq(nested_group.errors[0].code, "expected-doctype-but-got-start-tag")
+  guard nested_group.errors[0].column is Some(8) else {
+    fail("expected select doctype error at select start close")
+  }
+  let stray_group = @html_parser.parse(
+    "<select><option>1</option></optgroup></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(stray_group.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       <option>\n|         \"1\"",
+  )
+  assert_eq(stray_group.errors.length(), 2)
+  assert_eq(stray_group.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(stray_group.errors[1].code, "unexpected-end-tag-in-select")
+  guard stray_group.errors[1].column is Some(37) else {
+    fail("expected stray optgroup end at close bracket")
+  }
+}
+
+///|
 test "parser populates selectedcontent from selected option" {
   let no_options = @html_parser.parse_fragment(
     "<select><selectedcontent></selectedcontent></select>",
