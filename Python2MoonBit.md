@@ -1227,7 +1227,8 @@ JustHTML from Python to MoonBit.
   handling. The tokenizer-level `unexpected-null-character` still fires, but
   direct SVG/MathML foreign text reports `invalid-codepoint-in-foreign-content`
   and inserts U+FFFD; MathML text integration points keep normal HTML text
-  handling.
+  handling, so U+0000 is removed after the parse error and a following form
+  feed is normalized to a space.
 - `<![CDATA[...]]>` is only a bogus comment in HTML content. Under an
   SVG/MathML current node, port it as literal text without entity decoding;
   then apply the same foreign-text null handling for direct foreign content and
