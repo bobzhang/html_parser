@@ -372,6 +372,14 @@ JustHTML from Python to MoonBit.
   text whitespace. Keep those raw/preformatted elements on the compact path
   even when a programmatic DOM gives them mixed children, because pretty
   indentation would inject new text into raw content.
+- Pretty serialization has a second compact path for inline mixed content.
+  Text nodes in that path normalize only formatting whitespace (`LF`, `CR`,
+  `tab`, `FF`) to single spaces, preserving ordinary double spaces; elements
+  with only inline element children still use multiline formatting unless there
+  is visible text in the run. Do not compact when an inline wrapper contains a
+  layout/block descendant. In the multiline fallback, trim rendered text-node
+  lines and skip whitespace-only text nodes so indentation does not preserve
+  source formatting gaps as visible text.
 - The html5lib tree-test serializer is line-oriented and does not emit wrapper
   lines for `#document` or `#document-fragment`. Build it as an array of lines
   joined by `\n` so it has no trailing newline, and sort attribute lines by

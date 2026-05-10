@@ -372,6 +372,219 @@ fn compact_pretty_text_children(node : Node, quote : Char) -> String {
 }
 
 ///|
+fn formatting_whitespace_char(ch : Char) -> Bool {
+  match ch {
+    '\n' | '\r' | '\t' | '\u{000C}' => true
+    _ => false
+  }
+}
+
+///|
+fn normalize_formatting_whitespace(value : StringView) -> String {
+  let mut has_formatting = false
+  for ch in value {
+    if formatting_whitespace_char(ch) {
+      has_formatting = true
+      break
+    }
+  }
+  if !has_formatting {
+    return value.to_owned()
+  }
+  let out : Array[String] = []
+  let mut pos = 0
+  while pos < value.length() {
+    guard value.get_char(pos) is Some(ch) else { break }
+    if formatting_whitespace_char(ch) {
+      while !out.is_empty() && out.last() == Some(" ") {
+        ignore(out.pop())
+      }
+      let mut run_has_space = false
+      while pos < value.length() {
+        guard value.get_char(pos) is Some(run_ch) else { break }
+        if run_ch == ' ' {
+          run_has_space = true
+          pos += run_ch.utf16_len()
+        } else if formatting_whitespace_char(run_ch) {
+          pos += run_ch.utf16_len()
+        } else {
+          break
+        }
+      }
+      if !out.is_empty() && (pos < value.length() || run_has_space) {
+        out.push(" ")
+      }
+    } else {
+      out.push(ch.to_string())
+      pos += ch.utf16_len()
+    }
+  }
+  out.join("")
+}
+
+///|
+fn text_has_visible_char(value : StringView) -> Bool {
+  for ch in value {
+    if !is_html_whitespace_char(ch) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn layout_block_element_name(name : StringView) -> Bool {
+  match name {
+    "address"
+    | "article"
+    | "aside"
+    | "blockquote"
+    | "body"
+    | "dd"
+    | "div"
+    | "dl"
+    | "dt"
+    | "fieldset"
+    | "figcaption"
+    | "figure"
+    | "footer"
+    | "form"
+    | "h1"
+    | "h2"
+    | "h3"
+    | "h4"
+    | "h5"
+    | "h6"
+    | "header"
+    | "hr"
+    | "html"
+    | "li"
+    | "main"
+    | "nav"
+    | "ol"
+    | "p"
+    | "pre"
+    | "section"
+    | "table"
+    | "tbody"
+    | "td"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "tr"
+    | "ul" => true
+    _ => false
+  }
+}
+
+///|
+fn inline_pretty_element_name(name : StringView) -> Bool {
+  match name {
+    "a"
+    | "abbr"
+    | "b"
+    | "bdi"
+    | "bdo"
+    | "cite"
+    | "code"
+    | "data"
+    | "del"
+    | "dfn"
+    | "em"
+    | "i"
+    | "ins"
+    | "kbd"
+    | "label"
+    | "mark"
+    | "q"
+    | "rp"
+    | "rt"
+    | "ruby"
+    | "s"
+    | "samp"
+    | "small"
+    | "span"
+    | "strong"
+    | "sub"
+    | "sup"
+    | "time"
+    | "u"
+    | "var" => true
+    _ => false
+  }
+}
+
+///|
+fn node_contains_layout_block(node : Node) -> Bool {
+  if node.kind == Element && layout_block_element_name(node.name) {
+    return true
+  }
+  for child in node.children {
+    if node_contains_layout_block(child) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn element_has_compact_inline_children(node : Node) -> Bool {
+  let mut has_visible_text = false
+  for child in node.children {
+    match child.kind {
+      Text => if text_has_visible_char(child.data) { has_visible_text = true }
+      Element =>
+        if !inline_pretty_element_name(child.name) ||
+          node_contains_layout_block(child) {
+          return false
+        }
+      _ => return false
+    }
+  }
+  has_visible_text
+}
+
+///|
+fn node_to_html_pretty_inline_compact(node : Node, quote : Char) -> String {
+  let out = StringBuilder::new()
+  out.write_string(serialize_start_tag(node, quote))
+  for child in node.children {
+    match child.kind {
+      Text =>
+        out.write_string(
+          escape_text(normalize_formatting_whitespace(child.data[:])),
+        )
+      _ => out.write_string(node_to_html_compact(child, quote))
+    }
+  }
+  out.write_string("</")
+  out.write_string(node.name)
+  out.write_char('>')
+  out.to_string()
+}
+
+///|
+fn node_to_html_pretty_child_line(
+  node : Node,
+  indent : Int,
+  indent_size : Int,
+  quote : Char,
+) -> String? {
+  match node.kind {
+    Text => {
+      let normalized = normalize_formatting_whitespace(node.data[:])
+      let trimmed = normalized[:].trim()
+      if trimmed.is_empty() {
+        None
+      } else {
+        Some(" ".repeat(indent) + escape_text(trimmed))
+      }
+    }
+    _ => Some(node_to_html_pretty(node, indent, indent_size, quote))
+  }
+}
+
+///|
 fn node_to_html_pretty(
   node : Node,
   indent : Int,
@@ -402,16 +615,24 @@ fn node_to_html_pretty(
         out.write_string(node.name)
         out.write_char('>')
         out.to_string()
+      } else if element_has_compact_inline_children(node) {
+        " ".repeat(indent) + node_to_html_pretty_inline_compact(node, quote)
       } else {
         let out = StringBuilder::new()
         out.write_string(" ".repeat(indent))
         out.write_string(serialize_start_tag(node, quote))
         let child_indent = indent + indent_size
         for child in node.children {
-          out.write_char('\n')
-          out.write_string(
-            node_to_html_pretty(child, child_indent, indent_size, quote),
-          )
+          match
+            node_to_html_pretty_child_line(
+              child, child_indent, indent_size, quote,
+            ) {
+            Some(line) => {
+              out.write_char('\n')
+              out.write_string(line)
+            }
+            None => ()
+          }
         }
         out.write_char('\n')
         out.write_string(" ".repeat(indent))
