@@ -8624,6 +8624,23 @@ test "parser handles disabled scripting noscript in head" {
   assert_eq(leading_space.errors[0].code, "expected-doctype-but-got-start-tag")
   assert_eq(leading_space.errors[1].code, "unexpected-start-tag")
   assert_eq(leading_space.errors[2].code, "unexpected-end-tag")
+  let coerced_leading_space = @html_parser.parse(
+    "<head><noscript>\u{000C} x</noscript>",
+    collect_errors=true,
+    scripting_enabled=false,
+    xml_coercion=true,
+  )
+  assert_eq(
+    coerced_leading_space.to_html(pretty=false),
+    "<html><head><noscript></noscript>  </head><body>x</body></html>",
+  )
+  assert_eq(coerced_leading_space.errors.length(), 3)
+  assert_eq(
+    coerced_leading_space.errors[0].code,
+    "expected-doctype-but-got-start-tag",
+  )
+  assert_eq(coerced_leading_space.errors[1].code, "unexpected-start-tag")
+  assert_eq(coerced_leading_space.errors[2].code, "unexpected-end-tag")
   let allowed = @html_parser.parse(
     "<head><noscript><link rel=x></noscript><p>y",
     collect_errors=true,
