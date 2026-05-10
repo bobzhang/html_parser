@@ -608,6 +608,12 @@ JustHTML from Python to MoonBit.
   SVG/MathML current node, port it as literal text without entity decoding;
   then apply the same foreign-text null handling for direct foreign content and
   normal HTML text null handling at MathML text integration points.
+- Foreign fragment contexts need the same temporary-context trick as table
+  fragments. Seed the stack with an unrendered SVG/MathML context element so
+  child tags inherit the foreign namespace and CDATA is parsed as text, then
+  promote the wrapper's children back to the document fragment. Keep the
+  wrapper on the stack through EOF if the reference reports the context as an
+  unclosed element.
 
 ## Test Porting
 

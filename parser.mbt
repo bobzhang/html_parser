@@ -19,6 +19,7 @@ priv struct Parser {
   mut fragment_context_colgroup : Bool
   mut fragment_context_html : Bool
   mut fragment_context_html_root : Node?
+  mut fragment_context_foreign : Node?
   mut template_column_group_mode : Bool
   mut template_table_context_mode : Bool
   mut template_detached_column_group_mode : Bool
@@ -51,6 +52,7 @@ fn Parser::new(
     fragment_context_colgroup: false,
     fragment_context_html: false,
     fragment_context_html_root: None,
+    fragment_context_foreign: None,
     template_column_group_mode: false,
     template_table_context_mode: false,
     template_detached_column_group_mode: false,
@@ -4483,7 +4485,16 @@ fn Parser::parse_fragment_context(
   self : Parser,
   context : FragmentContext,
 ) -> Bool {
-  if context.ns is Some(_) {
+  let context_ns = match context.ns {
+    Some("mathml") => "math"
+    Some(ns) => ns
+    None => "html"
+  }
+  if context_ns != "html" {
+    if is_foreign_namespace(context_ns) {
+      self.parse_foreign_fragment_context(context, context_ns)
+      return true
+    }
     return false
   }
   let name = context.tag_name

@@ -71,6 +71,9 @@ fn Parser::start_tag_namespace(self : Parser, name : StringView) -> String {
     name != "malignmark" {
     return "html"
   }
+  if self.node_is_foreign_fragment_context(current) {
+    return "html"
+  }
   match current.ns {
     Some(ns) if is_foreign_namespace(ns) => ns
     _ => "html"
@@ -354,6 +357,14 @@ fn Parser::current_node_is_foreign_namespace(self : Parser) -> Bool {
 }
 
 ///|
+fn Parser::node_is_foreign_fragment_context(self : Parser, node : Node) -> Bool {
+  match self.fragment_context_foreign {
+    Some(context) => physical_equal(node, context)
+    None => false
+  }
+}
+
+///|
 fn Parser::clean_foreign_content_text(
   self : Parser,
   raw : StringView,
@@ -386,6 +397,9 @@ fn Parser::pop_until_html_or_integration_point(self : Parser) -> Unit {
     match current.ns {
       Some(ns) if is_foreign_namespace(ns) => {
         if node_is_html_integration_point(current) {
+          return
+        }
+        if self.node_is_foreign_fragment_context(current) {
           return
         }
         ignore(self.stack.pop())
@@ -453,6 +467,10 @@ fn Parser::handle_foreign_content_end_tag(
     index -= 1
     let node = self.stack[index]
     if node.kind == Element && names_match_end_tag(node, name) {
+      if self.node_is_foreign_fragment_context(node) {
+        self.error_at("unexpected-end-tag-in-fragment-context", start)
+        return true
+      }
       if node_is_html_namespace(node) {
         return false
       }
@@ -470,6 +488,22 @@ fn Parser::handle_foreign_content_end_tag(
     }
   }
   true
+}
+
+///|
+fn Parser::parse_foreign_fragment_context(
+  self : Parser,
+  context : FragmentContext,
+  ns : String,
+) -> Unit {
+  let name = adjusted_start_tag_name_for_namespace(ns, context.tag_name)
+  let wrapper = element(name, ns~)
+  self.fragment_context_foreign = Some(wrapper)
+  self.root.append_child(wrapper)
+  self.stack.push(wrapper)
+  self.parse_all()
+  unwrap_fragment_context_element(self.root, wrapper)
+  self.fragment_context_foreign = None
 }
 
 ///|
