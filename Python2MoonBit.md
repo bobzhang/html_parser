@@ -81,6 +81,10 @@ JustHTML from Python to MoonBit.
   miss, as are attributes such as `calcMode`, `clipPathUnits`, `keyPoints`,
   and `kernelUnitLength`. SVG `<font>` only breaks out to HTML when `color`,
   `face`, or `size` attributes are present.
+- After public foreign-content fixtures prove the adjustment path reaches the
+  DOM, cover the full SVG/foreign adjustment tables with whitebox helper tests.
+  They keep rare spec spellings locked down without turning each table entry
+  into a large parser fixture.
 - MathML text integration points are mostly HTML islands, but `mglyph` and
   `malignmark` are explicit exceptions that stay in MathML. When checking
   foreign-content recovery against Python, remember to enable `collect_errors`;
