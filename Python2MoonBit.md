@@ -61,6 +61,10 @@ JustHTML from Python to MoonBit.
   `<rtc>` only do so when the current node is already a ruby annotation. The
   later `</ruby>` follows the "any other end tag" path, so open annotations
   make it report `end-tag-too-early`.
+- Not every empty tree-builder insertion is an HTML void element. `<keygen>`
+  and fragment-mode `<frame>` are inserted empty but still serialize with end
+  tags, while document body-mode `<frame>` is ignored with
+  `unexpected-start-tag-ignored`.
 - Some start tags have their own scope rules even when they look like ordinary
   elements. A repeated `<button>` searches default scope, reports
   `unexpected-start-tag-implies-end-tag`, closes the previous button, and then

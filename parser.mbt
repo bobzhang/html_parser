@@ -1251,6 +1251,14 @@ fn current_node_is_ruby_annotation(node : Node) -> Bool {
 }
 
 ///|
+fn Parser::start_tag_inserts_empty_nonvoid(
+  self : Parser,
+  name : StringView,
+) -> Bool {
+  name == "keygen" || (name == "frame" && self.is_fragment_parser())
+}
+
+///|
 fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
   let start = self.pos
   self.pos += 1
@@ -1306,6 +1314,14 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if self.is_fragment_parser() && fragment_shell_start_is_ignored(name) {
         self.error_at(self.fragment_shell_start_error_code(name), start)
+        return
+      }
+      if self.has_open_element("select") && name == "frame" {
+        self.error_at("unexpected-start-tag-in-select", start)
+        return
+      }
+      if !self.is_fragment_parser() && name == "frame" {
+        self.error_at("unexpected-start-tag-ignored", start)
         return
       }
       if self.has_open_element("select") &&
@@ -1368,9 +1384,14 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       self.current_node().append_child(node)
       let self_closes_tree = self_closing && is_void_element(adjusted_name)
+      let inserts_empty_nonvoid = self.start_tag_inserts_empty_nonvoid(
+        adjusted_name,
+      )
       if !self_closes_tree && self.is_special_text_element(adjusted_name) {
         self.consume_special_element_content(node, adjusted_name)
-      } else if !self_closes_tree && !is_void_element(adjusted_name) {
+      } else if !self_closes_tree &&
+        !is_void_element(adjusted_name) &&
+        !inserts_empty_nonvoid {
         self.stack.push(node)
         if start_tag_ignores_initial_lf(adjusted_name) {
           self.skip_one_initial_lf()
