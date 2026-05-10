@@ -4459,6 +4459,7 @@ pub fn parse(
   parser.report_eof_tree_errors()
   scaffold_document(root)
   normalize_tables(root)
+  populate_selectedcontent(root)
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {
     raise HtmlError::StrictMode(parser.errors[0])
@@ -4510,6 +4511,84 @@ fn is_whitespace_text_node(node : Node) -> Bool {
 fn append_children_to(target : Node, children : Array[Node]) -> Unit {
   for child in children {
     target.append_child(child)
+  }
+}
+
+///|
+fn push_children_reverse(stack : Array[Node], node : Node) -> Unit {
+  let mut index = node.children.length()
+  while index > 0 {
+    index -= 1
+    stack.push(node.children[index])
+  }
+}
+
+///|
+fn find_elements_by_name(root : Node, name : String) -> Array[Node] {
+  let found : Array[Node] = []
+  let stack : Array[Node] = [root]
+  while !stack.is_empty() {
+    match stack.pop() {
+      Some(node) => {
+        if node.kind == Element && node.name == name {
+          found.push(node)
+        }
+        push_children_reverse(stack, node)
+      }
+      None => ()
+    }
+  }
+  found
+}
+
+///|
+fn find_first_element_by_name(root : Node, name : String) -> Node? {
+  let stack : Array[Node] = [root]
+  while !stack.is_empty() {
+    match stack.pop() {
+      Some(node) => {
+        if node.kind == Element && node.name == name {
+          return Some(node)
+        }
+        push_children_reverse(stack, node)
+      }
+      None => ()
+    }
+  }
+  None
+}
+
+///|
+fn selected_option_in(options : Array[Node]) -> Node? {
+  for option in options {
+    if option.attrs.contains("selected") {
+      return Some(option)
+    }
+  }
+  options.get(0)
+}
+
+///|
+fn append_cloned_children(source : Node, target : Node) -> Unit {
+  for child in source.children {
+    target.append_child(child.clone_node(deep=true))
+  }
+}
+
+///|
+fn populate_selectedcontent(root : Node) -> Unit {
+  let selects = find_elements_by_name(root, "select")
+  for select in selects {
+    match find_first_element_by_name(select, "selectedcontent") {
+      Some(selectedcontent) => {
+        let options = find_elements_by_name(select, "option")
+        match selected_option_in(options) {
+          Some(option) => append_cloned_children(option, selectedcontent)
+          None => ()
+        }
+      }
+      None => ()
+    }
   }
 }
 
@@ -4815,6 +4894,7 @@ pub fn parse_fragment(
   }
   parser.report_eof_tree_errors()
   normalize_tables(root)
+  populate_selectedcontent(root)
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {
     raise HtmlError::StrictMode(parser.errors[0])

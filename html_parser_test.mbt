@@ -3035,6 +3035,61 @@ test "parser closes repeated option and select optgroup starts" {
 }
 
 ///|
+test "parser populates selectedcontent from selected option" {
+  let first = @html_parser.parse_fragment(
+    "<select><option>one</option><option>two</option><selectedcontent></selectedcontent></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    first.to_html(pretty=false),
+    "<select><option>one</option><option>two</option><selectedcontent>one</selectedcontent></select>",
+  )
+  assert_eq(first.errors.length(), 2)
+  assert_eq(first.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(first.errors[1].code, "unexpected-end-tag-in-select")
+  let selected = @html_parser.parse_fragment(
+    "<select><option>one</option><option selected>two <b>bold</b></option><selectedcontent></selectedcontent></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    selected.to_html(pretty=false),
+    "<select><option>one</option><option selected>two <b>bold</b></option><selectedcontent>two <b>bold</b></selectedcontent></select>",
+  )
+  assert_eq(selected.errors.length(), 2)
+  let existing = @html_parser.parse_fragment(
+    "<select><option selected>one</option><selectedcontent>old</selectedcontent></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    existing.to_html(pretty=false),
+    "<select><option selected>one</option><selectedcontent>oldone</selectedcontent></select>",
+  )
+  assert_eq(existing.errors.length(), 2)
+  let nested = @html_parser.parse_fragment(
+    "<select><optgroup><option selected><span>x</span></option></optgroup><selectedcontent></selectedcontent></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested.to_html(pretty=false),
+    "<select><optgroup><option selected><span>x</span></option></optgroup><selectedcontent><span>x</span></selectedcontent></select>",
+  )
+  assert_eq(nested.errors.length(), 4)
+  assert_eq(nested.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(nested.errors[1].code, "unexpected-end-tag-in-select")
+  assert_eq(nested.errors[2].code, "unexpected-start-tag-in-select")
+  assert_eq(nested.errors[3].code, "unexpected-end-tag-in-select")
+  let two_selects = @html_parser.parse_fragment(
+    "<select><option selected>a</option><selectedcontent></selectedcontent></select><select><option>b</option><selectedcontent></selectedcontent></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    two_selects.to_html(pretty=false),
+    "<select><option selected>a</option><selectedcontent>a</selectedcontent></select><select><option>b</option><selectedcontent>b</selectedcontent></select>",
+  )
+  assert_eq(two_selects.errors.length(), 4)
+}
+
+///|
 test "parser inserts basic table row groups and rows" {
   let rows = @html_parser.parse_fragment("<table><tr><td>x</td></tr></table>")
   assert_eq(

@@ -300,6 +300,12 @@ JustHTML from Python to MoonBit.
   template-content context. Table structural tags inside `<template>` are not
   discarded by "outside table" guards, and `</template>` closes the template
   content stack without reporting generic misnesting for open descendants.
+- The Python tree builder performs some finish-time DOM population in addition
+  to token insertion. `<selectedcontent>` is parsed in select mode with normal
+  select-mode parse errors, then populated after tree construction by appending
+  deep clones of the selected `<option>` children, or the first option when no
+  option has a `selected` attribute. Existing selectedcontent children are not
+  cleared first.
 - Document scaffolding also has to preserve explicit root-level `<head>` and
   `<body>` nodes, including attributes on `<body>`. Do not always synthesize
   fresh elements and then nest the parsed ones inside the body.
