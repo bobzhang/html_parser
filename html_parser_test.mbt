@@ -55,6 +55,43 @@ test "builder preserves adjusted foreign element names" {
 }
 
 ///|
+test "builder exposes DOM helper invariants" {
+  let custom = @html_parser.element("Thing", ns="CustomNS")
+  assert_eq(custom.name(), "Thing")
+  assert_true(custom.namespace_uri() is Some("CustomNS"))
+  assert_true(custom.kind() is @html_parser.NodeKind::Element)
+  assert_eq(custom.data(), "")
+  assert_eq(custom.text(), "")
+  assert_eq(custom.has_child_nodes(), false)
+  let parent = @html_parser.element("div", attrs={ "id": Some("root") }, children=[
+    @html_parser.text("a"),
+    @html_parser.element("span", children=[@html_parser.text("b")]),
+  ])
+  assert_true(parent.has_child_nodes())
+  assert_eq(parent.text(), "ab")
+  let shallow = parent.clone_node()
+  assert_eq(shallow.to_html(pretty=false), "<div id=\"root\"></div>")
+  let deep = parent.clone_node(deep=true, override_attrs={ "id": Some("clone") })
+  assert_eq(
+    deep.to_html(pretty=false),
+    "<div id=\"clone\">a<span>b</span></div>",
+  )
+  assert_eq(
+    parent.to_html(pretty=false),
+    "<div id=\"root\">a<span>b</span></div>",
+  )
+  let original_children = parent.children()
+  assert_true(original_children[0].kind() is @html_parser.NodeKind::Text)
+  assert_eq(original_children[0].data(), "a")
+  let note = @html_parser.comment("note")
+  assert_true(note.kind() is @html_parser.NodeKind::Comment)
+  assert_eq(note.data(), "note")
+  assert_eq(note.text(), "")
+  note.append_child(@html_parser.text("ignored"))
+  assert_eq(note.has_child_nodes(), false)
+}
+
+///|
 test "builder neutralizes raw text end tag breakouts" {
   let script = @html_parser.element("script", children=[
     @html_parser.text("</script><img src=x onerror=alert(1)>"),

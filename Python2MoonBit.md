@@ -158,6 +158,13 @@ JustHTML from Python to MoonBit.
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids
   escaping an embedded double quote.
+- DOM nodes are mutable object graphs, so port Python operations by preserving
+  identity semantics instead of structural equality. Moving a node must detach
+  it from its old parent, insert-before needs an identity scan with an append
+  fallback, and append/insert must reject self-or-ancestor cycles.
+- Clone mutable node metadata explicitly. Attribute maps should be copied on
+  `attrs()` and `clone_node()`, and `override_attrs` must not become shared
+  mutable state between the caller and the clone.
 - Class selector matching must split class attributes on HTML whitespace
   (`space`, `tab`, `LF`, `FF`, `CR`), not just literal spaces. This matters for
   both parsed attributes and programmatically-created DOM nodes.
