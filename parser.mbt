@@ -859,6 +859,14 @@ fn Parser::handle_select_end_tag(
 }
 
 ///|
+fn select_start_tag_reprocesses_in_body(name : StringView) -> Bool {
+  match name {
+    "input" | "table" | "textarea" => true
+    _ => false
+  }
+}
+
+///|
 fn Parser::close_open_table_cell(self : Parser) -> Unit {
   if self.has_open_element("td") {
     ignore(self.close_open_element("td"))
@@ -1011,6 +1019,11 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if !closed {
         self.error_at_eof("eof-in-tag")
         return
+      }
+      if self.has_open_element("select") &&
+        select_start_tag_reprocesses_in_body(name) {
+        self.error_at("unexpected-start-tag-in-select", start)
+        ignore(self.close_open_element("select"))
       }
       if start_tag_closes_p(name) {
         self.close_open_p_element()

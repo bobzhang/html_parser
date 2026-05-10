@@ -58,6 +58,9 @@ JustHTML from Python to MoonBit.
   closes the current select and reports `unexpected-select-in-select`; stray
   `</option>`/`</optgroup>` inside a select use
   `unexpected-end-tag-in-select`, not the generic unexpected-end-tag code.
+  Some start tags such as `<input>`, `<textarea>`, and `<table>` also close the
+  select with `unexpected-start-tag-in-select` and then get reprocessed in body
+  mode.
 - Serializing `script`/`style` text nodes has a security edge case, especially
   for programmatically-created trees: neutralize matching `</script` or
   `</style` sequences only when the tag name is followed by EOF, HTML

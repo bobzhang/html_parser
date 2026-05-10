@@ -1949,6 +1949,36 @@ test "parser closes repeated option and select optgroup starts" {
   assert_eq(stray_option.to_html(pretty=false), "<select></select>")
   assert_eq(stray_option.errors.length(), 1)
   assert_eq(stray_option.errors[0].code, "unexpected-end-tag-in-select")
+  let input = @html_parser.parse_fragment(
+    "<select><input name=x></select>",
+    collect_errors=true,
+  )
+  assert_eq(input.to_html(pretty=false), "<select></select><input name=\"x\">")
+  assert_eq(input.errors.length(), 2)
+  assert_eq(input.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(input.errors[1].code, "unexpected-end-tag")
+  let textarea = @html_parser.parse_fragment(
+    "<select><textarea>hi</textarea></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    textarea.to_html(pretty=false),
+    "<select></select><textarea>hi</textarea>",
+  )
+  assert_eq(textarea.errors.length(), 2)
+  assert_eq(textarea.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(textarea.errors[1].code, "unexpected-end-tag")
+  let table = @html_parser.parse_fragment(
+    "<select><table><tr><td>x</td></tr></table></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    table.to_html(pretty=false),
+    "<select></select><table><tbody><tr><td>x</td></tr></tbody></table>",
+  )
+  assert_eq(table.errors.length(), 2)
+  assert_eq(table.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(table.errors[1].code, "unexpected-end-tag")
 }
 
 ///|
