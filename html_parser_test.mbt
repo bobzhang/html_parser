@@ -3118,6 +3118,69 @@ test "parser assigns namespaces and adjusted names for foreign content" {
 }
 
 ///|
+test "parser adjusts SVG edge names and foreign attributes" {
+  let svg = @html_parser.parse_fragment(
+    "<svg><altglyph attributetype='xml' xlink:actuate='onLoad'></altglyph><femerge><femergenode></femergenode></femerge><radialgradient gradienttransform='r'></radialgradient></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    svg.to_html(pretty=false),
+    "<svg><altGlyph attributeType=\"xml\" xlink:actuate=\"onLoad\"></altGlyph><feMerge><feMergeNode></feMergeNode></feMerge><radialGradient gradientTransform=\"r\"></radialGradient></svg>",
+  )
+  assert_eq(svg.errors.length(), 0)
+  guard svg.query_one("svg") is Some(svg_node) else { fail("expected svg") }
+  let svg_children = svg_node.children()
+  assert_eq(svg_children.length(), 3)
+  assert_eq(svg_children[0].name(), "altGlyph")
+  let alt_attrs = svg_children[0].attrs()
+  guard alt_attrs["attributeType"] is Some("xml") else {
+    fail("expected adjusted attributeType")
+  }
+  guard alt_attrs["xlink:actuate"] is Some("onLoad") else {
+    fail("expected preserved xlink:actuate")
+  }
+  assert_eq(svg_children[1].name(), "feMerge")
+  let merge_children = svg_children[1].children()
+  assert_eq(merge_children.length(), 1)
+  assert_eq(merge_children[0].name(), "feMergeNode")
+  assert_eq(svg_children[2].name(), "radialGradient")
+  let radial_attrs = svg_children[2].attrs()
+  guard radial_attrs["gradientTransform"] is Some("r") else {
+    fail("expected adjusted gradientTransform")
+  }
+}
+
+///|
+test "parser treats foreign integration points as HTML islands" {
+  let svg = @html_parser.parse_fragment(
+    "<svg><foreignobject><div><span>x</span></div></foreignobject></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    svg.to_html(pretty=false),
+    "<svg><foreignObject><div><span>x</span></div></foreignObject></svg>",
+  )
+  assert_eq(svg.errors.length(), 0)
+  guard svg.query_one("div") is Some(div) else { fail("expected div") }
+  assert_true(div.namespace_uri() is Some("html"))
+  guard svg.query_one("span") is Some(span) else { fail("expected span") }
+  assert_true(span.namespace_uri() is Some("html"))
+  let math = @html_parser.parse_fragment(
+    "<math><annotation-xml encoding='application/xhtml+xml'><section>x</section></annotation-xml></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    math.to_html(pretty=false),
+    "<math><annotation-xml encoding=\"application/xhtml+xml\"><section>x</section></annotation-xml></math>",
+  )
+  assert_eq(math.errors.length(), 0)
+  guard math.query_one("section") is Some(section) else {
+    fail("expected integrated section")
+  }
+  assert_true(section.namespace_uri() is Some("html"))
+}
+
+///|
 test "parser handles foreign content end tag recovery" {
   let ancestor_end = @html_parser.parse_fragment(
     "<svg><lineargradient></svg>",

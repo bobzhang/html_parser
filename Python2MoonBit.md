@@ -65,6 +65,12 @@ JustHTML from Python to MoonBit.
   and fragment-mode `<frame>` are inserted empty but still serialize with end
   tags, while document body-mode `<frame>` is ignored with
   `unexpected-start-tag-ignored`.
+- Foreign-content parsing is not just namespace inheritance. SVG tag and
+  attribute names have spec-defined camel-case adjustments, MathML has its own
+  `definitionURL` adjustment, and foreign attributes such as `xlink:actuate`
+  must survive normalization. HTML integration points such as SVG
+  `foreignObject`/`desc`/`title` and MathML `annotation-xml` with HTML
+  encodings switch descendants back into the HTML namespace.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open, and non-whitespace tokens
