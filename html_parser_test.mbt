@@ -5660,6 +5660,45 @@ test "parse_bytes decodes utf16 bom and explicit encodings" {
 }
 
 ///|
+test "parse_bytes handles empty labels aliases and malformed utf16 tails" {
+  let empty_label = @html_parser.parse_bytes(b"<p>\x80</p>", encoding="  ")
+  assert_eq(empty_label.to_text(separator="", strip=false), "\u{20AC}")
+  guard empty_label.encoding is Some("windows-1252") else {
+    fail("expected empty transport label to fall back")
+  }
+  let explicit_little = b"\x3c\x00\x70\x00\x3e\x00\x68\x00\x69\x00\x3c\x00\x2f\x00\x70\x00\x3e\x00"
+  let explicit_little_doc = @html_parser.parse_bytes(
+    explicit_little,
+    encoding="UTF16LE",
+  )
+  assert_eq(
+    explicit_little_doc.to_html(pretty=false),
+    "<html><head></head><body><p>hi</p></body></html>",
+  )
+  guard explicit_little_doc.encoding is Some("utf-16le") else {
+    fail("expected utf16le alias to normalize")
+  }
+  let odd_little = b"\xff\xfe\x3c\x00\x70\x00\x3e\x00\x41"
+  let odd_little_doc = @html_parser.parse_bytes(odd_little)
+  assert_eq(
+    odd_little_doc.to_html(pretty=false),
+    "<html><head></head><body><p>\u{FFFD}</p></body></html>",
+  )
+  guard odd_little_doc.encoding is Some("utf-16le") else {
+    fail("expected malformed utf16le bom encoding")
+  }
+  let odd_big = b"\xfe\xff\x00\x3c\x00\x70\x00\x3e\x00\x42\x00"
+  let odd_big_doc = @html_parser.parse_bytes(odd_big)
+  assert_eq(
+    odd_big_doc.to_html(pretty=false),
+    "<html><head></head><body><p>B\u{FFFD}</p></body></html>",
+  )
+  guard odd_big_doc.encoding is Some("utf-16be") else {
+    fail("expected malformed utf16be bom encoding")
+  }
+}
+
+///|
 test "tokenize exposes stable token data structures" {
   let result = @html_parser.tokenize("<p class='x'>Hi<br><!--ok--></p>")
   assert_eq(result.tokens.length(), 6)

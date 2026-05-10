@@ -43,6 +43,11 @@ JustHTML from Python to MoonBit.
 - Valid transport encoding labels take precedence over BOM and meta sniffing.
   Keep tests for this because a natural refactor is to sniff BOM first, which
   would silently change byte-entry behavior.
+- Empty or unsupported transport encoding labels behave like a missing label:
+  fall back through BOM, meta prescan, and finally Windows-1252. Supported
+  aliases such as `UTF16LE` should normalize the reported `ParsedHtml.encoding`
+  while malformed trailing UTF-16 bytes are decoded lossily as U+FFFD, matching
+  Python's forgiving byte-entry behavior.
 - Byte-level prescan edge cases are easy to accidentally "fix" by decoding
   first. Keep explicit tests for unfinished comments/tags and unterminated
   quotes so malformed sniff-only markup does not change the selected encoding.
