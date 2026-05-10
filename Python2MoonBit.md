@@ -74,6 +74,10 @@ JustHTML from Python to MoonBit.
   MoonBit can use `physical_equal` while scanning `parent.children`; remember
   CSS sibling combinators use previous element siblings, skipping text and
   comments.
+- General sibling matching is the same scan as adjacent sibling, but keeps the
+  latest previous element that matches the selector to the left. When matching
+  right-to-left, set the current node to that sibling so earlier combinators
+  continue from the correct place.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

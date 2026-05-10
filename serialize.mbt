@@ -882,6 +882,7 @@ priv enum SelectorCombinator {
   DescendantCombinator
   ChildCombinator
   AdjacentSiblingCombinator
+  GeneralSiblingCombinator
 } derive(Eq)
 
 ///|
@@ -933,7 +934,8 @@ fn split_complex_selector(
                 None => ()
               }
               start = pos + ch.utf16_len()
-            } else if bracket_depth == 0 && (ch == '>' || ch == '+') {
+            } else if bracket_depth == 0 &&
+              (ch == '>' || ch == '+' || ch == '~') {
               match selector_list_part(selector, start, pos) {
                 Some(part) =>
                   push_complex_selector_part(parts, combinators, part, pending)
@@ -944,8 +946,10 @@ fn split_complex_selector(
               }
               pending = if ch == '>' {
                 ChildCombinator
-              } else {
+              } else if ch == '+' {
                 AdjacentSiblingCombinator
+              } else {
+                GeneralSiblingCombinator
               }
               start = pos + ch.utf16_len()
             }
@@ -977,6 +981,25 @@ fn previous_element_sibling(node : Node) -> Node? {
         }
         if child.kind == Element {
           previous = Some(child)
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn previous_matching_sibling(node : Node, selector : StringView) -> Node? {
+  match node.parent {
+    Some(parent) => {
+      let mut previous_match : Node? = None
+      for child in parent.children {
+        if physical_equal(child, node) {
+          return previous_match
+        }
+        if child.kind == Element && matches_simple_selector(child, selector) {
+          previous_match = Some(child)
         }
       }
       None
@@ -1033,6 +1056,11 @@ fn matches_complex_selector(node : Node, selector : StringView) -> Bool {
             }
             current = sibling
           }
+          None => return false
+        }
+      GeneralSiblingCombinator =>
+        match previous_matching_sibling(current, wanted) {
+          Some(sibling) => current = sibling
           None => return false
         }
     }
