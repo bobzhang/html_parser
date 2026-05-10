@@ -764,6 +764,20 @@ test "document parser promotes explicit root head and body elements" {
   assert_eq(duplicate_head.errors.length(), 2)
   assert_eq(duplicate_head.errors[0].code, "expected-doctype-but-got-start-tag")
   assert_eq(duplicate_head.errors[1].code, "unexpected-start-tag")
+  let duplicate_head_body_start = @html_parser.parse(
+    "<head><head><p>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    duplicate_head_body_start.to_html(pretty=false),
+    "<html><head></head><body><p>x</p></body></html>",
+  )
+  assert_eq(duplicate_head_body_start.errors.length(), 2)
+  assert_eq(
+    duplicate_head_body_start.errors[0].code,
+    "expected-doctype-but-got-start-tag",
+  )
+  assert_eq(duplicate_head_body_start.errors[1].code, "unexpected-start-tag")
   let closed_duplicate_head = @html_parser.parse(
     "<head><head></head><title>T</title>",
     collect_errors=true,

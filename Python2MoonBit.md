@@ -602,8 +602,9 @@ JustHTML from Python to MoonBit.
   missing attributes onto the existing html node, and drop the token.
 - Repeated `<head>` starts are a JustHTML-specific recovery edge. A duplicate
   head start while the real head is open reports `unexpected-start-tag`, starts
-  a transient duplicate head sibling, and document scaffolding later moves that
-  duplicate head's children into the body. A following head element such as
+  a transient duplicate head sibling, and either pops that duplicate when a
+  body-mode start such as `<p>` arrives or lets document scaffolding later move
+  the duplicate head's children into the body. A following head element such as
   `<title>` must therefore not be pulled back into the real head.
 - Foreign-content integration points depend on attributes, not just tag names.
   MathML `annotation-xml` integrates HTML only for `encoding` values like
