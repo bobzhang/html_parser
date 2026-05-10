@@ -1639,6 +1639,42 @@ test "template caption end defers recovery to template end" {
 }
 
 ///|
+test "template table recovery fosters ordinary body starts" {
+  let after_caption = @html_parser.parse_fragment(
+    "<template><caption>x</caption><p>z</p></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    after_caption.to_html(pretty=false),
+    "<template><caption>x</caption><p>z</p></template>",
+  )
+  assert_eq(after_caption.errors.length(), 4)
+  assert_eq(after_caption.errors[0].code, "foster-parenting-start-tag")
+  assert_eq(after_caption.errors[1].code, "foster-parenting-character")
+  assert_eq(
+    after_caption.errors[2].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  assert_eq(
+    after_caption.errors[3].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  let after_row = @html_parser.parse_fragment(
+    "<template><tr><td>x</td></tr><p>z</p></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    after_row.to_html(pretty=false),
+    "<template><tr><td>x</td></tr><p>z</p></template>",
+  )
+  assert_eq(after_row.errors.length(), 4)
+  assert_eq(after_row.errors[0].code, "foster-parenting-start-tag")
+  assert_eq(after_row.errors[1].code, "foster-parenting-character")
+  assert_eq(after_row.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
+  assert_eq(after_row.errors[3].code, "unexpected-end-tag-implies-table-voodoo")
+}
+
+///|
 test "template column group keeps columns and drops text" {
   let text = @html_parser.parse_fragment(
     "<template><col>x<col></template>",

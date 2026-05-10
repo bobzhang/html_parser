@@ -580,6 +580,10 @@ JustHTML from Python to MoonBit.
 - A plain `</caption>` inside template content can also leave hidden table-mode
   state behind. The caption node is closed, but the following `</template>`
   still reports table-voodoo recovery.
+- While that synthetic table-mode state is active, ordinary body starts such as
+  `<p>` are inserted normally into template content but still report
+  `foster-parenting-start-tag`; non-whitespace character tokens beneath them
+  also report `foster-parenting-character`.
 
 ## Test Porting
 

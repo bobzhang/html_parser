@@ -146,6 +146,9 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if self.foster_parent_template_table_text(cleaned, start) {
     return
   }
+  if self.template_table_context_mode && text_has_non_ascii_whitespace(cleaned) {
+    ignore(self.report_foster_parenting_character_errors(cleaned, start))
+  }
   self.report_foster_parented_table_context_text(cleaned, start)
   self
   .current_node()
@@ -879,6 +882,21 @@ fn Parser::handle_template_table_context_start_tag(
     return true
   }
   false
+}
+
+///|
+fn Parser::report_template_table_context_fostered_start(
+  self : Parser,
+  name : StringView,
+  start : Int,
+) -> Unit {
+  if !self.template_table_context_mode {
+    return
+  }
+  match name {
+    "html" | "script" | "style" | "template" => ()
+    _ => self.error_at("foster-parenting-start-tag", start)
+  }
 }
 
 ///|
@@ -3220,6 +3238,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.handle_template_table_context_start_tag(name, attrs, start) {
         return
       }
+      self.report_template_table_context_fostered_start(name, start)
       let in_template_table_context = self.in_template_content_without_inner_table()
       if name == "col" && in_template_table_context {
         let current = self.current_node()
