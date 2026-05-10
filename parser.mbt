@@ -861,7 +861,26 @@ fn Parser::handle_select_end_tag(
 ///|
 fn select_start_tag_reprocesses_in_body(name : StringView) -> Bool {
   match name {
-    "input" | "table" | "textarea" => true
+    "caption"
+    | "col"
+    | "colgroup"
+    | "input"
+    | "table"
+    | "tbody"
+    | "td"
+    | "textarea"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn table_start_tag_is_ignored_outside_table(name : StringView) -> Bool {
+  match name {
+    "colgroup" | "tbody" | "td" | "tfoot" | "th" | "thead" | "tr" => true
     _ => false
   }
 }
@@ -1024,6 +1043,15 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         select_start_tag_reprocesses_in_body(name) {
         self.error_at("unexpected-start-tag-in-select", start)
         ignore(self.close_open_element("select"))
+      }
+      if !self.has_open_element("table") && name == "caption" {
+        self.error_at("unexpected-start-tag", start)
+        return
+      }
+      if !self.has_open_element("table") &&
+        table_start_tag_is_ignored_outside_table(name) {
+        self.error_at("unexpected-start-tag-ignored", start)
+        return
       }
       if start_tag_closes_p(name) {
         self.close_open_p_element()

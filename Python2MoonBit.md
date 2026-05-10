@@ -60,7 +60,10 @@ JustHTML from Python to MoonBit.
   `unexpected-end-tag-in-select`, not the generic unexpected-end-tag code.
   Some start tags such as `<input>`, `<textarea>`, and `<table>` also close the
   select with `unexpected-start-tag-in-select` and then get reprocessed in body
-  mode.
+  mode. When table-internal tags are reprocessed outside an actual table, most
+  starts are ignored while preserving text children; `<caption>` reports
+  `unexpected-start-tag`, while `<td>`, `<tr>`, row groups, and `<colgroup>`
+  report `unexpected-start-tag-ignored`.
 - Serializing `script`/`style` text nodes has a security edge case, especially
   for programmatically-created trees: neutralize matching `</script` or
   `</style` sequences only when the tag name is followed by EOF, HTML
