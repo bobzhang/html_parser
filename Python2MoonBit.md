@@ -1278,6 +1278,10 @@ JustHTML from Python to MoonBit.
 - Mirror Python's lazy error collection explicitly: parse errors are tracked
   internally so strict mode can raise, but public `errors` stays empty unless
   `collect_errors=true` or a strict parse succeeds and returns its result.
+- Tree-builder parse errors for tags are usually reported at the consumed
+  token's current cursor, so line/column tests need to include newlines inside
+  tag whitespace and quoted attributes. Normalize CR and CRLF before computing
+  those positions.
 - Snapshot-style `inspect` tests are useful for complex tree output, but stable
   assertion tests are better for focused behavior.
 - When porting recursive output helpers, match the reference traversal state,
