@@ -584,6 +584,16 @@ JustHTML from Python to MoonBit.
   `<p>` are inserted normally into template content but still report
   `foster-parenting-start-tag`; non-whitespace character tokens beneath them
   also report `foster-parenting-character`.
+- The tokenizer/parser lowercases raw tag and attribute names first, but
+  foreign content needs a second adjustment step. Preserve non-HTML node names
+  in `element(..., ns="svg" | "math")`, then apply SVG tag-name casing
+  (`lineargradient` -> `linearGradient`) and SVG/MathML attribute casing before
+  inserting the node.
+- Foreign content is a parser mode, not just a namespace on the node. While the
+  adjusted current node is SVG/MathML, bypass ordinary HTML insertion-mode
+  special cases for non-breakout starts, honor self-closing syntax for all
+  foreign elements, and pop back to HTML mode before reprocessing breakout tags
+  such as `<div>` or `<font color>`.
 
 ## Test Porting
 

@@ -55,9 +55,14 @@ pub fn element(
   children? : Array[Node] = [],
   ns? : String = "html",
 ) -> Node {
+  let normalized_name = if ns == "html" {
+    lower_ascii(name)
+  } else {
+    name.to_owned()
+  }
   make_node(
     Element,
-    lower_ascii(name),
+    normalized_name,
     Some(ns),
     attrs,
     "",

@@ -2218,7 +2218,7 @@ fn Parser::handle_document_frameset_end_tag(
 fn Parser::pop_until(self : Parser, name : String, pos : Int) -> Unit {
   let mut found = false
   for node in self.stack {
-    if node.kind == Element && node.name == name {
+    if node.kind == Element && names_match_end_tag(node, name) {
       found = true
     }
   }
@@ -2235,12 +2235,13 @@ fn Parser::pop_until(self : Parser, name : String, pos : Int) -> Unit {
     }
   }
   match self.stack.last() {
-    Some(node) if node.kind == Element && node.name == name => ()
+    Some(node) if node.kind == Element && names_match_end_tag(node, name) => ()
     _ => self.error_at("end-tag-too-early", pos)
   }
   while self.stack.length() > 1 {
     match self.stack.pop() {
-      Some(node) if node.kind == Element && node.name == name => break
+      Some(node) if node.kind == Element && names_match_end_tag(node, name) =>
+        break
       Some(_) => ()
       None => break
     }
@@ -3216,6 +3217,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at_eof("eof-in-tag")
         return
       }
+      if self.handle_foreign_content_start_tag(name, attrs, self_closing, start) {
+        return
+      }
       if self.handle_fragment_shell_start_tag(name, attrs, start) {
         return
       }
@@ -3342,28 +3346,44 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if !self.document_start_tag_preserves_frameset_ok(name) {
         self.frameset_ok = false
       }
-      let adjusted_name = if name == "image" {
-        self.error_at("image-start-tag", start)
-        "img"
+      let node_ns = self.start_tag_namespace(name)
+      let adjusted_name = if node_ns == "html" {
+        if name == "image" {
+          self.error_at("image-start-tag", start)
+          "img"
+        } else {
+          name
+        }
       } else {
-        name
+        adjusted_start_tag_name_for_namespace(node_ns, name)
       }
-      let node = element(adjusted_name, attrs~)
+      let adjusted_attrs = if node_ns == "html" {
+        attrs
+      } else {
+        prepare_foreign_attrs(node_ns, attrs)
+      }
+      let node = element(adjusted_name, attrs=adjusted_attrs, ns=node_ns)
       if adjusted_name == "form" {
         self.form_element = Some(node)
       }
       self.append_start_tag_node(node, adjusted_name, start)
-      let self_closes_tree = self_closing && is_void_element(adjusted_name)
+      let self_closes_tree = if node_ns == "html" {
+        self_closing && is_void_element(adjusted_name)
+      } else {
+        self_closing
+      }
       let inserts_empty_nonvoid = self.start_tag_inserts_empty_nonvoid(
         adjusted_name,
       )
-      if !self_closes_tree && self.is_special_text_element(adjusted_name) {
+      if node_ns == "html" &&
+        !self_closes_tree &&
+        self.is_special_text_element(adjusted_name) {
         self.consume_special_element_content(node, adjusted_name)
       } else if !self_closes_tree &&
         !is_void_element(adjusted_name) &&
         !inserts_empty_nonvoid {
         self.stack.push(node)
-        if start_tag_ignores_initial_lf(adjusted_name) {
+        if node_ns == "html" && start_tag_ignores_initial_lf(adjusted_name) {
           self.skip_one_initial_lf()
         }
       }

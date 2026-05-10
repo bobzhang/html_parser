@@ -37,6 +37,17 @@ test "builder serializes minimized and quoted attributes like reference" {
 }
 
 ///|
+test "builder preserves adjusted foreign element names" {
+  let gradient = @html_parser.element("linearGradient", ns="svg")
+  assert_eq(gradient.name(), "linearGradient")
+  assert_true(gradient.namespace_uri() is Some("svg"))
+  assert_eq(gradient.to_html(pretty=false), "<linearGradient></linearGradient>")
+  let div = @html_parser.element("DIV")
+  assert_eq(div.name(), "div")
+  assert_true(div.namespace_uri() is Some("html"))
+}
+
+///|
 test "builder neutralizes raw text end tag breakouts" {
   let script = @html_parser.element("script", children=[
     @html_parser.text("</script><img src=x onerror=alert(1)>"),
@@ -2827,6 +2838,84 @@ test "parser generates implied ruby annotation end tags" {
   )
   assert_eq(rp_rt.errors.length(), 1)
   assert_eq(rp_rt.errors[0].code, "end-tag-too-early")
+}
+
+///|
+test "parser assigns namespaces and adjusted names for foreign content" {
+  let svg = @html_parser.parse_fragment(
+    "<svg><lineargradient><stop/></lineargradient><feimage attributename='href'></feimage></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    svg.to_html(pretty=false),
+    "<svg><linearGradient><stop></stop></linearGradient><feImage attributeName=\"href\"></feImage></svg>",
+  )
+  assert_eq(svg.errors.length(), 0)
+  guard svg.query_one("svg") is Some(svg_node) else { fail("expected svg") }
+  assert_true(svg_node.namespace_uri() is Some("svg"))
+  let svg_children = svg_node.children()
+  assert_eq(svg_children.length(), 2)
+  assert_eq(svg_children[0].name(), "linearGradient")
+  assert_true(svg_children[0].namespace_uri() is Some("svg"))
+  let gradient_children = svg_children[0].children()
+  assert_eq(gradient_children.length(), 1)
+  assert_eq(gradient_children[0].name(), "stop")
+  assert_true(gradient_children[0].namespace_uri() is Some("svg"))
+  assert_eq(svg_children[1].name(), "feImage")
+  assert_true(svg_children[1].namespace_uri() is Some("svg"))
+  let image_attrs = svg_children[1].attrs()
+  guard image_attrs["attributeName"] is Some("href") else {
+    fail("expected adjusted SVG attribute")
+  }
+  let math = @html_parser.parse_fragment(
+    "<math><mi definitionurl='x'>y</mi></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    math.to_html(pretty=false),
+    "<math><mi definitionURL=\"x\">y</mi></math>",
+  )
+  assert_eq(math.errors.length(), 0)
+  guard math.query_one("math") is Some(math_node) else { fail("expected math") }
+  assert_true(math_node.namespace_uri() is Some("math"))
+  let math_children = math_node.children()
+  assert_eq(math_children.length(), 1)
+  assert_true(math_children[0].namespace_uri() is Some("math"))
+  let mi_attrs = math_children[0].attrs()
+  guard mi_attrs["definitionURL"] is Some("x") else {
+    fail("expected adjusted MathML attribute")
+  }
+  let breakout = @html_parser.parse_fragment(
+    "<svg><font color='red'>text</font></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    breakout.to_html(pretty=false),
+    "<svg></svg><font color=\"red\">text</font>",
+  )
+  assert_eq(breakout.errors.length(), 2)
+  assert_eq(
+    breakout.errors[0].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(breakout.errors[1].code, "unexpected-end-tag")
+  guard breakout.query_one("font") is Some(font_node) else {
+    fail("expected breakout font")
+  }
+  assert_true(font_node.namespace_uri() is Some("html"))
+  let integrated = @html_parser.parse_fragment(
+    "<math><annotation-xml encoding='text/html'><div>x</div></annotation-xml></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    integrated.to_html(pretty=false),
+    "<math><annotation-xml encoding=\"text/html\"><div>x</div></annotation-xml></math>",
+  )
+  assert_eq(integrated.errors.length(), 0)
+  guard integrated.query_one("div") is Some(integrated_div) else {
+    fail("expected integrated div")
+  }
+  assert_true(integrated_div.namespace_uri() is Some("html"))
 }
 
 ///|
