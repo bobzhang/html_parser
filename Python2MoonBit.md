@@ -722,11 +722,11 @@ JustHTML from Python to MoonBit.
   accessors that default to `None`, and the parser now threads source starts for
   ordinary parsed elements, text, comments, doctypes, special-text children,
   fragment raw-text wrappers, select-insertion helper starts, table column-group
-  helpers, template table helpers, hidden input/form table helpers, and
-  foster-parented table text when `track_node_locations=true`. The remaining
-  risky paths are recovery-generated or relocated nodes: broader table/fragment
-  insertion-mode helpers, active formatting reconstruction, and adoption agency
-  replacement nodes. Duplicated or
+  helpers, template table helpers, hidden input/form table helpers, foreign
+  table recovery helpers, and foster-parented table text when
+  `track_node_locations=true`. The remaining risky paths are recovery-generated
+  or relocated nodes: broader table/fragment insertion-mode helpers, active
+  formatting reconstruction, and adoption agency replacement nodes. Duplicated or
   reconstructed nodes should copy the original formatting node's origin rather
   than inventing a new one.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can

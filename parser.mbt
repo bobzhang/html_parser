@@ -3654,6 +3654,7 @@ fn Parser::handle_select_reprocessed_foreign_cell_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
+  start : Int,
   self_closing : Bool,
 ) -> Bool {
   if name != "td" && name != "th" {
@@ -3663,7 +3664,7 @@ fn Parser::handle_select_reprocessed_foreign_cell_start_tag(
     return false
   }
   self.clear_open_elements_to_root()
-  let node = element(name, attrs~)
+  let node = self.node_with_origin(element(name, attrs~), start)
   self.post_body_html_children.push(node)
   if !self_closing {
     self.stack.push(node)
@@ -3676,6 +3677,7 @@ fn Parser::handle_foreign_table_row_recovery_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
+  start : Int,
   self_closing : Bool,
 ) -> Bool {
   if name != "tr" {
@@ -3685,7 +3687,7 @@ fn Parser::handle_foreign_table_row_recovery_start_tag(
     return false
   }
   self.clear_open_elements_to_root()
-  let node = element("tr", attrs~)
+  let node = self.node_with_origin(element("tr", attrs~), start)
   self.post_body_html_children.push(node)
   self.foreign_table_row_recovery_mode = !self_closing
   if !self_closing {
@@ -4237,13 +4239,13 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         ignore(self.close_open_element("select"))
         self.reset_select_insertion_mode()
         if self.handle_select_reprocessed_foreign_cell_start_tag(
-            name, attrs, self_closing,
+            name, attrs, start, self_closing,
           ) {
           return
         }
       }
       if self.handle_foreign_table_row_recovery_start_tag(
-          name, attrs, self_closing,
+          name, attrs, start, self_closing,
         ) {
         return
       }
