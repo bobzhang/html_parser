@@ -150,7 +150,8 @@ JustHTML from Python to MoonBit.
   allowlists them. Drop SVG/MathML mutation or integration tags such as
   `animate`, `set`, `foreignObject`, and `annotation-xml` when the node is
   effectively foreign. "Effectively foreign" includes non-HTML namespaces and
-  programmatic HTML-namespace descendants under an `svg` or `math` root.
+  programmatic HTML-namespace descendants under an `svg` or `math` root; use
+  that same broader predicate for `drop_foreign_namespaces`.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside

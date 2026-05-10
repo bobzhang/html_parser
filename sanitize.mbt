@@ -885,8 +885,7 @@ fn sanitize_container_children(
         }
       Element => {
         let tag_name = sanitize_node_name(child)
-        if policy.drop_foreign_namespaces &&
-          sanitize_namespace_is_foreign(child) {
+        if policy.drop_foreign_namespaces && node_is_effectively_foreign(child) {
           remove_child_at(parent, index)
         } else if !policy.drop_foreign_namespaces &&
           sanitize_node_is_active_foreign_content(child) {
