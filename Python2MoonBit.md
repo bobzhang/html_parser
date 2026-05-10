@@ -388,8 +388,12 @@ JustHTML from Python to MoonBit.
   allowlisting. A policy that allows the `style` attribute but leaves
   `allowed_css_properties` empty should still drop `style`; only declarations
   with valid, explicitly allowed ASCII property names survive, and values that
-  may load resources (`url(...)`, `image-set(...)`, CSS escapes, obfuscated CSS
-  comments, and legacy loader functions) should be rejected conservatively.
+  may load resources need a second URL-policy decision. Plain `url(...)` can
+  be kept only with an exact `style:<property>` rule (or a wildcard tag rule
+  such as `("*", "style:background-image")` in the Python API); sanitize the
+  inner URL, then reserialize as `url('...')` only when the sanitized URL does
+  not need CSS escaping. Keep rejecting `image-set(...)`, CSS escapes,
+  obfuscated CSS comments, and legacy loader functions conservatively.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone.
