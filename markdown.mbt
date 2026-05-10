@@ -50,9 +50,30 @@ fn MarkdownBuilder::raw(self : MarkdownBuilder, value : StringView) -> Unit {
 }
 
 ///|
+fn markdown_trim_trailing_spaces_tabs(value : StringView) -> String {
+  let mut end = value.length()
+  while end > 0 {
+    match value.get_char(end - 1) {
+      Some(' ' | '\t') => end -= 1
+      _ => break
+    }
+  }
+  match value.get_view(start=0, end~) {
+    Some(trimmed) => trimmed.to_owned()
+    None => value.to_owned()
+  }
+}
+
+///|
 fn MarkdownBuilder::newline(self : MarkdownBuilder, count : Int) -> Unit {
   for _ in 0..<count {
     self.pending_space = false
+    if !self.parts.is_empty() {
+      let last_index = self.parts.length() - 1
+      self.parts[last_index] = markdown_trim_trailing_spaces_tabs(
+        self.parts[last_index],
+      )
+    }
     self.parts.push("\n")
     if self.newline_count < 2 {
       self.newline_count += 1
@@ -307,9 +328,10 @@ fn markdown_render_children(
   node : Node,
   builder : MarkdownBuilder,
   html_passthrough : Bool,
+  list_depth : Int,
 ) -> Unit {
   for child in node.children {
-    markdown_walk(child, builder, html_passthrough)
+    markdown_walk(child, builder, html_passthrough, list_depth)
   }
 }
 
@@ -317,9 +339,10 @@ fn markdown_render_children(
 fn markdown_render_children_to_string(
   node : Node,
   html_passthrough : Bool,
+  list_depth : Int,
 ) -> String {
   let builder = MarkdownBuilder::new()
-  markdown_render_children(node, builder, html_passthrough)
+  markdown_render_children(node, builder, html_passthrough, list_depth)
   builder.finish()
 }
 
@@ -357,8 +380,11 @@ fn markdown_wrapped_inline(
   builder : MarkdownBuilder,
   marker : String,
   html_passthrough : Bool,
+  list_depth : Int,
 ) -> Unit {
-  let inner = markdown_render_children_to_string(node, html_passthrough)
+  let inner = markdown_render_children_to_string(
+    node, html_passthrough, list_depth,
+  )
   if inner != "" {
     builder.raw(marker)
     builder.raw(inner)
@@ -595,23 +621,28 @@ fn markdown_walk_list(
   builder : MarkdownBuilder,
   ordered : Bool,
   html_passthrough : Bool,
+  list_depth : Int,
 ) -> Unit {
-  builder.ensure_newlines(2)
+  if !builder.parts.is_empty() {
+    builder.ensure_newlines(2)
+  }
   let mut index = 1
+  let mut rendered = 0
   for child in node.children {
     if child.kind == Element && child.name == "li" {
-      let inner = markdown_render_children_to_string(child, html_passthrough)
-      if inner != "" {
-        if ordered {
-          builder.raw(index.to_string())
-          builder.raw(". ")
-        } else {
-          builder.raw("- ")
-        }
-        builder.raw(inner)
+      if rendered > 0 {
         builder.newline(1)
       }
+      builder.raw("  ".repeat(list_depth))
+      if ordered {
+        builder.raw(index.to_string())
+        builder.raw(". ")
+      } else {
+        builder.raw("- ")
+      }
+      markdown_render_children(child, builder, html_passthrough, list_depth + 1)
       index += 1
+      rendered += 1
     }
   }
   builder.ensure_newlines(2)
@@ -622,8 +653,11 @@ fn markdown_walk_blockquote(
   node : Node,
   builder : MarkdownBuilder,
   html_passthrough : Bool,
+  list_depth : Int,
 ) -> Unit {
-  let inner = markdown_render_children_to_string(node, html_passthrough)
+  let inner = markdown_render_children_to_string(
+    node, html_passthrough, list_depth,
+  )
   if inner == "" {
     return
   }
@@ -649,16 +683,19 @@ fn markdown_walk(
   node : Node,
   builder : MarkdownBuilder,
   html_passthrough : Bool,
+  list_depth : Int,
 ) -> Unit {
   match node.kind {
     Text => builder.text(markdown_escape_text(node.data))
     Comment | Doctype => ()
     Document | Fragment =>
-      markdown_render_children(node, builder, html_passthrough)
+      markdown_render_children(node, builder, html_passthrough, list_depth)
     Element => {
       let level = markdown_heading_level(node.name)
       if level > 0 {
-        let inner = markdown_render_children_to_string(node, html_passthrough)
+        let inner = markdown_render_children_to_string(
+          node, html_passthrough, list_depth,
+        )
         builder.ensure_newlines(2)
         builder.raw("#".repeat(level))
         builder.raw(" ")
@@ -667,25 +704,41 @@ fn markdown_walk(
       } else {
         match node.name {
           "html" | "body" | "span" =>
-            markdown_render_children(node, builder, html_passthrough)
+            markdown_render_children(
+              node, builder, html_passthrough, list_depth,
+            )
           "head" => ()
           "p" => {
             builder.ensure_newlines(2)
-            markdown_render_children(node, builder, html_passthrough)
+            markdown_render_children(
+              node, builder, html_passthrough, list_depth,
+            )
             builder.ensure_newlines(2)
           }
           "br" => builder.newline(1)
           "b" | "strong" =>
-            markdown_wrapped_inline(node, builder, "**", html_passthrough)
+            markdown_wrapped_inline(
+              node, builder, "**", html_passthrough, list_depth,
+            )
           "i" | "em" =>
-            markdown_wrapped_inline(node, builder, "*", html_passthrough)
+            markdown_wrapped_inline(
+              node, builder, "*", html_passthrough, list_depth,
+            )
           "code" => builder.raw(markdown_code_span(markdown_collect_text(node)))
           "pre" => markdown_walk_pre(node, builder)
           "a" => markdown_walk_link(node, builder, html_passthrough)
-          "ul" => markdown_walk_list(node, builder, false, html_passthrough)
-          "ol" => markdown_walk_list(node, builder, true, html_passthrough)
+          "ul" =>
+            markdown_walk_list(
+              node, builder, false, html_passthrough, list_depth,
+            )
+          "ol" =>
+            markdown_walk_list(
+              node, builder, true, html_passthrough, list_depth,
+            )
           "blockquote" =>
-            markdown_walk_blockquote(node, builder, html_passthrough)
+            markdown_walk_blockquote(
+              node, builder, html_passthrough, list_depth,
+            )
           "hr" => {
             builder.ensure_newlines(2)
             builder.raw("---")
@@ -706,11 +759,14 @@ fn markdown_walk(
           }
           _ =>
             if markdown_block_container_name(node.name) {
-              builder.ensure_newlines(2)
-              markdown_render_children(node, builder, html_passthrough)
+              markdown_render_children(
+                node, builder, html_passthrough, list_depth,
+              )
               builder.ensure_newlines(2)
             } else {
-              markdown_render_children(node, builder, html_passthrough)
+              markdown_render_children(
+                node, builder, html_passthrough, list_depth,
+              )
             }
         }
       }
@@ -724,7 +780,7 @@ pub fn Node::to_markdown(
   html_passthrough? : Bool = false,
 ) -> String {
   let builder = MarkdownBuilder::new()
-  markdown_walk(self, builder, html_passthrough)
+  markdown_walk(self, builder, html_passthrough, 0)
   builder.finish()
 }
 

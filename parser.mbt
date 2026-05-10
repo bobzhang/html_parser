@@ -695,6 +695,42 @@ fn Parser::close_open_element(self : Parser, name : String) -> Bool {
 }
 
 ///|
+fn is_list_item_scope_terminator(name : StringView) -> Bool {
+  match name {
+    "applet"
+    | "caption"
+    | "html"
+    | "marquee"
+    | "object"
+    | "ol"
+    | "table"
+    | "td"
+    | "template"
+    | "th"
+    | "ul" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::close_open_list_item(self : Parser) -> Unit {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element {
+      if node.name == "li" {
+        ignore(self.close_open_element("li"))
+        return
+      }
+      if is_list_item_scope_terminator(node.name) {
+        return
+      }
+    }
+  }
+}
+
+///|
 fn Parser::close_open_p_element(self : Parser) -> Unit {
   ignore(self.close_open_element("p"))
 }
@@ -895,7 +931,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.close_open_p_element()
       }
       if name == "li" {
-        ignore(self.close_open_element("li"))
+        self.close_open_list_item()
       } else if name == "dd" || name == "dt" {
         self.close_open_definition_item(name)
       } else if name == "option" || name == "optgroup" {

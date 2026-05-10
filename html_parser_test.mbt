@@ -196,6 +196,64 @@ test "to_markdown renders code spans blocks lists and blockquotes" {
 }
 
 ///|
+test "to_markdown indents nested lists like reference" {
+  let unordered = @html_parser.element("ul", children=[
+    @html_parser.element("li", children=[
+      @html_parser.text("One"),
+      @html_parser.element("ul", children=[
+        @html_parser.element("li", children=[@html_parser.text("Sub")]),
+      ]),
+    ]),
+    @html_parser.element("li", children=[@html_parser.text("Two")]),
+  ])
+  assert_eq(unordered.to_markdown(), "- One\n\n  - Sub\n\n\n- Two")
+  let parsed_unordered = @html_parser.parse_fragment(
+    "<ul><li>One<ul><li>Sub</li></ul></li><li>Two</li></ul>",
+  )
+  assert_eq(parsed_unordered.to_markdown(), "- One\n\n  - Sub\n\n\n- Two")
+  let ordered = @html_parser.element("ol", children=[
+    @html_parser.element("li", children=[
+      @html_parser.text("A"),
+      @html_parser.element("ol", children=[
+        @html_parser.element("li", children=[@html_parser.text("B")]),
+      ]),
+    ]),
+    @html_parser.element("li", children=[@html_parser.text("C")]),
+  ])
+  assert_eq(ordered.to_markdown(), "1. A\n\n  1. B\n\n\n2. C")
+  let parsed_ordered = @html_parser.parse_fragment(
+    "<ol><li>A<ol><li>B</li></ol></li><li>C</li></ol>",
+  )
+  assert_eq(parsed_ordered.to_markdown(), "1. A\n\n  1. B\n\n\n2. C")
+  let mixed = @html_parser.element("ul", children=[
+    @html_parser.element("li", children=[
+      @html_parser.text("One"),
+      @html_parser.element("ol", children=[
+        @html_parser.element("li", children=[@html_parser.text("A")]),
+        @html_parser.element("li", children=[@html_parser.text("B")]),
+      ]),
+    ]),
+  ])
+  assert_eq(mixed.to_markdown(), "- One\n\n  1. A\n  2. B")
+  let empty = @html_parser.element("ul", children=[@html_parser.element("li")])
+  assert_eq(empty.to_markdown(), "-")
+  let paragraph = @html_parser.element("ul", children=[
+    @html_parser.element("li", children=[
+      @html_parser.text("one"),
+      @html_parser.element("p", children=[@html_parser.text("two")]),
+    ]),
+  ])
+  assert_eq(paragraph.to_markdown(), "- one\n\ntwo")
+  let block = @html_parser.element("ul", children=[
+    @html_parser.element("li", children=[
+      @html_parser.element("div", children=[@html_parser.text("one")]),
+    ]),
+    @html_parser.element("li", children=[@html_parser.text("two")]),
+  ])
+  assert_eq(block.to_markdown(), "- one\n\n\n- two")
+}
+
+///|
 test "to_markdown separates generic block containers" {
   let doc = @html_parser.parse_fragment(
     "<div>A</div><section><span>B</span></section><aside>C</aside>",
@@ -205,6 +263,10 @@ test "to_markdown separates generic block containers" {
     "<article><p>A</p><p>B</p></article><footer>C</footer>",
   )
   assert_eq(nested.to_markdown(), "A\n\nB\n\nC")
+  let inline_before_block = @html_parser.parse_fragment(
+    "A<div>B</div><span>C</span>",
+  )
+  assert_eq(inline_before_block.to_markdown(), "AB\n\nC")
 }
 
 ///|

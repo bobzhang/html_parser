@@ -49,6 +49,10 @@ JustHTML from Python to MoonBit.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.
+- Scope-sensitive implied end tags need the same terminators as Python's tree
+  builder. For example, a new `<li>` closes an earlier `<li>` only in list-item
+  scope; a nested `<ul>` or `<ol>` terminates that search and must not close the
+  parent list item.
 - Serializing `script`/`style` text nodes has a security edge case, especially
   for programmatically-created trees: neutralize matching `</script` or
   `</style` sequences only when the tag name is followed by EOF, HTML
@@ -80,8 +84,17 @@ JustHTML from Python to MoonBit.
   backtick. Keep separate tests for leading and trailing backticks.
 - Markdown block elements are not just tags with recursive children. Generic
   containers such as `div`, `section`, `article`, `footer`, and `aside` need
-  block-boundary newlines around their rendered children, while inline/unknown
-  containers can still stream their children directly.
+  a block-boundary newline after their rendered children, while inline/unknown
+  containers can still stream their children directly. Do not insert a leading
+  separator for these generic containers; Python will render `A<div>B</div>C`
+  as `AB\n\nC`.
+- Nested Markdown lists need the walker to carry `list_depth` into recursive
+  children and render each `li` into the active builder. Rendering each list
+  item through a separate string loses indentation, hides empty markers, and
+  changes Python's blank-line behavior around paragraph children.
+- Match the Python builder's `_rstrip_last_segment()` behavior before emitting
+  a newline. Without this, list markers before block children render as `- `
+  followed by a blank line instead of the reference `-` marker line.
 - `script`, `style`, and `textarea` are block-like in Markdown output even when
   their content is dropped by default. Preserve surrounding text separation, and
   only emit the raw HTML itself when `html_passthrough` is enabled.
