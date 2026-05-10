@@ -91,6 +91,8 @@ JustHTML from Python to MoonBit.
   root does.
 - Type-position pseudo-classes such as `:first-of-type` and `:last-of-type`
   use the node's normalized element name and ignore non-element siblings.
+- `:only-of-type` should be implemented from the same type-filtered sibling
+  semantics as first/last-of-type, not from the total element child count.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

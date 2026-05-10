@@ -1249,6 +1249,18 @@ test "query supports first and last of type pseudo selectors" {
 }
 
 ///|
+test "query supports only of type pseudo selector" {
+  let doc = @html_parser.parse_fragment(
+    "<div><h1>Heading</h1><p>First</p><p>Second</p><span>Other</span></div>",
+  )
+  assert_eq(doc.query("h1:only-of-type").length(), 1)
+  assert_eq(doc.query("span:only-of-type").length(), 1)
+  assert_eq(doc.query("p:only-of-type").length(), 0)
+  guard doc.query_one("h1") is Some(heading) else { fail("expected heading") }
+  assert_true(@html_parser.matches(heading, "div > h1:only-of-type"))
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)

@@ -883,6 +883,11 @@ fn is_last_of_type(node : Node) -> Bool {
 }
 
 ///|
+fn is_only_of_type(node : Node) -> Bool {
+  is_first_of_type(node) && is_last_of_type(node)
+}
+
+///|
 fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
   match name {
     "first-child" => is_first_element_child(node)
@@ -892,6 +897,7 @@ fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
     "root" => is_root_for_selector(node)
     "first-of-type" => is_first_of_type(node)
     "last-of-type" => is_last_of_type(node)
+    "only-of-type" => is_only_of_type(node)
     _ => false
   }
 }
