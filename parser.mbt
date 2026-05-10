@@ -15,6 +15,7 @@ priv struct Parser {
   mut fragment_context_table_section : Node?
   mut fragment_context_table_row : Node?
   mut fragment_context_table_cell : Node?
+  mut fragment_context_caption : Bool
 }
 
 ///|
@@ -40,6 +41,7 @@ fn Parser::new(
     fragment_context_table_section: None,
     fragment_context_table_row: None,
     fragment_context_table_cell: None,
+    fragment_context_caption: false,
   }
 }
 
@@ -750,6 +752,42 @@ fn Parser::handle_caption_end_tag(
     }
     _ => false
   }
+}
+
+///|
+fn fragment_context_caption_structural_start(name : StringView) -> Bool {
+  match name {
+    "caption"
+    | "col"
+    | "colgroup"
+    | "table"
+    | "tbody"
+    | "td"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::handle_fragment_context_caption_start_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if !self.fragment_context_caption ||
+    !fragment_context_caption_structural_start(name) {
+    return false
+  }
+  self.error_at("unexpected-start-tag-implies-end-tag", start)
+  self.error_at("unexpected-end-tag", start)
+  if name == "table" {
+    self.fragment_context_caption = false
+    return false
+  }
+  true
 }
 
 ///|
@@ -2593,6 +2631,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at("unexpected-start-tag-in-select", start)
         ignore(self.close_open_element("select"))
       }
+      if self.handle_fragment_context_caption_start_tag(name, start) {
+        return
+      }
       if !self.has_open_element("table") && name == "caption" {
         self.error_at("unexpected-start-tag", start)
         return
@@ -3787,6 +3828,12 @@ fn Parser::parse_fragment_context(
   }
   if name == "td" || name == "th" {
     self.parse_table_cell_fragment_context(name)
+    return true
+  }
+  if name == "caption" {
+    self.fragment_context_caption = true
+    self.parse_all()
+    self.fragment_context_caption = false
     return true
   }
   false

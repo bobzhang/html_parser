@@ -376,6 +376,12 @@ JustHTML from Python to MoonBit.
   `unexpected-start-tag-in-cell-fragment`; a nested `<table>` is still ordinary
   body content inside the cell and can produce foster-parenting text errors
   inside that nested table.
+- Caption fragment context is mode-only, not a synthetic `<caption>` wrapper.
+  Ordinary body content is inserted directly, but table-structural starts first
+  report `unexpected-start-tag-implies-end-tag` and the failed synthetic caption
+  close reports `unexpected-end-tag`. A `<table>` start is the exception: after
+  those two errors it is reprocessed in body mode and future tokens no longer
+  use caption insertion mode.
 
 ## Optional Values and Defaults
 
