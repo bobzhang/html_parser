@@ -817,7 +817,9 @@ JustHTML from Python to MoonBit.
   adjusted current node is SVG/MathML, bypass ordinary HTML insertion-mode
   special cases for non-breakout starts, honor self-closing syntax for all
   foreign elements, and pop back to HTML mode before reprocessing breakout tags
-  such as `<div>` or `<font color>`.
+  such as `<div>` or `<font color>`. If the foreign subtree is nested inside an
+  ordinary HTML ancestor, only the foreign nodes are popped; the reprocessed
+  breakout tag is inserted under that HTML ancestor.
 - End tags in foreign content walk the stack case-insensitively against
   adjusted SVG names. If the current foreign element is not the match, report
   `unexpected-end-tag` before popping an ancestor match; if the walk reaches an

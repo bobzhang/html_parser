@@ -4309,6 +4309,21 @@ test "parser handles foreign content end tag recovery" {
     "unexpected-html-element-in-foreign-content",
   )
   assert_eq(paragraph_breakout.errors[1].code, "unexpected-end-tag")
+  let nested_svg_breakout = @html_parser.parse_fragment(
+    "<div><svg><g><p>x</p></g></svg>after</div>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_svg_breakout.to_html(pretty=false),
+    "<div><svg><g></g></svg><p>x</p>after</div>",
+  )
+  assert_eq(nested_svg_breakout.errors.length(), 3)
+  assert_eq(
+    nested_svg_breakout.errors[0].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(nested_svg_breakout.errors[1].code, "unexpected-end-tag")
+  assert_eq(nested_svg_breakout.errors[2].code, "unexpected-end-tag")
   let math_text_integration = @html_parser.parse_fragment(
     "<math><mi><b>x</b></mi></math>",
     collect_errors=true,
