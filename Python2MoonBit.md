@@ -78,6 +78,9 @@ JustHTML from Python to MoonBit.
   latest previous element that matches the selector to the left. When matching
   right-to-left, set the current node to that sibling so earlier combinators
   continue from the correct place.
+- Pseudo-class parsing starts as another simple-selector marker. For
+  `:first-child` and `:last-child`, scan only element children under the parent;
+  whitespace text nodes created by parsing must not affect child positions.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

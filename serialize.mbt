@@ -585,7 +585,7 @@ fn next_simple_selector_marker(selector : StringView, start : Int) -> Int {
   let mut pos = start
   while pos < selector.length() {
     match selector.get_char(pos) {
-      Some(ch) if ch == '.' || ch == '#' || ch == '[' => return pos
+      Some(ch) if ch == '.' || ch == '#' || ch == '[' || ch == ':' => return pos
       Some(ch) => pos += ch.utf16_len()
       None => break
     }
@@ -790,6 +790,49 @@ fn attribute_selector_matches(node : Node, selector : StringView) -> Bool {
 }
 
 ///|
+fn is_first_element_child(node : Node) -> Bool {
+  match node.parent {
+    Some(parent) => {
+      for child in parent.children {
+        if child.kind == Element {
+          return physical_equal(child, node)
+        }
+      }
+      false
+    }
+    None => false
+  }
+}
+
+///|
+fn is_last_element_child(node : Node) -> Bool {
+  match node.parent {
+    Some(parent) => {
+      let mut last : Node? = None
+      for child in parent.children {
+        if child.kind == Element {
+          last = Some(child)
+        }
+      }
+      match last {
+        Some(child) => physical_equal(child, node)
+        None => false
+      }
+    }
+    None => false
+  }
+}
+
+///|
+fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
+  match name {
+    "first-child" => is_first_element_child(node)
+    "last-child" => is_last_element_child(node)
+    _ => false
+  }
+}
+
+///|
 fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
   if node.kind != Element {
     return false
@@ -804,12 +847,12 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
       pos += 1
       if pos < selector.length() {
         match selector.get_char(pos) {
-          Some('.') | Some('#') | Some('[') => ()
+          Some('.') | Some('#') | Some('[') | Some(':') => ()
           _ => return false
         }
       }
     }
-    Some('.') | Some('#') | Some('[') => ()
+    Some('.') | Some('#') | Some('[') | Some(':') => ()
     Some(_) => {
       let end = next_simple_selector_marker(selector, pos)
       guard selector.get_view(start=pos, end~) is Some(tag) else {
@@ -835,6 +878,16 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
         return false
       }
       pos = end + 1
+      continue
+    }
+    if marker == ':' {
+      let start = pos + marker.utf16_len()
+      let end = next_simple_selector_marker(selector, start)
+      guard selector.get_view(start~, end~) is Some(name) else { return false }
+      if name.is_empty() || !pseudo_selector_matches(node, name) {
+        return false
+      }
+      pos = end
       continue
     }
     if marker != '.' && marker != '#' {
