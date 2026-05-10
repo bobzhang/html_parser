@@ -568,6 +568,10 @@ JustHTML from Python to MoonBit.
   parent link. If a programmatically-created node has a stale parent pointer
   that does not actually contain it, adoption should still replace that pointer;
   do not rely on the old parent's child list as the only source of truth.
+- Some Python DOM mutation paths raise `ValueError` for invalid references or
+  unsupported containers. This MoonBit port generally exposes total builder
+  helpers instead: `remove_child` ignores missing children, invalid append/insert
+  operations are no-ops, and `replace_child` reports failure with `None`.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

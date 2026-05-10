@@ -5376,6 +5376,21 @@ test "dom child mutation follows node ownership rules" {
 }
 
 ///|
+test "remove_child ignores missing children" {
+  let parent = @html_parser.element("div")
+  let kept = @html_parser.element("span")
+  let missing = @html_parser.element("em")
+  parent.append_child(kept)
+  parent.remove_child(missing)
+  assert_eq(parent.to_html(pretty=false), "<div><span></span></div>")
+  assert_true(missing.parent() is None)
+  guard kept.parent() is Some(kept_parent) else {
+    fail("expected retained child parent")
+  }
+  assert_eq(kept_parent.name(), "div")
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)
