@@ -280,6 +280,28 @@ test "pretty serializer keeps block descendants multiline" {
 }
 
 ///|
+test "pretty serializer compacts inline whitespace separators" {
+  let inline = @html_parser.element("span", children=[
+    @html_parser.element("span"),
+    @html_parser.text("\n  \t"),
+    @html_parser.element("span"),
+  ])
+  assert_eq(
+    inline.to_html(pretty=true),
+    "<span><span></span> <span></span></span>",
+  )
+  let block = @html_parser.element("div", children=[
+    @html_parser.element("span"),
+    @html_parser.text("  "),
+    @html_parser.element("span"),
+  ])
+  assert_eq(
+    block.to_html(pretty=true),
+    "<div>\n  <span></span>\n  <span></span>\n</div>",
+  )
+}
+
+///|
 test "builder preserves adjusted foreign element names" {
   let gradient = @html_parser.element("linearGradient", ns="svg")
   assert_eq(gradient.name(), "linearGradient")

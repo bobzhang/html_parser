@@ -380,6 +380,16 @@ fn formatting_whitespace_char(ch : Char) -> Bool {
 }
 
 ///|
+fn string_view_has_formatting_whitespace(value : StringView) -> Bool {
+  for ch in value {
+    if formatting_whitespace_char(ch) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn normalize_formatting_whitespace(value : StringView) -> String {
   let mut has_formatting = false
   for ch in value {
@@ -530,30 +540,43 @@ fn node_contains_layout_block(node : Node) -> Bool {
 ///|
 fn element_has_compact_inline_children(node : Node) -> Bool {
   let mut has_visible_text = false
+  let mut has_inline_element = false
   for child in node.children {
     match child.kind {
       Text => if text_has_visible_char(child.data) { has_visible_text = true }
-      Element =>
+      Element => {
         if !inline_pretty_element_name(child.name) ||
           node_contains_layout_block(child) {
           return false
         }
+        has_inline_element = true
+      }
       _ => return false
     }
   }
-  has_visible_text
+  has_visible_text ||
+  (has_inline_element && !layout_block_element_name(node.name))
 }
 
 ///|
 fn node_to_html_pretty_inline_compact(node : Node, quote : Char) -> String {
   let out = StringBuilder::new()
   out.write_string(serialize_start_tag(node, quote))
-  for child in node.children {
+  let child_count = node.children.length()
+  for index in 0..<child_count {
+    let child = node.children[index]
     match child.kind {
-      Text =>
-        out.write_string(
-          escape_text(normalize_formatting_whitespace(child.data[:])),
-        )
+      Text => {
+        let normalized = normalize_formatting_whitespace(child.data[:])
+        if normalized == "" &&
+          index > 0 &&
+          index + 1 < child_count &&
+          string_view_has_formatting_whitespace(child.data[:]) {
+          out.write_char(' ')
+        } else {
+          out.write_string(escape_text(normalized))
+        }
+      }
       _ => out.write_string(node_to_html_compact(child, quote))
     }
   }
