@@ -8180,6 +8180,26 @@ test "parser treats xmp and plaintext content as text" {
 }
 
 ///|
+fn assert_script_fragment_eof(
+  source : StringView,
+  expected_html : String,
+  expected_column : Int,
+) -> Unit raise {
+  let doc = @html_parser.parse_fragment(source, collect_errors=true)
+  assert_eq(doc.to_html(pretty=false), expected_html)
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "expected-named-closing-tag-but-got-eof")
+  guard doc.errors[0].line is Some(line) else {
+    fail("expected script EOF line")
+  }
+  assert_eq(line, 1)
+  guard doc.errors[0].column is Some(column) else {
+    fail("expected script EOF column")
+  }
+  assert_eq(column, expected_column)
+}
+
+///|
 test "parser reports special text EOF like tree builder" {
   let script = @html_parser.parse_fragment("<script>x", collect_errors=true)
   assert_eq(script.to_html(pretty=false), "<script>x</script>")
@@ -8205,6 +8225,18 @@ test "parser reports special text EOF like tree builder" {
   assert_eq(xmp.errors[0].code, "expected-named-closing-tag-but-got-eof")
   let iframe = @html_parser.parse_fragment("<iframe>x", collect_errors=true)
   assert_eq(iframe.errors[0].code, "expected-closing-tag-but-got-eof")
+  assert_script_fragment_eof("<script><!--", "<script><!--</script>", 12)
+  assert_script_fragment_eof("<script><!---", "<script><!---</script>", 13)
+  assert_script_fragment_eof("<script><!--a--", "<script><!--a--</script>", 15)
+  assert_script_fragment_eof(
+    "<script><!--<script>x", "<script><!--<script>x</script>", 21,
+  )
+  assert_script_fragment_eof(
+    "<script><!--<script>--", "<script><!--<script>--</script>", 22,
+  )
+  assert_script_fragment_eof(
+    "<script><!--<script>--<", "<script><!--<script>--<</script>", 23,
+  )
 }
 
 ///|
@@ -8320,6 +8352,28 @@ test "parser matches malformed special text end tags after solidus" {
   assert_eq(script.errors[1].code, "unexpected-character-after-solidus-in-tag")
   guard script.errors[1].column is Some(19) else {
     fail("expected script solidus recovery at column 19")
+  }
+  let script_eof = @html_parser.parse(
+    "<script>a</script/foo",
+    collect_errors=true,
+  )
+  assert_eq(
+    script_eof.to_html(pretty=false),
+    "<html><head><script>a</script></head><body></body></html>",
+  )
+  assert_eq(script_eof.errors.length(), 4)
+  assert_eq(script_eof.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(
+    script_eof.errors[1].code,
+    "unexpected-character-after-solidus-in-tag",
+  )
+  assert_eq(script_eof.errors[2].code, "eof-in-tag")
+  assert_eq(script_eof.errors[3].code, "expected-named-closing-tag-but-got-eof")
+  guard script_eof.errors[2].column is Some(21) else {
+    fail("expected script EOF-in-tag at column 21")
+  }
+  guard script_eof.errors[3].column is Some(21) else {
+    fail("expected script tree-builder EOF at column 21")
   }
 }
 

@@ -95,6 +95,10 @@ JustHTML from Python to MoonBit.
   `--` is emitted before the next escaped-less-than state reconsumes the
   following character, so cases such as `<!----<x` intentionally serialize with
   two `<` characters in the text.
+- EOF in script escaped or double-escaped states is still tree-builder EOF
+  recovery, not a tokenizer-side repair. Preserve the buffered text exactly
+  (`<!--`, `<!---`, `<!--<script>--<`, etc.) and report
+  `expected-named-closing-tag-but-got-eof` at the final source column.
 - Scope-sensitive implied end tags need the same terminators as Python's tree
   builder. For example, a new `<li>` closes an earlier `<li>` only in list-item
   scope; a nested `<ul>` or `<ol>` terminates that search and must not close the
@@ -340,6 +344,10 @@ JustHTML from Python to MoonBit.
   A `<script` token inside escaped script text can also enter double-escaped
   states where an inner `</script>` remains character data. Keep these states
   explicit instead of trying to repair the serialized output afterwards.
+- A plausible script end tag can still fail while consuming the closing tag
+  itself. For example, `</script/foo` first ends the script text, then reports
+  `unexpected-character-after-solidus-in-tag`, `eof-in-tag`, and finally the
+  named closing-tag EOF error; do not collapse this into ordinary text.
 - EOF inside raw/RCDATA/plaintext content is a tree-builder concern in the
   reference, not a tokenizer error. The tokenizer still emits the character
   token and EOF; the parser reports the closing-tag EOF error at the final
