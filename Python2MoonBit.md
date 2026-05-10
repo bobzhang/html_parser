@@ -31,6 +31,10 @@ JustHTML from Python to MoonBit.
   bracket, not the initial `<`. Keep both `start` and `tag_close_pos` in scope
   when dispatching state-specific handlers such as select mode, table mode, and
   foreign-content breakout.
+- Character-token diagnostics can also be reported at the consumed token end
+  rather than at the first character. After a closed document frameset, Python
+  reports `unexpected-token-after-frameset` at the final non-whitespace
+  character of the ignored text run.
 - For numeric HTML entities, use `Int::to_char()` and handle `None` for
   invalid Unicode scalar values. Do not use unchecked conversion unless the
   value has already been validated. Match the Python reference error order:

@@ -8156,7 +8156,7 @@ test "document parser scaffolds framesets outside body" {
 ///|
 test "document parser ignores tokens after frameset" {
   let text = @html_parser.parse(
-    "<!doctype html><html><head></head><frameset></frameset>abc",
+    "<!DOCTYPE html><html><head></head><frameset></frameset>abc",
     collect_errors=true,
   )
   assert_eq(
@@ -8165,6 +8165,9 @@ test "document parser ignores tokens after frameset" {
   )
   assert_eq(text.errors.length(), 1)
   assert_eq(text.errors[0].code, "unexpected-token-after-frameset")
+  guard text.errors[0].column is Some(58) else {
+    fail("expected post-frameset text error at final text column")
+  }
   let paired = @html_parser.parse(
     "<!doctype html><frameset></frameset><p>x</p>",
     collect_errors=true,

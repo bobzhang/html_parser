@@ -178,7 +178,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     if self.after_frameset &&
       self.after_frameset_ignored_depth == 0 &&
       whitespace.length() != cleaned.length() {
-      self.error_at("unexpected-token-after-frameset", start)
+      self.error_at("unexpected-token-after-frameset", start + raw.length() - 1)
     }
     if !whitespace.is_empty() {
       self.current_node().append_child(text(whitespace))
