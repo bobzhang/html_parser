@@ -5065,6 +5065,25 @@ test "tree builder matches Python reference table form-feed behavior" {
 }
 
 ///|
+test "tree builder matches reference select stray end EOF fixture" {
+  let doc = @html_parser.parse("<select></regularitem>", collect_errors=true)
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <select>",
+  )
+  assert_eq(doc.errors.length(), 3)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(doc.errors[1].code, "unexpected-end-tag")
+  assert_eq(doc.errors[2].code, "expected-closing-tag-but-got-eof")
+  guard doc.errors[1].column is Some(22) else {
+    fail("expected stray select end tag at close bracket")
+  }
+  guard doc.errors[2].column is Some(22) else {
+    fail("expected open select EOF at final column")
+  }
+}
+
+///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(
