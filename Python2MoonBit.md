@@ -719,11 +719,13 @@ JustHTML from Python to MoonBit.
   operations are no-ops, and `replace_child` reports failure with `None`.
 - Python has a `track_node_locations` option with per-node `origin_offset`,
   `origin_line`, and `origin_col` fields. MoonBit exposes matching origin
-  accessors that default to `None`; parser-side tracking still needs token start
-  offsets threaded through normal insertion, foster parenting, active formatting
-  reconstruction, and adoption agency replacement nodes. Duplicated or
-  reconstructed nodes should copy the original formatting node's origin rather
-  than inventing a new one.
+  accessors that default to `None`, and the parser now threads source starts for
+  ordinary parsed elements, text, comments, doctypes, special-text children, and
+  fragment raw-text wrappers when `track_node_locations=true`. The remaining
+  risky paths are recovery-generated or relocated nodes: foster parenting, table
+  insertion mode helpers, active formatting reconstruction, and adoption agency
+  replacement nodes. Duplicated or reconstructed nodes should copy the original
+  formatting node's origin rather than inventing a new one.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

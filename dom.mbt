@@ -300,6 +300,13 @@ pub fn Node::origin_location(self : Node) -> (Int, Int)? {
 }
 
 ///|
+fn Node::set_origin(self : Node, offset : Int, line : Int, col : Int) -> Unit {
+  self.origin_offset = Some(offset)
+  self.origin_line = Some(line)
+  self.origin_col = Some(col)
+}
+
+///|
 fn Node::copy_origin_from(self : Node, source : Node) -> Unit {
   self.origin_offset = source.origin_offset
   self.origin_line = source.origin_line

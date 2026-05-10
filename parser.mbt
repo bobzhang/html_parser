@@ -3,6 +3,7 @@ priv struct Parser {
   input : StringView
   scripting_enabled : Bool
   xml_coercion : Bool
+  track_node_locations : Bool
   mut pos : Int
   errors : Array[ParseError]
   root : Node
@@ -42,12 +43,14 @@ fn Parser::new(
   root : Node,
   scripting_enabled~ : Bool,
   xml_coercion~ : Bool,
+  track_node_locations? : Bool = false,
 ) -> Parser {
   let input = strip_leading_bom(input)
   Parser::{
     input,
     scripting_enabled,
     xml_coercion,
+    track_node_locations,
     pos: 0,
     errors: [],
     root,
@@ -80,6 +83,25 @@ fn Parser::new(
     repeated_document_html_shell: false,
     post_body_html_children: [],
   }
+}
+
+///|
+fn Parser::node_with_origin(self : Parser, node : Node, offset : Int) -> Node {
+  if self.track_node_locations {
+    let (line, col) = line_col_at(self.input, offset)
+    node.set_origin(offset, line, col)
+  }
+  node
+}
+
+///|
+fn Parser::text_at(self : Parser, data : StringView, offset : Int) -> Node {
+  self.node_with_origin(text(data), offset)
+}
+
+///|
+fn Parser::comment_at(self : Parser, data : StringView, offset : Int) -> Node {
+  self.node_with_origin(comment(data), offset)
 }
 
 ///|
@@ -158,7 +180,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
       } else {
         whitespace
       }
-      self.current_node().append_child(text(data))
+      self.current_node().append_child(self.text_at(data, start))
     }
     if self.current_is_document_head() {
       ignore(self.stack.pop())
@@ -181,7 +203,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
       self.error_at("unexpected-token-after-frameset", start + raw.length() - 1)
     }
     if !whitespace.is_empty() {
-      self.current_node().append_child(text(whitespace))
+      self.current_node().append_child(self.text_at(whitespace, start))
     }
     return
   }
@@ -219,7 +241,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   } else {
     decoded
   }
-  self.current_node().append_child(text(data))
+  self.current_node().append_child(self.text_at(data, start))
 }
 
 ///|
@@ -1986,6 +2008,7 @@ fn Parser::report_eof_tree_errors(self : Parser) -> Unit {
 
 ///|
 fn Parser::parse_comment(self : Parser) -> Unit {
+  let comment_start = self.pos
   self.pos += 4
   let scan = scan_comment_data(self.input, self.pos)
   for error in scan.errors {
@@ -1997,11 +2020,11 @@ fn Parser::parse_comment(self : Parser) -> Unit {
   } else {
     scan.data
   }
-  self.current_node().append_child(comment(data))
+  self.current_node().append_child(self.comment_at(data, comment_start))
 }
 
 ///|
-fn Parser::parse_bogus_comment(self : Parser) -> Unit {
+fn Parser::parse_bogus_comment(self : Parser, origin_start : Int) -> Unit {
   let data_start = self.pos
   while !self.is_eof() && self.current() != Some('>') {
     ignore(self.advance_char())
@@ -2014,7 +2037,7 @@ fn Parser::parse_bogus_comment(self : Parser) -> Unit {
       } else {
         data
       }
-      self.current_node().append_child(comment(data))
+      self.current_node().append_child(self.comment_at(data, origin_start))
     }
     None => ()
   }
@@ -2025,6 +2048,7 @@ fn Parser::parse_bogus_comment(self : Parser) -> Unit {
 
 ///|
 fn Parser::parse_markup_declaration(self : Parser) -> Unit {
+  let origin_start = self.pos
   self.pos += 2
   if self.starts_with("[CDATA[") {
     if self.current_node_is_foreign_namespace() {
@@ -2035,7 +2059,7 @@ fn Parser::parse_markup_declaration(self : Parser) -> Unit {
   } else {
     self.error_at("incorrectly-opened-comment", self.pos - 1)
   }
-  self.parse_bogus_comment()
+  self.parse_bogus_comment(origin_start)
 }
 
 ///|
@@ -2059,7 +2083,7 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
         } else {
           cleaned
         }
-        self.current_node().append_child(text(data))
+        self.current_node().append_child(self.text_at(data, start))
       }
     }
     None => ()
@@ -2071,6 +2095,7 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
 
 ///|
 fn Parser::parse_doctype(self : Parser) -> Unit {
+  let doctype_start = self.pos
   self.pos += "<!doctype".length()
   let missing_before_name = match self.current() {
     Some('>') | None => None
@@ -2154,16 +2179,19 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
     self.error_at("unknown-doctype", error_pos)
   }
   self.root.append_child(
-    make_node(
-      Doctype,
-      "#doctype",
-      None,
-      {},
-      name,
-      public_id,
-      system_id,
-      force_quirks,
-      [],
+    self.node_with_origin(
+      make_node(
+        Doctype,
+        "#doctype",
+        None,
+        {},
+        name,
+        public_id,
+        system_id,
+        force_quirks,
+        [],
+      ),
+      doctype_start,
     ),
   )
 }
@@ -2180,12 +2208,12 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     }
     Some(ch) if !is_tag_name_start(ch) => {
       self.error_at("invalid-first-character-of-tag-name", self.pos)
-      self.parse_bogus_comment()
+      self.parse_bogus_comment(start)
       return
     }
     None => {
       self.error_at_eof("eof-before-tag-name")
-      self.current_node().append_child(text("</"))
+      self.current_node().append_child(self.text_at("</", start))
       return
     }
     _ => ()
@@ -4297,7 +4325,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       } else {
         prepare_foreign_attrs(node_ns, attrs)
       }
-      let node = element(adjusted_name, attrs=adjusted_attrs, ns=node_ns)
+      let node = self.node_with_origin(
+        element(adjusted_name, attrs=adjusted_attrs, ns=node_ns),
+        start,
+      )
       if adjusted_name == "form" {
         self.form_element = Some(node)
       }
@@ -4330,10 +4361,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.current() is None {
         self.error_at_eof("eof-before-tag-name")
         self.flush_deferred_initial_doctype_error()
-        self.current_node().append_child(text("<"))
+        self.current_node().append_child(self.text_at("<", start))
       } else if self.current() == Some('?') {
         self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)
-        self.parse_bogus_comment()
+        self.parse_bogus_comment(start)
       } else {
         self.report_current_noncharacter()
         self.parse_invalid_tag_open_as_text(start)
@@ -5246,13 +5277,14 @@ fn Parser::consume_special_element_content(
     match self.input.get_view(start=content_start, end=self.input.length()) {
       Some(view) =>
         parent.append_child(
-          text(
+          self.text_at(
             self.decoded_special_text(
               name,
               view,
               content_start,
               eof_error_pos(self.input),
             ),
+            content_start,
           ),
         )
       None => ()
@@ -5273,7 +5305,7 @@ fn Parser::consume_special_element_content(
       } else {
         scan_data
       }
-      parent.append_child(text(data))
+      parent.append_child(self.text_at(data, content_start))
     }
     match scan.end_start {
       Some(end_start) => {
@@ -5295,8 +5327,9 @@ fn Parser::consume_special_element_content(
       match self.input.get_view(start=content_start, end=end_start) {
         Some(view) =>
           parent.append_child(
-            text(
+            self.text_at(
               self.decoded_special_text(name, view, content_start, error_pos),
+              content_start,
             ),
           )
         None => ()
@@ -5311,8 +5344,9 @@ fn Parser::consume_special_element_content(
       match self.input.get_view(start=content_start, end=self.input.length()) {
         Some(view) =>
           parent.append_child(
-            text(
+            self.text_at(
               self.decoded_special_text(name, view, content_start, error_pos),
+              content_start,
             ),
           )
         None => ()
@@ -5360,7 +5394,7 @@ fn Parser::append_fragment_context_text(
   let data = normalize_newlines(raw)
   let data = normalize_tree_builder_text(data[:])
   let data = if self.xml_coercion { coerce_text_for_xml(data[:]) } else { data }
-  self.root.append_child(text(data))
+  self.root.append_child(self.text_at(data, start))
 }
 
 ///|
@@ -6268,9 +6302,16 @@ pub fn parse(
   strict? : Bool = false,
   scripting_enabled? : Bool = true,
   xml_coercion? : Bool = false,
+  track_node_locations? : Bool = false,
 ) -> ParsedHtml raise HtmlError {
   let root = document()
-  let parser = Parser::new(html, root, scripting_enabled~, xml_coercion~)
+  let parser = Parser::new(
+    html,
+    root,
+    scripting_enabled~,
+    xml_coercion~,
+    track_node_locations~,
+  )
   parser.deferred_initial_doctype_error = parser.report_initial_doctype_error()
   parser.parse_all()
   parser.flush_deferred_initial_doctype_error()
@@ -6726,9 +6767,16 @@ pub fn parse_fragment(
   strict? : Bool = false,
   scripting_enabled? : Bool = true,
   xml_coercion? : Bool = false,
+  track_node_locations? : Bool = false,
 ) -> ParsedHtml raise HtmlError {
   let root = fragment()
-  let parser = Parser::new(html, root, scripting_enabled~, xml_coercion~)
+  let parser = Parser::new(
+    html,
+    root,
+    scripting_enabled~,
+    xml_coercion~,
+    track_node_locations~,
+  )
   match context {
     Some(fragment_context) =>
       if !parser.parse_fragment_context(fragment_context) {
@@ -7405,6 +7453,7 @@ pub fn parse_bytes(
   strict? : Bool = false,
   scripting_enabled? : Bool = true,
   xml_coercion? : Bool = false,
+  track_node_locations? : Bool = false,
 ) -> ParsedHtml raise HtmlError {
   let (decoded, detected_encoding) = decode_html_bytes(input, encoding)
   let parsed = parse(
@@ -7414,6 +7463,7 @@ pub fn parse_bytes(
     strict~,
     scripting_enabled~,
     xml_coercion~,
+    track_node_locations~,
   )
   ParsedHtml::{
     root: parsed.root,
