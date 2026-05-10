@@ -8670,6 +8670,40 @@ test "document parser scaffolds framesets outside body" {
   assert_eq(inner_tag.errors.length(), 2)
   assert_eq(inner_tag.errors[0].code, "unexpected-token-in-frameset")
   assert_eq(inner_tag.errors[1].code, "unexpected-token-in-frameset")
+  let html_inside = @html_parser.parse(
+    "<!doctype html><frameset><html id=x><frame src=y></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    html_inside.to_html(pretty=false),
+    "<!DOCTYPE html><html id=\"x\"><head></head><frameset></frameset></html>",
+  )
+  assert_eq(html_inside.errors.length(), 2)
+  assert_eq(html_inside.errors[0].code, "unexpected-start-tag")
+  assert_eq(html_inside.errors[1].code, "unexpected-start-tag-ignored")
+  guard html_inside.errors[0].column is Some(36) else {
+    fail("expected html-in-frameset error at close bracket")
+  }
+  guard html_inside.errors[1].column is Some(49) else {
+    fail("expected ignored frame after html-in-frameset at close bracket")
+  }
+  let explicit_html_inside = @html_parser.parse(
+    "<!doctype html><html><frameset><html id=x><frame src=y></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    explicit_html_inside.to_html(pretty=false),
+    "<!DOCTYPE html><html id=\"x\"><head></head><frameset></frameset></html>",
+  )
+  assert_eq(explicit_html_inside.errors.length(), 2)
+  assert_eq(explicit_html_inside.errors[0].code, "unexpected-start-tag")
+  assert_eq(explicit_html_inside.errors[1].code, "unexpected-start-tag-ignored")
+  guard explicit_html_inside.errors[0].column is Some(42) else {
+    fail("expected explicit html-in-frameset error at close bracket")
+  }
+  guard explicit_html_inside.errors[1].column is Some(55) else {
+    fail("expected explicit ignored frame after html-in-frameset")
+  }
   let trailing_space = @html_parser.parse(
     "<!doctype html><frameset></frameset>   ",
     collect_errors=true,

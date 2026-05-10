@@ -34,6 +34,7 @@ priv struct Parser {
   mut deferred_initial_doctype_error : ParseError?
   mut duplicate_head_element : Node?
   mut repeated_document_html_shell : Bool
+  pending_document_html_attrs : Map[String, String?]
   mut pending_table_view_implied_end_tag : Bool
   post_body_html_children : Array[Node]
   active_formatting : Array[FormattingEntry]
@@ -92,6 +93,7 @@ fn Parser::new(
     deferred_initial_doctype_error: None,
     duplicate_head_element: None,
     repeated_document_html_shell: false,
+    pending_document_html_attrs: {},
     pending_table_view_implied_end_tag: false,
     post_body_html_children: [],
     active_formatting: [],
@@ -4554,10 +4556,7 @@ fn Parser::handle_document_frameset_start_tag(
     match name {
       "html" => {
         self.error_at("unexpected-start-tag", tag_close_pos)
-        match self.open_html_element() {
-          Some(html) => merge_missing_attrs_from_map(html, attrs)
-          None => ()
-        }
+        self.merge_document_html_attrs(attrs)
         true
       }
       "frame" | "frameset" => {
@@ -4579,10 +4578,7 @@ fn Parser::handle_document_frameset_start_tag(
       "noframes" => false
       "html" => {
         self.error_at("unexpected-start-tag", tag_close_pos)
-        match self.open_html_element() {
-          Some(html) => merge_missing_attrs_from_map(html, attrs)
-          None => ()
-        }
+        self.merge_document_html_attrs(attrs)
         self.frameset_reprocesses_in_body_mode = true
         true
       }
@@ -4802,10 +4798,6 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.handle_late_document_head_start_tag(name, start) {
         return
       }
-      if self.handle_repeated_document_html_start_tag(name, attrs, start) {
-        return
-      }
-      self.report_body_start_after_repeated_document_html(name, start)
       if self.in_select_insertion_mode() && name == "frame" {
         self.error_at("unexpected-start-tag-in-select", start)
         return
@@ -4820,6 +4812,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         ) {
         return
       }
+      if self.handle_repeated_document_html_start_tag(name, attrs, start) {
+        return
+      }
+      self.report_body_start_after_repeated_document_html(name, start)
       if !self.is_fragment_parser() && name == "frame" {
         self.error_at("unexpected-start-tag-ignored", start)
         return
@@ -6973,6 +6969,7 @@ pub fn parse(
   parser.flush_deferred_initial_doctype_error()
   parser.report_eof_tree_errors()
   scaffold_document(root)
+  parser.apply_pending_document_html_attrs()
   append_post_body_html_children(root, parser.post_body_html_children)
   normalize_tables(root)
   populate_selectedcontent(root)
@@ -7140,6 +7137,18 @@ fn merge_missing_attrs(target : Node, source : Node) -> Unit {
 }
 
 ///|
+fn merge_missing_attrs_into_map(
+  target : Map[String, String?],
+  attrs : Map[String, String?],
+) -> Unit {
+  for name, value in attrs {
+    if !target.contains(name) {
+      target[name] = value
+    }
+  }
+}
+
+///|
 fn merge_missing_attrs_from_map(
   target : Node,
   attrs : Map[String, String?],
@@ -7148,6 +7157,30 @@ fn merge_missing_attrs_from_map(
     if !target.attrs.contains(name) {
       target.attrs[name] = value
     }
+  }
+}
+
+///|
+fn Parser::merge_document_html_attrs(
+  self : Parser,
+  attrs : Map[String, String?],
+) -> Unit {
+  match self.open_html_element() {
+    Some(html) => merge_missing_attrs_from_map(html, attrs)
+    None =>
+      merge_missing_attrs_into_map(self.pending_document_html_attrs, attrs)
+  }
+}
+
+///|
+fn Parser::apply_pending_document_html_attrs(self : Parser) -> Unit {
+  if self.pending_document_html_attrs.length() == 0 {
+    return
+  }
+  match document_html_element(self.root) {
+    Some(html) =>
+      merge_missing_attrs_from_map(html, self.pending_document_html_attrs)
+    None => ()
   }
 }
 
