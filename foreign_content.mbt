@@ -420,6 +420,7 @@ fn Parser::handle_foreign_content_start_tag(
   name : String,
   attrs : Map[String, String?],
   self_closing : Bool,
+  start : Int,
   tag_close_pos : Int,
 ) -> Bool {
   if !self.current_node_uses_foreign_content_for_start(name) {
@@ -437,7 +438,10 @@ fn Parser::handle_foreign_content_start_tag(
   }
   let adjusted_name = adjusted_start_tag_name_for_namespace(ns, name)
   let adjusted_attrs = prepare_foreign_attrs(ns, attrs)
-  let node = element(adjusted_name, attrs=adjusted_attrs, ns~)
+  let node = self.node_with_origin(
+    element(adjusted_name, attrs=adjusted_attrs, ns~),
+    start,
+  )
   self.current_node().append_child(node)
   if !self_closing {
     self.stack.push(node)

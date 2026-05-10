@@ -4926,7 +4926,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       self.flush_deferred_initial_doctype_error()
       self.before_html_phase = false
       if self.handle_foreign_content_start_tag(
-          name, attrs, self_closing, tag_close_pos,
+          name, attrs, self_closing, start, tag_close_pos,
         ) {
         return
       }

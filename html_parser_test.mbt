@@ -8314,6 +8314,34 @@ test "parser adjusts long tail SVG names attributes and font breakouts" {
 }
 
 ///|
+test "parser tracks origins for nested foreign content starts" {
+  let svg = @html_parser.parse_fragment(
+    "<svg><lineargradient>\n  <stop/></lineargradient><feimage></feimage></svg>",
+    track_node_locations=true,
+  )
+  guard svg.query_one("svg") is Some(svg_node) else { fail("expected svg") }
+  assert_node_origin(svg_node, 0, 1, 1)
+  let svg_children = svg_node.children()
+  assert_eq(svg_children.length(), 2)
+  assert_node_origin(svg_children[0], 5, 1, 6)
+  let gradient_children = svg_children[0].children()
+  assert_eq(gradient_children.length(), 2)
+  assert_eq(gradient_children[1].name(), "stop")
+  assert_node_origin(gradient_children[1], 24, 2, 3)
+  assert_node_origin(svg_children[1], 48, 2, 27)
+  let math = @html_parser.parse_fragment(
+    "<math><mi definitionurl='x'>y</mi><annotation-xml encoding='text/html'><section>x</section></annotation-xml></math>",
+    track_node_locations=true,
+  )
+  guard math.query_one("mi") is Some(mi) else { fail("expected mi") }
+  assert_node_origin(mi, 6, 1, 7)
+  guard math.query_one("annotation-xml") is Some(annotation) else {
+    fail("expected annotation-xml")
+  }
+  assert_node_origin(annotation, 34, 1, 35)
+}
+
+///|
 test "parser treats foreign integration points as HTML islands" {
   let svg = @html_parser.parse_fragment(
     "<svg><foreignobject><div><span>x</span></div></foreignobject></svg>",

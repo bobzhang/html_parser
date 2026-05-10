@@ -724,11 +724,12 @@ JustHTML from Python to MoonBit.
   ordinary parsed elements, text, comments, doctypes, special-text children,
   fragment raw-text wrappers, select-insertion helper starts, table column-group
   helpers, template table helpers, hidden input/form table helpers, foreign
-  table recovery helpers, end-tag recovery elements, frameset helper insertions,
-  html-fragment body markers, basic active-formatting reconstruction,
-  adoption-agency replacement nodes, repeated formatting starts, the
-  duplicate-entry cap, applet-like/template/caption active-formatting markers,
-  and foster-parented table text when
+  table recovery helpers, nested foreign-content starts, end-tag recovery
+  elements, frameset helper insertions, html-fragment body markers, basic
+  active-formatting reconstruction, adoption-agency replacement nodes, repeated
+  formatting starts, the duplicate-entry cap,
+  applet-like/template/caption active-formatting markers, and foster-parented
+  table text when
   `track_node_locations=true`. The remaining risky paths are recovery-generated
   or relocated nodes in broader table/fragment insertion-mode helpers.
   Duplicated or reconstructed nodes should copy the original formatting node's
