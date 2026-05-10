@@ -251,6 +251,22 @@ test "to_markdown renders code spans blocks lists and blockquotes" {
 }
 
 ///|
+test "to_markdown renders empty blocks headings and horizontal rules" {
+  let empty_blocks = @html_parser.parse_fragment(
+    "<hr><h2></h2><p></p><pre></pre><blockquote></blockquote>",
+  )
+  assert_eq(empty_blocks.to_markdown(), "---\n\n##\n\n```\n```")
+  let head = @html_parser.fragment(children=[
+    @html_parser.element("h3", children=[@html_parser.text("Sub")]),
+    @html_parser.element("head", children=[@html_parser.text("X")]),
+    @html_parser.element("p", children=[@html_parser.text("body")]),
+  ])
+  assert_eq(head.to_markdown(), "### Sub\n\nbody")
+  let empty_quote = @html_parser.parse_fragment("<blockquote></blockquote><hr>")
+  assert_eq(empty_quote.to_markdown(), "---")
+}
+
+///|
 test "to_markdown indents nested lists like reference" {
   let unordered = @html_parser.element("ul", children=[
     @html_parser.element("li", children=[

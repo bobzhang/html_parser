@@ -36,3 +36,66 @@ test "dom insert_child_before moves appends and rejects cycles" {
   non_container.remove_child(first)
   assert_eq(first.to_html(pretty=false), "<p>first</p>")
 }
+
+///|
+fn assert_markdown_line_start_escape(
+  value : StringView,
+  replacement : String,
+  consumed : Int,
+) -> Unit raise {
+  guard markdown_escape_line_start(value) is Some((actual, actual_consumed)) else {
+    fail("expected markdown line-start escape")
+  }
+  assert_eq(actual, replacement)
+  assert_eq(actual_consumed, consumed)
+}
+
+///|
+test "markdown helper edge cases match reference" {
+  assert_true(markdown_escape_line_start("") is None)
+  assert_markdown_line_start_escape("# heading", "\\#", 1)
+  assert_true(markdown_escape_line_start("#heading") is None)
+  assert_markdown_line_start_escape("> quote", "\\>", 1)
+  assert_markdown_line_start_escape("- item", "\\-", 1)
+  assert_true(markdown_escape_line_start("-x") is None)
+  assert_markdown_line_start_escape("+ item", "\\+", 1)
+  assert_true(markdown_escape_line_start("+item") is None)
+  assert_markdown_line_start_escape("1. item", "1\\.", 2)
+  assert_markdown_line_start_escape("2) item", "2\\)", 2)
+  assert_markdown_line_start_escape("12. item", "12\\.", 3)
+  assert_markdown_line_start_escape("~~~", "\\~", 1)
+  assert_true(markdown_escape_line_start("~~") is None)
+  assert_markdown_line_start_escape("```", "\\`", 1)
+  assert_true(markdown_escape_line_start("``") is None)
+  assert_markdown_line_start_escape("---", "\\-", 1)
+  assert_markdown_line_start_escape("===", "\\=", 1)
+  assert_true(markdown_escape_line_start("=x") is None)
+  assert_true(markdown_escape_line_start("plain text") is None)
+  assert_eq(
+    markdown_thematic_or_setext_line("   ", '-', minimum_markers=3),
+    false,
+  )
+  assert_true(markdown_thematic_or_setext_line("- - -", '-', minimum_markers=3))
+  assert_eq(
+    markdown_thematic_or_setext_line("- - x", '-', minimum_markers=3),
+    false,
+  )
+  assert_eq(markdown_link_destination(""), "")
+  assert_eq(markdown_link_destination("   "), "")
+  assert_eq(markdown_link_destination("https://e.com/x"), "https://e.com/x")
+  assert_eq(
+    markdown_link_destination("https://e.com/a b"),
+    "<https://e.com/a%20b>",
+  )
+  assert_eq(
+    markdown_collect_text(
+      element("code", children=[comment("skip"), text("x"), doctype()]),
+    ),
+    "x",
+  )
+  let builder = MarkdownBuilder::new()
+  builder.raw("a\n\n\n")
+  assert_eq(builder.newline_count, 2)
+  assert_eq(builder.pending_space, false)
+  assert_eq(builder.finish(), "a")
+}

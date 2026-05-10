@@ -152,6 +152,11 @@ JustHTML from Python to MoonBit.
 - Markdown intentionally preserves `<img>` and `<table>` subtrees as canonical
   compact HTML. Pair these tests with parser normalization because table
   serialization may include inserted row groups such as `<tbody>`.
+- Some Markdown helper branches are easier to lose during a port because the
+  public walker escapes text before applying line-start marker checks. Keep
+  whitebox tests for helper-level cases such as `#heading` versus `# heading`,
+  thematic breaks, ordered-list starts, empty link destinations, and raw
+  builder newline accounting.
 - Link text uses a distinct Markdown traversal. The reference flattens
   paragraphs, lists, blockquotes, and `<br>` inside `<a>` into spaces so the
   generated `[text](href)` does not contain block Markdown or blank lines.
