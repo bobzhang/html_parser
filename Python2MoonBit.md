@@ -599,6 +599,11 @@ JustHTML from Python to MoonBit.
   `unexpected-end-tag` before popping an ancestor match; if the walk reaches an
   HTML node, reprocess the token in the normal HTML path so missing foreign end
   tags can produce both foreign-mode and HTML-mode diagnostics.
+- Character tokens in foreign content also have tree-builder-specific null
+  handling. The tokenizer-level `unexpected-null-character` still fires, but
+  direct SVG/MathML foreign text reports `invalid-codepoint-in-foreign-content`
+  and inserts U+FFFD; MathML text integration points keep normal HTML text
+  handling.
 
 ## Test Porting
 

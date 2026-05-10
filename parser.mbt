@@ -110,7 +110,11 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if raw.is_empty() {
     return
   }
-  let cleaned = self.remove_null_characters(raw, start)
+  let cleaned = if self.current_node_uses_foreign_content_for_text() {
+    self.clean_foreign_content_text(raw, start)
+  } else {
+    self.remove_null_characters(raw, start)
+  }
   if cleaned.is_empty() {
     return
   }

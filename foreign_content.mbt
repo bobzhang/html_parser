@@ -335,6 +335,43 @@ fn Parser::current_node_uses_foreign_content_for_start(
 }
 
 ///|
+fn Parser::current_node_uses_foreign_content_for_text(self : Parser) -> Bool {
+  let current = self.current_node()
+  match current.ns {
+    Some(ns) if is_foreign_namespace(ns) =>
+      !node_is_html_integration_point(current) &&
+      !node_is_mathml_text_integration_point(current)
+    _ => false
+  }
+}
+
+///|
+fn Parser::clean_foreign_content_text(
+  self : Parser,
+  raw : StringView,
+  start : Int,
+) -> String {
+  let out = StringBuilder::new(size_hint=raw.length())
+  let mut pos = 0
+  while pos < raw.length() {
+    match raw.get_char(pos) {
+      Some('\u{0000}') => {
+        self.error_at("unexpected-null-character", start + pos)
+        self.error_at("invalid-codepoint-in-foreign-content", start + pos)
+        out.write_char('\u{FFFD}')
+        pos += 1
+      }
+      Some(ch) => {
+        out.write_char(ch)
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  out.to_string()
+}
+
+///|
 fn Parser::pop_until_html_or_integration_point(self : Parser) -> Unit {
   while self.stack.length() > 1 {
     let current = self.current_node()
