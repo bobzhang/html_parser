@@ -162,6 +162,10 @@ JustHTML from Python to MoonBit.
   generated `[text](href)` does not contain block Markdown or blank lines.
   It still preserves inline code and raw table HTML, skips `<hr>`, and ignores
   non-`li` children when flattening lists.
+- Link text is not plain text: inline formatting markers are preserved inside
+  `[text](href)`, images remain compact HTML, generic block containers add a
+  flattening space, and `script`/`style`/`textarea` only contribute when
+  Markdown `html_passthrough` is enabled.
 - Markdown link destinations use Python `quote(..., safe=...)` semantics only
   after wrapping is required. Keep the safe-byte set explicit; printable bytes
   such as quotes and backslashes still need percent-encoding inside `<...>`.

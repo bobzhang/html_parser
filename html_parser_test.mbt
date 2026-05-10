@@ -256,6 +256,8 @@ test "to_markdown renders empty blocks headings and horizontal rules" {
     "<hr><h2></h2><p></p><pre></pre><blockquote></blockquote>",
   )
   assert_eq(empty_blocks.to_markdown(), "---\n\n##\n\n```\n```")
+  let deep_heading = @html_parser.parse_fragment("<h4>Deep</h4>")
+  assert_eq(deep_heading.to_markdown(), "#### Deep")
   let head = @html_parser.fragment(children=[
     @html_parser.element("h3", children=[@html_parser.text("Sub")]),
     @html_parser.element("head", children=[@html_parser.text("X")]),
@@ -494,6 +496,45 @@ test "to_markdown flattens block content inside links" {
     ],
   )
   assert_eq(filtered.to_markdown(), "[One](https://e.com)")
+}
+
+///|
+test "to_markdown keeps inline and raw variants inside links" {
+  let formatted = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.element("strong", children=[@html_parser.text("B")]),
+      @html_parser.text(" "),
+      @html_parser.element("em", children=[@html_parser.text("I")]),
+      @html_parser.text(" "),
+      @html_parser.element("img", attrs={ "src": Some("x"), "alt": Some("y") }),
+      @html_parser.text(" "),
+      @html_parser.element("section", children=[@html_parser.text("S")]),
+      @html_parser.text(" "),
+      @html_parser.element("foo", children=[@html_parser.text("F")]),
+      @html_parser.comment("skip"),
+    ],
+  )
+  assert_eq(
+    formatted.to_markdown(),
+    "[**B** *I* <img src=\"x\" alt=\"y\"> S F](https://e.com)",
+  )
+  let passthrough = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.element("script", children=[@html_parser.text("alert(1);")]),
+      @html_parser.text("x"),
+      @html_parser.element("style", children=[@html_parser.text("body{}")]),
+      @html_parser.element("textarea", children=[@html_parser.text("T")]),
+    ],
+  )
+  assert_eq(passthrough.to_markdown(), "[x](https://e.com)")
+  assert_eq(
+    passthrough.to_markdown(html_passthrough=true),
+    "[<script>alert(1);</script>x<style>body{}</style><textarea>T</textarea>](https://e.com)",
+  )
 }
 
 ///|
