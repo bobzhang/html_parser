@@ -120,6 +120,11 @@ JustHTML from Python to MoonBit.
   while searching for that earlier `<li>`. The same pattern applies to
   `<dt>`/`<dd>` in definition scope, where a nested `<dl>` terminates the
   search.
+- Select insertion mode treats formatting end tags specially. `</b>` or `</a>`
+  should report `unexpected-end-tag-in-select` when the matching formatting
+  element is absent or was opened before the current `<select>`, but a matching
+  formatting element inside the select still needs to close normally.
+  Non-formatting unknown end tags keep the generic `unexpected-end-tag` path.
 - Ruby annotation tags have their own implied-end rules. `<rp>` and `<rt>`
   generate implied end tags except for an open `<rtc>`, while `<rb>` and
   `<rtc>` only do so when the current node is already a ruby annotation. The

@@ -3381,6 +3381,12 @@ fn Parser::handle_select_end_tag(
       } else {
         false
       }
+    _ if self.in_select_insertion_mode() &&
+      select_formatting_end_reports_in_select(name) &&
+      self.formatting_end_tag_is_outside_current_select(name) => {
+      self.error_at("unexpected-end-tag-in-select", tag_close_pos)
+      true
+    }
     _ => false
   }
 }
@@ -3389,6 +3395,27 @@ fn Parser::handle_select_end_tag(
 fn select_common_element_start_reports_in_select(name : StringView) -> Bool {
   match name {
     "button" | "datalist" | "div" | "p" | "selectedcontent" | "span" => true
+    _ => false
+  }
+}
+
+///|
+fn select_formatting_end_reports_in_select(name : StringView) -> Bool {
+  match name {
+    "a"
+    | "b"
+    | "big"
+    | "code"
+    | "em"
+    | "font"
+    | "i"
+    | "nobr"
+    | "s"
+    | "small"
+    | "strike"
+    | "strong"
+    | "tt"
+    | "u" => true
     _ => false
   }
 }
@@ -3412,6 +3439,19 @@ fn Parser::last_stack_index_of(self : Parser, name : String) -> Int {
     }
   }
   -1
+}
+
+///|
+fn Parser::formatting_end_tag_is_outside_current_select(
+  self : Parser,
+  name : String,
+) -> Bool {
+  let target_index = self.last_stack_index_of(name)
+  if target_index < 0 {
+    return true
+  }
+  let select_index = self.last_stack_index_of("select")
+  select_index >= 0 && target_index < select_index
 }
 
 ///|
