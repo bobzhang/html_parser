@@ -298,8 +298,11 @@ JustHTML from Python to MoonBit.
   and children.
 - Some insertion modes can be approximated by a normalization pass while the
   port is still incremental. Keep those passes explicit and narrow: implicit
-  table row groups/rows are reasonable, but foster parenting and full table
-  error recovery should stay separate slices.
+  table row groups/rows are reasonable. Foster-parenting table text is a
+  separate tree-builder concern: when non-whitespace text is seen under a
+  `table`/row-group/`tr` but not inside a `td`/`th`/`caption`, move the whole
+  text run before the table while reporting `foster-parenting-character` once
+  per non-whitespace character.
 
 ## Optional Values and Defaults
 

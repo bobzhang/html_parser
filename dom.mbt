@@ -109,6 +109,24 @@ pub fn Node::append_child(self : Node, child : Node) -> Unit {
 }
 
 ///|
+fn Node::insert_child_before(self : Node, child : Node, before : Node) -> Unit {
+  if !node_accepts_children(self) || node_is_self_or_ancestor(child, self) {
+    return
+  }
+  detach_from_parent(child)
+  child.parent = Some(self)
+  let mut index = 0
+  while index < self.children.length() {
+    if physical_equal(self.children[index], before) {
+      self.children.insert(index, child)
+      return
+    }
+    index += 1
+  }
+  self.children.push(child)
+}
+
+///|
 fn node_accepts_children(node : Node) -> Bool {
   match node.kind {
     Document | Fragment | Element => true

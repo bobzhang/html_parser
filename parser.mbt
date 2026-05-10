@@ -106,9 +106,100 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if !self.is_fragment_parser() && text_has_non_ascii_whitespace(cleaned) {
     self.frameset_ok = false
   }
+  if self.foster_parent_table_text(cleaned, start) {
+    return
+  }
   self
   .current_node()
   .append_child(text(decode_entities(cleaned, in_attribute=false)))
+}
+
+///|
+fn is_table_text_foster_target(name : StringView) -> Bool {
+  match name {
+    "table" | "tbody" | "tfoot" | "thead" | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::last_open_table_index(self : Parser) -> Int {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element && node.name == "table" {
+      return index
+    }
+  }
+  -1
+}
+
+///|
+fn Parser::table_text_is_inside_cell_or_caption(
+  self : Parser,
+  table_index : Int,
+) -> Bool {
+  let mut index = table_index + 1
+  while index < self.stack.length() {
+    let node = self.stack[index]
+    if node.kind == Element &&
+      (node.name == "td" || node.name == "th" || node.name == "caption") {
+      return true
+    }
+    index += 1
+  }
+  false
+}
+
+///|
+fn Parser::report_foster_parenting_character_errors(
+  self : Parser,
+  value : StringView,
+  start : Int,
+) -> Int {
+  let mut count = 0
+  let mut pos = 0
+  while pos < value.length() {
+    match value.get_char(pos) {
+      Some(ch) => {
+        if !ch.is_ascii_whitespace() {
+          self.error_at("foster-parenting-character", start + pos)
+          count += 1
+        }
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  count
+}
+
+///|
+fn Parser::foster_parent_table_text(
+  self : Parser,
+  cleaned : StringView,
+  start : Int,
+) -> Bool {
+  if !text_has_non_ascii_whitespace(cleaned) {
+    return false
+  }
+  let table_index = self.last_open_table_index()
+  if table_index < 0 || self.table_text_is_inside_cell_or_caption(table_index) {
+    return false
+  }
+  let current = self.current_node()
+  if current.kind != Element || !is_table_text_foster_target(current.name) {
+    return false
+  }
+  ignore(self.report_foster_parenting_character_errors(cleaned, start))
+  let table = self.stack[table_index]
+  let fostered = text(decode_entities(cleaned, in_attribute=false))
+  match table.parent {
+    Some(parent) => parent.insert_child_before(fostered, table)
+    None => self.root.append_child(fostered)
+  }
+  true
 }
 
 ///|
