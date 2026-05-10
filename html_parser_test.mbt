@@ -1198,6 +1198,17 @@ test "query supports first and last child pseudo selectors" {
 }
 
 ///|
+test "query supports only child pseudo selector" {
+  let doc = @html_parser.parse_fragment(
+    "<div><span>Only</span></div><ul><li>One</li><li>Two</li></ul>",
+  )
+  assert_eq(doc.query("span:only-child").length(), 1)
+  assert_eq(doc.query("li:only-child").length(), 0)
+  guard doc.query_one("span") is Some(span) else { fail("expected span") }
+  assert_true(@html_parser.matches(span, "div > span:only-child"))
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)

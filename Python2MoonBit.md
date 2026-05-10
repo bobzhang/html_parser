@@ -81,6 +81,9 @@ JustHTML from Python to MoonBit.
 - Pseudo-class parsing starts as another simple-selector marker. For
   `:first-child` and `:last-child`, scan only element children under the parent;
   whitespace text nodes created by parsing must not affect child positions.
+- `:only-child` should reuse the same element-only child semantics, not raw
+  child-array length, because parser-inserted text nodes are not element
+  siblings.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

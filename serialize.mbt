@@ -824,10 +824,16 @@ fn is_last_element_child(node : Node) -> Bool {
 }
 
 ///|
+fn is_only_element_child(node : Node) -> Bool {
+  is_first_element_child(node) && is_last_element_child(node)
+}
+
+///|
 fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
   match name {
     "first-child" => is_first_element_child(node)
     "last-child" => is_last_element_child(node)
+    "only-child" => is_only_element_child(node)
     _ => false
   }
 }
