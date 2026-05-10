@@ -356,7 +356,10 @@ fn Parser::foster_parent_table_text(
     return false
   }
   ignore(self.report_foster_parenting_character_errors(cleaned, start))
-  let fostered = text(decode_entities(cleaned, in_attribute=false))
+  let fostered = self.text_at(
+    decode_entities(cleaned, in_attribute=false),
+    start,
+  )
   if self.table_index_is_fragment_context_table(table_index) {
     self.current_node().append_child(fostered)
     return true
@@ -389,7 +392,7 @@ fn Parser::foster_parent_template_table_text(
   }
   ignore(self.report_foster_parenting_character_errors(cleaned, start))
   self.stack[template_index].append_child(
-    text(decode_entities(cleaned, in_attribute=false)),
+    self.text_at(decode_entities(cleaned, in_attribute=false), start),
   )
   true
 }
