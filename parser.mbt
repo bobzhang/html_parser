@@ -3836,8 +3836,11 @@ fn Parser::insert_empty_frameset_child(
   self : Parser,
   name : StringView,
   attrs : Map[String, String?],
+  start : Int,
 ) -> Unit {
-  self.current_node().append_child(element(name, attrs~))
+  self
+  .current_node()
+  .append_child(self.node_with_origin(element(name, attrs~), start))
 }
 
 ///|
@@ -3927,6 +3930,7 @@ fn Parser::handle_document_frameset_start_tag(
   name : String,
   attrs : Map[String, String?],
   self_closing : Bool,
+  start : Int,
   tag_close_pos : Int,
 ) -> Bool {
   if self.is_fragment_parser() && !self.fragment_context_html {
@@ -3962,11 +3966,11 @@ fn Parser::handle_document_frameset_start_tag(
   } else if self.has_open_element("frameset") {
     match name {
       "frameset" => {
-        self.insert_element_maybe_push(name, attrs, true)
+        self.insert_element_maybe_push(name, attrs, true, start~)
         true
       }
       "frame" => {
-        self.insert_empty_frameset_child(name, attrs)
+        self.insert_empty_frameset_child(name, attrs, start)
         true
       }
       "noframes" => false
@@ -3992,7 +3996,7 @@ fn Parser::handle_document_frameset_start_tag(
       self.error_at("unexpected-start-tag-ignored", tag_close_pos)
       true
     } else {
-      self.insert_element_maybe_push(name, attrs, true)
+      self.insert_element_maybe_push(name, attrs, true, start~)
       true
     }
   } else {
@@ -4209,7 +4213,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         return
       }
       if self.handle_document_frameset_start_tag(
-          name, attrs, self_closing, tag_close_pos,
+          name, attrs, self_closing, start, tag_close_pos,
         ) {
         return
       }
