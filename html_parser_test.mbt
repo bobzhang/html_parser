@@ -234,6 +234,38 @@ test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
 }
 
 ///|
+test "to_markdown flattens block content inside links" {
+  let line_break = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.text("A"),
+      @html_parser.element("br"),
+      @html_parser.text("B"),
+      @html_parser.element("p", children=[@html_parser.text("C")]),
+      @html_parser.text("D"),
+    ],
+  )
+  assert_eq(line_break.to_markdown(), "[A BC D](https://e.com)")
+  let list = @html_parser.element("ul", children=[
+    @html_parser.text("\n"),
+    @html_parser.element("li", children=[@html_parser.text("One")]),
+    @html_parser.element("li", children=[@html_parser.text("Two")]),
+  ])
+  let blocks = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.element("blockquote", children=[
+        @html_parser.element("p", children=[@html_parser.text("Q")]),
+      ]),
+      list,
+    ],
+  )
+  assert_eq(blocks.to_markdown(), "[Q One Two](https://e.com)")
+}
+
+///|
 test "parser handles nested tags attributes comments and doctype" {
   let doc = @html_parser.parse(
     "<!doctype html><p id='x' class=\"intro lead\">Hi &amp; bye<!--ok--></p>",

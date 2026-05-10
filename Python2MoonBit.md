@@ -76,6 +76,9 @@ JustHTML from Python to MoonBit.
   containers such as `div`, `section`, `article`, `footer`, and `aside` need
   block-boundary newlines around their rendered children, while inline/unknown
   containers can still stream their children directly.
+- Link text uses a distinct Markdown traversal. The reference flattens
+  paragraphs, lists, blockquotes, and `<br>` inside `<a>` into spaces so the
+  generated `[text](href)` does not contain block Markdown or blank lines.
 - Attribute serialization has policy baked into the Python helper: `None`,
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids

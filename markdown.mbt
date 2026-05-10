@@ -420,7 +420,7 @@ fn markdown_walk_link(
   builder : MarkdownBuilder,
   html_passthrough : Bool,
 ) -> Unit {
-  let inner = markdown_render_children_to_string(node, html_passthrough)
+  let inner = markdown_render_link_children_to_string(node, html_passthrough)
   builder.raw("[")
   builder.raw(inner)
   builder.raw("]")
@@ -434,6 +434,117 @@ fn markdown_walk_link(
       }
     }
     None => ()
+  }
+}
+
+///|
+fn markdown_render_link_children_to_string(
+  node : Node,
+  html_passthrough : Bool,
+) -> String {
+  let builder = MarkdownBuilder::new()
+  for child in node.children {
+    markdown_walk_link_text(child, builder, html_passthrough)
+  }
+  builder.finish()
+}
+
+///|
+fn markdown_link_text_marker(
+  node : Node,
+  builder : MarkdownBuilder,
+  marker : String,
+  html_passthrough : Bool,
+) -> Unit {
+  let inner = MarkdownBuilder::new()
+  for child in node.children {
+    markdown_walk_link_text(child, inner, html_passthrough)
+  }
+  let content = inner.finish()
+  if content != "" {
+    builder.raw(marker)
+    builder.raw(content)
+    builder.raw(marker)
+  }
+}
+
+///|
+fn markdown_walk_link_list(
+  node : Node,
+  builder : MarkdownBuilder,
+  html_passthrough : Bool,
+) -> Unit {
+  for child in node.children {
+    if child.kind == Element && child.name == "li" {
+      builder.raw(" ")
+      for grandchild in child.children {
+        markdown_walk_link_text(grandchild, builder, html_passthrough)
+      }
+    }
+  }
+}
+
+///|
+fn markdown_walk_link_text(
+  node : Node,
+  builder : MarkdownBuilder,
+  html_passthrough : Bool,
+) -> Unit {
+  match node.kind {
+    Text => builder.text(markdown_escape_text(node.data))
+    Comment | Doctype => ()
+    Document | Fragment =>
+      for child in node.children {
+        markdown_walk_link_text(child, builder, html_passthrough)
+      }
+    Element => {
+      let level = markdown_heading_level(node.name)
+      if level > 0 {
+        for child in node.children {
+          markdown_walk_link_text(child, builder, html_passthrough)
+        }
+      } else {
+        match node.name {
+          "head" | "title" | "hr" => ()
+          "br" => builder.text(" ")
+          "html" | "body" | "span" | "blockquote" =>
+            for child in node.children {
+              markdown_walk_link_text(child, builder, html_passthrough)
+            }
+          "p" => {
+            for child in node.children {
+              markdown_walk_link_text(child, builder, html_passthrough)
+            }
+            builder.text(" ")
+          }
+          "b" | "strong" =>
+            markdown_link_text_marker(node, builder, "**", html_passthrough)
+          "i" | "em" =>
+            markdown_link_text_marker(node, builder, "*", html_passthrough)
+          "code" | "pre" =>
+            builder.raw(markdown_code_span(markdown_collect_text(node)))
+          "ul" | "ol" =>
+            markdown_walk_link_list(node, builder, html_passthrough)
+          "table" => builder.raw(node.to_html(pretty=false))
+          "script" | "style" | "textarea" =>
+            if html_passthrough {
+              builder.raw(node.to_html(pretty=false))
+            }
+          "img" => builder.raw(node.to_html(pretty=false))
+          _ =>
+            if markdown_block_container_name(node.name) {
+              for child in node.children {
+                markdown_walk_link_text(child, builder, html_passthrough)
+              }
+              builder.text(" ")
+            } else {
+              for child in node.children {
+                markdown_walk_link_text(child, builder, html_passthrough)
+              }
+            }
+        }
+      }
+    }
   }
 }
 
