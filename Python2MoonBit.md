@@ -632,6 +632,8 @@ JustHTML from Python to MoonBit.
 - After a quoted public identifier, EOF without whitespace before a system
   identifier reports `missing-whitespace-between-doctype-public-and-system-identifiers`;
   an immediate non-quote character reports `unexpected-character-after-doctype-public-identifier`.
+  With whitespace after the public identifier, EOF or a non-quote system token
+  instead reports `missing-quote-before-doctype-system-identifier`.
 - Doctype external-ID recovery is not a single-error decision. The tokenizer can
   report a missing separator before a system identifier and then continue into
   the system identifier state, so keep a list of local-offset errors instead of

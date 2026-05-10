@@ -1256,6 +1256,22 @@ test "parser and tokenizer report missing doctype identifiers" {
   guard system.errors[0].column is Some(22) else {
     fail("expected missing system identifier at close bracket")
   }
+  let system_whitespace_eof = @html_parser.parse(
+    "<!doctype html SYSTEM ",
+    collect_errors=true,
+  )
+  assert_eq(
+    system_whitespace_eof.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body></body></html>",
+  )
+  assert_eq(system_whitespace_eof.errors.length(), 1)
+  assert_eq(
+    system_whitespace_eof.errors[0].code,
+    "missing-doctype-system-identifier",
+  )
+  guard system_whitespace_eof.errors[0].column is Some(22) else {
+    fail("expected whitespace EOF missing system id at final whitespace")
+  }
   let system_token = @html_parser.tokenize(
     "<!doctype html SYSTEM >",
     collect_errors=true,
@@ -1502,6 +1518,23 @@ test "parser and tokenizer report post-public-identifier errors" {
   guard missing_space.errors[0].column is Some(25) else {
     fail("expected missing whitespace error at EOF")
   }
+  let missing_system_after_space = @html_parser.parse(
+    "<!doctype html PUBLIC \"x\" ",
+    collect_errors=true,
+  )
+  assert_eq(
+    missing_system_after_space.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(missing_system_after_space.errors.length(), 2)
+  assert_eq(
+    missing_system_after_space.errors[0].code,
+    "missing-quote-before-doctype-system-identifier",
+  )
+  assert_eq(missing_system_after_space.errors[1].code, "unknown-doctype")
+  guard missing_system_after_space.errors[0].column is Some(26) else {
+    fail("expected missing system quote at trailing whitespace EOF")
+  }
   let unexpected = @html_parser.tokenize(
     "<!doctype html PUBLIC \"x\"x>",
     collect_errors=true,
@@ -1516,6 +1549,29 @@ test "parser and tokenizer report post-public-identifier errors" {
   assert_eq(info.name, "html")
   guard info.public_id is Some("x") else { fail("expected public id") }
   assert_eq(info.force_quirks, true)
+  let missing_quote = @html_parser.tokenize(
+    "<!doctype html PUBLIC \"x\" foo>",
+    collect_errors=true,
+  )
+  assert_eq(missing_quote.errors.length(), 1)
+  assert_eq(
+    missing_quote.errors[0].code,
+    "missing-quote-before-doctype-system-identifier",
+  )
+  guard missing_quote.errors[0].column is Some(27) else {
+    fail("expected missing system quote after public-id whitespace")
+  }
+  guard missing_quote.tokens[0]
+    is @html_parser.HtmlToken::DoctypeToken(missing_quote_info) else {
+    fail("expected doctype token after missing system quote")
+  }
+  guard missing_quote_info.public_id is Some("x") else {
+    fail("expected public id before missing system quote")
+  }
+  guard missing_quote_info.system_id is None else {
+    fail("expected no system id after missing quote")
+  }
+  assert_eq(missing_quote_info.force_quirks, true)
   let known = @html_parser.parse(
     "<!doctype html PUBLIC \"-//W3C//DTD HTML 4.01//EN\"x>",
     collect_errors=true,
