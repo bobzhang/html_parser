@@ -271,6 +271,11 @@ JustHTML from Python to MoonBit.
   after `body`, with following non-whitespace text reporting
   `unexpected-character-implies-table-voodoo` rather than the ordinary
   `foster-parenting-character`.
+- Fixture flags do not always map to public MoonBit options yet. The
+  `#iframe-srcdoc` tree-builder flag changes Python's internal quirks mode, but
+  the current MoonBit API does not expose quirks mode; port the observable tree
+  and parse errors without adding an API flag until quirks mode itself is
+  represented.
 - Other select-mode starts report but stay inside the select: `<hr>` first
   closes the current `option`/`optgroup`, void-like starts such as `<br>` and
   `<img>` are inserted without pushing, and common containers such as `<div>`
