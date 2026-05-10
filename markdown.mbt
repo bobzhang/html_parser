@@ -282,6 +282,27 @@ fn markdown_collect_text_into(node : Node, parts : Array[String]) -> Unit {
 }
 
 ///|
+fn markdown_code_block_body(value : StringView) -> String {
+  let mut end = value.length()
+  while end > 0 {
+    match value.get_char(end - 1) {
+      Some('\n') => end -= 1
+      _ => break
+    }
+  }
+  while end > 0 {
+    match value.get_char(end - 1) {
+      Some(' ' | '\t') => end -= 1
+      _ => break
+    }
+  }
+  match value.get_view(start=0, end~) {
+    Some(body) => body.to_owned()
+    None => value.to_owned()
+  }
+}
+
+///|
 fn markdown_render_children(
   node : Node,
   builder : MarkdownBuilder,
@@ -404,12 +425,13 @@ fn markdown_walk_link(
 ///|
 fn markdown_walk_pre(node : Node, builder : MarkdownBuilder) -> Unit {
   let code = markdown_collect_text(node)
+  let body = markdown_code_block_body(code)
   let fence = markdown_backtick_fence(code, 3)
   builder.ensure_newlines(2)
   builder.raw(fence)
   builder.newline(1)
-  builder.raw(code)
-  if !code.has_suffix("\n") {
+  if body != "" {
+    builder.raw(body)
     builder.newline(1)
   }
   builder.raw(fence)

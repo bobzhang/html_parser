@@ -68,6 +68,10 @@ JustHTML from Python to MoonBit.
   while raw Markdown syntax such as `**`, link brackets, and code fences must be
   appended without escaping. A `to_text()` fallback misses both formatting and
   security-relevant escaping.
+- Fenced Markdown code blocks need delimiter selection from the raw code
+  content, not a fixed triple-backtick string. Strip trailing newlines and the
+  spaces/tabs that would sit immediately before the closing fence, and choose a
+  fence longer than any backtick run inside the code.
 - Attribute serialization has policy baked into the Python helper: `None`,
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids

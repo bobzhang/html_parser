@@ -166,6 +166,17 @@ test "to_markdown renders code spans blocks lists and blockquotes" {
     "<pre>code`here\n</pre><p>inline <code>a`b</code></p>",
   )
   assert_eq(code.to_markdown(), "```\ncode`here\n```\n\ninline ``a`b``")
+  let empty_pre = @html_parser.parse_fragment("<pre></pre>")
+  assert_eq(empty_pre.to_markdown(), "```\n```")
+  let trailing_space = @html_parser.parse_fragment("<pre>X   \n</pre>")
+  assert_eq(trailing_space.to_markdown(), "```\nX\n```")
+  let longer_fence = @html_parser.parse_fragment(
+    "<pre>&#96;&#96;&#96;\n&lt;img src=x onerror=alert(1)&gt;</pre>",
+  )
+  assert_eq(
+    longer_fence.to_markdown(),
+    "````\n```\n<img src=x onerror=alert(1)>\n````",
+  )
   let quote = @html_parser.parse_fragment(
     "<blockquote><p>Q<br>R</p></blockquote>",
   )
@@ -183,9 +194,12 @@ test "to_markdown escapes text and line starting markdown markers" {
   )
   assert_eq(escaped.to_markdown(), "&lt;img src=x onerror=alert(1)>")
   let markers = @html_parser.parse_fragment(
-    "<p>a<br># heading<br>- item<br>```</p>",
+    "<p>a<br># heading<br>- item<br>+ next<br>1. ordered<br>2) ordered<br>~~~<br>```<br>---<br>===</p>",
   )
-  assert_eq(markers.to_markdown(), "a\n\\# heading\n\\- item\n\\`\\`\\`")
+  assert_eq(
+    markers.to_markdown(),
+    "a\n\\# heading\n\\- item\n\\+ next\n1\\. ordered\n2\\) ordered\n\\~~~\n\\`\\`\\`\n\\---\n\\===",
+  )
 }
 
 ///|
