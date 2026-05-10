@@ -7107,6 +7107,15 @@ test "tokenize handles selected bogus comment fixture cases" {
   guard question.errors[0].column is Some(2) else {
     fail("expected question-mark error at column 2")
   }
+  let question_crlf = @html_parser.tokenize("<?a\r\nb>", collect_errors=true)
+  guard question_crlf.tokens[0] is CommentToken("?a\nb") else {
+    fail("expected CRLF-normalized question-mark bogus comment")
+  }
+  assert_eq(question_crlf.errors.length(), 1)
+  assert_eq(
+    question_crlf.errors[0].code,
+    "unexpected-question-mark-instead-of-tag-name",
+  )
   let declaration = @html_parser.tokenize("<!foo>", collect_errors=true)
   guard declaration.tokens[0] is @html_parser.HtmlToken::CommentToken("foo") else {
     fail("expected malformed declaration as bogus comment")

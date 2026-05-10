@@ -762,8 +762,9 @@ JustHTML from Python to MoonBit.
   `incorrectly-opened-comment`, and `<![CDATA[` also becomes a bogus comment
   after `cdata-in-html-content`; the bogus comment data starts after `<!`.
 - Bogus comments replace NULs with U+FFFD without adding a second
-  `unexpected-null-character` error. Keep that distinct from normal comment
-  data, where NUL is itself a parse error.
+  `unexpected-null-character` error, but they still run input-stream newline
+  normalization so CR and CRLF become LF in the emitted comment data. Keep that
+  distinct from normal comment data, where NUL is itself a parse error.
 - Do not normalize empty doctype names to `"html"` in serialization. The builder
   default should create `"html"`, but a parsed empty-name doctype serializes as
   `<!DOCTYPE>`.
