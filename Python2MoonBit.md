@@ -34,6 +34,9 @@ JustHTML from Python to MoonBit.
   from the `content` attribute after ASCII lowercasing and whitespace
   normalization; quoted, unquoted, and invalid/unterminated charset values have
   different fallback behavior.
+- Legacy single-byte encodings are not UTF-8 variants. Port them as explicit
+  byte-to-code-point tables, and test non-ASCII bytes so label normalization
+  and decoding are both covered.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.

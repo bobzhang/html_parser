@@ -1761,6 +1761,22 @@ test "parse_bytes defaults to windows1252 and normalizes compatible labels" {
 }
 
 ///|
+test "parse_bytes decodes iso8859-2 labels" {
+  let explicit = b"<p>\xa1\xb1</p>"
+  let doc = @html_parser.parse_bytes(explicit, encoding="iso8859-2")
+  assert_eq(doc.to_text(separator="", strip=false), "\u{0104}\u{0105}")
+  guard doc.encoding is Some("iso-8859-2") else {
+    fail("expected explicit iso-8859-2 encoding")
+  }
+  let meta = b"<meta charset=latin2><p>\xc6\xe6</p>"
+  let meta_doc = @html_parser.parse_bytes(meta)
+  assert_eq(meta_doc.to_text(separator="", strip=false), "\u{0106}\u{0107}")
+  guard meta_doc.encoding is Some("iso-8859-2") else {
+    fail("expected meta latin2 encoding")
+  }
+}
+
+///|
 test "parse_bytes sniffs utf8 bom before windows1252 fallback" {
   let bytes = b"\xef\xbb\xbf\x3c\x70\x3e\x62\x6f\x6d\x3c\x2f\x70\x3e"
   let doc = @html_parser.parse_bytes(bytes)
