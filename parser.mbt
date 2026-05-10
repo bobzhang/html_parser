@@ -731,6 +731,44 @@ fn Parser::close_open_list_item(self : Parser) -> Unit {
 }
 
 ///|
+fn is_definition_scope_terminator(name : StringView) -> Bool {
+  match name {
+    "applet"
+    | "caption"
+    | "dl"
+    | "html"
+    | "marquee"
+    | "object"
+    | "table"
+    | "td"
+    | "template"
+    | "th" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::close_open_definition_item_name(
+  self : Parser,
+  name : String,
+) -> Unit {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element {
+      if node.name == name {
+        ignore(self.close_open_element(name))
+        return
+      }
+      if is_definition_scope_terminator(node.name) {
+        return
+      }
+    }
+  }
+}
+
+///|
 fn Parser::close_open_p_element(self : Parser) -> Unit {
   ignore(self.close_open_element("p"))
 }
@@ -738,11 +776,11 @@ fn Parser::close_open_p_element(self : Parser) -> Unit {
 ///|
 fn Parser::close_open_definition_item(self : Parser, name : String) -> Unit {
   if name == "dd" {
-    ignore(self.close_open_element("dd"))
-    ignore(self.close_open_element("dt"))
+    self.close_open_definition_item_name("dd")
+    self.close_open_definition_item_name("dt")
   } else {
-    ignore(self.close_open_element("dt"))
-    ignore(self.close_open_element("dd"))
+    self.close_open_definition_item_name("dt")
+    self.close_open_definition_item_name("dd")
   }
 }
 

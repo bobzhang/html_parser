@@ -1876,6 +1876,33 @@ test "parser closes open definition items before repeated dt and dd starts" {
     loose.to_html(pretty=false),
     "<dt>term</dt><dd>def</dd><dt>next</dt>",
   )
+  let nested_terms = @html_parser.parse_fragment(
+    "<dl><dt>A<dl><dt>B</dt></dl></dt><dt>C</dt></dl>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_terms.to_html(pretty=false),
+    "<dl><dt>A<dl><dt>B</dt></dl></dt><dt>C</dt></dl>",
+  )
+  assert_eq(nested_terms.errors.length(), 0)
+  let nested_definitions = @html_parser.parse_fragment(
+    "<dl><dd>A<dl><dd>B</dd></dl></dd><dd>C</dd></dl>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_definitions.to_html(pretty=false),
+    "<dl><dd>A<dl><dd>B</dd></dl></dd><dd>C</dd></dl>",
+  )
+  assert_eq(nested_definitions.errors.length(), 0)
+  let nested_mixed = @html_parser.parse_fragment(
+    "<dl><dt>A<dl><dd>B</dd></dl></dt><dd>C</dd></dl>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_mixed.to_html(pretty=false),
+    "<dl><dt>A<dl><dd>B</dd></dl></dt><dd>C</dd></dl>",
+  )
+  assert_eq(nested_mixed.errors.length(), 0)
 }
 
 ///|

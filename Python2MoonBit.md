@@ -52,7 +52,8 @@ JustHTML from Python to MoonBit.
 - Scope-sensitive implied end tags need the same terminators as Python's tree
   builder. For example, a new `<li>` closes an earlier `<li>` only in list-item
   scope; a nested `<ul>` or `<ol>` terminates that search and must not close the
-  parent list item.
+  parent list item. The same pattern applies to `<dt>`/`<dd>` in definition
+  scope, where a nested `<dl>` terminates the search.
 - Serializing `script`/`style` text nodes has a security edge case, especially
   for programmatically-created trees: neutralize matching `</script` or
   `</style` sequences only when the tag name is followed by EOF, HTML
