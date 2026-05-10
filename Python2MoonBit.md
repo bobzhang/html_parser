@@ -266,7 +266,10 @@ JustHTML from Python to MoonBit.
 - DOM nodes are mutable object graphs, so port Python operations by preserving
   identity semantics instead of structural equality. Moving a node must detach
   it from its old parent, insert-before needs an identity scan with an append
-  fallback, and append/insert must reject self-or-ancestor cycles.
+  fallback, and append/insert must reject self-or-ancestor cycles. When exposing
+  these helpers in MoonBit, prefer non-throwing results over Python exceptions:
+  `replace_child` returns `None` when the old child is absent or the replacement
+  would create a cycle, and `Some(old_child)` when replacement succeeds.
 - Query traversal also needs identity bookkeeping. The Python selector walker
   seeds its visited set with the query root, so descendants are deduplicated by
   object identity, shared child references are returned once, and

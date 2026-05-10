@@ -130,6 +130,9 @@ fn Node::insert_child_before(self : Node, child : Node, before : Node) -> Unit {
   if !node_accepts_children(self) || node_is_self_or_ancestor(child, self) {
     return
   }
+  if physical_equal(child, before) {
+    return
+  }
   detach_from_parent(child)
   child.parent = Some(self)
   let mut index = 0
@@ -141,6 +144,14 @@ fn Node::insert_child_before(self : Node, child : Node, before : Node) -> Unit {
     index += 1
   }
   self.children.push(child)
+}
+
+///|
+pub fn Node::insert_before(self : Node, child : Node, before : Node?) -> Unit {
+  match before {
+    Some(reference) => self.insert_child_before(child, reference)
+    None => self.append_child(child)
+  }
 }
 
 ///|
@@ -175,6 +186,41 @@ fn detach_from_parent(node : Node) -> Unit {
 }
 
 ///|
+pub fn Node::replace_child(
+  self : Node,
+  new_child : Node,
+  old_child : Node,
+) -> Node? {
+  if !node_accepts_children(self) || node_is_self_or_ancestor(new_child, self) {
+    return None
+  }
+  let mut index = 0
+  while index < self.children.length() {
+    if physical_equal(self.children[index], old_child) {
+      if physical_equal(new_child, old_child) {
+        return Some(old_child)
+      }
+      detach_from_parent(new_child)
+      let mut target_index = 0
+      while target_index < self.children.length() {
+        if physical_equal(self.children[target_index], old_child) {
+          self.children[target_index] = new_child
+          new_child.parent = Some(self)
+          if old_child.parent is Some(parent) && physical_equal(parent, self) {
+            old_child.parent = None
+          }
+          return Some(old_child)
+        }
+        target_index += 1
+      }
+      return None
+    }
+    index += 1
+  }
+  None
+}
+
+///|
 pub fn Node::remove_child(self : Node, child : Node) -> Unit {
   if !node_accepts_children(self) {
     return
@@ -200,6 +246,11 @@ pub fn Node::has_child_nodes(self : Node) -> Bool {
 ///|
 pub fn Node::kind(self : Node) -> NodeKind {
   self.kind
+}
+
+///|
+pub fn Node::parent(self : Node) -> Node? {
+  self.parent
 }
 
 ///|

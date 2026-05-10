@@ -78,12 +78,15 @@ pub fn Node::children(Self) -> Array[Self]
 pub fn Node::clone_node(Self, deep? : Bool, override_attrs? : Map[String, String?]) -> Self
 pub fn Node::data(Self) -> String
 pub fn Node::has_child_nodes(Self) -> Bool
+pub fn Node::insert_before(Self, Self, Self?) -> Unit
 pub fn Node::kind(Self) -> NodeKind
 pub fn Node::name(Self) -> String
 pub fn Node::namespace_uri(Self) -> String?
+pub fn Node::parent(Self) -> Self?
 pub fn Node::query(Self, StringView) -> Array[Self]
 pub fn Node::query_one(Self, StringView) -> Self?
 pub fn Node::remove_child(Self, Self) -> Unit
+pub fn Node::replace_child(Self, Self, Self) -> Self?
 pub fn Node::text(Self) -> String
 pub fn Node::to_html(Self, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String
 pub fn Node::to_markdown(Self, html_passthrough? : Bool) -> String
