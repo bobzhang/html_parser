@@ -63,6 +63,11 @@ JustHTML from Python to MoonBit.
   characters such as backspace/form-feed, `<`, `>`, and line/paragraph
   separators U+2028/U+2029. Match the reference context exactly: `&` is already
   HTML-escaped in the serialized markup and is not escaped again for JS.
+- Markdown rendering needs two output paths like the Python `_MarkdownBuilder`:
+  escaped text should collapse whitespace and guard line-start Markdown markers,
+  while raw Markdown syntax such as `**`, link brackets, and code fences must be
+  appended without escaping. A `to_text()` fallback misses both formatting and
+  security-relevant escaping.
 - Attribute serialization has policy baked into the Python helper: `None`,
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids

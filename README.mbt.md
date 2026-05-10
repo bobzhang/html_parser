@@ -15,6 +15,8 @@ The current slice provides:
   lists, and common pseudo selectors.
 - Byte input parsing with supported transport labels, BOM sniffing, and
   meta-charset prescan.
+- Initial Markdown conversion for text, paragraphs, headings, inline
+  formatting, links, code, lists, blockquotes, and raw HTML passthrough.
 
 ```mbt check
 ///|
@@ -25,6 +27,7 @@ test "readme parse fragment example" {
     "<p class=\"intro\">Hello <b>MoonBit</b></p>",
   )
   assert_eq(doc.to_text(separator="", strip=false), "Hello MoonBit")
+  assert_eq(doc.to_markdown(), "Hello **MoonBit**")
   assert_eq(doc.query("p.intro").length(), 1)
   let tokens = tokenize("<p>Hello</p>").tokens
   assert_eq(tokens.length(), 4)
@@ -42,4 +45,5 @@ test "readme parse bytes example" {
 ```
 
 Full HTML5 tree construction, sanitization, transforms, linkify, streaming,
-Markdown parity, and CLI compatibility are planned as separate passing slices.
+full Markdown parity, and CLI compatibility are planned as separate passing
+slices.

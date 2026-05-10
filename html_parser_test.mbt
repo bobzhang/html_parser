@@ -150,6 +150,64 @@ test "to_text can separate only block boundaries" {
 }
 
 ///|
+test "to_markdown renders headings paragraphs inline formatting and links" {
+  let doc = @html_parser.parse_fragment(
+    "<h1>Title</h1><p>Hello <b>world</b> <em>ok</em> <a href='https://e.com'>link</a> a*b</p>",
+  )
+  assert_eq(
+    doc.to_markdown(),
+    "# Title\n\nHello **world** *ok* [link](https://e.com) a\\*b",
+  )
+}
+
+///|
+test "to_markdown renders code spans blocks lists and blockquotes" {
+  let code = @html_parser.parse_fragment(
+    "<pre>code`here\n</pre><p>inline <code>a`b</code></p>",
+  )
+  assert_eq(code.to_markdown(), "```\ncode`here\n```\n\ninline ``a`b``")
+  let quote = @html_parser.parse_fragment(
+    "<blockquote><p>Q<br>R</p></blockquote>",
+  )
+  assert_eq(quote.to_markdown(), "> Q\n> R")
+  let list = @html_parser.parse_fragment(
+    "<ul>\n<li>One</li>\n</ul><ol><li>A</li><li>B</li></ol>",
+  )
+  assert_eq(list.to_markdown(), "- One\n\n1. A\n2. B")
+}
+
+///|
+test "to_markdown escapes text and line starting markdown markers" {
+  let escaped = @html_parser.parse_fragment(
+    "<p>&lt;img src=x onerror=alert(1)&gt;</p>",
+  )
+  assert_eq(escaped.to_markdown(), "&lt;img src=x onerror=alert(1)>")
+  let markers = @html_parser.parse_fragment(
+    "<p>a<br># heading<br>- item<br>```</p>",
+  )
+  assert_eq(markers.to_markdown(), "a\n\\# heading\n\\- item\n\\`\\`\\`")
+}
+
+///|
+test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
+  let links = @html_parser.parse_fragment(
+    "<p><a href='https://e.com/a(b)c'>x</a> <a href='https://e.com/a b'>y</a></p>",
+  )
+  assert_eq(
+    links.to_markdown(),
+    "[x](<https://e.com/a(b)c>) [y](<https://e.com/a%20b>)",
+  )
+  let script = @html_parser.element("div", children=[
+    @html_parser.element("script", attrs={ "data-x": Some("1&2") }),
+  ])
+  assert_eq(script.to_markdown(), "")
+  assert_eq(
+    script.to_markdown(html_passthrough=true),
+    "<script data-x=\"1&amp;2\"></script>",
+  )
+}
+
+///|
 test "parser handles nested tags attributes comments and doctype" {
   let doc = @html_parser.parse(
     "<!doctype html><p id='x' class=\"intro lead\">Hi &amp; bye<!--ok--></p>",

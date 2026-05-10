@@ -3150,15 +3150,6 @@ pub fn ParsedHtml::to_text(
 }
 
 ///|
-pub fn ParsedHtml::to_markdown(
-  self : ParsedHtml,
-  html_passthrough? : Bool = false,
-) -> String {
-  ignore(html_passthrough)
-  self.to_text(separator="\n\n", strip=true)
-}
-
-///|
 pub fn ParsedHtml::query(
   self : ParsedHtml,
   selector : StringView,
