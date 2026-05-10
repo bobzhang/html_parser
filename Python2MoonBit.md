@@ -23,7 +23,8 @@ JustHTML from Python to MoonBit.
   parser string. Do not run every `BytesView` through UTF-8 lossy decoding:
   UTF-16 BOMs must be detected first, decoded with explicit endianness, and the
   resulting `ParsedHtml.encoding` should report the detected or transport
-  label.
+  label. A generic transport `utf-16` label still needs the BOM to choose byte
+  order, while preserving `utf-16` as the reported label.
 - HTML's default byte fallback is Windows-1252, not UTF-8. Latin-1 labels such
   as `iso-8859-1` also normalize to Windows-1252, and UTF-7 labels should be
   rejected by normalizing them to Windows-1252.
@@ -33,7 +34,9 @@ JustHTML from Python to MoonBit.
 - The `http-equiv="Content-Type"` path is also byte-level. Extract `charset`
   from the `content` attribute after ASCII lowercasing and whitespace
   normalization; quoted, unquoted, and invalid/unterminated charset values have
-  different fallback behavior.
+  different fallback behavior. Raw quote bytes inside the `content` value are
+  meaningful to the prescan, but HTML entities such as `&quot;` are not decoded
+  before charset extraction.
 - Legacy single-byte encodings are not UTF-8 variants. Port them as explicit
   byte-to-code-point tables, and test non-ASCII bytes so label normalization
   and decoding are both covered.

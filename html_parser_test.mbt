@@ -5972,6 +5972,18 @@ test "parse_bytes prescans http equiv content charset" {
   guard unterminated_doc.encoding is Some("windows-1252") else {
     fail("expected unterminated content charset quote to fall back")
   }
+  let quoted_charset = b"<meta http-equiv='Content-Type' content='text/html; charset=\"utf-8\"'><p>\xe2\x82\xac</p>"
+  let quoted_charset_doc = @html_parser.parse_bytes(quoted_charset)
+  assert_eq(quoted_charset_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard quoted_charset_doc.encoding is Some("utf-8") else {
+    fail("expected raw quoted content charset to sniff utf-8")
+  }
+  let semicolon = b"<meta http-equiv='Content-Type' content='text/html; charset=utf-8; x=y'><p>\xe2\x82\xac</p>"
+  let semicolon_doc = @html_parser.parse_bytes(semicolon)
+  assert_eq(semicolon_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard semicolon_doc.encoding is Some("utf-8") else {
+    fail("expected semicolon-terminated content charset to sniff utf-8")
+  }
 }
 
 ///|
@@ -6001,6 +6013,14 @@ test "parse_bytes decodes utf16 bom and explicit encodings" {
   )
   guard explicit.encoding is Some("utf-16") else {
     fail("expected explicit utf-16 encoding")
+  }
+  let explicit_generic_big = @html_parser.parse_bytes(big, encoding="utf-16")
+  assert_eq(
+    explicit_generic_big.to_html(pretty=false),
+    "<html><head></head><body><p>hi</p></body></html>",
+  )
+  guard explicit_generic_big.encoding is Some("utf-16") else {
+    fail("expected generic utf-16 encoding to preserve label")
   }
   let explicit_big = b"\x00\x3c\x00\x70\x00\x3e\x00\x62\x00\x65\x00\x3c\x00\x2f\x00\x70\x00\x3e"
   let explicit_big_doc = @html_parser.parse_bytes(
