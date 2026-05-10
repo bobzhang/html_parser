@@ -6012,6 +6012,15 @@ test "parse_bytes meta prescan ignores incomplete constructs" {
   guard unfinished_comment_doc.encoding is Some("windows-1252") else {
     fail("expected unfinished comment to prevent meta sniff")
   }
+  let bogus_declaration = b"<!meta charset=utf-8><p>\x80</p>"
+  let bogus_declaration_doc = @html_parser.parse_bytes(bogus_declaration)
+  assert_eq(
+    bogus_declaration_doc.to_text(separator="", strip=false),
+    "\u{20AC}",
+  )
+  guard bogus_declaration_doc.encoding is Some("windows-1252") else {
+    fail("expected bogus meta declaration to be ignored")
+  }
   let end_tag = b"\x3c\x2f\x61\x20\x74\x69\x74\x6c\x65\x3d\x27\x78\x27\x3e\x3c\x70\x3e\x80\x3c\x2f\x70\x3e"
   let end_tag_doc = @html_parser.parse_bytes(end_tag)
   assert_eq(end_tag_doc.to_text(separator="", strip=false), "\u{20AC}")
@@ -6022,6 +6031,16 @@ test "parse_bytes meta prescan ignores incomplete constructs" {
   let unclosed_quote_doc = @html_parser.parse_bytes(unclosed_quote)
   guard unclosed_quote_doc.encoding is Some("windows-1252") else {
     fail("expected unclosed meta attribute quote to be ignored")
+  }
+  let broken_value = b"<meta charset=   <p>\x80</p>"
+  let broken_value_doc = @html_parser.parse_bytes(broken_value)
+  assert_eq(broken_value_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard broken_value_doc.encoding is Some("windows-1252") else {
+    fail("expected meta charset interrupted by markup to fall back")
+  }
+  let eof_after_equals = @html_parser.parse_bytes(b"<meta charset=   ")
+  guard eof_after_equals.encoding is Some("windows-1252") else {
+    fail("expected eof after meta charset equals to fall back")
   }
   let missing_value = @html_parser.parse_bytes(b"<meta charset")
   guard missing_value.encoding is Some("windows-1252") else {
@@ -6086,6 +6105,21 @@ test "parse_bytes prescans http equiv content charset" {
   assert_eq(missing_equals_doc.to_text(separator="", strip=false), "\u{20AC}")
   guard missing_equals_doc.encoding is Some("windows-1252") else {
     fail("expected malformed content charset to fall back")
+  }
+  let valueless_http = b"<meta http-equiv content=\"text/html; charset=utf-8\"><p>\x80</p>"
+  let valueless_http_doc = @html_parser.parse_bytes(valueless_http)
+  assert_eq(valueless_http_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard valueless_http_doc.encoding is Some("windows-1252") else {
+    fail("expected valueless http-equiv to fall back")
+  }
+  let valueless_content = b"<meta http-equiv=\"Content-Type\" content><p>\x80</p>"
+  let valueless_content_doc = @html_parser.parse_bytes(valueless_content)
+  assert_eq(
+    valueless_content_doc.to_text(separator="", strip=false),
+    "\u{20AC}",
+  )
+  guard valueless_content_doc.encoding is Some("windows-1252") else {
+    fail("expected valueless content to fall back")
   }
   let unterminated = b"<meta http-equiv=\"Content-Type\" content=\"text/html; charset='utf-8\"><p>\x80</p>"
   let unterminated_doc = @html_parser.parse_bytes(unterminated)

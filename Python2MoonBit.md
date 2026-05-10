@@ -39,8 +39,9 @@ JustHTML from Python to MoonBit.
   from the `content` attribute after ASCII lowercasing and whitespace
   normalization; quoted, unquoted, and invalid/unterminated charset values have
   different fallback behavior. Raw quote bytes inside the `content` value are
-  meaningful to the prescan, but HTML entities such as `&quot;` are not decoded
-  before charset extraction.
+  meaningful to the prescan, but valueless `http-equiv`/`content` attributes
+  do not participate, and HTML entities such as `&quot;` are not decoded before
+  charset extraction.
 - Legacy single-byte encodings are not UTF-8 variants. Port them as explicit
   byte-to-code-point tables, and test non-ASCII bytes so label normalization
   and decoding are both covered. Include both remapped bytes and high bytes
@@ -59,6 +60,8 @@ JustHTML from Python to MoonBit.
 - Byte-level prescan edge cases are easy to accidentally "fix" by decoding
   first. Keep explicit tests for unfinished comments/tags and unterminated
   quotes so malformed sniff-only markup does not change the selected encoding.
+  A `<` inside a meta tag and EOF after `charset=` both make that sniff
+  candidate fail.
 - When the Python reference separates tokenizer and tree-builder states, a
   combined MoonBit parser still needs to preserve their error ordering. Initial
   doctype recovery after bogus markup is one example: tokenizer errors for the
