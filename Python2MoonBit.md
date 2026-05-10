@@ -370,6 +370,12 @@ JustHTML from Python to MoonBit.
   that row context still use table foster-parenting error rules, but because the
   synthetic row is unwrapped they serialize where the row's children would have
   been.
+- Cell fragment contexts (`td`, `th`) use synthetic table/row-group/row/cell
+  wrappers, but the returned fragment is only the cell children. Structural
+  starts that would close a real cell are ignored with
+  `unexpected-start-tag-in-cell-fragment`; a nested `<table>` is still ordinary
+  body content inside the cell and can produce foster-parenting text errors
+  inside that nested table.
 
 ## Optional Values and Defaults
 

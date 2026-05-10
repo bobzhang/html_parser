@@ -14,6 +14,7 @@ priv struct Parser {
   mut fragment_context_table : Node?
   mut fragment_context_table_section : Node?
   mut fragment_context_table_row : Node?
+  mut fragment_context_table_cell : Node?
 }
 
 ///|
@@ -38,6 +39,7 @@ fn Parser::new(
     fragment_context_table: None,
     fragment_context_table_section: None,
     fragment_context_table_row: None,
+    fragment_context_table_cell: None,
   }
 }
 
@@ -400,8 +402,11 @@ fn Parser::close_current_table_row_for_start(
     return
   }
   let table_index = self.last_open_table_index()
+  if table_index < 0 || self.table_text_is_inside_cell_or_caption(table_index) {
+    return
+  }
   let row_index = self.last_stack_index_of("tr")
-  if table_index < 0 || row_index <= table_index {
+  if row_index <= table_index {
     return
   }
   while self.stack.length() > row_index {
@@ -427,6 +432,9 @@ fn Parser::close_current_table_section_for_start(
     return
   }
   let table_index = self.last_open_table_index()
+  if table_index < 0 || self.table_text_is_inside_cell_or_caption(table_index) {
+    return
+  }
   let mut section_index = -1
   let mut index = self.stack.length()
   while index > 0 {
@@ -437,7 +445,7 @@ fn Parser::close_current_table_section_for_start(
       break
     }
   }
-  if table_index < 0 || section_index <= table_index {
+  if section_index <= table_index {
     return
   }
   while self.stack.length() > section_index {
@@ -912,6 +920,44 @@ fn Parser::handle_fragment_context_table_row_start_tag(
 }
 
 ///|
+fn fragment_context_table_cell_ignores_start(name : StringView) -> Bool {
+  match name {
+    "caption"
+    | "col"
+    | "colgroup"
+    | "tbody"
+    | "td"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::handle_fragment_context_table_cell_start_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if !fragment_context_table_cell_ignores_start(name) {
+    return false
+  }
+  match self.fragment_context_table_cell {
+    Some(cell) => {
+      let current = self.current_node()
+      if physical_equal(current, cell) {
+        self.error_at("unexpected-start-tag-in-cell-fragment", start)
+        return true
+      }
+      false
+    }
+    None => false
+  }
+}
+
+///|
 fn Parser::handle_fragment_context_table_end_tag(
   self : Parser,
   name : String,
@@ -934,6 +980,15 @@ fn Parser::handle_fragment_context_table_wrapper_end_tag(
   name : String,
   start : Int,
 ) -> Bool {
+  if name == "td" || name == "th" {
+    match self.fragment_context_table_cell {
+      Some(cell) if self.last_stack_index_of_node(cell) >= 0 => {
+        self.error_at("unexpected-end-tag", start)
+        return true
+      }
+      _ => ()
+    }
+  }
   if name == "tr" {
     match self.fragment_context_table_row {
       Some(row) if self.last_stack_index_of_node(row) >= 0 => {
@@ -2558,6 +2613,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         ) {
         return
       }
+      if self.handle_fragment_context_table_cell_start_tag(name, start) {
+        return
+      }
       if self.handle_fragment_context_table_row_start_tag(name, start) {
         return
       }
@@ -3642,6 +3700,41 @@ fn Parser::parse_table_row_fragment_context(self : Parser) -> Unit {
 }
 
 ///|
+fn Parser::parse_table_cell_fragment_context(
+  self : Parser,
+  name : String,
+) -> Unit {
+  let table = element("table")
+  let section = element("tbody")
+  let row = element("tr")
+  let cell = element(name)
+  self.fragment_context_table = Some(table)
+  self.fragment_context_table_section = Some(section)
+  self.fragment_context_table_row = Some(row)
+  self.fragment_context_table_cell = Some(cell)
+  self.root.append_child(table)
+  table.append_child(section)
+  section.append_child(row)
+  row.append_child(cell)
+  self.stack.push(table)
+  self.stack.push(section)
+  self.stack.push(row)
+  self.stack.push(cell)
+  self.parse_all()
+  normalize_tables(cell)
+  unwrap_fragment_context_element(row, cell)
+  unwrap_fragment_context_element(section, row)
+  unwrap_fragment_context_element(table, section)
+  unwrap_fragment_context_element(self.root, table)
+  self.stack.clear()
+  self.stack.push(self.root)
+  self.fragment_context_table_cell = None
+  self.fragment_context_table_row = None
+  self.fragment_context_table_section = None
+  self.fragment_context_table = None
+}
+
+///|
 fn Parser::parse_fragment_context(
   self : Parser,
   context : FragmentContext,
@@ -3690,6 +3783,10 @@ fn Parser::parse_fragment_context(
   }
   if name == "tr" {
     self.parse_table_row_fragment_context()
+    return true
+  }
+  if name == "td" || name == "th" {
+    self.parse_table_cell_fragment_context(name)
     return true
   }
   false
