@@ -329,6 +329,8 @@ JustHTML from Python to MoonBit.
 - Do not apply tree-builder text tweaks in tokenizer helpers. For example, the
   tokenizer preserves a leading newline in `<textarea>` text; the parser/tree
   builder is responsible for dropping it after the start tag has been inserted.
+  The dropped initial newline includes CR and CRLF after input-stream
+  normalization; `<title>` normalizes those newlines but does not drop them.
 - Tokenizer recovery states still need the same text post-processing as normal
   data states. Invalid tag-open text decodes character references and honors
   XML coercion, while empty raw/RCDATA/plaintext content should emit no
