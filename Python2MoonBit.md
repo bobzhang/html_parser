@@ -253,6 +253,13 @@ JustHTML from Python to MoonBit.
   report `unexpected-start-tag-ignored`. `<col>` is context-sensitive:
   document body mode ignores it outside tables, but fragment body mode keeps it
   as a void element.
+- A select-reprocessed table cell can hit Python's "empty stack" fallback when
+  a foreign-content ancestor has the name `td`/`th`. The reference's insertion
+  mode reset looks at names before namespaces, drains the open-element stack
+  while trying to close the non-HTML cell, and reprocesses the new `td`/`th` as
+  a child of the document `html` element after `body`. Model this as a narrow
+  parser recovery path; do not make ordinary table-internal starts outside a
+  table insert nodes.
 - Other select-mode starts report but stay inside the select: `<hr>` first
   closes the current `option`/`optgroup`, void-like starts such as `<br>` and
   `<img>` are inserted without pushing, and common containers such as `<div>`

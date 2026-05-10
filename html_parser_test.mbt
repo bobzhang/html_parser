@@ -4776,6 +4776,25 @@ test "document parser defers initial doctype errors after bogus markup" {
 }
 
 ///|
+test "tree builder matches reference empty-stack foreign select edge" {
+  let doc = @html_parser.parse(
+    "<!><svg><th><title><n><select><td>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <!--  -->\n| <html>\n|   <head>\n|   <body>\n|     <svg svg>\n|       <svg th>\n|         <svg title>\n|           <n>\n|             <select>\n|   <td>",
+  )
+  assert_eq(doc.errors.length(), 3)
+  assert_eq(doc.errors[0].code, "incorrectly-opened-comment")
+  assert_eq(doc.errors[1].code, "expected-doctype-but-got-start-tag")
+  assert_eq(doc.errors[2].code, "unexpected-start-tag-in-select")
+  guard doc.errors[0].column is Some(2) else {
+    fail("expected malformed declaration at bang")
+  }
+}
+
+///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(

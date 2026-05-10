@@ -30,6 +30,7 @@ priv struct Parser {
   mut deferred_initial_doctype_error : ParseError?
   mut duplicate_head_element : Node?
   mut repeated_document_html_shell : Bool
+  post_body_html_children : Array[Node]
 }
 
 ///|
@@ -71,6 +72,7 @@ fn Parser::new(
     deferred_initial_doctype_error: None,
     duplicate_head_element: None,
     repeated_document_html_shell: false,
+    post_body_html_children: [],
   }
 }
 
@@ -3447,6 +3449,47 @@ fn Parser::handle_select_special_start_tag(
 }
 
 ///|
+fn Parser::has_foreign_table_cell_on_stack(self : Parser) -> Bool {
+  for node in self.stack {
+    if node.kind == Element &&
+      (node.name == "td" || node.name == "th") &&
+      !(node.ns is Some("html")) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn Parser::clear_open_elements_to_root(self : Parser) -> Unit {
+  while self.stack.length() > 1 {
+    ignore(self.stack.pop())
+  }
+}
+
+///|
+fn Parser::handle_select_reprocessed_foreign_cell_start_tag(
+  self : Parser,
+  name : String,
+  attrs : Map[String, String?],
+  self_closing : Bool,
+) -> Bool {
+  if name != "td" && name != "th" {
+    return false
+  }
+  if self.has_open_element("table") || !self.has_foreign_table_cell_on_stack() {
+    return false
+  }
+  self.clear_open_elements_to_root()
+  let node = element(name, attrs~)
+  self.post_body_html_children.push(node)
+  if !self_closing {
+    self.stack.push(node)
+  }
+  true
+}
+
+///|
 fn select_start_tag_reprocesses_in_body(name : StringView) -> Bool {
   match name {
     "caption"
@@ -3789,6 +3832,11 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         select_start_tag_reprocesses_in_body(name) {
         self.error_at("unexpected-start-tag-in-select", start)
         ignore(self.close_open_element("select"))
+        if self.handle_select_reprocessed_foreign_cell_start_tag(
+            name, attrs, self_closing,
+          ) {
+          return
+        }
       }
       if self.handle_fragment_context_caption_start_tag(name, start) {
         return
@@ -5864,6 +5912,7 @@ pub fn parse(
   parser.flush_deferred_initial_doctype_error()
   parser.report_eof_tree_errors()
   scaffold_document(root)
+  append_post_body_html_children(root, parser.post_body_html_children)
   normalize_tables(root)
   populate_selectedcontent(root)
   let errors = if collect_errors || strict { parser.errors } else { [] }
@@ -6291,6 +6340,17 @@ fn scaffold_document(root : Node) -> Unit {
     }
   }
   root.append_child(html)
+}
+
+///|
+fn append_post_body_html_children(root : Node, children : Array[Node]) -> Unit {
+  if children.is_empty() {
+    return
+  }
+  match document_html_element(root) {
+    Some(html) => append_children_to(html, children)
+    None => append_children_to(root, children)
+  }
 }
 
 ///|
