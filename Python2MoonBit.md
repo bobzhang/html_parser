@@ -146,6 +146,11 @@ JustHTML from Python to MoonBit.
   `mi`/`mn`/`mo`/`ms`/`mtext` should keep text only, with MathML `mglyph` and
   `malignmark` as the exceptions. Do this before unwrapping allowed or
   disallowed HTML descendants, or an active child can turn into surviving text.
+- Active foreign-content tags remain unsafe even when a custom policy
+  allowlists them. Drop SVG/MathML mutation or integration tags such as
+  `animate`, `set`, `foreignObject`, and `annotation-xml` when the node is
+  effectively foreign. "Effectively foreign" includes non-HTML namespaces and
+  programmatic HTML-namespace descendants under an `svg` or `math` root.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside

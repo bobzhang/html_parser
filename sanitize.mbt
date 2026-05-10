@@ -247,6 +247,40 @@ fn sanitize_namespace_is_foreign(node : Node) -> Bool {
 }
 
 ///|
+fn node_is_effectively_foreign(node : Node) -> Bool {
+  let mut current = Some(node)
+  while current is Some(current_node) {
+    if sanitize_namespace_is_foreign(current_node) {
+      return true
+    }
+    match current_node.kind {
+      Element =>
+        match sanitize_node_name(current_node) {
+          "math" | "svg" => return true
+          _ => ()
+        }
+      _ => ()
+    }
+    current = current_node.parent
+  }
+  false
+}
+
+///|
+fn is_active_foreign_mutation_tag(name : String) -> Bool {
+  match name {
+    "animate" | "annotation-xml" | "foreignobject" | "set" => true
+    _ => false
+  }
+}
+
+///|
+fn sanitize_node_is_active_foreign_content(node : Node) -> Bool {
+  is_active_foreign_mutation_tag(sanitize_node_name(node)) &&
+  node_is_effectively_foreign(node)
+}
+
+///|
 fn attr_name_is_dangerous(name : StringView) -> Bool {
   let normalized = lower_ascii(name)
   normalized.has_prefix("on") ||
@@ -853,6 +887,9 @@ fn sanitize_container_children(
         let tag_name = sanitize_node_name(child)
         if policy.drop_foreign_namespaces &&
           sanitize_namespace_is_foreign(child) {
+          remove_child_at(parent, index)
+        } else if !policy.drop_foreign_namespaces &&
+          sanitize_node_is_active_foreign_content(child) {
           remove_child_at(parent, index)
         } else if policy.drop_content_tags.contains(tag_name) {
           remove_child_at(parent, index)

@@ -480,6 +480,49 @@ test "sanitize_dom preserves math marker exceptions in text integration points" 
 }
 
 ///|
+test "sanitize_dom drops active foreign mutation tags when allowlisted" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    [
+      "svg", "image", "set", "animate", "foreignobject", "script", "math", "annotation-xml",
+    ],
+    allowed_attributes={
+      "image": ["id", "href", "width", "height"],
+      "set": ["href", "attributeName", "to", "begin"],
+      "animate": ["href", "attributeName", "values", "dur"],
+      "annotation-xml": ["encoding"],
+    },
+    drop_foreign_namespaces=false,
+    drop_content_tags=[],
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<svg><image id='img' href='#ok' width='10' height='10'></image><set href='#img' attributeName='href' to='https://evil.example/pwn' begin='0s'></set><animate href='#img' attributeName='href' values='https://evil.example/pwn;#ok' dur='1s'></animate><foreignObject><script>bad</script></foreignObject></svg><math><annotation-xml encoding='text/html'><script>bad</script></annotation-xml></math>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<svg><image id=\"img\" href=\"#ok\" width=\"10\" height=\"10\"></image></svg><math></math>",
+  )
+}
+
+///|
+test "sanitize_dom treats html namespace svg roots as foreign for active tags" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["svg", "rect", "set"],
+    allowed_attributes={ "rect": ["width"], "set": ["begin"] },
+    drop_foreign_namespaces=false,
+    drop_content_tags=[],
+  )
+  let svg = @html_parser.element("svg", ns="html", children=[
+    @html_parser.element("set", ns="html", attrs={ "begin": Some("0s") }),
+    @html_parser.element("rect", ns="html", attrs={ "width": Some("10") }),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(svg, policy~).to_html(pretty=false),
+    "<svg><rect width=\"10\"></rect></svg>",
+  )
+}
+
+///|
 test "sanitize_dom handles standalone nodes and url edge cases" {
   let allowed = @html_parser.element(
     "p",
