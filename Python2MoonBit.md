@@ -565,7 +565,9 @@ JustHTML from Python to MoonBit.
 - DOM mutation must keep parent links and child arrays in sync. Only document,
   fragment, and element nodes accept children; adopting an existing child should
   detach it from its old parent, and removing a child must clear the child's
-  parent link.
+  parent link. If a programmatically-created node has a stale parent pointer
+  that does not actually contain it, adoption should still replace that pointer;
+  do not rely on the old parent's child list as the only source of truth.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

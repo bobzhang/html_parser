@@ -38,6 +38,20 @@ test "dom insert_child_before moves appends and rejects cycles" {
 }
 
 ///|
+test "append_child clears stale parent links" {
+  let parent = element("div")
+  let child = element("span")
+  child.parent = Some(comment("stale"))
+  parent.append_child(child)
+  assert_eq(parent.children.length(), 1)
+  assert_true(physical_equal(parent.children[0], child))
+  guard child.parent is Some(actual_parent) else {
+    fail("expected adopted child parent")
+  }
+  assert_true(physical_equal(actual_parent, parent))
+}
+
+///|
 test "query deduplicates shared nodes and ignores traversal cycles" {
   let shared_root = element("div")
   let shared = element("span", attrs={ "class": Some("target") })
