@@ -14,6 +14,7 @@ priv struct Parser {
   mut after_frameset_ignored_depth : Int
   mut document_after_body : Bool
   mut select_insertion_mode : Bool
+  mut foreign_table_row_recovery_mode : Bool
   foster_parented_start_error_nodes : Array[Node]
   mut fragment_context_table : Node?
   mut fragment_context_table_section : Node?
@@ -57,6 +58,7 @@ fn Parser::new(
     after_frameset_ignored_depth: 0,
     document_after_body: false,
     select_insertion_mode: false,
+    foreign_table_row_recovery_mode: false,
     foster_parented_start_error_nodes: [],
     fragment_context_table: None,
     fragment_context_table_section: None,
@@ -192,6 +194,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if self.handle_column_group_text(cleaned, start) {
     return
   }
+  self.report_foreign_table_row_recovery_text(cleaned, start)
   if self.foster_parent_table_text(cleaned, start) {
     return
   }
@@ -3501,6 +3504,16 @@ fn Parser::has_foreign_table_cell_on_stack(self : Parser) -> Bool {
 }
 
 ///|
+fn Parser::has_foreign_table_row_on_stack(self : Parser) -> Bool {
+  for node in self.stack {
+    if node.kind == Element && node.name == "tr" && !(node.ns is Some("html")) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn Parser::clear_open_elements_to_root(self : Parser) -> Unit {
   while self.stack.length() > 1 {
     ignore(self.stack.pop())
@@ -3527,6 +3540,50 @@ fn Parser::handle_select_reprocessed_foreign_cell_start_tag(
     self.stack.push(node)
   }
   true
+}
+
+///|
+fn Parser::handle_foreign_table_row_recovery_start_tag(
+  self : Parser,
+  name : String,
+  attrs : Map[String, String?],
+  self_closing : Bool,
+) -> Bool {
+  if name != "tr" {
+    return false
+  }
+  if self.has_open_element("table") || !self.has_foreign_table_row_on_stack() {
+    return false
+  }
+  self.clear_open_elements_to_root()
+  let node = element("tr", attrs~)
+  self.post_body_html_children.push(node)
+  self.foreign_table_row_recovery_mode = !self_closing
+  if !self_closing {
+    self.stack.push(node)
+  }
+  true
+}
+
+///|
+fn Parser::report_foreign_table_row_recovery_text(
+  self : Parser,
+  value : StringView,
+  start : Int,
+) -> Unit {
+  if !self.foreign_table_row_recovery_mode ||
+    !text_has_non_ascii_whitespace(value) {
+    return
+  }
+  let current = self.current_node()
+  if current.kind != Element || current.name != "tr" {
+    return
+  }
+  let whitespace = leading_ascii_whitespace(value)
+  self.error_at(
+    "unexpected-character-implies-table-voodoo",
+    start + whitespace.length(),
+  )
 }
 
 ///|
@@ -3878,6 +3935,11 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
           ) {
           return
         }
+      }
+      if self.handle_foreign_table_row_recovery_start_tag(
+          name, attrs, self_closing,
+        ) {
+        return
       }
       if self.handle_fragment_context_caption_start_tag(name, start) {
         return

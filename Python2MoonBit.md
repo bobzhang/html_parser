@@ -265,6 +265,12 @@ JustHTML from Python to MoonBit.
   as select-mode content. Once an HTML `<select>` has entered select mode,
   though, Python's reset logic can keep that mode alive through remaining
   foreign elements named `select`, even after the HTML select is closed.
+- Foreign-content breakouts can also reset Python into table modes by name
+  before namespace. A foreign SVG `<tr>` can put the reference into row mode;
+  a later HTML `<tr>` drains the stack to the document shell and gets appended
+  after `body`, with following non-whitespace text reporting
+  `unexpected-character-implies-table-voodoo` rather than the ordinary
+  `foster-parenting-character`.
 - Other select-mode starts report but stay inside the select: `<hr>` first
   closes the current `option`/`optgroup`, void-like starts such as `<br>` and
   `<img>` are inserted without pushing, and common containers such as `<div>`
