@@ -193,6 +193,16 @@ test "builder exposes DOM helper invariants" {
 }
 
 ///|
+test "text nodes expose no children" {
+  let value = @html_parser.text("hello")
+  assert_eq(value.children().length(), 0)
+  assert_eq(value.has_child_nodes(), false)
+  value.append_child(@html_parser.text("ignored"))
+  assert_eq(value.children().length(), 0)
+  assert_eq(value.text(), "hello")
+}
+
+///|
 test "sanitize_dom default policy drops unsafe document content" {
   let doc = @html_parser.parse(
     "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",
