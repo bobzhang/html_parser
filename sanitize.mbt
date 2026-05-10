@@ -411,6 +411,23 @@ fn sanitize_url_attribute_value(
 }
 
 ///|
+fn is_unsupported_url_like_attr(name : String) -> Bool {
+  match name {
+    "srcset"
+    | "imagesrcset"
+    | "poster"
+    | "action"
+    | "formaction"
+    | "data"
+    | "cite"
+    | "background"
+    | "ping"
+    | "attributionsrc" => true
+    _ => false
+  }
+}
+
+///|
 fn is_foreign_url_function_like_attr(name : String) -> Bool {
   match name {
     "clip-path"
@@ -646,6 +663,8 @@ fn sanitize_attribute_value(
     is_foreign_url_function_like_attr(attr_name) &&
     css_value_may_load_external_resource(value) {
     None
+  } else if is_unsupported_url_like_attr(attr_name) {
+    None
   } else if attr_name == "style" {
     sanitize_inline_style_value(policy, value)
   } else {
@@ -747,7 +766,8 @@ fn sanitize_element_attributes(
         }
         Some(None) if attr_name == "href" ||
           attr_name == "src" ||
-          attr_name == "style" => node.attrs.remove(key)
+          attr_name == "style" ||
+          is_unsupported_url_like_attr(attr_name) => node.attrs.remove(key)
         Some(value) =>
           if attr_name != key {
             node.attrs.remove(key)

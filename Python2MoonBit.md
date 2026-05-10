@@ -163,6 +163,11 @@ JustHTML from Python to MoonBit.
 - `<base href>` is not an ordinary link URL. Drop it even when allowlisted,
   because preserving it can alter how later relative URLs resolve after
   sanitization.
+- Until the port has Python's full `UrlPolicy`, treat URL-bearing attributes
+  without dedicated sanitizer support as unsafe when allowlisted. This includes
+  `srcset`, `imagesrcset`, `poster`, `action`, `formaction`, `data`, `cite`,
+  `background`, `ping`, and `attributionsrc`; do not confuse object `data` with
+  safe custom `data-*` attributes.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside
