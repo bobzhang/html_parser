@@ -1286,6 +1286,10 @@ JustHTML from Python to MoonBit.
   but tag parser-produced errors like Python does: lexical/tag/entity/input
   stream diagnostics are `"tokenizer"`, structural insertion-mode diagnostics
   are `"treebuilder"`, and sanitizer findings stay `"security"`.
+- Python's `ParseError` has `__str__`, `repr`, and `as_exception()` helpers.
+  MoonBit's value type currently exposes fields and derives equality/debug, so
+  port those tests as field and equality assertions instead of formatting
+  checks.
 - Snapshot-style `inspect` tests are useful for complex tree output, but stable
   assertion tests are better for focused behavior.
 - When porting recursive output helpers, match the reference traversal state,
