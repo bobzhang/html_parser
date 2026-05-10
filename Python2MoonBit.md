@@ -15,7 +15,10 @@ JustHTML from Python to MoonBit.
 - When a parser consumes a `Char`, advance by `ch.utf16_len()`, not by `1`.
 - For numeric HTML entities, use `Int::to_char()` and handle `None` for
   invalid Unicode scalar values. Do not use unchecked conversion unless the
-  value has already been validated.
+  value has already been validated. Match the Python reference error order:
+  C0/C1 numeric references report `control-character-reference` before any
+  replacement mapping, invalid scalars and surrogates decode to U+FFFD without
+  extra errors, and digitless forms such as `&#x;` stay literal.
 - HTML input-stream preprocessing is not the same as generic string handling:
   strip a leading U+FEFF BOM and normalize CR/CRLF to LF before exposing text,
   comment, or attribute values.

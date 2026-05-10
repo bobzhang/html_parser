@@ -6354,6 +6354,57 @@ test "entity decoding reports upstream fixture errors" {
 }
 
 ///|
+test "numeric entity decoding covers replacement and no digit edges" {
+  let zero = @html_parser.tokenize("&#0;", collect_errors=true)
+  guard zero.tokens[0] is @html_parser.HtmlToken::Characters("\u{FFFD}") else {
+    fail("expected null numeric reference replacement")
+  }
+  assert_eq(zero.errors.length(), 1)
+  assert_eq(zero.errors[0].code, "control-character-reference")
+  guard zero.errors[0].column is Some(4) else {
+    fail("expected null control reference at column 4")
+  }
+  let c1 = @html_parser.tokenize("&#x82;", collect_errors=true)
+  guard c1.tokens[0] is @html_parser.HtmlToken::Characters("\u{201A}") else {
+    fail("expected C1 numeric replacement")
+  }
+  assert_eq(c1.errors.length(), 1)
+  assert_eq(c1.errors[0].code, "control-character-reference")
+  guard c1.errors[0].column is Some(6) else {
+    fail("expected C1 control reference at column 6")
+  }
+  let lowercase_hex = @html_parser.tokenize("&#xa;", collect_errors=true)
+  guard lowercase_hex.tokens[0] is @html_parser.HtmlToken::Characters("\n") else {
+    fail("expected lowercase hex numeric reference")
+  }
+  assert_eq(lowercase_hex.errors.length(), 1)
+  assert_eq(lowercase_hex.errors[0].code, "control-character-reference")
+  guard lowercase_hex.errors[0].column is Some(5) else {
+    fail("expected lowercase hex control reference at column 5")
+  }
+  let upper_x = @html_parser.tokenize("&#X66;", collect_errors=true)
+  guard upper_x.tokens[0] is @html_parser.HtmlToken::Characters("f") else {
+    fail("expected uppercase X hex marker")
+  }
+  assert_eq(upper_x.errors.length(), 0)
+  let invalid_scalars = @html_parser.tokenize(
+    "&#x110000; &#xD800;",
+    collect_errors=true,
+  )
+  guard invalid_scalars.tokens[0]
+    is @html_parser.HtmlToken::Characters("\u{FFFD} \u{FFFD}") else {
+    fail("expected invalid numeric scalars to replace")
+  }
+  assert_eq(invalid_scalars.errors.length(), 0)
+  let no_digits = @html_parser.tokenize("&#x; &#; &#xg;", collect_errors=true)
+  guard no_digits.tokens[0]
+    is @html_parser.HtmlToken::Characters("&#x; &#; &#xg;") else {
+    fail("expected digitless numeric references to remain literal")
+  }
+  assert_eq(no_digits.errors.length(), 0)
+}
+
+///|
 test "attribute entity decoding reports upstream fixture errors" {
   let quoted = @html_parser.tokenize(
     "<div a='&#x80 &notit;'>",
