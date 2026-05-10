@@ -7512,6 +7512,28 @@ test "tree builder matches Python reference annotation-xml breakout branch fixtu
 }
 
 ///|
+test "tree builder matches Python reference SVG font breakout branch fixture" {
+  let doc = @html_parser.parse(
+    "<svg><font color=\"red\">text</font></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <svg svg>\n|     <font>\n|       color=\"red\"\n|       \"text\"",
+  )
+  assert_eq(doc.errors.length(), 3)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(doc.errors[1].code, "unexpected-html-element-in-foreign-content")
+  assert_eq(doc.errors[2].code, "unexpected-end-tag")
+  guard doc.errors[1].column is Some(23) else {
+    fail("expected SVG font breakout error at font start close")
+  }
+  guard doc.errors[2].column is Some(40) else {
+    fail("expected SVG end-tag recovery at svg end close")
+  }
+}
+
+///|
 test "parser adjusts SVG edge names and foreign attributes" {
   let svg = @html_parser.parse_fragment(
     "<svg><altglyph attributetype='xml' xlink:actuate='onLoad'></altglyph><femerge><femergenode></femergenode></femerge><radialgradient gradienttransform='r'></radialgradient></svg>",
