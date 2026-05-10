@@ -364,6 +364,12 @@ JustHTML from Python to MoonBit.
   and cells are ignored with `unexpected-start-tag`; otherwise they would be
   incorrectly inserted because the MoonBit synthetic row group is more concrete
   than Python's mode-only fragment context.
+- A `tr` fragment context adds one more synthetic wrapper level. Direct cells
+  are returned as fragment children, while top-level row/table structural starts
+  are ignored with `unexpected-start-tag-implies-end-tag`. Non-table starts in
+  that row context still use table foster-parenting error rules, but because the
+  synthetic row is unwrapped they serialize where the row's children would have
+  been.
 
 ## Optional Values and Defaults
 

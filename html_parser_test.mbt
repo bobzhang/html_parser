@@ -1427,6 +1427,47 @@ test "fragment context seeds table section insertion mode" {
 }
 
 ///|
+test "fragment context seeds table row insertion mode" {
+  let cells = @html_parser.parse_fragment(
+    "<td>x</td><td>y</td>",
+    context=@html_parser.FragmentContext::new("tr"),
+    collect_errors=true,
+  )
+  assert_eq(cells.to_html(pretty=false), "<td>x</td><td>y</td>")
+  assert_eq(cells.errors.length(), 0)
+  let ignored_row = @html_parser.parse_fragment(
+    "<tr><td>x</td></tr>",
+    context=@html_parser.FragmentContext::new("tr"),
+    collect_errors=true,
+  )
+  assert_eq(ignored_row.to_html(pretty=false), "<td>x</td>")
+  assert_eq(ignored_row.errors.length(), 2)
+  assert_eq(ignored_row.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(ignored_row.errors[1].code, "unexpected-end-tag")
+  let fostered_start = @html_parser.parse_fragment(
+    "<div>x</div>",
+    context=@html_parser.FragmentContext::new("tr"),
+    collect_errors=true,
+  )
+  assert_eq(fostered_start.to_html(pretty=false), "<div>x</div>")
+  assert_eq(fostered_start.errors.length(), 1)
+  assert_eq(fostered_start.errors[0].code, "foster-parenting-character")
+  let ignored_caption = @html_parser.parse_fragment(
+    "<caption>x</caption>",
+    context=@html_parser.FragmentContext::new("tr"),
+    collect_errors=true,
+  )
+  assert_eq(ignored_caption.to_html(pretty=false), "x")
+  assert_eq(ignored_caption.errors.length(), 3)
+  assert_eq(
+    ignored_caption.errors[0].code,
+    "unexpected-start-tag-implies-end-tag",
+  )
+  assert_eq(ignored_caption.errors[1].code, "foster-parenting-character")
+  assert_eq(ignored_caption.errors[2].code, "unexpected-end-tag")
+}
+
+///|
 test "query supports tag class id and tag class selectors" {
   let doc = @html_parser.parse_fragment(
     "<div><p id='first' class='intro lead first'>One</p><p>Two</p></div>",

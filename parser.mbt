@@ -13,6 +13,7 @@ priv struct Parser {
   foster_parented_start_error_nodes : Array[Node]
   mut fragment_context_table : Node?
   mut fragment_context_table_section : Node?
+  mut fragment_context_table_row : Node?
 }
 
 ///|
@@ -36,6 +37,7 @@ fn Parser::new(
     foster_parented_start_error_nodes: [],
     fragment_context_table: None,
     fragment_context_table_section: None,
+    fragment_context_table_row: None,
   }
 }
 
@@ -873,6 +875,43 @@ fn Parser::handle_fragment_context_table_section_start_tag(
 }
 
 ///|
+fn fragment_context_table_row_ignores_start(name : StringView) -> Bool {
+  match name {
+    "caption"
+    | "col"
+    | "colgroup"
+    | "table"
+    | "tbody"
+    | "tfoot"
+    | "thead"
+    | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::handle_fragment_context_table_row_start_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if !fragment_context_table_row_ignores_start(name) {
+    return false
+  }
+  match self.fragment_context_table_row {
+    Some(row) => {
+      let current = self.current_node()
+      if physical_equal(current, row) {
+        self.error_at("unexpected-start-tag-implies-end-tag", start)
+        return true
+      }
+      false
+    }
+    None => false
+  }
+}
+
+///|
 fn Parser::handle_fragment_context_table_end_tag(
   self : Parser,
   name : String,
@@ -887,6 +926,33 @@ fn Parser::handle_fragment_context_table_end_tag(
   }
   self.error_at("unexpected-end-tag", start)
   true
+}
+
+///|
+fn Parser::handle_fragment_context_table_wrapper_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if name == "tr" {
+    match self.fragment_context_table_row {
+      Some(row) if self.last_stack_index_of_node(row) >= 0 => {
+        self.error_at("unexpected-end-tag", start)
+        return true
+      }
+      _ => ()
+    }
+  }
+  if is_table_section_name(name) {
+    match self.fragment_context_table_section {
+      Some(section) if self.last_stack_index_of_node(section) >= 0 => {
+        self.error_at("unexpected-end-tag", start)
+        return true
+      }
+      _ => ()
+    }
+  }
+  false
 }
 
 ///|
@@ -1477,6 +1543,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   if self.handle_document_frameset_end_tag(name, start) {
+    return
+  }
+  if self.handle_fragment_context_table_wrapper_end_tag(name, start) {
     return
   }
   if self.handle_foster_parented_end_tag(name, start) {
@@ -2487,6 +2556,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.handle_table_context_hidden_input_or_form_start(
           name, attrs, start,
         ) {
+        return
+      }
+      if self.handle_fragment_context_table_row_start_tag(name, start) {
         return
       }
       if self.handle_fragment_context_table_section_start_tag(name, start) {
@@ -3544,6 +3616,32 @@ fn Parser::parse_table_section_fragment_context(
 }
 
 ///|
+fn Parser::parse_table_row_fragment_context(self : Parser) -> Unit {
+  let table = element("table")
+  let section = element("tbody")
+  let row = element("tr")
+  self.fragment_context_table = Some(table)
+  self.fragment_context_table_section = Some(section)
+  self.fragment_context_table_row = Some(row)
+  self.root.append_child(table)
+  table.append_child(section)
+  section.append_child(row)
+  self.stack.push(table)
+  self.stack.push(section)
+  self.stack.push(row)
+  self.parse_all()
+  normalize_tables(row)
+  unwrap_fragment_context_element(section, row)
+  unwrap_fragment_context_element(table, section)
+  unwrap_fragment_context_element(self.root, table)
+  self.stack.clear()
+  self.stack.push(self.root)
+  self.fragment_context_table_row = None
+  self.fragment_context_table_section = None
+  self.fragment_context_table = None
+}
+
+///|
 fn Parser::parse_fragment_context(
   self : Parser,
   context : FragmentContext,
@@ -3588,6 +3686,10 @@ fn Parser::parse_fragment_context(
   }
   if is_fragment_table_section_context(name) {
     self.parse_table_section_fragment_context(name)
+    return true
+  }
+  if name == "tr" {
+    self.parse_table_row_fragment_context()
     return true
   }
   false
