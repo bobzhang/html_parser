@@ -21,6 +21,7 @@ priv struct Parser {
   mut fragment_context_colgroup : Bool
   mut fragment_context_html : Bool
   mut fragment_context_html_root : Node?
+  mut fragment_context_html_after_body : Bool
   mut fragment_context_foreign : Node?
   mut template_column_group_mode : Bool
   mut template_table_context_mode : Bool
@@ -59,6 +60,7 @@ fn Parser::new(
     fragment_context_colgroup: false,
     fragment_context_html: false,
     fragment_context_html_root: None,
+    fragment_context_html_after_body: false,
     fragment_context_foreign: None,
     template_column_group_mode: false,
     template_table_context_mode: false,
@@ -2317,7 +2319,12 @@ fn Parser::fragment_end_tag_is_ignored(
     return false
   }
   match name {
-    "html" => true
+    "html" => {
+      if self.fragment_context_html {
+        self.fragment_context_html_after_body = true
+      }
+      true
+    }
     "body" => !self.has_open_element("select")
     _ => false
   }
@@ -2917,7 +2924,14 @@ fn Parser::handle_html_fragment_shell_start_tag(
         true
       }
     "body" =>
-      if self.current_node_allows_html_fragment_body() {
+      if self.fragment_context_html_after_body {
+        self.fragment_context_html_after_body = false
+        self.error_at("unexpected-token-after-body", start)
+        self.error_at("unexpected-start-tag", start)
+        self.frameset_ok = false
+        self.insert_html_fragment_body_marker(attrs)
+        true
+      } else if self.current_node_allows_html_fragment_body() {
         false
       } else {
         self.error_at("unexpected-start-tag", start)
@@ -4942,6 +4956,7 @@ fn Parser::parse_html_fragment_context(self : Parser) -> Unit {
   let html = element("html")
   self.fragment_context_html = true
   self.fragment_context_html_root = Some(html)
+  self.fragment_context_html_after_body = false
   self.frameset_ok = true
   self.root.append_child(html)
   self.stack.push(html)
@@ -4949,6 +4964,7 @@ fn Parser::parse_html_fragment_context(self : Parser) -> Unit {
   scaffold_existing_html_element(html)
   unwrap_fragment_context_element(self.root, html)
   self.fragment_context_html_root = None
+  self.fragment_context_html_after_body = false
   self.fragment_context_html = false
 }
 

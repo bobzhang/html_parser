@@ -2236,6 +2236,42 @@ test "fragment context seeds html insertion mode" {
     "<head><title>T</title></head><body><p>x</p></body>",
   )
   assert_eq(explicit_html.errors.length(), 0)
+  let comment_before_body = @html_parser.parse_fragment(
+    "<!--c-->\n<body id=b>x",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    comment_before_body.to_html(pretty=false),
+    "<!--c--><head></head><body id=\"b\">x</body>",
+  )
+  assert_eq(comment_before_body.errors.length(), 0)
+  let text_before_body = @html_parser.parse_fragment(
+    "x<body id=b>y",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    text_before_body.to_html(pretty=false),
+    "<head></head><body id=\"b\">xy</body>",
+  )
+  assert_eq(text_before_body.errors.length(), 1)
+  assert_eq(text_before_body.errors[0].code, "unexpected-start-tag")
+  let nested_html_before_body = @html_parser.parse_fragment(
+    "<html><title>T</title></html><body id=b>x",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_html_before_body.to_html(pretty=false),
+    "<head><title>T</title></head><body id=\"b\">x</body>",
+  )
+  assert_eq(nested_html_before_body.errors.length(), 2)
+  assert_eq(
+    nested_html_before_body.errors[0].code,
+    "unexpected-token-after-body",
+  )
+  assert_eq(nested_html_before_body.errors[1].code, "unexpected-start-tag")
   let table = @html_parser.parse_fragment(
     "<table><tr><td>x</td></tr></table>",
     context=@html_parser.FragmentContext::new("html"),
