@@ -42,7 +42,8 @@ JustHTML from Python to MoonBit.
   before charset extraction.
 - Legacy single-byte encodings are not UTF-8 variants. Port them as explicit
   byte-to-code-point tables, and test non-ASCII bytes so label normalization
-  and decoding are both covered.
+  and decoding are both covered. Include both remapped bytes and high bytes
+  that map to the same Unicode code point; legacy tables often mix the two.
 - Invalid transport encoding labels should not become the reported encoding.
   Treat them like a missing transport label and continue with BOM/meta/default
   sniffing.

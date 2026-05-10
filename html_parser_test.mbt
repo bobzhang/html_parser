@@ -5894,6 +5894,15 @@ test "parse_bytes decodes iso8859-2 labels" {
   guard doc.encoding is Some("iso-8859-2") else {
     fail("expected explicit iso-8859-2 encoding")
   }
+  let mixed = b"<p>\xa0\xa2\xb2\xc7\xe7</p>"
+  let mixed_doc = @html_parser.parse_bytes(mixed, encoding="latin-2")
+  assert_eq(
+    mixed_doc.to_text(separator="", strip=false),
+    "\u{00A0}\u{02D8}\u{02DB}\u{00C7}\u{00E7}",
+  )
+  guard mixed_doc.encoding is Some("iso-8859-2") else {
+    fail("expected latin-2 label to normalize to iso-8859-2")
+  }
   let meta = b"<meta charset=latin2><p>\xc6\xe6</p>"
   let meta_doc = @html_parser.parse_bytes(meta)
   assert_eq(meta_doc.to_text(separator="", strip=false), "\u{0106}\u{0107}")
