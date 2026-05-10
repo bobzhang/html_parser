@@ -1282,6 +1282,10 @@ JustHTML from Python to MoonBit.
   token's current cursor, so line/column tests need to include newlines inside
   tag whitespace and quoted attributes. Normalize CR and CRLF before computing
   those positions.
+- Keep `ParseError::new`'s direct-construction category default as `"parse"`,
+  but tag parser-produced errors like Python does: lexical/tag/entity/input
+  stream diagnostics are `"tokenizer"`, structural insertion-mode diagnostics
+  are `"treebuilder"`, and sanitizer findings stay `"security"`.
 - Snapshot-style `inspect` tests are useful for complex tree output, but stable
   assertion tests are better for focused behavior.
 - When porting recursive output helpers, match the reference traversal state,

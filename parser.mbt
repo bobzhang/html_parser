@@ -1691,7 +1691,7 @@ fn Parser::error_at(self : Parser, code : String, pos : Int) -> Unit {
 ///|
 fn Parser::make_error_at(self : Parser, code : String, pos : Int) -> ParseError {
   let (line, column) = line_col_at(self.input, pos)
-  ParseError::new(code, line~, column~)
+  ParseError::new(code, line~, column~, category=parser_error_category(code))
 }
 
 ///|
@@ -1927,7 +1927,12 @@ fn Parser::error_at_eof(self : Parser, code : String) -> Unit {
 ///|
 fn Parser::make_error_at_eof(self : Parser, code : String) -> ParseError {
   if self.input.is_empty() {
-    ParseError::new(code, line=1, column=0)
+    ParseError::new(
+      code,
+      line=1,
+      column=0,
+      category=parser_error_category(code),
+    )
   } else {
     self.make_error_at(code, self.eof_error_pos())
   }

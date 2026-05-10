@@ -125,7 +125,9 @@ fn SourceTokenizer::error_at(
 ) -> Unit {
   if self.collect_errors {
     let (line, column) = line_col_at(self.input, pos)
-    self.errors.push(ParseError::new(code, line~, column~))
+    self.errors.push(
+      ParseError::new(code, line~, column~, category="tokenizer"),
+    )
   }
 }
 
@@ -133,7 +135,9 @@ fn SourceTokenizer::error_at(
 fn SourceTokenizer::error_at_eof(self : SourceTokenizer, code : String) -> Unit {
   if self.collect_errors {
     if self.input.is_empty() {
-      self.errors.push(ParseError::new(code, line=1, column=0))
+      self.errors.push(
+        ParseError::new(code, line=1, column=0, category="tokenizer"),
+      )
     } else {
       self.error_at(code, eof_error_pos(self.input))
     }
