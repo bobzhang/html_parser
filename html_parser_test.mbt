@@ -8578,6 +8578,28 @@ test "tree builder matches Python reference select formatting end branch fixture
 }
 
 ///|
+test "tree builder matches Python reference select plaintext branch fixture" {
+  let doc = @html_parser.parse(
+    "<select><plaintext></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       <plaintext>\n|         \"</select>\"",
+  )
+  assert_eq(doc.errors.length(), 3)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(doc.errors[1].code, "unexpected-start-tag-in-select")
+  assert_eq(doc.errors[2].code, "expected-closing-tag-but-got-eof")
+  guard doc.errors[1].column is Some(19) else {
+    fail("expected plaintext start error at start tag close")
+  }
+  guard doc.errors[2].column is Some(28) else {
+    fail("expected plaintext EOF recovery at EOF column")
+  }
+}
+
+///|
 test "parser populates selectedcontent from selected option" {
   let no_options = @html_parser.parse_fragment(
     "<select><selectedcontent></selectedcontent></select>",
