@@ -665,6 +665,8 @@ JustHTML from Python to MoonBit.
   Sanitizer code must also recurse through the chosen template-content
   representation so allowlisted template contents are preserved, and so a
   disallowed template unwraps to its sanitized content instead of dropping it.
+  With a direct-child representation, clone template descendants through the
+  normal child traversal; there is no separate `template_content` clone step.
 - Template table recovery stays active after a template caption/column group is
   closed. Structural starts such as `tbody` and direct `td`/`th` are reprocessed
   into table context, while `script`, `style`, and nested `template` starts are
