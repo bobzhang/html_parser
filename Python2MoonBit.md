@@ -331,6 +331,9 @@ JustHTML from Python to MoonBit.
   caption, colgroup, col, or table at the right level. Cell mode adds one more
   layer: starts for another cell or a table structural element first close the
   current `td`/`th`, then the same row/row-group reprocessing rules apply.
+  Column-group text is another special case: report
+  `unexpected-characters-in-column-group`; non-whitespace is then reprocessed as
+  table text and foster-parented, while whitespace stays in the colgroup.
 
 ## Optional Values and Defaults
 

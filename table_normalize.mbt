@@ -83,6 +83,12 @@ fn normalize_table(table : Node) -> Unit {
       colgroup.append_child(child)
       current_body = None
       current_row = None
+    } else if child.kind == Text &&
+      current_colgroup is Some(colgroup) &&
+      !text_has_non_ascii_whitespace(child.data) {
+      colgroup.append_child(child)
+      current_body = None
+      current_row = None
     } else if child.kind == Element && child.name == "tr" {
       let (body, next_body) = table_implicit_body(table, current_body)
       current_body = next_body

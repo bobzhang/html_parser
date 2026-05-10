@@ -108,6 +108,9 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if !self.is_fragment_parser() && text_has_non_ascii_whitespace(cleaned) {
     self.frameset_ok = false
   }
+  if self.handle_column_group_text(cleaned, start) {
+    return
+  }
   if self.foster_parent_table_text(cleaned, start) {
     return
   }
@@ -536,6 +539,53 @@ fn Parser::handle_foster_parented_end_tag(
   }
   self.pop_until(name, start)
   true
+}
+
+///|
+fn Parser::current_table_last_child_is_col(self : Parser) -> Bool {
+  let current = self.current_node()
+  if current.kind != Element || current.name != "table" {
+    return false
+  }
+  match current.children.last() {
+    Some(child) => child.kind == Element && child.name == "col"
+    None => false
+  }
+}
+
+///|
+fn Parser::handle_column_group_text(
+  self : Parser,
+  cleaned : StringView,
+  start : Int,
+) -> Bool {
+  let has_non_whitespace = text_has_non_ascii_whitespace(cleaned)
+  let current = self.current_node()
+  if current.kind == Element && current.name == "colgroup" {
+    self.error_at("unexpected-characters-in-column-group", start)
+    if has_non_whitespace {
+      ignore(self.pop_current_element_if_name("colgroup"))
+      if self.foster_parent_table_text(cleaned, start) {
+        return true
+      }
+      self
+      .current_node()
+      .append_child(text(decode_entities(cleaned, in_attribute=false)))
+    } else {
+      current.append_child(text(decode_entities(cleaned, in_attribute=false)))
+      ignore(self.pop_current_element_if_name("colgroup"))
+    }
+    return true
+  }
+  if self.current_table_last_child_is_col() {
+    self.error_at("unexpected-characters-in-column-group", start)
+    if has_non_whitespace {
+      if self.foster_parent_table_text(cleaned, start) {
+        return true
+      }
+    }
+  }
+  false
 }
 
 ///|
