@@ -147,7 +147,9 @@ JustHTML from Python to MoonBit.
 - Some start tags have their own scope rules even when they look like ordinary
   elements. A repeated `<button>` searches default scope, reports
   `unexpected-start-tag-implies-end-tag`, closes the previous button, and then
-  inserts the new one instead of nesting buttons.
+  inserts the new one instead of nesting buttons. Table cells terminate default
+  scope, so a `<button>` outside a table cell is not closed by another button
+  started inside a later `<td>` or `<th>`.
 - `<form>` is tracked as parser state, not just as whatever is on top of the
   open-element stack. A second `<form>` start reports `unexpected-start-tag`
   and is ignored without closing an open paragraph, while `</form>` clears the
