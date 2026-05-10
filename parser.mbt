@@ -2318,7 +2318,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.fragment_end_tag_is_ignored(name) {
     return
   }
-  if self.handle_select_end_tag(name, start) {
+  if self.handle_select_end_tag(name, tag_close_pos) {
     return
   }
   if name == "ruby" {
@@ -3325,14 +3325,14 @@ fn Parser::close_open_select_item(self : Parser, name : String) -> Unit {
 fn Parser::handle_select_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  tag_close_pos : Int,
 ) -> Bool {
   match name {
     "optgroup" =>
       if self.in_select_insertion_mode() {
         ignore(self.pop_current_element_if_name("option"))
         if !self.pop_current_element_if_name("optgroup") {
-          self.error_at("unexpected-end-tag-in-select", start)
+          self.error_at("unexpected-end-tag-in-select", tag_close_pos)
         }
         true
       } else {
@@ -3341,7 +3341,7 @@ fn Parser::handle_select_end_tag(
     "option" =>
       if self.in_select_insertion_mode() {
         if !self.pop_current_element_if_name("option") {
-          self.error_at("unexpected-end-tag-in-select", start)
+          self.error_at("unexpected-end-tag-in-select", tag_close_pos)
         }
         true
       } else {
@@ -3357,13 +3357,13 @@ fn Parser::handle_select_end_tag(
       }
     _ if select_common_element_start_reports_in_select(name) &&
       self.in_select_insertion_mode() => {
-      self.error_at("unexpected-end-tag-in-select", start)
+      self.error_at("unexpected-end-tag-in-select", tag_close_pos)
       self.close_open_select_common_element(name)
       true
     }
     "menuitem" =>
       if self.in_select_insertion_mode() {
-        self.error_at("unexpected-end-tag", start)
+        self.error_at("unexpected-end-tag", tag_close_pos)
         true
       } else {
         false
