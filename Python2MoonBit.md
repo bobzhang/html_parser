@@ -272,7 +272,9 @@ JustHTML from Python to MoonBit.
   resource-loading constructs such as `@import`, `url(`, or `image-set(`.
   Make sanitizer decisions on normalized tag names while leaving the node's
   stored spelling alone; a programmatic `StYlE` node should still be cleared for
-  unsafe CSS and serialize back as `StYlE`.
+  unsafe CSS and serialize back as `StYlE`. Normalize policy tag collections
+  such as `drop_content_tags` the same way so uppercase policy input still
+  drops mixed-case programmatic roots as whole subtrees.
 - The sanitizer's invisible-Unicode stripping applies to text nodes and
   attribute values before later checks. Keep the strip table aligned with the
   Python regex: zero-width/bidi controls, variation selectors, FEFF, BMP
