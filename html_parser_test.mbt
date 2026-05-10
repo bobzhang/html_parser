@@ -2202,6 +2202,33 @@ test "parser reports select common element starts and ends" {
 }
 
 ///|
+test "parser reports select plaintext start and keeps current container" {
+  let plain = @html_parser.parse_fragment(
+    "<select><plaintext>x</select>y",
+    collect_errors=true,
+  )
+  assert_eq(
+    plain.to_html(pretty=false),
+    "<select><plaintext>x&lt;/select&gt;y</plaintext></select>",
+  )
+  assert_eq(plain.errors.length(), 2)
+  assert_eq(plain.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(plain.errors[1].code, "expected-closing-tag-but-got-eof")
+  let in_p = @html_parser.parse_fragment(
+    "<select><p>x<plaintext>y</select>z",
+    collect_errors=true,
+  )
+  assert_eq(
+    in_p.to_html(pretty=false),
+    "<select><p>x<plaintext>y&lt;/select&gt;z</plaintext></p></select>",
+  )
+  assert_eq(in_p.errors.length(), 3)
+  assert_eq(in_p.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(in_p.errors[1].code, "unexpected-start-tag-in-select")
+  assert_eq(in_p.errors[2].code, "expected-closing-tag-but-got-eof")
+}
+
+///|
 test "parser closes open list items before repeated li starts" {
   let fragment = @html_parser.parse_fragment(
     "<ul><li>one<li><p>two<li>three</ul>",

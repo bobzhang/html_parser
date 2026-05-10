@@ -1192,6 +1192,14 @@ fn Parser::handle_select_special_start_tag(
   if !self.has_open_element("select") {
     return false
   }
+  if name == "plaintext" {
+    self.error_at("unexpected-start-tag-in-select", start)
+    let node = element(name, attrs~)
+    self.current_node().append_child(node)
+    self.consume_special_element_content(node, name)
+    ignore(self.close_open_element("select"))
+    return true
+  }
   if name == "hr" {
     self.error_at("unexpected-start-tag-in-select", start)
     ignore(self.pop_current_element_if_name("option"))

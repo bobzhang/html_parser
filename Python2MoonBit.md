@@ -87,6 +87,9 @@ JustHTML from Python to MoonBit.
   closes the current `option`/`optgroup`, void-like starts such as `<br>` and
   `<img>` are inserted without pushing, and common containers such as `<div>`
   or `<button>` get matching `unexpected-end-tag-in-select` errors when closed.
+  `<plaintext>` is also inserted inside the current select subtree, reports
+  `unexpected-start-tag-in-select`, and then consumes the rest of the input as
+  text without first closing an open `<p>`.
 - Serializing `script`/`style` text nodes has a security edge case, especially
   for programmatically-created trees: neutralize matching `</script` or
   `</style` sequences only when the tag name is followed by EOF, HTML
