@@ -17,6 +17,8 @@ priv struct Parser {
   mut fragment_context_table_cell : Node?
   mut fragment_context_caption : Bool
   mut fragment_context_colgroup : Bool
+  mut fragment_context_html : Bool
+  mut fragment_context_html_root : Node?
 }
 
 ///|
@@ -44,6 +46,8 @@ fn Parser::new(
     fragment_context_table_cell: None,
     fragment_context_caption: false,
     fragment_context_colgroup: false,
+    fragment_context_html: false,
+    fragment_context_html_root: None,
   }
 }
 
@@ -104,7 +108,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if cleaned.is_empty() {
     return
   }
-  if !self.is_fragment_parser() &&
+  if self.uses_document_frameset_rules() &&
     (self.after_frameset || self.has_open_element("frameset")) {
     let whitespace = ascii_whitespace_chars_only(cleaned)
     if self.after_frameset &&
@@ -117,7 +121,8 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     }
     return
   }
-  if !self.is_fragment_parser() && text_has_non_ascii_whitespace(cleaned) {
+  if self.uses_document_frameset_rules() &&
+    text_has_non_ascii_whitespace(cleaned) {
     self.frameset_ok = false
   }
   if self.handle_fragment_context_colgroup_text(cleaned, start) {
@@ -1786,6 +1791,11 @@ fn Parser::is_fragment_parser(self : Parser) -> Bool {
 }
 
 ///|
+fn Parser::uses_document_frameset_rules(self : Parser) -> Bool {
+  !self.is_fragment_parser() || self.fragment_context_html
+}
+
+///|
 fn Parser::fragment_end_tag_is_ignored(
   self : Parser,
   name : StringView,
@@ -1806,7 +1816,7 @@ fn Parser::handle_document_frameset_end_tag(
   name : String,
   start : Int,
 ) -> Bool {
-  if self.is_fragment_parser() {
+  if self.is_fragment_parser() && !self.fragment_context_html {
     return false
   }
   if self.after_frameset {
@@ -2067,6 +2077,141 @@ fn fragment_shell_start_is_ignored(name : StringView) -> Bool {
     "body" | "head" | "html" => true
     _ => false
   }
+}
+
+///|
+fn html_fragment_child_is_before_head(child : Node) -> Bool {
+  child.kind == Comment || is_whitespace_text_node(child)
+}
+
+///|
+fn html_fragment_child_is_before_body(child : Node) -> Bool {
+  if child.kind == Comment || is_whitespace_text_node(child) {
+    return true
+  }
+  if child.kind != Element {
+    return false
+  }
+  child.name == "head" ||
+  is_document_head_element_name(child.name) ||
+  (child.name == "html" && html_fragment_children_are_before_body(child))
+}
+
+///|
+fn html_fragment_children_are_before_head(html : Node) -> Bool {
+  for child in html.children {
+    if !html_fragment_child_is_before_head(child) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn html_fragment_children_are_before_body(html : Node) -> Bool {
+  for child in html.children {
+    if !html_fragment_child_is_before_body(child) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn Parser::current_node_allows_html_fragment_head(self : Parser) -> Bool {
+  let current = self.current_node()
+  current.kind == Element &&
+  current.name == "html" &&
+  html_fragment_children_are_before_head(current)
+}
+
+///|
+fn Parser::current_node_allows_html_fragment_body(self : Parser) -> Bool {
+  let current = self.current_node()
+  current.kind == Element &&
+  current.name == "html" &&
+  html_fragment_children_are_before_body(current)
+}
+
+///|
+fn Parser::insert_html_fragment_body_marker(
+  self : Parser,
+  attrs : Map[String, String?],
+) -> Unit {
+  match self.fragment_context_html_root {
+    Some(html) => html.append_child(element("body", attrs~))
+    None => ()
+  }
+}
+
+///|
+fn Parser::insert_empty_html_fragment_body_marker(self : Parser) -> Unit {
+  let attrs : Map[String, String?] = {}
+  self.insert_html_fragment_body_marker(attrs)
+}
+
+///|
+fn Parser::current_node_is_html_element(self : Parser) -> Bool {
+  let current = self.current_node()
+  current.kind == Element && current.name == "html"
+}
+
+///|
+fn Parser::handle_html_fragment_shell_start_tag(
+  self : Parser,
+  name : String,
+  attrs : Map[String, String?],
+  start : Int,
+) -> Bool {
+  match name {
+    "head" =>
+      if self.current_node_allows_html_fragment_head() {
+        false
+      } else {
+        self.error_at("unexpected-start-tag", start)
+        if self.current_node_is_html_element() {
+          self.insert_empty_html_fragment_body_marker()
+        }
+        true
+      }
+    "body" =>
+      if self.current_node_allows_html_fragment_body() {
+        false
+      } else {
+        self.error_at("unexpected-start-tag", start)
+        self.frameset_ok = false
+        self.insert_html_fragment_body_marker(attrs)
+        true
+      }
+    "html" =>
+      if self.current_node_allows_html_fragment_body() {
+        false
+      } else {
+        self.error_at("unexpected-start-tag", start)
+        if self.current_node_is_html_element() {
+          self.insert_empty_html_fragment_body_marker()
+        }
+        true
+      }
+    _ => false
+  }
+}
+
+///|
+fn Parser::handle_fragment_shell_start_tag(
+  self : Parser,
+  name : String,
+  attrs : Map[String, String?],
+  start : Int,
+) -> Bool {
+  if !self.is_fragment_parser() || !fragment_shell_start_is_ignored(name) {
+    return false
+  }
+  if self.fragment_context_html {
+    return self.handle_html_fragment_shell_start_tag(name, attrs, start)
+  }
+  self.error_at(self.fragment_shell_start_error_code(name), start)
+  true
 }
 
 ///|
@@ -2446,7 +2591,7 @@ fn Parser::document_start_tag_preserves_frameset_ok(
   self : Parser,
   name : StringView,
 ) -> Bool {
-  self.is_fragment_parser() ||
+  (self.is_fragment_parser() && !self.fragment_context_html) ||
   name == "html" ||
   name == "head" ||
   name == "frameset" ||
@@ -2470,7 +2615,7 @@ fn Parser::handle_document_frameset_start_tag(
   self_closing : Bool,
   start : Int,
 ) -> Bool {
-  if self.is_fragment_parser() {
+  if self.is_fragment_parser() && !self.fragment_context_html {
     return false
   }
   if self.after_frameset {
@@ -2688,8 +2833,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at_eof("eof-in-tag")
         return
       }
-      if self.is_fragment_parser() && fragment_shell_start_is_ignored(name) {
-        self.error_at(self.fragment_shell_start_error_code(name), start)
+      if self.handle_fragment_shell_start_tag(name, attrs, start) {
         return
       }
       if self.has_open_element("select") && name == "frame" {
@@ -3861,6 +4005,21 @@ fn Parser::parse_table_cell_fragment_context(
 }
 
 ///|
+fn Parser::parse_html_fragment_context(self : Parser) -> Unit {
+  let html = element("html")
+  self.fragment_context_html = true
+  self.fragment_context_html_root = Some(html)
+  self.frameset_ok = true
+  self.root.append_child(html)
+  self.stack.push(html)
+  self.parse_all()
+  scaffold_existing_html_element(html)
+  unwrap_fragment_context_element(self.root, html)
+  self.fragment_context_html_root = None
+  self.fragment_context_html = false
+}
+
+///|
 fn Parser::parse_fragment_context(
   self : Parser,
   context : FragmentContext,
@@ -3897,6 +4056,10 @@ fn Parser::parse_fragment_context(
         self.pos = self.input.length()
       }
     }
+    return true
+  }
+  if name == "html" {
+    self.parse_html_fragment_context()
     return true
   }
   if name == "table" {
@@ -4281,6 +4444,28 @@ fn append_children_to(target : Node, children : Array[Node]) -> Unit {
 }
 
 ///|
+fn text_node_without_leading_ascii_whitespace(node : Node) -> Node? {
+  let view = node.data[:]
+  let mut start = 0
+  while start < view.length() {
+    match view.get_char(start) {
+      Some(ch) if ch.is_ascii_whitespace() => start += ch.utf16_len()
+      _ => break
+    }
+  }
+  if start == 0 {
+    Some(node)
+  } else if start >= view.length() {
+    None
+  } else {
+    match view.get_view(start~, end=view.length()) {
+      Some(rest) => Some(text(rest))
+      None => None
+    }
+  }
+}
+
+///|
 fn merge_missing_attrs(target : Node, source : Node) -> Unit {
   for name, value in source.attrs {
     if !target.attrs.contains(name) {
@@ -4373,12 +4558,21 @@ fn scaffold_existing_html_element(html : Node) -> Unit {
   let mut head : Node? = None
   let mut body : Node? = None
   let mut frameset : Node? = None
+  let before_head_children : Array[Node] = []
+  let between_head_body_children : Array[Node] = []
   let head_children : Array[Node] = []
   let body_children : Array[Node] = []
   let after_frameset_children : Array[Node] = []
   let mut body_started = false
   for child in original {
-    if child.kind == Element &&
+    if child.kind == Comment &&
+      !body_started &&
+      head is None &&
+      head_children.is_empty() {
+      before_head_children.push(child)
+    } else if child.kind == Comment && !body_started && head is Some(_) {
+      between_head_body_children.push(child)
+    } else if child.kind == Element &&
       child.name == "head" &&
       head is None &&
       !body_started {
@@ -4412,16 +4606,26 @@ fn scaffold_existing_html_element(html : Node) -> Unit {
       is_document_head_element_name(child.name) &&
       !body_started {
       head_children.push(child)
+    } else if child.kind == Comment && !body_started {
+      head_children.push(child)
     } else if is_whitespace_text_node(child) && !body_started {
       ()
+    } else if child.kind == Text && !body_started {
+      body_started = true
+      match text_node_without_leading_ascii_whitespace(child) {
+        Some(stripped) => body_children.push(stripped)
+        None => ()
+      }
     } else {
       body_started = true
       body_children.push(child)
     }
   }
   let head_node = head.unwrap_or(element("head"))
+  append_children_to(html, before_head_children)
   html.append_child(head_node)
   append_children_to(head_node, head_children)
+  append_children_to(html, between_head_body_children)
   match frameset {
     Some(frameset_node) if body is None && body_children.is_empty() => {
       html.append_child(frameset_node)

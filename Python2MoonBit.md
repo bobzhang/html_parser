@@ -282,6 +282,18 @@ JustHTML from Python to MoonBit.
   mode, `<html>`, `<body>`, and `<head>` starts are reported and ignored, their
   children stay in the current insertion location, and `</head>` is still an
   unexpected end tag.
+- `FragmentContext("html")` is the exception to ordinary body-fragment parsing.
+  The reference seeds a synthetic `<html>` element, starts before the head, then
+  unwraps that synthetic root at finish. That means fragments return `<head>`
+  and `<body>`/`<frameset>` siblings rather than an `<html>` wrapper. Head
+  elements seen before body content belong in the synthetic head, a later
+  `<head>` start is reported and ignored while its children continue in body
+  mode, and a `<body>` start after body content only contributes missing body
+  attributes.
+- Frameset state still matters inside `FragmentContext("html")`: a leading
+  frameset is allowed even though normal fragments reject document-shell
+  behavior, whitespace after it is preserved, and non-whitespace tokens after
+  the closed frameset are ignored with `unexpected-token-after-frameset`.
 - Document scaffolding also has to preserve explicit root-level `<head>` and
   `<body>` nodes, including attributes on `<body>`. Do not always synthesize
   fresh elements and then nest the parsed ones inside the body.

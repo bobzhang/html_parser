@@ -1321,6 +1321,113 @@ test "fragment context seeds literal text modes" {
 }
 
 ///|
+test "fragment context seeds html insertion mode" {
+  let empty = @html_parser.parse_fragment(
+    "",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(empty.to_html(pretty=false), "<head></head><body></body>")
+  assert_eq(empty.errors.length(), 0)
+  let title = @html_parser.parse_fragment(
+    "<title>T</title><div>x</div>",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    title.to_html(pretty=false),
+    "<head><title>T</title></head><body><div>x</div></body>",
+  )
+  assert_eq(title.errors.length(), 0)
+  let explicit = @html_parser.parse_fragment(
+    "<head id=h><title>T</title></head><body id=b>x</body>",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    explicit.to_html(pretty=false),
+    "<head id=\"h\"><title>T</title></head><body id=\"b\">x</body>",
+  )
+  assert_eq(explicit.errors.length(), 0)
+  let table = @html_parser.parse_fragment(
+    "<table><tr><td>x</td></tr></table>",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    table.to_html(pretty=false),
+    "<head></head><body><table><tbody><tr><td>x</td></tr></tbody></table></body>",
+  )
+  assert_eq(table.errors.length(), 0)
+  let late_head = @html_parser.parse_fragment(
+    "<body>x</body><head><meta name=y></head>",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    late_head.to_html(pretty=false),
+    "<head></head><body>x<meta name=\"y\"></body>",
+  )
+  assert_eq(late_head.errors.length(), 2)
+  assert_eq(late_head.errors[0].code, "unexpected-start-tag")
+  assert_eq(late_head.errors[1].code, "unexpected-end-tag")
+  let inferred_head_comment = @html_parser.parse_fragment(
+    "<!--before--><title>T</title><!--in--><p>x</p>",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    inferred_head_comment.to_html(pretty=false),
+    "<!--before--><head><title>T</title><!--in--></head><body><p>x</p></body>",
+  )
+  assert_eq(inferred_head_comment.errors.length(), 0)
+  let explicit_head_comment = @html_parser.parse_fragment(
+    "<head><title>T</title></head><!--after--><p>x</p>",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    explicit_head_comment.to_html(pretty=false),
+    "<head><title>T</title></head><!--after--><body><p>x</p></body>",
+  )
+  assert_eq(explicit_head_comment.errors.length(), 0)
+  let late_body = @html_parser.parse_fragment(
+    "<p>x</p><body id=b>y",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    late_body.to_html(pretty=false),
+    "<head></head><body id=\"b\"><p>x</p>y</body>",
+  )
+  assert_eq(late_body.errors.length(), 1)
+  assert_eq(late_body.errors[0].code, "unexpected-start-tag")
+  let late_head_after_title = @html_parser.parse_fragment(
+    "<title>T</title><head><meta name=y></head>x",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    late_head_after_title.to_html(pretty=false),
+    "<head><title>T</title></head><body><meta name=\"y\">x</body>",
+  )
+  assert_eq(late_head_after_title.errors.length(), 2)
+  assert_eq(late_head_after_title.errors[0].code, "unexpected-start-tag")
+  assert_eq(late_head_after_title.errors[1].code, "unexpected-end-tag")
+  let frameset = @html_parser.parse_fragment(
+    "<frameset><frame src=x></frameset>after",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    frameset.to_html(pretty=false),
+    "<head></head><frameset><frame src=\"x\"></frame></frameset>",
+  )
+  assert_eq(frameset.errors.length(), 1)
+  assert_eq(frameset.errors[0].code, "unexpected-token-after-frameset")
+}
+
+///|
 test "fragment context seeds table insertion mode" {
   let row = @html_parser.parse_fragment(
     "<tr><td>x</td></tr>",
