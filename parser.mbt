@@ -2283,7 +2283,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   }
   let tag_close_pos = self.pos - 1
   self.flush_deferred_initial_doctype_error()
-  if self.handle_before_html_end_tag(name, self.pos - 1) {
+  if self.handle_before_html_end_tag(name, start, self.pos - 1) {
     return
   }
   if self.handle_foreign_content_end_tag(name, start) {
@@ -2336,20 +2336,20 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.error_at("unexpected-end-tag", start)
     self.report_table_context_end_tag_voodoo(name, tag_close_pos)
     self.close_open_p_element()
-    self.insert_body_mode_node(element("br"))
+    self.insert_body_mode_node(self.node_with_origin(element("br"), start))
     return
   }
   self.report_table_context_end_tag_voodoo(name, start)
   if name == "br" {
     self.error_at("unexpected-end-tag", tag_close_pos)
     self.close_open_p_element()
-    self.insert_body_mode_node(element("br"))
+    self.insert_body_mode_node(self.node_with_origin(element("br"), start))
     return
   }
   if name == "p" {
     if !self.close_open_element("p") {
       self.error_at("unexpected-end-tag", tag_close_pos)
-      self.insert_body_mode_node(element("p"))
+      self.insert_body_mode_node(self.node_with_origin(element("p"), start))
     }
     return
   }
@@ -2463,6 +2463,7 @@ fn Parser::document_has_element_child(self : Parser) -> Bool {
 fn Parser::handle_before_html_end_tag(
   self : Parser,
   name : StringView,
+  start : Int,
   error_pos : Int,
 ) -> Bool {
   if !self.before_html_phase ||
@@ -2475,7 +2476,7 @@ fn Parser::handle_before_html_end_tag(
     "html" | "head" | "body" => true
     "br" => {
       self.error_at("unexpected-end-tag", error_pos)
-      self.insert_body_mode_node(element("br"))
+      self.insert_body_mode_node(self.node_with_origin(element("br"), start))
       true
     }
     _ => {
