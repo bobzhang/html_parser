@@ -501,7 +501,9 @@ JustHTML from Python to MoonBit.
   from the returned fragment. Top-level table-structural starts other than rows
   and cells are ignored with `unexpected-start-tag`; otherwise they would be
   incorrectly inserted because the MoonBit synthetic row group is more concrete
-  than Python's mode-only fragment context.
+  than Python's mode-only fragment context. A matching `</tbody>`/`</thead>`/
+  `</tfoot>` also reports `unexpected-end-tag` and must not close that synthetic
+  wrapper.
 - A `tr` fragment context adds one more synthetic wrapper level. Direct cells
   are returned as fragment children, while top-level row/table structural starts
   are ignored with `unexpected-start-tag-implies-end-tag`. Non-table starts in

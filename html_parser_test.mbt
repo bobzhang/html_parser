@@ -2965,6 +2965,15 @@ test "fragment context seeds table section insertion mode" {
   assert_eq(ignored_table.errors[0].code, "unexpected-start-tag")
   assert_eq(ignored_table.errors[1].code, "foster-parenting-character")
   assert_eq(ignored_table.errors[2].code, "unexpected-end-tag")
+  let ignored_section_end = @html_parser.parse_fragment(
+    "</tbody>x",
+    context=@html_parser.FragmentContext::new("tbody"),
+    collect_errors=true,
+  )
+  assert_eq(ignored_section_end.to_html(pretty=false), "x")
+  assert_eq(ignored_section_end.errors.length(), 2)
+  assert_eq(ignored_section_end.errors[0].code, "unexpected-end-tag")
+  assert_eq(ignored_section_end.errors[1].code, "foster-parenting-character")
 }
 
 ///|
