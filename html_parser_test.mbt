@@ -7946,6 +7946,18 @@ test "parser and tokenizer optionally coerce XML-invalid text" {
 }
 
 ///|
+test "tokenize matches upstream XML violation coverage fixtures" {
+  let form_feed = @html_parser.tokenize("\u{000C}", xml_coercion=true)
+  guard form_feed.tokens[0] is Characters(" ") else {
+    fail("expected XML coercion to replace form feed with space")
+  }
+  let noncharacter = @html_parser.tokenize("\u{FDD0}", xml_coercion=true)
+  guard noncharacter.tokens[0] is Characters("\u{FFFD}") else {
+    fail("expected XML coercion to replace noncharacter")
+  }
+}
+
+///|
 test "tree builder matches upstream XML coercion document fixtures" {
   let comment = @html_parser.parse(
     "<!-- normal comment -->",
