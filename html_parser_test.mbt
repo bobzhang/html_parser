@@ -329,6 +329,22 @@ test "sanitize_dom filters attributes and dangerous URLs" {
 }
 
 ///|
+test "sanitize_dom preserves allowed valueless non-url attributes" {
+  let policy = @html_parser.SanitizationPolicy::new(["div"], allowed_attributes={
+    "*": [],
+    "div": ["disabled"],
+  })
+  let fragment = @html_parser.parse_fragment(
+    "<div disabled></div>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<div disabled></div>",
+  )
+}
+
+///|
 test "sanitize_dom can collect and raise unsafe findings" {
   let collect_policy = @html_parser.SanitizationPolicy::new(
     ["p", "a"],
