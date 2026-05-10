@@ -23,6 +23,7 @@ pub struct UrlRule {
   priv allow_fragment : Bool
   priv resolve_protocol_relative : String?
   priv allowed_schemes : Set[String]
+  priv allowed_hosts : Set[String]
   priv handling : UrlHandling?
   priv allow_relative : Bool?
 } derive(Debug)
@@ -113,6 +114,7 @@ fn sanitize_allowed_attributes(
 ///|
 pub fn UrlRule::new(
   allowed_schemes? : Array[String] = [],
+  allowed_hosts? : Array[String] = [],
   allow_fragment? : Bool = true,
   resolve_protocol_relative? : String? = Some("https"),
   handling? : UrlHandling,
@@ -124,6 +126,7 @@ pub fn UrlRule::new(
       lower_ascii(scheme[:].trim())
     }),
     allowed_schemes: sanitized_string_set(allowed_schemes),
+    allowed_hosts: sanitized_string_set(allowed_hosts),
     handling,
     allow_relative,
   }
@@ -500,10 +503,10 @@ fn is_url_ignored_scheme_char(ch : Char) -> Bool {
 }
 
 ///|
-fn string_contains_url_control(value : StringView) -> Bool {
+fn string_contains_forbidden_url_char(value : StringView) -> Bool {
   for ch in value {
     let code = ch.to_int()
-    if code < 0x20 || code == 0x7F {
+    if code < 0x20 || code == 0x7F || ch == '\\' {
       return true
     }
   }
@@ -548,6 +551,146 @@ fn extract_url_scheme(value : StringView) -> String? {
 }
 
 ///|
+fn url_authority_end(value : StringView, start : Int) -> Int {
+  let mut pos = start
+  while pos < value.length() {
+    match value.get_char(pos) {
+      Some('/') | Some('?') | Some('#') => return pos
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  value.length()
+}
+
+///|
+fn authority_host_start(value : StringView, start : Int, end : Int) -> Int {
+  let mut host_start = start
+  let mut pos = start
+  while pos < end {
+    match value.get_char(pos) {
+      Some('@') => {
+        pos += 1
+        host_start = pos
+      }
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  host_start
+}
+
+///|
+fn extract_authority_host(
+  value : StringView,
+  start : Int,
+  end : Int,
+) -> String? {
+  let host_start = authority_host_start(value, start, end)
+  if host_start >= end {
+    return None
+  }
+  match value.get_char(host_start) {
+    Some('[') => extract_bracketed_authority_host(value, host_start, end)
+    Some(_) => extract_named_authority_host(value, host_start, end)
+    None => None
+  }
+}
+
+///|
+fn extract_bracketed_authority_host(
+  value : StringView,
+  start : Int,
+  end : Int,
+) -> String? {
+  let mut pos = start + 1
+  while pos < end {
+    match value.get_char(pos) {
+      Some(']') => {
+        if start + 1 >= pos {
+          return None
+        }
+        let after_bracket = pos + 1
+        if after_bracket < end && value.get_char(after_bracket) != Some(':') {
+          return None
+        }
+        guard value.get_view(start=start + 1, end=pos) is Some(host) else {
+          return None
+        }
+        return Some(lower_ascii(host))
+      }
+      Some(ch) => pos += ch.utf16_len()
+      None => return None
+    }
+  }
+  None
+}
+
+///|
+fn extract_named_authority_host(
+  value : StringView,
+  start : Int,
+  end : Int,
+) -> String? {
+  let mut pos = start
+  while pos < end {
+    match value.get_char(pos) {
+      Some(':') => {
+        if start >= pos {
+          return None
+        }
+        guard value.get_view(start~, end=pos) is Some(host) else { return None }
+        return Some(lower_ascii(host))
+      }
+      Some('[') | Some(']') => return None
+      Some(ch) => pos += ch.utf16_len()
+      None => return None
+    }
+  }
+  if start >= end {
+    None
+  } else {
+    guard value.get_view(start~, end~) is Some(host) else { return None }
+    Some(lower_ascii(host))
+  }
+}
+
+///|
+fn extract_absolute_url_host(value : StringView) -> String? {
+  guard extract_url_scheme(value) is Some(_) else { return None }
+  let mut pos = 0
+  while pos < value.length() {
+    match value.get_char(pos) {
+      Some(':') => {
+        let after_colon = pos + 1
+        if value.get_char(after_colon) != Some('/') ||
+          value.get_char(after_colon + 1) != Some('/') {
+          return None
+        }
+        let authority_start = after_colon + 2
+        let authority_end = url_authority_end(value, authority_start)
+        return extract_authority_host(value, authority_start, authority_end)
+      }
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  None
+}
+
+///|
+fn url_rule_allows_host(rule : UrlRule, value : String) -> Bool {
+  if rule.allowed_hosts.is_empty() {
+    true
+  } else {
+    match extract_absolute_url_host(value[:]) {
+      Some(host) => rule.allowed_hosts.contains(host)
+      None => false
+    }
+  }
+}
+
+///|
 fn UrlPolicy::lookup_rule(
   self : UrlPolicy,
   tag_name : String,
@@ -565,7 +708,7 @@ fn sanitize_url_attribute_value_with_rule(
   let trimmed = value[:].trim().to_owned()
   if trimmed == "" {
     return None
-  } else if string_contains_url_control(trimmed) {
+  } else if string_contains_forbidden_url_char(trimmed) {
     return None
   } else {
     let handling = rule.handling.unwrap_or(policy.default_handling)
@@ -582,7 +725,12 @@ fn sanitize_url_attribute_value_with_rule(
       match rule.resolve_protocol_relative {
         Some(scheme) if rule.allowed_schemes.contains(scheme) =>
           if handling == UrlAllow {
-            Some(scheme + ":" + trimmed)
+            let resolved = scheme + ":" + trimmed
+            if url_rule_allows_host(rule, resolved) {
+              Some(resolved)
+            } else {
+              None
+            }
           } else {
             None
           }
@@ -591,7 +739,9 @@ fn sanitize_url_attribute_value_with_rule(
     } else {
       match extract_url_scheme(trimmed) {
         Some(scheme) =>
-          if rule.allowed_schemes.contains(scheme) && handling == UrlAllow {
+          if rule.allowed_schemes.contains(scheme) &&
+            handling == UrlAllow &&
+            url_rule_allows_host(rule, trimmed) {
             Some(trimmed)
           } else {
             None

@@ -184,7 +184,7 @@ pub fn UrlPolicyRule::new(StringView, StringView, UrlRule) -> Self
 pub struct UrlRule {
   // private fields
 } derive(@debug.Debug)
-pub fn UrlRule::new(allowed_schemes? : Array[String], allow_fragment? : Bool, resolve_protocol_relative? : String?, handling? : UrlHandling, allow_relative? : Bool) -> Self
+pub fn UrlRule::new(allowed_schemes? : Array[String], allowed_hosts? : Array[String], allow_fragment? : Bool, resolve_protocol_relative? : String?, handling? : UrlHandling, allow_relative? : Bool) -> Self
 
 // Type aliases
 

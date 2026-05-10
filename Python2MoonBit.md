@@ -342,6 +342,12 @@ JustHTML from Python to MoonBit.
   `UrlPolicyRule::new(tag, attr, rule)` wrapper and normalize it into an
   internal string-keyed map; this avoids depending on tuple-key hashing in the
   public API while still keeping exact tag/attribute rule semantics.
+- Python's `UrlRule.allowed_hosts` is optional. The MoonBit constructor uses an
+  empty `allowed_hosts` array to mean "no host restriction"; non-empty
+  allowlists are lowercased and matched against the parsed host only, not the
+  whole URL. Strip userinfo and port for matching, accept bracketed IPv6 by
+  matching the inner host, and reject malformed bracket hosts or backslashes
+  before applying the allowlist.
 - Python's `unsafe_handling` string mode maps more safely to a MoonBit enum.
   Keep `Strip` as the no-op default, make `Collect` append `ParseError` values
   with `category="security"`, and make `Raise` use a typed `HtmlError` variant
