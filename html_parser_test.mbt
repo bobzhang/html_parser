@@ -605,6 +605,35 @@ test "sanitize_dom preserves math marker exceptions in text integration points" 
 
 ///|
 test "sanitize_dom drops active foreign mutation tags when allowlisted" {
+  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
+    @html_parser.UrlPolicyRule::new(
+      "image",
+      "href",
+      @html_parser.UrlRule::new(
+        allowed_schemes=[],
+        allow_fragment=true,
+        allow_relative=false,
+      ),
+    ),
+    @html_parser.UrlPolicyRule::new(
+      "set",
+      "href",
+      @html_parser.UrlRule::new(
+        allowed_schemes=[],
+        allow_fragment=true,
+        allow_relative=false,
+      ),
+    ),
+    @html_parser.UrlPolicyRule::new(
+      "animate",
+      "href",
+      @html_parser.UrlRule::new(
+        allowed_schemes=[],
+        allow_fragment=true,
+        allow_relative=false,
+      ),
+    ),
+  ])
   let policy = @html_parser.SanitizationPolicy::new(
     [
       "svg", "image", "set", "animate", "foreignobject", "script", "math", "annotation-xml",
@@ -615,6 +644,7 @@ test "sanitize_dom drops active foreign mutation tags when allowlisted" {
       "animate": ["href", "attributeName", "values", "dur"],
       "annotation-xml": ["encoding"],
     },
+    url_policy~,
     drop_foreign_namespaces=false,
     drop_content_tags=[],
   )
@@ -734,25 +764,67 @@ test "sanitize_dom drops base href even when allowlisted" {
 }
 
 ///|
-test "sanitize_dom drops unsupported url-like attributes when allowlisted" {
+test "sanitize_dom drops url-like attributes without exact url rules" {
   let policy = @html_parser.SanitizationPolicy::new(
-    ["a", "img", "blockquote", "object", "p"],
+    ["a", "img", "blockquote", "object", "p", "form", "button", "video"],
     allowed_attributes={
       "a": ["href", "ping"],
-      "img": ["src", "srcset", "attributionsrc"],
+      "img": ["src", "srcset", "attributionsrc", "poster"],
+      "video": ["poster"],
+      "form": ["action"],
+      "button": ["formaction"],
       "blockquote": ["cite"],
       "object": ["data"],
       "p": ["background", "data-x"],
     },
+    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
     drop_content_tags=[],
   )
   let fragment = @html_parser.parse_fragment(
-    "<a href='https://example.com' ping='https://trusted.example/p https://evil.example/p'>x</a><img src='/ok.png' srcset='/one.png 1x' attributionsrc='https://evil.example/register'><blockquote cite='https://evil.example/q'></blockquote><object data='/payload'></object><p background='/bg.png' data-x='ok'>t</p>",
+    "<a href='https://example.com' ping='https://trusted.example/p https://evil.example/p'>x</a><img src='/ok.png' srcset='/one.png 1x' attributionsrc='https://evil.example/register' poster='/poster.png'><video poster='/poster.png'></video><form action='/submit'></form><button formaction='/submit'>go</button><blockquote cite='https://evil.example/q'></blockquote><object data='/payload'></object><p background='/bg.png' data-x='ok'>t</p>",
     sanitize=false,
   )
   assert_eq(
     @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<a href=\"https://example.com\">x</a><img src=\"/ok.png\"><blockquote></blockquote><object></object><p data-x=\"ok\">t</p>",
+    "<a>x</a><img><video></video><form></form><button>go</button><blockquote></blockquote><object></object><p data-x=\"ok\">t</p>",
+  )
+}
+
+///|
+test "sanitize_dom applies single url-like attribute rules" {
+  let remote_rule = @html_parser.UrlRule::new(
+    allowed_schemes=["https"],
+    allowed_hosts=["trusted.example"],
+    allow_relative=false,
+  )
+  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
+    @html_parser.UrlPolicyRule::new("video", "poster", remote_rule),
+    @html_parser.UrlPolicyRule::new("form", "action", remote_rule),
+    @html_parser.UrlPolicyRule::new("button", "formaction", remote_rule),
+    @html_parser.UrlPolicyRule::new("blockquote", "cite", remote_rule),
+    @html_parser.UrlPolicyRule::new("object", "data", remote_rule),
+    @html_parser.UrlPolicyRule::new("p", "background", remote_rule),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["video", "form", "button", "blockquote", "object", "p"],
+    allowed_attributes={
+      "video": ["poster"],
+      "form": ["action"],
+      "button": ["formaction"],
+      "blockquote": ["cite"],
+      "object": ["data"],
+      "p": ["background"],
+    },
+    url_policy~,
+    drop_content_tags=[],
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<video poster='https://trusted.example/poster.png'></video><video poster='https://evil.example/poster.png'></video><form action='//trusted.example/submit'></form><button formaction='https://trusted.example/send'>go</button><blockquote cite='https://trusted.example/q'></blockquote><object data='https://trusted.example/payload'></object><p background='https://trusted.example/bg.png'>ok</p><p background='/relative.png'>rel</p>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<video poster=\"https://trusted.example/poster.png\"></video><video></video><form action=\"https://trusted.example/submit\"></form><button formaction=\"https://trusted.example/send\">go</button><blockquote cite=\"https://trusted.example/q\"></blockquote><object data=\"https://trusted.example/payload\"></object><p background=\"https://trusted.example/bg.png\">ok</p><p>rel</p>",
   )
 }
 

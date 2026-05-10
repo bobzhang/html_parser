@@ -163,11 +163,14 @@ JustHTML from Python to MoonBit.
 - `<base href>` is not an ordinary link URL. Drop it even when allowlisted,
   because preserving it can alter how later relative URLs resolve after
   sanitization.
-- Until the port has Python's full URL attribute parsers, treat URL-bearing
-  attributes without dedicated sanitizer support as unsafe when allowlisted.
-  This includes `poster`, `action`, `formaction`, `data`, `cite`, and
-  `background`; do not confuse object `data` with safe custom `data-*`
-  attributes.
+- URL-bearing attributes are opt-in twice: the attribute allowlist must permit
+  the name, and `UrlPolicy.allow_rules` must contain an exact tag/attribute
+  rule. Missing URL rules drop even otherwise-allowlisted `href` and `src`
+  values. This is stricter than ordinary attributes and prevents a custom
+  allowlist from accidentally preserving navigations or network loads.
+- `poster`, `action`, `formaction`, `data`, `cite`, and `background` are
+  single URL values. Route them through the same exact-rule path as `href` and
+  `src`; do not confuse object `data` with safe custom `data-*` attributes.
 - `srcset` and `imagesrcset` are URL lists rather than single URL values. Port
   them as a separate attribute path: apply the exact tag/attribute rule, split
   comma-separated candidates, sanitize the first whitespace-delimited URL token

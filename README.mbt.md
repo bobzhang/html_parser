@@ -22,14 +22,14 @@ The current slice provides:
   allowlist simple inline CSS properties while stripping invisible Unicode and
   hardening allowed raw-text, foreign text-integration, active foreign contents,
   foreign URL-function attributes, meta refresh contents, and base URL rewrites.
-  Unsupported URL-like attributes are conservatively dropped. Policies can keep
-  the default strip behavior, collect security findings, or raise on the first
+  URL-like attributes require exact URL policy rules. Policies can keep the
+  default strip behavior, collect security findings, or raise on the first
   unsafe construct, and can define exact tag/attribute URL rules for schemes,
   hosts, fragments, relative URLs, protocol-relative rewrites, and allow/strip
   handling while rejecting malformed host values and backslashes, including
-  simple `srcset`/`imagesrcset` candidate lists and `ping`/`attributionsrc`
-  URL-token lists. Use `css_preset_text()` for the conservative text-style
-  property allowlist from the reference sanitizer.
+  single URL attributes, simple `srcset`/`imagesrcset` candidate lists, and
+  `ping`/`attributionsrc` URL-token lists. Use `css_preset_text()` for the
+  conservative text-style property allowlist from the reference sanitizer.
 - Initial Markdown conversion for text, paragraphs, headings, inline
   formatting, links, code, lists, blockquotes, and raw HTML passthrough.
 

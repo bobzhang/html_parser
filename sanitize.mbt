@@ -758,7 +758,7 @@ fn sanitize_url_attribute_value_with_rule(
 }
 
 ///|
-fn sanitize_url_attribute_value(
+fn sanitize_single_url_attribute_value(
   policy : SanitizationPolicy,
   tag_name : String,
   attr_name : String,
@@ -770,7 +770,7 @@ fn sanitize_url_attribute_value(
     match policy.url_policy.lookup_rule(tag_name, attr_name) {
       Some(rule) =>
         sanitize_url_attribute_value_with_rule(policy.url_policy, rule, value)
-      None => Some(value)
+      None => None
     }
   }
 }
@@ -968,10 +968,10 @@ fn is_space_separated_url_list_attr(name : String) -> Bool {
 }
 
 ///|
-fn is_unsupported_url_like_attr(name : String) -> Bool {
+fn is_single_url_like_attr(name : String) -> Bool {
   match name {
-    "srcset"
-    | "imagesrcset"
+    "href"
+    | "src"
     | "poster"
     | "action"
     | "formaction"
@@ -1224,12 +1224,12 @@ fn sanitize_attribute_value(
     sanitize_space_separated_url_list_attribute_value(
       policy, tag_name, attr_name, value,
     )
-  } else if is_unsupported_url_like_attr(attr_name) {
-    None
+  } else if is_single_url_like_attr(attr_name) {
+    sanitize_single_url_attribute_value(policy, tag_name, attr_name, value)
   } else if attr_name == "style" {
     sanitize_inline_style_value(policy, value)
   } else {
-    sanitize_url_attribute_value(policy, tag_name, attr_name, value)
+    Some(value)
   }
 }
 
@@ -1352,7 +1352,9 @@ fn sanitize_element_attributes(
         Some(None) if attr_name == "href" ||
           attr_name == "src" ||
           attr_name == "style" ||
-          is_unsupported_url_like_attr(attr_name) => {
+          is_single_url_like_attr(attr_name) ||
+          is_srcset_like_attr(attr_name) ||
+          is_space_separated_url_list_attr(attr_name) => {
           policy.handle_unsafe(
             "Unsafe attribute '" +
             attr_name +
