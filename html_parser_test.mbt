@@ -661,7 +661,12 @@ test "sanitize_dom collects rawtext and foreign integration findings" {
   )
   let rawtext_errors = rawtext_policy.collected_security_errors()
   assert_eq(rawtext_errors.length(), 1)
+  assert_eq(rawtext_errors[0].code, "unsafe-html")
   assert_eq(rawtext_errors[0].category, "security")
+  assert_eq(
+    rawtext_errors[0].message,
+    "Unsafe raw text inside <style> contains a closing tag sequence",
+  )
 
   let foreign_policy = @html_parser.SanitizationPolicy::new(
     ["svg", "title", "script"],
@@ -682,7 +687,12 @@ test "sanitize_dom collects rawtext and foreign integration findings" {
   )
   let foreign_errors = foreign_policy.collected_security_errors()
   assert_eq(foreign_errors.length(), 1)
+  assert_eq(foreign_errors[0].code, "unsafe-html")
   assert_eq(foreign_errors[0].category, "security")
+  assert_eq(
+    foreign_errors[0].message,
+    "Unsafe HTML child inside foreign integration point <title> was dropped",
+  )
 }
 
 ///|
