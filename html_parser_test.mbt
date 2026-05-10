@@ -4605,6 +4605,17 @@ test "document parser scaffolds framesets outside body" {
     "<!DOCTYPE html><html><head></head><frameset><frame src=\"x\"></frame><frameset></frameset></frameset></html>",
   )
   assert_eq(nested.errors.length(), 0)
+  let inner_tag = @html_parser.parse(
+    "<!doctype html><frameset><p>x</p><frame src=y></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    inner_tag.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset><frame src=\"y\"></frame></frameset></html>",
+  )
+  assert_eq(inner_tag.errors.length(), 2)
+  assert_eq(inner_tag.errors[0].code, "unexpected-token-in-frameset")
+  assert_eq(inner_tag.errors[1].code, "unexpected-token-in-frameset")
   let trailing_space = @html_parser.parse(
     "<!doctype html><frameset></frameset>   ",
     collect_errors=true,

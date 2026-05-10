@@ -137,8 +137,10 @@ JustHTML from Python to MoonBit.
   otherwise output may match while tree-builder error parity is untested.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
-  `<frame>` is only kept while a frameset is open, and non-whitespace tokens
-  after the final `</frameset>` are ignored with
+  `<frame>` is only kept while a frameset is open; ordinary start tags inside
+  the open frameset are ignored immediately and their matching end tags report
+  `unexpected-token-in-frameset` too. Non-whitespace tokens after the final
+  `</frameset>` are ignored with
   `unexpected-token-after-frameset`; ordinary tags also report the reprocessed
   `unexpected-token-in-frameset`, while `<noframes>` remains allowed.
 - Some start tags have their own scope rules even when they look like ordinary
