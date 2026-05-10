@@ -593,6 +593,10 @@ JustHTML from Python to MoonBit.
 - Malformed external IDs follow the same split. `PUBLIC>` and `SYSTEM>` report
   tokenizer errors and set force-quirks, but the serialized node can still be a
   plain `<!DOCTYPE html>` and should not automatically get `unknown-doctype`.
+- Known doctype recognition includes a small legacy allowlist, not only
+  `<!DOCTYPE html>` and `SYSTEM "about:legacy-compat"`. Preserve the exact
+  HTML 4.0/4.01 and XHTML public/system ID pairs so compatibility doctypes do
+  not regress into `unknown-doctype` errors.
 - Keep small state distinctions in doctype keyword recovery. `PUBLIC>` is a
   missing identifier, but `PUBLIC x>` and `PUBLIC` at EOF are missing quotes
   before the identifier; the system identifier path mirrors the public one.

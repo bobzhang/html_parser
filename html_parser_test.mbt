@@ -1621,6 +1621,42 @@ test "parser reports unknown and unexpected doctypes" {
     collect_errors=true,
   )
   assert_eq(legacy_system.errors.length(), 0)
+  let html40_public = @html_parser.parse(
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.0//EN\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    html40_public.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.0//EN\"><html><head></head><body></body></html>",
+  )
+  assert_eq(html40_public.errors.length(), 0)
+  let html40_strict = @html_parser.parse(
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    html40_strict.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.0//EN\" \"http://www.w3.org/TR/REC-html40/strict.dtd\"><html><head></head><body></body></html>",
+  )
+  assert_eq(html40_strict.errors.length(), 0)
+  let xhtml10 = @html_parser.parse(
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    xhtml10.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.0 Strict//EN\" \"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd\"><html><head></head><body></body></html>",
+  )
+  assert_eq(xhtml10.errors.length(), 0)
+  let xhtml11 = @html_parser.parse(
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    xhtml11.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD XHTML 1.1//EN\" \"http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd\"><html><head></head><body></body></html>",
+  )
+  assert_eq(xhtml11.errors.length(), 0)
   let repeated = @html_parser.parse(
     "<!doctype html><!doctype html><p>x",
     collect_errors=true,
