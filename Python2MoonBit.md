@@ -267,6 +267,11 @@ JustHTML from Python to MoonBit.
   identity semantics instead of structural equality. Moving a node must detach
   it from its old parent, insert-before needs an identity scan with an append
   fallback, and append/insert must reject self-or-ancestor cycles.
+- Query traversal also needs identity bookkeeping. The Python selector walker
+  seeds its visited set with the query root, so descendants are deduplicated by
+  object identity, shared child references are returned once, and
+  programmatically-created cycles cannot make `query()` recurse back into the
+  root or loop forever.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone.

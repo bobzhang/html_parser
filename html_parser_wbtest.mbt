@@ -38,6 +38,25 @@ test "dom insert_child_before moves appends and rejects cycles" {
 }
 
 ///|
+test "query deduplicates shared nodes and ignores traversal cycles" {
+  let shared_root = element("div")
+  let shared = element("span", attrs={ "class": Some("target") })
+  shared_root.append_child(shared)
+  shared_root.children.push(shared)
+  assert_eq(shared_root.query("span").length(), 1)
+  assert_eq(shared_root.query(".target").length(), 1)
+  assert_eq(shared_root.query("*").length(), 1)
+  let cyclic_root = element("div")
+  let child = element("span", attrs={ "class": Some("cycle") })
+  cyclic_root.append_child(child)
+  child.children.push(cyclic_root)
+  cyclic_root.parent = Some(child)
+  assert_eq(cyclic_root.query("span").length(), 1)
+  assert_eq(cyclic_root.query(".cycle").length(), 1)
+  assert_eq(cyclic_root.query("*").length(), 1)
+}
+
+///|
 fn assert_script_scan(
   value : StringView,
   expected : String,

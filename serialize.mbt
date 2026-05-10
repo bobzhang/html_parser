@@ -1703,18 +1703,33 @@ fn matches_selector_list(node : Node, selector : StringView) -> Bool {
 }
 
 ///|
+fn node_identity_seen(nodes : Array[Node], node : Node) -> Bool {
+  for seen in nodes {
+    if physical_equal(seen, node) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn walk_query(
   node : Node,
   selector : StringView,
   out : Array[Node],
   allow_non_elements : Bool,
+  visited : Array[Node],
 ) -> Unit {
+  if node_identity_seen(visited, node) {
+    return
+  }
+  visited.push(node)
   if (allow_non_elements || node.kind == Element) &&
     matches_selector_list(node, selector) {
     out.push(node)
   }
   for child in node.children {
-    walk_query(child, selector, out, allow_non_elements)
+    walk_query(child, selector, out, allow_non_elements, visited)
   }
 }
 
@@ -1722,8 +1737,9 @@ fn walk_query(
 pub fn Node::query(self : Node, selector : StringView) -> Array[Node] {
   let out : Array[Node] = []
   let allow_non_elements = selector_allows_non_elements(selector)
+  let visited : Array[Node] = [self]
   for child in self.children {
-    walk_query(child, selector, out, allow_non_elements)
+    walk_query(child, selector, out, allow_non_elements, visited)
   }
   out
 }
