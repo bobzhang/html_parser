@@ -380,10 +380,15 @@ JustHTML from Python to MoonBit.
   stay compact with only formatting-whitespace separators, but that separator
   text should become one space only when it is between children; the same
   applies to whitespace-only runs longer than two spaces. Edge whitespace is
-  dropped in the compact fallback. Direct comment children also force this
-  compact fallback, even when adjacent elements are block-level, because
-  inserting indentation around comments changes the Python reference output.
-  Do not compact when an inline wrapper contains a layout/block descendant.
+  dropped in the compact fallback. Layout/block containers with visible inline
+  mixed content have an extra smart-run path: formatting whitespace (`LF`,
+  `CR`, `tab`, `FF`, or whitespace-only runs longer than two spaces) splits the
+  children into indented inline runs, consecutive separators collapse, edge
+  separators disappear, and ordinary spaces inside each run stay compact.
+  Direct comment children also force this compact fallback, even when adjacent
+  elements are block-level, because inserting indentation around comments
+  changes the Python reference output. Do not compact when an inline wrapper
+  contains a layout/block descendant.
   This layout-block set is broader than the text-extraction block set and
   includes names such as `caption`, `center`, `details`, `dialog`, `iframe`,
   `listing`, `marquee`, `menu`, `noframes`, `noscript`, `plaintext`, `search`,

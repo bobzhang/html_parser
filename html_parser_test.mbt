@@ -327,6 +327,48 @@ test "pretty serializer compacts inline whitespace separators" {
 }
 
 ///|
+test "pretty serializer splits formatted inline runs in block containers" {
+  let small_spacing = @html_parser.element("div", children=[
+    @html_parser.element("span"),
+    @html_parser.text("\n  "),
+    @html_parser.text("Hello"),
+    @html_parser.text(" "),
+    @html_parser.element("em"),
+    @html_parser.text(" world"),
+    @html_parser.text("\n"),
+    @html_parser.element("a"),
+  ])
+  assert_eq(
+    small_spacing.to_html(pretty=true),
+    "<div>\n  <span></span>\n  Hello <em></em> world\n  <a></a>\n</div>",
+  )
+  let edge_spacing = @html_parser.element("div", children=[
+    @html_parser.text("\n"),
+    @html_parser.element("span"),
+    @html_parser.text("\n"),
+    @html_parser.element("a"),
+    @html_parser.text(" "),
+    @html_parser.text("Tail"),
+    @html_parser.text("\n"),
+  ])
+  assert_eq(
+    edge_spacing.to_html(pretty=true),
+    "<div>\n  <span></span>\n  <a></a> Tail\n</div>",
+  )
+  let consecutive_separators = @html_parser.element("div", children=[
+    @html_parser.element("span"),
+    @html_parser.text("\n"),
+    @html_parser.text("\n  \t"),
+    @html_parser.element("a"),
+    @html_parser.text(" Tail"),
+  ])
+  assert_eq(
+    consecutive_separators.to_html(pretty=true),
+    "<div>\n  <span></span>\n  <a></a> Tail\n</div>",
+  )
+}
+
+///|
 test "pretty serializer keeps comment child runs compact" {
   let commented = @html_parser.element("div", children=[
     @html_parser.element("span"),

@@ -589,6 +589,89 @@ fn element_has_comment_child(node : Node) -> Bool {
 }
 
 ///|
+fn node_is_pretty_formatting_separator(node : Node) -> Bool {
+  node.kind == Text &&
+  !text_has_visible_char(node.data) &&
+  compact_pretty_whitespace_separator(node.data[:])
+}
+
+///|
+fn pretty_inline_run_to_html(run : Array[Node], quote : Char) -> String {
+  let out = StringBuilder::new()
+  for child in run {
+    match child.kind {
+      Text => {
+        let data = child.data[:]
+        if text_has_visible_char(data) {
+          out.write_string(escape_text(normalize_formatting_whitespace(data)))
+        } else {
+          out.write_string(escape_text(data))
+        }
+      }
+      _ => out.write_string(node_to_html_compact(child, quote))
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn node_to_html_pretty_inline_runs(
+  node : Node,
+  indent : Int,
+  indent_size : Int,
+  quote : Char,
+) -> String? {
+  if !layout_block_element_name(node.name) ||
+    !element_has_compact_inline_children(node) {
+    return None
+  }
+  let runs : Array[Array[Node]] = []
+  let mut current : Array[Node] = []
+  let mut saw_separator = false
+  for child in node.children {
+    if node_is_pretty_formatting_separator(child) {
+      saw_separator = true
+      if !current.is_empty() {
+        runs.push(current)
+        current = []
+      }
+    } else {
+      current.push(child)
+    }
+  }
+  if !current.is_empty() {
+    runs.push(current)
+  }
+  if !saw_separator || runs.is_empty() {
+    return None
+  }
+  let out = StringBuilder::new()
+  out.write_string(" ".repeat(indent))
+  out.write_string(serialize_start_tag(node, quote))
+  let child_prefix = " ".repeat(indent + indent_size)
+  let mut wrote_run = false
+  for run in runs {
+    let line = pretty_inline_run_to_html(run, quote)
+    if line.is_empty() {
+      continue
+    }
+    wrote_run = true
+    out.write_char('\n')
+    out.write_string(child_prefix)
+    out.write_string(line)
+  }
+  if !wrote_run {
+    return None
+  }
+  out.write_char('\n')
+  out.write_string(" ".repeat(indent))
+  out.write_string("</")
+  out.write_string(node.name)
+  out.write_char('>')
+  Some(out.to_string())
+}
+
+///|
 fn node_to_html_pretty_compact_part(
   node : Node,
   quote : Char,
@@ -708,6 +791,11 @@ fn node_to_html_pretty(
         out.write_string(node.name)
         out.write_char('>')
         out.to_string()
+      } else if node_to_html_pretty_inline_runs(
+          node, indent, indent_size, quote,
+        )
+        is Some(html) {
+        html
       } else if element_has_compact_inline_children(node) {
         " ".repeat(indent) +
         node_to_html_pretty_compact_children(node, quote, indent_size)
