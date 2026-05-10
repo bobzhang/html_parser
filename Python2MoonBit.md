@@ -527,9 +527,16 @@ JustHTML from Python to MoonBit.
   recovery error, pop `noscript`, and let the same token land in body mode.
   Character runs need a split: leading ASCII whitespace stays in the head after
   `noscript`, while the non-whitespace suffix is reprocessed into the body.
+  A `</br>` in this mode first reports as an unexpected noscript end tag, then
+  is reprocessed as the body-mode `br` recovery and reports again.
 - Repeated `<html>` start tags are not normal element insertion. Once the
   document html element exists, report `unexpected-start-tag`, merge only
   missing attributes onto the existing html node, and drop the token.
+- Repeated `<head>` starts are a JustHTML-specific recovery edge. A duplicate
+  head start while the real head is open reports `unexpected-start-tag`, starts
+  a transient duplicate head sibling, and document scaffolding later moves that
+  duplicate head's children into the body. A following head element such as
+  `<title>` must therefore not be pulled back into the real head.
 - Foreign-content integration points depend on attributes, not just tag names.
   MathML `annotation-xml` integrates HTML only for `encoding` values like
   `text/html`; missing or other values still break HTML starts out of MathML.

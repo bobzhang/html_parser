@@ -26,6 +26,7 @@ priv struct Parser {
   mut template_table_context_mode : Bool
   mut template_detached_column_group_mode : Bool
   mut deferred_initial_doctype_error : ParseError?
+  mut duplicate_head_element : Node?
 }
 
 ///|
@@ -63,6 +64,7 @@ fn Parser::new(
     template_table_context_mode: false,
     template_detached_column_group_mode: false,
     deferred_initial_doctype_error: None,
+    duplicate_head_element: None,
   }
 }
 
@@ -2225,6 +2227,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_disabled_head_noscript_end_tag(name, start) {
     return
   }
+  if self.handle_duplicate_head_end_tag(name, start) {
+    return
+  }
   self.close_current_column_group_for_end(name)
   if self.handle_caption_end_tag(name, start) {
     return
@@ -2523,9 +2528,21 @@ fn Parser::close_current_document_head_for_start(
   }
   if name == "head" {
     self.error_at("unexpected-start-tag", start)
+    ignore(self.stack.pop())
+    let duplicate = element("head")
+    self.current_node().append_child(duplicate)
+    self.stack.push(duplicate)
+    self.duplicate_head_element = Some(duplicate)
     return true
   }
-  ignore(self.stack.pop())
+  match self.stack.pop() {
+    Some(node) =>
+      if self.duplicate_head_element is Some(duplicate) &&
+        physical_equal(node, duplicate) {
+        self.duplicate_head_element = None
+      }
+    None => ()
+  }
   false
 }
 
@@ -2624,6 +2641,26 @@ fn Parser::handle_disabled_head_noscript_end_tag(
     return false
   }
   true
+}
+
+///|
+fn Parser::handle_duplicate_head_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if name != "head" {
+    return false
+  }
+  match (self.stack.last(), self.duplicate_head_element) {
+    (Some(current), Some(duplicate)) if physical_equal(current, duplicate) => {
+      self.error_at("unexpected-end-tag", start)
+      ignore(self.stack.pop())
+      self.duplicate_head_element = None
+      true
+    }
+    _ => false
+  }
 }
 
 ///|
@@ -5733,6 +5770,7 @@ fn scaffold_existing_html_element(html : Node) -> Unit {
       for grandchild in existing {
         body_children.push(grandchild)
       }
+      body_started = true
     } else if child.kind == Element &&
       is_document_head_element_name(child.name) &&
       !body_started {
@@ -5824,6 +5862,7 @@ fn scaffold_document(root : Node) -> Unit {
       for grandchild in existing {
         body_children.push(grandchild)
       }
+      body_started = true
     } else if child.kind == Element &&
       is_document_head_element_name(child.name) &&
       !body_started {

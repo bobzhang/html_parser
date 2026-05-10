@@ -735,6 +735,43 @@ test "document parser promotes explicit root head and body elements" {
     late_head_item.to_html(pretty=false),
     "<html><head></head><body class=\"x\"><p>p</p><title>T</title></body></html>",
   )
+  let text_in_head = @html_parser.parse(
+    "<head>x</head><p>y",
+    collect_errors=true,
+  )
+  assert_eq(
+    text_in_head.to_html(pretty=false),
+    "<html><head></head><body>x<p>y</p></body></html>",
+  )
+  assert_eq(text_in_head.errors.length(), 2)
+  assert_eq(text_in_head.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(text_in_head.errors[1].code, "unexpected-end-tag")
+  let duplicate_head = @html_parser.parse(
+    "<head><head><title>T</title>",
+    collect_errors=true,
+  )
+  assert_eq(
+    duplicate_head.to_html(pretty=false),
+    "<html><head></head><body><title>T</title></body></html>",
+  )
+  assert_eq(duplicate_head.errors.length(), 2)
+  assert_eq(duplicate_head.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(duplicate_head.errors[1].code, "unexpected-start-tag")
+  let closed_duplicate_head = @html_parser.parse(
+    "<head><head></head><title>T</title>",
+    collect_errors=true,
+  )
+  assert_eq(
+    closed_duplicate_head.to_html(pretty=false),
+    "<html><head></head><body><title>T</title></body></html>",
+  )
+  assert_eq(closed_duplicate_head.errors.length(), 3)
+  assert_eq(
+    closed_duplicate_head.errors[0].code,
+    "expected-doctype-but-got-start-tag",
+  )
+  assert_eq(closed_duplicate_head.errors[1].code, "unexpected-start-tag")
+  assert_eq(closed_duplicate_head.errors[2].code, "unexpected-end-tag")
 }
 
 ///|
@@ -4078,6 +4115,37 @@ test "document parser ignores tokens after frameset" {
   assert_eq(paired.errors[0].code, "unexpected-token-after-frameset")
   assert_eq(paired.errors[1].code, "unexpected-token-in-frameset")
   assert_eq(paired.errors[2].code, "unexpected-token-in-frameset")
+  let extra_end = @html_parser.parse(
+    "<!doctype html><frameset></frameset></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    extra_end.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset></frameset></html>",
+  )
+  assert_eq(extra_end.errors.length(), 1)
+  assert_eq(extra_end.errors[0].code, "unexpected-token-after-frameset")
+  let stray_end = @html_parser.parse(
+    "<!doctype html><frameset></p></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    stray_end.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset></frameset></html>",
+  )
+  assert_eq(stray_end.errors.length(), 1)
+  assert_eq(stray_end.errors[0].code, "unexpected-token-in-frameset")
+  let after_stray_end = @html_parser.parse(
+    "<!doctype html><frameset></frameset></p>",
+    collect_errors=true,
+  )
+  assert_eq(
+    after_stray_end.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset></frameset></html>",
+  )
+  assert_eq(after_stray_end.errors.length(), 2)
+  assert_eq(after_stray_end.errors[0].code, "unexpected-token-after-frameset")
+  assert_eq(after_stray_end.errors[1].code, "unexpected-token-in-frameset")
   let void_start = @html_parser.parse(
     "<!doctype html><frameset></frameset><br>",
     collect_errors=true,
@@ -7175,6 +7243,31 @@ test "parser handles disabled scripting noscript in head" {
   assert_eq(stray_end.errors.length(), 2)
   assert_eq(stray_end.errors[0].code, "expected-doctype-but-got-start-tag")
   assert_eq(stray_end.errors[1].code, "unexpected-end-tag")
+  let stray_head = @html_parser.parse(
+    "<head><noscript><head></noscript>",
+    collect_errors=true,
+    scripting_enabled=false,
+  )
+  assert_eq(
+    stray_head.to_html(pretty=false),
+    "<html><head><noscript></noscript></head><body></body></html>",
+  )
+  assert_eq(stray_head.errors.length(), 2)
+  assert_eq(stray_head.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(stray_head.errors[1].code, "unexpected-start-tag")
+  let stray_br = @html_parser.parse(
+    "<head><noscript></br>x",
+    collect_errors=true,
+    scripting_enabled=false,
+  )
+  assert_eq(
+    stray_br.to_html(pretty=false),
+    "<html><head><noscript></noscript></head><body><br>x</body></html>",
+  )
+  assert_eq(stray_br.errors.length(), 3)
+  assert_eq(stray_br.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(stray_br.errors[1].code, "unexpected-end-tag")
+  assert_eq(stray_br.errors[2].code, "unexpected-end-tag")
   let paragraph = @html_parser.parse(
     "<head><noscript><p>x</noscript>",
     collect_errors=true,
