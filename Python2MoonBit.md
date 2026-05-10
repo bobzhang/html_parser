@@ -173,7 +173,9 @@ JustHTML from Python to MoonBit.
   metadata.
 - `<base href>` is not an ordinary link URL. Drop it even when allowlisted,
   because preserving it can alter how later relative URLs resolve after
-  sanitization.
+  sanitization. In `Collect` or `Raise` mode, route this through the same
+  unsafe-attribute handling path as other dropped URL attributes, even when a
+  `UrlPolicy` rule exists for `("base", "href")`.
 - URL-bearing attributes are opt-in twice: the attribute allowlist must permit
   the name, and `UrlPolicy.allow_rules` must contain an exact tag/attribute
   rule. Missing URL rules drop even otherwise-allowlisted `href` and `src`
