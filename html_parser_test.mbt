@@ -1844,6 +1844,34 @@ test "parse_bytes meta prescan skips comments and quoted non-meta tags" {
 }
 
 ///|
+test "parse_bytes meta prescan ignores incomplete constructs" {
+  let unfinished_comment = b"\x3c\x21\x2d\x2d\x3c\x6d\x65\x74\x61\x20\x63\x68\x61\x72\x73\x65\x74\x3d\x75\x74\x66\x2d\x38\x3e"
+  let unfinished_comment_doc = @html_parser.parse_bytes(unfinished_comment)
+  guard unfinished_comment_doc.encoding is Some("windows-1252") else {
+    fail("expected unfinished comment to prevent meta sniff")
+  }
+  let end_tag = b"\x3c\x2f\x61\x20\x74\x69\x74\x6c\x65\x3d\x27\x78\x27\x3e\x3c\x70\x3e\x80\x3c\x2f\x70\x3e"
+  let end_tag_doc = @html_parser.parse_bytes(end_tag)
+  assert_eq(end_tag_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard end_tag_doc.encoding is Some("windows-1252") else {
+    fail("expected end tag to be skipped during meta sniff")
+  }
+  let unclosed_quote = b"\x3c\x6d\x65\x74\x61\x20\x63\x68\x61\x72\x73\x65\x74\x3d\x22\x75\x74\x66\x2d\x38\x3c\x70\x3e\x80\x3c\x2f\x70\x3e"
+  let unclosed_quote_doc = @html_parser.parse_bytes(unclosed_quote)
+  guard unclosed_quote_doc.encoding is Some("windows-1252") else {
+    fail("expected unclosed meta attribute quote to be ignored")
+  }
+  let missing_value = @html_parser.parse_bytes(b"<meta charset")
+  guard missing_value.encoding is Some("windows-1252") else {
+    fail("expected incomplete charset attribute to fall back")
+  }
+  let missing_gt = @html_parser.parse_bytes(b"<meta charset=utf-8")
+  guard missing_gt.encoding is Some("windows-1252") else {
+    fail("expected unclosed meta tag to fall back")
+  }
+}
+
+///|
 test "parse_bytes prescans http equiv content charset" {
   let utf8 = @utf8.encode(
     "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"><p>\u{20AC}</p>",
@@ -1861,6 +1889,22 @@ test "parse_bytes prescans http equiv content charset" {
   guard single_quoted_doc.encoding is Some("utf-8") else {
     fail("expected quoted content charset utf-8")
   }
+  let spaced_equals = @utf8.encode(
+    "<meta http-equiv=\"Content-Type\" content=\"charset   =utf-8\"><p>\u{20AC}</p>",
+  )
+  let spaced_equals_doc = @html_parser.parse_bytes(spaced_equals)
+  assert_eq(spaced_equals_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard spaced_equals_doc.encoding is Some("utf-8") else {
+    fail("expected content charset with spaced equals")
+  }
+  let spaced_value = @utf8.encode(
+    "<meta http-equiv=\"Content-Type\" content=\"charset=   utf-8\"><p>\u{20AC}</p>",
+  )
+  let spaced_value_doc = @html_parser.parse_bytes(spaced_value)
+  assert_eq(spaced_value_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard spaced_value_doc.encoding is Some("utf-8") else {
+    fail("expected content charset with spaced value")
+  }
   let invalid_direct = @utf8.encode(
     "<meta charset=bogus http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"><p>\u{20AC}</p>",
   )
@@ -1874,6 +1918,18 @@ test "parse_bytes prescans http equiv content charset" {
   assert_eq(invalid_doc.to_text(separator="", strip=false), "\u{20AC}")
   guard invalid_doc.encoding is Some("windows-1252") else {
     fail("expected invalid http-equiv charset to fall back")
+  }
+  let missing_equals = b"<meta http-equiv=\"Content-Type\" content=\"charset   utf-8\"><p>\x80</p>"
+  let missing_equals_doc = @html_parser.parse_bytes(missing_equals)
+  assert_eq(missing_equals_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard missing_equals_doc.encoding is Some("windows-1252") else {
+    fail("expected malformed content charset to fall back")
+  }
+  let unterminated = b"<meta http-equiv=\"Content-Type\" content=\"text/html; charset='utf-8\"><p>\x80</p>"
+  let unterminated_doc = @html_parser.parse_bytes(unterminated)
+  assert_eq(unterminated_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard unterminated_doc.encoding is Some("windows-1252") else {
+    fail("expected unterminated content charset quote to fall back")
   }
 }
 

@@ -40,6 +40,9 @@ JustHTML from Python to MoonBit.
 - Invalid transport encoding labels should not become the reported encoding.
   Treat them like a missing transport label and continue with BOM/meta/default
   sniffing.
+- Byte-level prescan edge cases are easy to accidentally "fix" by decoding
+  first. Keep explicit tests for unfinished comments/tags and unterminated
+  quotes so malformed sniff-only markup does not change the selected encoding.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.
