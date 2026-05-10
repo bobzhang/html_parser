@@ -358,6 +358,12 @@ JustHTML from Python to MoonBit.
   appended at the current table-context position rather than moved before a
   visible table wrapper, and `</table>` reports `unexpected-end-tag` instead of
   closing the synthetic context.
+- Row-group fragment contexts (`tbody`, `thead`, `tfoot`) need a synthetic
+  table plus synthetic row group for insertion, then both wrappers are unwrapped
+  from the returned fragment. Top-level table-structural starts other than rows
+  and cells are ignored with `unexpected-start-tag`; otherwise they would be
+  incorrectly inserted because the MoonBit synthetic row group is more concrete
+  than Python's mode-only fragment context.
 
 ## Optional Values and Defaults
 

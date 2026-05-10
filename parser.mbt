@@ -12,6 +12,7 @@ priv struct Parser {
   mut after_frameset_ignored_depth : Int
   foster_parented_start_error_nodes : Array[Node]
   mut fragment_context_table : Node?
+  mut fragment_context_table_section : Node?
 }
 
 ///|
@@ -34,6 +35,7 @@ fn Parser::new(
     after_frameset_ignored_depth: 0,
     foster_parented_start_error_nodes: [],
     fragment_context_table: None,
+    fragment_context_table_section: None,
   }
 }
 
@@ -837,6 +839,37 @@ fn Parser::handle_fragment_context_table_start_tag(
     return true
   }
   false
+}
+
+///|
+fn fragment_context_table_section_ignores_start(name : StringView) -> Bool {
+  match name {
+    "caption" | "col" | "colgroup" | "table" | "tbody" | "tfoot" | "thead" =>
+      true
+    _ => false
+  }
+}
+
+///|
+fn Parser::handle_fragment_context_table_section_start_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if !fragment_context_table_section_ignores_start(name) {
+    return false
+  }
+  match self.fragment_context_table_section {
+    Some(section) => {
+      let current = self.current_node()
+      if physical_equal(current, section) {
+        self.error_at("unexpected-start-tag", start)
+        return true
+      }
+      false
+    }
+    None => false
+  }
 }
 
 ///|
@@ -2456,6 +2489,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         ) {
         return
       }
+      if self.handle_fragment_context_table_section_start_tag(name, start) {
+        return
+      }
       let closed_table_cell = self.close_current_table_cell_for_start(name)
       self.close_current_table_row_for_start(name)
       self.close_current_table_section_for_start(name)
@@ -3428,6 +3464,14 @@ fn is_fragment_plain_text_context(name : StringView) -> Bool {
 }
 
 ///|
+fn is_fragment_table_section_context(name : StringView) -> Bool {
+  match name {
+    "tbody" | "thead" | "tfoot" => true
+    _ => false
+  }
+}
+
+///|
 fn Parser::append_fragment_context_text(
   self : Parser,
   raw : StringView,
@@ -3477,6 +3521,29 @@ fn Parser::parse_table_fragment_context(self : Parser) -> Unit {
 }
 
 ///|
+fn Parser::parse_table_section_fragment_context(
+  self : Parser,
+  name : String,
+) -> Unit {
+  let table = element("table")
+  let section = element(name)
+  self.fragment_context_table = Some(table)
+  self.fragment_context_table_section = Some(section)
+  self.root.append_child(table)
+  table.append_child(section)
+  self.stack.push(table)
+  self.stack.push(section)
+  self.parse_all()
+  normalize_tables(section)
+  unwrap_fragment_context_element(table, section)
+  unwrap_fragment_context_element(self.root, table)
+  self.stack.clear()
+  self.stack.push(self.root)
+  self.fragment_context_table_section = None
+  self.fragment_context_table = None
+}
+
+///|
 fn Parser::parse_fragment_context(
   self : Parser,
   context : FragmentContext,
@@ -3517,6 +3584,10 @@ fn Parser::parse_fragment_context(
   }
   if name == "table" {
     self.parse_table_fragment_context()
+    return true
+  }
+  if is_fragment_table_section_context(name) {
+    self.parse_table_section_fragment_context(name)
     return true
   }
   false
