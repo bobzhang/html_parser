@@ -9,6 +9,7 @@ priv struct Parser {
   mut form_element : Node?
   mut frameset_ok : Bool
   mut after_frameset : Bool
+  mut after_frameset_ignored_depth : Int
 }
 
 ///|
@@ -28,6 +29,7 @@ fn Parser::new(
     form_element: None,
     frameset_ok: root.kind == Document,
     after_frameset: false,
+    after_frameset_ignored_depth: 0,
   }
 }
 
@@ -91,7 +93,9 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if !self.is_fragment_parser() &&
     (self.after_frameset || self.has_open_element("frameset")) {
     let whitespace = ascii_whitespace_chars_only(cleaned)
-    if self.after_frameset && whitespace.length() != cleaned.length() {
+    if self.after_frameset &&
+      self.after_frameset_ignored_depth == 0 &&
+      whitespace.length() != cleaned.length() {
       self.error_at("unexpected-token-after-frameset", start)
     }
     if !whitespace.is_empty() {
@@ -649,6 +653,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.error_at_eof("eof-in-tag")
     return
   }
+  if self.handle_document_frameset_end_tag(name, start) {
+    return
+  }
   if name == "br" {
     self.error_at("unexpected-end-tag", start)
     self.close_open_p_element()
@@ -668,9 +675,6 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   }
   if name == "form" {
     self.handle_form_end_tag(start)
-    return
-  }
-  if self.handle_document_frameset_end_tag(name, start) {
     return
   }
   if self.fragment_end_tag_is_ignored(name) {
@@ -720,7 +724,11 @@ fn Parser::handle_document_frameset_end_tag(
   if self.after_frameset {
     if name == "frameset" {
       self.error_at("unexpected-token-after-frameset", start)
+    } else if self.after_frameset_ignored_depth > 0 {
+      self.error_at("unexpected-token-in-frameset", start)
+      self.after_frameset_ignored_depth -= 1
     } else {
+      self.error_at("unexpected-token-after-frameset", start)
       self.error_at("unexpected-token-in-frameset", start)
     }
     return true
@@ -1359,13 +1367,21 @@ fn Parser::handle_document_frameset_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
+  self_closing : Bool,
   start : Int,
 ) -> Bool {
   if self.is_fragment_parser() {
     return false
   }
   if self.after_frameset {
+    if name == "noframes" {
+      return false
+    }
     self.error_at("unexpected-token-after-frameset", start)
+    self.error_at("unexpected-token-in-frameset", start)
+    if !self_closing && !is_void_element(name) {
+      self.after_frameset_ignored_depth += 1
+    }
     return true
   }
   if self.has_open_element("frameset") {
@@ -1583,7 +1599,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.handle_select_special_start_tag(name, attrs, self_closing, start) {
         return
       }
-      if self.handle_document_frameset_start_tag(name, attrs, start) {
+      if self.handle_document_frameset_start_tag(
+          name, attrs, self_closing, start,
+        ) {
         return
       }
       if !self.is_fragment_parser() && name == "frame" {

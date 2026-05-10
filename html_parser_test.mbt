@@ -2160,6 +2160,38 @@ test "document parser ignores tokens after frameset" {
   )
   assert_eq(text.errors.length(), 1)
   assert_eq(text.errors[0].code, "unexpected-token-after-frameset")
+  let paired = @html_parser.parse(
+    "<!doctype html><frameset></frameset><p>x</p>",
+    collect_errors=true,
+  )
+  assert_eq(
+    paired.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset></frameset></html>",
+  )
+  assert_eq(paired.errors.length(), 3)
+  assert_eq(paired.errors[0].code, "unexpected-token-after-frameset")
+  assert_eq(paired.errors[1].code, "unexpected-token-in-frameset")
+  assert_eq(paired.errors[2].code, "unexpected-token-in-frameset")
+  let void_start = @html_parser.parse(
+    "<!doctype html><frameset></frameset><br>",
+    collect_errors=true,
+  )
+  assert_eq(
+    void_start.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset></frameset></html>",
+  )
+  assert_eq(void_start.errors.length(), 2)
+  assert_eq(void_start.errors[0].code, "unexpected-token-after-frameset")
+  assert_eq(void_start.errors[1].code, "unexpected-token-in-frameset")
+  let noframes = @html_parser.parse(
+    "<!doctype html><frameset></frameset><noframes>x</noframes>",
+    collect_errors=true,
+  )
+  assert_eq(
+    noframes.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset></frameset><noframes>x</noframes></html>",
+  )
+  assert_eq(noframes.errors.length(), 0)
   let body = @html_parser.parse(
     "<!doctype html><body>x</body><frameset></frameset>",
     collect_errors=true,
