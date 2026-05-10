@@ -631,11 +631,34 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.handle_form_end_tag(start)
     return
   }
+  if self.fragment_end_tag_is_ignored(name) {
+    return
+  }
   if self.handle_select_end_tag(name, start) {
     return
   }
   if name != "" {
     self.pop_until(name, start)
+  }
+}
+
+///|
+fn Parser::is_fragment_parser(self : Parser) -> Bool {
+  self.root.kind == Fragment
+}
+
+///|
+fn Parser::fragment_end_tag_is_ignored(
+  self : Parser,
+  name : StringView,
+) -> Bool {
+  if !self.is_fragment_parser() {
+    return false
+  }
+  match name {
+    "html" => true
+    "body" => !self.has_open_element("select")
+    _ => false
   }
 }
 
@@ -734,6 +757,26 @@ fn Parser::handle_form_end_tag(self : Parser, start : Int) -> Unit {
       }
     }
     None => self.error_at("unexpected-end-tag", start)
+  }
+}
+
+///|
+fn fragment_shell_start_is_ignored(name : StringView) -> Bool {
+  match name {
+    "body" | "head" | "html" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::fragment_shell_start_error_code(
+  self : Parser,
+  name : StringView,
+) -> String {
+  if self.has_open_element("select") && (name == "body" || name == "head") {
+    "unexpected-start-tag-in-select"
+  } else {
+    "unexpected-start-tag"
   }
 }
 
@@ -1116,6 +1159,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if !closed {
         self.error_at_eof("eof-in-tag")
+        return
+      }
+      if self.is_fragment_parser() && fragment_shell_start_is_ignored(name) {
+        self.error_at(self.fragment_shell_start_error_code(name), start)
         return
       }
       if self.has_open_element("select") &&
