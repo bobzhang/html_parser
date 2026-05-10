@@ -3474,6 +3474,22 @@ test "parser reports select common element starts and ends" {
 }
 
 ///|
+test "parser ignores sectioning starts in select mode" {
+  let aside = @html_parser.parse(
+    "<select><aside>text</aside></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    aside.to_html(pretty=false),
+    "<html><head></head><body><select>text</select></body></html>",
+  )
+  assert_eq(aside.errors.length(), 3)
+  assert_eq(aside.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(aside.errors[1].code, "unexpected-start-tag-in-select")
+  assert_eq(aside.errors[2].code, "unexpected-end-tag")
+}
+
+///|
 test "parser reports select plaintext start and keeps current container" {
   let plain = @html_parser.parse_fragment(
     "<select><plaintext>x</select>y",

@@ -3047,6 +3047,14 @@ fn select_common_element_start_reports_in_select(name : StringView) -> Bool {
 }
 
 ///|
+fn select_ignored_start_reports_in_select(name : StringView) -> Bool {
+  match name {
+    "aside" => true
+    _ => false
+  }
+}
+
+///|
 fn Parser::last_stack_index_of(self : Parser, name : String) -> Int {
   let mut index = self.stack.length()
   while index > 0 {
@@ -3158,6 +3166,10 @@ fn Parser::handle_select_special_start_tag(
   if select_common_element_start_reports_in_select(name) {
     self.error_at("unexpected-start-tag-in-select", start)
     self.insert_element_maybe_push(name, attrs, !self_closing)
+    return true
+  }
+  if select_ignored_start_reports_in_select(name) {
+    self.error_at("unexpected-start-tag-in-select", start)
     return true
   }
   false

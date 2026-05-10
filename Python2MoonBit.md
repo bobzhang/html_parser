@@ -443,6 +443,9 @@ JustHTML from Python to MoonBit.
 - Repeated `<html>` start tags are not normal element insertion. Once the
   document html element exists, report `unexpected-start-tag`, merge only
   missing attributes onto the existing html node, and drop the token.
+- Select insertion mode has element-specific recovery. Some starts, such as
+  `aside`, are parse-error tokens that should be ignored while their following
+  text still belongs to the open `select`.
 - A function receiving an already optional value, such as a stored `String?`,
   should usually take a normal `arg : String?` parameter. Do not use an
   optional labeled parameter when the caller needs to pass `None` or `Some(...)`
