@@ -321,6 +321,17 @@ fn Parser::report_unexpected_table_body_cell_start(
 }
 
 ///|
+fn Parser::last_open_table_cell_index(self : Parser) -> Int {
+  let td_index = self.last_stack_index_of("td")
+  let th_index = self.last_stack_index_of("th")
+  if td_index > th_index {
+    td_index
+  } else {
+    th_index
+  }
+}
+
+///|
 fn table_cell_start_closes_current_cell(name : StringView) -> Bool {
   match name {
     "caption"
@@ -344,14 +355,15 @@ fn Parser::close_current_table_cell_for_start(
   if !table_cell_start_closes_current_cell(name) {
     return false
   }
-  match self.stack.last() {
-    Some(node) if node.kind == Element &&
-      (node.name == "td" || node.name == "th") => {
-      ignore(self.stack.pop())
-      true
-    }
-    _ => false
+  let table_index = self.last_open_table_index()
+  let cell_index = self.last_open_table_cell_index()
+  if table_index < 0 || cell_index <= table_index {
+    return false
   }
+  while self.stack.length() > cell_index {
+    ignore(self.stack.pop())
+  }
+  true
 }
 
 ///|
@@ -377,10 +389,13 @@ fn Parser::close_current_table_row_for_start(
   if !table_row_start_closes_current_row(name) {
     return
   }
-  match self.stack.last() {
-    Some(node) if node.kind == Element && node.name == "tr" =>
-      ignore(self.stack.pop())
-    _ => ()
+  let table_index = self.last_open_table_index()
+  let row_index = self.last_stack_index_of("tr")
+  if table_index < 0 || row_index <= table_index {
+    return
+  }
+  while self.stack.length() > row_index {
+    ignore(self.stack.pop())
   }
 }
 
@@ -400,10 +415,22 @@ fn Parser::close_current_table_section_for_start(
   if !table_body_start_closes_current_section(name) {
     return
   }
-  match self.stack.last() {
-    Some(node) if node.kind == Element && is_table_section_name(node.name) =>
-      ignore(self.stack.pop())
-    _ => ()
+  let table_index = self.last_open_table_index()
+  let mut section_index = -1
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element && is_table_section_name(node.name) {
+      section_index = index
+      break
+    }
+  }
+  if table_index < 0 || section_index <= table_index {
+    return
+  }
+  while self.stack.length() > section_index {
+    ignore(self.stack.pop())
   }
 }
 
