@@ -19,7 +19,8 @@ The current slice provides:
   doctype handling, unsafe attribute filtering, basic URL checks, and explicit
   parse-time sanitization via `sanitize=true`. Custom policies can unwrap,
   drop, or escape disallowed tags, force hardened anchor `rel` tokens, and
-  allowlist simple inline CSS properties.
+  allowlist simple inline CSS properties while hardening allowed raw-text
+  `script` and `style` contents.
 - Initial Markdown conversion for text, paragraphs, headings, inline
   formatting, links, code, lists, blockquotes, and raw HTML passthrough.
 

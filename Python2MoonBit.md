@@ -187,6 +187,11 @@ JustHTML from Python to MoonBit.
   `</style` sequences only when the tag name is followed by EOF, HTML
   whitespace, `>`, or `/`. Do not escape all `<` characters in raw text, and
   do not alter non-boundaries such as `</scriptx>`.
+- Sanitizing allowed raw-text elements needs a DOM-level hardening pass, not
+  only serializer escaping. Join split text children before searching for
+  `</script`/`</style`, drop any non-text children that were created
+  programmatically, and clear allowed `<style>` contents if the CSS contains
+  resource-loading constructs such as `@import`, `url(`, or `image-set(`.
 - URL serialization context is based on text content, not the serialized markup
   string. Match Python by trimming the text and percent-encoding its UTF-8
   bytes while preserving URL delimiter characters such as `/`, `?`, `&`, and

@@ -371,6 +371,45 @@ test "sanitize_dom filters inline style declarations by property allowlist" {
 }
 
 ///|
+test "sanitize_dom hardens allowed rawtext element contents" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["style", "script", "img", "span"],
+    allowed_attributes={ "img": ["src", "alt"], "span": [] },
+    drop_content_tags=[],
+  )
+  let style = @html_parser.element("style", children=[
+    @html_parser.text("</sty"),
+    @html_parser.text("le><img src=x onerror=1>"),
+  ])
+  let script = @html_parser.element("script", children=[
+    @html_parser.text("a"),
+    @html_parser.element("span", children=[@html_parser.text("ignored")]),
+    @html_parser.text("</script><img src=x onerror=1>"),
+  ])
+  let fragment = @html_parser.fragment(children=[style, script])
+  let clean = @html_parser.sanitize_dom(fragment, policy~)
+  let out = clean.to_html(pretty=false)
+  assert_eq(
+    out, "<style>&lt;/style><img src=x onerror=1></style><script>a&lt;/script><img src=x onerror=1></script>",
+  )
+  let reparsed = @html_parser.parse_fragment(out, sanitize=false)
+  assert_eq(reparsed.query("img").length(), 0)
+}
+
+///|
+test "sanitize_dom filters allowed style rawtext resource loads" {
+  let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
+  let fragment = @html_parser.parse_fragment(
+    "<style>@import \"https://evil.example/x.css\"; body{background:url(/x.png)}</style><style>body{color:red}</style>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<style></style><style>body{color:red}</style>",
+  )
+}
+
+///|
 test "sanitize_dom handles standalone nodes and url edge cases" {
   let allowed = @html_parser.element(
     "p",

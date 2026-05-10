@@ -630,6 +630,58 @@ fn sanitize_element_attributes(
 }
 
 ///|
+fn rawtext_serialization_element_name(node : Node) -> String? {
+  let name = sanitize_node_name(node)
+  match name {
+    "script" | "style" => Some(name)
+    _ => None
+  }
+}
+
+///|
+fn sanitize_rawtext_element_children(node : Node) -> Bool {
+  guard rawtext_serialization_element_name(node) is Some(tag_name) else {
+    return false
+  }
+  let original = node.children.copy()
+  node.children.clear()
+  let text_children : Array[Node] = []
+  let text_parts : Array[String] = []
+  for child in original {
+    if child.parent is Some(parent) && physical_equal(parent, node) {
+      child.parent = None
+    }
+    match child.kind {
+      Text => {
+        text_children.push(child)
+        text_parts.push(child.data)
+      }
+      _ => ()
+    }
+  }
+  if text_children.is_empty() {
+    return true
+  }
+  let combined_text = text_parts.join("")
+  let sanitized_text = neutralize_rawtext_end_tag_sequences(
+    combined_text, tag_name,
+  )
+  if tag_name == "style" &&
+    sanitized_text != "" &&
+    css_value_may_load_external_resource(sanitized_text) {
+    return true
+  }
+  if sanitized_text == combined_text {
+    for child in text_children {
+      node.append_child(child)
+    }
+  } else if sanitized_text != "" {
+    node.append_child(text(sanitized_text))
+  }
+  true
+}
+
+///|
 fn sanitize_container_children(
   parent : Node,
   policy : SanitizationPolicy,
@@ -673,7 +725,9 @@ fn sanitize_container_children(
           }
         } else {
           sanitize_element_attributes(child, policy)
-          sanitize_container_children(child, policy)
+          if !sanitize_rawtext_element_children(child) {
+            sanitize_container_children(child, policy)
+          }
           index += 1
         }
       }
