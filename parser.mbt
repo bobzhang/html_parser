@@ -440,7 +440,7 @@ fn Parser::handle_nested_table_start_tag(
 fn Parser::report_unexpected_table_body_cell_start(
   self : Parser,
   name : String,
-  start : Int,
+  tag_close_pos : Int,
 ) -> Unit {
   let current = self.current_node()
   if (name == "td" || name == "th") &&
@@ -452,7 +452,7 @@ fn Parser::report_unexpected_table_body_cell_start(
         is_table_or_section_context(current.name)
       )
     ) {
-    self.error_at("unexpected-cell-in-table-body", start)
+    self.error_at("unexpected-cell-in-table-body", tag_close_pos)
   }
 }
 
@@ -4007,7 +4007,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       ignore(self.handle_nested_table_start_tag(name, tag_close_pos))
       if !closed_table_cell {
-        self.report_unexpected_table_body_cell_start(name, start)
+        self.report_unexpected_table_body_cell_start(name, tag_close_pos)
       }
       if name == "form" && self.form_element is Some(_) {
         self.error_at("unexpected-start-tag", start)
