@@ -5899,6 +5899,56 @@ test "parser handles null characters in text attributes and text modes" {
 }
 
 ///|
+test "parser and tokenizer report noncharacters in input stream" {
+  let tokens = @html_parser.tokenize("ab\u{FDD0}cd", collect_errors=true)
+  guard tokens.tokens[0] is @html_parser.HtmlToken::Characters("ab\u{FDD0}cd") else {
+    fail("expected noncharacter to stay in character token")
+  }
+  assert_eq(tokens.errors.length(), 1)
+  assert_eq(tokens.errors[0].code, "noncharacter-in-input-stream")
+  guard tokens.errors[0].column is Some(3) else {
+    fail("expected data-state noncharacter at column 3")
+  }
+  let multiline = @html_parser.tokenize("a\nb\u{FDD0}c", collect_errors=true)
+  assert_eq(multiline.errors.length(), 1)
+  assert_eq(multiline.errors[0].code, "noncharacter-in-input-stream")
+  guard multiline.errors[0].line is Some(2) else {
+    fail("expected multiline noncharacter on line 2")
+  }
+  guard multiline.errors[0].column is Some(2) else {
+    fail("expected multiline noncharacter at column 2")
+  }
+  let invalid_open = @html_parser.tokenize("<\u{FDD0}", collect_errors=true)
+  guard invalid_open.tokens[0]
+    is @html_parser.HtmlToken::Characters("<\u{FDD0}") else {
+    fail("expected invalid tag open as text")
+  }
+  assert_eq(invalid_open.errors.length(), 3)
+  assert_eq(invalid_open.errors[0].code, "noncharacter-in-input-stream")
+  assert_eq(invalid_open.errors[1].code, "invalid-first-character-of-tag-name")
+  assert_eq(invalid_open.errors[2].code, "noncharacter-in-input-stream")
+  let fragment = @html_parser.parse_fragment(
+    "ab\u{FDD0}cd",
+    collect_errors=true,
+  )
+  assert_eq(fragment.to_html(pretty=false), "ab\u{FDD0}cd")
+  assert_eq(fragment.errors.length(), 1)
+  assert_eq(fragment.errors[0].code, "noncharacter-in-input-stream")
+  let invalid_fragment = @html_parser.parse_fragment(
+    "<\u{FDD0}",
+    collect_errors=true,
+  )
+  assert_eq(invalid_fragment.to_html(pretty=false), "&lt;\u{FDD0}")
+  assert_eq(invalid_fragment.errors.length(), 3)
+  assert_eq(invalid_fragment.errors[0].code, "noncharacter-in-input-stream")
+  assert_eq(
+    invalid_fragment.errors[1].code,
+    "invalid-first-character-of-tag-name",
+  )
+  assert_eq(invalid_fragment.errors[2].code, "noncharacter-in-input-stream")
+}
+
+///|
 test "parser treats script style title textarea content as text" {
   let doc = @html_parser.parse_fragment(
     "<script><!--a--<b</script><title>a &lt; b</title>",

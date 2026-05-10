@@ -141,6 +141,15 @@ fn SourceTokenizer::error_at_eof(self : SourceTokenizer, code : String) -> Unit 
 }
 
 ///|
+fn SourceTokenizer::report_current_noncharacter(self : SourceTokenizer) -> Unit {
+  match self.current() {
+    Some(ch) if is_xml_noncharacter(ch) =>
+      self.error_at("noncharacter-in-input-stream", self.pos)
+    _ => ()
+  }
+}
+
+///|
 fn SourceTokenizer::run(self : SourceTokenizer) -> Unit {
   while !self.is_eof() {
     if self.starts_with("<!--") {
@@ -163,8 +172,11 @@ fn SourceTokenizer::run(self : SourceTokenizer) -> Unit {
 fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
   let start = self.pos
   while !self.is_eof() && !self.starts_with("<") {
-    if self.current() == Some('\u{0000}') {
-      self.error_at("unexpected-null-character", self.pos)
+    match self.current() {
+      Some('\u{0000}') => self.error_at("unexpected-null-character", self.pos)
+      Some(ch) if is_xml_noncharacter(ch) =>
+        self.error_at("noncharacter-in-input-stream", self.pos)
+      _ => ()
     }
     ignore(self.advance_char())
   }
@@ -429,6 +441,7 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
         self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)
         self.parse_bogus_comment()
       } else {
+        self.report_current_noncharacter()
         self.parse_invalid_tag_open_as_text(start)
       }
   }
@@ -441,8 +454,11 @@ fn SourceTokenizer::parse_invalid_tag_open_as_text(
 ) -> Unit {
   self.error_at("invalid-first-character-of-tag-name", self.pos)
   while !self.is_eof() && !self.starts_with("<") {
-    if self.current() == Some('\u{0000}') {
-      self.error_at("unexpected-null-character", self.pos)
+    match self.current() {
+      Some('\u{0000}') => self.error_at("unexpected-null-character", self.pos)
+      Some(ch) if is_xml_noncharacter(ch) =>
+        self.error_at("noncharacter-in-input-stream", self.pos)
+      _ => ()
     }
     ignore(self.advance_char())
   }

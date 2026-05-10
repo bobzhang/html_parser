@@ -1652,6 +1652,15 @@ fn Parser::make_error_at(self : Parser, code : String, pos : Int) -> ParseError 
 }
 
 ///|
+fn Parser::report_current_noncharacter(self : Parser) -> Unit {
+  match self.current() {
+    Some(ch) if is_xml_noncharacter(ch) =>
+      self.error_at("noncharacter-in-input-stream", self.pos)
+    _ => ()
+  }
+}
+
+///|
 fn Parser::parse_all(self : Parser) -> Unit {
   while !self.is_eof() {
     let start = self.pos
@@ -1674,6 +1683,7 @@ fn Parser::parse_all(self : Parser) -> Unit {
         }
       Some(_) => {
         while !self.is_eof() && !self.starts_with("<") {
+          self.report_current_noncharacter()
           ignore(self.advance_char())
         }
         match self.input.get_view(start~, end=self.pos) {
@@ -3717,6 +3727,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)
         self.parse_bogus_comment()
       } else {
+        self.report_current_noncharacter()
         self.parse_invalid_tag_open_as_text(start)
       }
   }
@@ -3726,6 +3737,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
 fn Parser::parse_invalid_tag_open_as_text(self : Parser, start : Int) -> Unit {
   self.error_at("invalid-first-character-of-tag-name", self.pos)
   while !self.is_eof() && !self.starts_with("<") {
+    self.report_current_noncharacter()
     ignore(self.advance_char())
   }
   match self.input.get_view(start~, end=self.pos) {

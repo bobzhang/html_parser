@@ -469,6 +469,10 @@ JustHTML from Python to MoonBit.
   `raise` for API misuse or strict-mode failure.
 - Keep parse errors stable by code, line, and column so fixture expectations do
   not depend on message wording.
+- Noncharacter input-stream errors are state-sensitive. Report
+  `noncharacter-in-input-stream` while scanning data-state text and invalid
+  tag-open recovery, but do not put it in a low-level `advance_char` helper or
+  attributes and raw-text states will over-report compared with Python.
 - Tree-builder EOF diagnostics are not one error per open stack entry. Match
   the reference by reporting the first still-open non-implied element, while
   allowing tags such as `p`, `li`, `option`, and table row/cell wrappers to
