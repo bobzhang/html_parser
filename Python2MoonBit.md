@@ -569,6 +569,10 @@ JustHTML from Python to MoonBit.
   closes. `</tr>` and `</colgroup>` inside `<template>` close their element but
   defer the table-voodoo error to `</template>`, while `</tbody>`, `</thead>`,
   and `</tfoot>` also report `unexpected-end-tag` at their own close.
+- Foster parenting can occur even when there is no `<table>` element on the
+  MoonBit stack. In Python's template table modes, text in direct template
+  `<tr>` or row-group content is inserted into the template content after the
+  current structural element, with `foster-parenting-character` diagnostics.
 
 ## Test Porting
 

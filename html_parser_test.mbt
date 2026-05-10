@@ -1534,6 +1534,33 @@ test "template table context defers structural end recovery to template end" {
 }
 
 ///|
+test "template table row contexts foster non-whitespace text" {
+  let row = @html_parser.parse_fragment(
+    "<template><tr>x<td>y</td></tr></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    row.to_html(pretty=false),
+    "<template><tr><td>y</td></tr>x</template>",
+  )
+  assert_eq(row.errors.length(), 2)
+  assert_eq(row.errors[0].code, "foster-parenting-character")
+  assert_eq(row.errors[1].code, "unexpected-end-tag-implies-table-voodoo")
+  let section = @html_parser.parse_fragment(
+    "<template><tbody>x<tr><td>y</td></tr></tbody></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    section.to_html(pretty=false),
+    "<template><tbody><tr><td>y</td></tr></tbody>x</template>",
+  )
+  assert_eq(section.errors.length(), 3)
+  assert_eq(section.errors[0].code, "foster-parenting-character")
+  assert_eq(section.errors[1].code, "unexpected-end-tag")
+  assert_eq(section.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
+}
+
+///|
 test "template column group keeps columns and drops text" {
   let text = @html_parser.parse_fragment(
     "<template><col>x<col></template>",

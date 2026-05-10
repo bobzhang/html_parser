@@ -143,6 +143,9 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if self.foster_parent_table_text(cleaned, start) {
     return
   }
+  if self.foster_parent_template_table_text(cleaned, start) {
+    return
+  }
   self.report_foster_parented_table_context_text(cleaned, start)
   self
   .current_node()
@@ -271,6 +274,31 @@ fn Parser::foster_parent_table_text(
     Some(parent) => parent.insert_child_before(fostered, table)
     None => self.root.append_child(fostered)
   }
+  true
+}
+
+///|
+fn Parser::foster_parent_template_table_text(
+  self : Parser,
+  cleaned : StringView,
+  start : Int,
+) -> Bool {
+  if !self.in_template_content_without_inner_table() ||
+    !text_has_non_ascii_whitespace(cleaned) {
+    return false
+  }
+  let current = self.current_node()
+  if current.kind != Element || !is_table_text_foster_target(current.name) {
+    return false
+  }
+  let template_index = self.last_open_template_index()
+  if template_index < 0 {
+    return false
+  }
+  ignore(self.report_foster_parenting_character_errors(cleaned, start))
+  self.stack[template_index].append_child(
+    text(decode_entities(cleaned, in_attribute=false)),
+  )
   true
 }
 
