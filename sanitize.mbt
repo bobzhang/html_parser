@@ -1,6 +1,7 @@
 ///|
 pub(all) enum DisallowedTagHandling {
   Unwrap
+  Escape
   Drop
 } derive(Debug, Eq)
 
@@ -138,6 +139,61 @@ fn unwrap_child_at(parent : Node, index : Int) -> Int {
     grandchild.parent = Some(parent)
     parent.children.insert(index + inserted, grandchild)
     inserted += 1
+  }
+  inserted
+}
+
+///|
+fn escaped_end_tag_for(node : Node) -> String? {
+  if is_void_element(node.name) {
+    None
+  } else {
+    Some("</" + node.name + ">")
+  }
+}
+
+///|
+fn insert_sanitized_escape_text(
+  parent : Node,
+  index : Int,
+  value : String,
+) -> Unit {
+  let escaped = text(value)
+  escaped.parent = Some(parent)
+  parent.children.insert(index, escaped)
+}
+
+///|
+fn escape_child_at(
+  parent : Node,
+  index : Int,
+  policy : SanitizationPolicy,
+) -> Int {
+  let child = parent.children[index]
+  let start_tag = serialize_start_tag(child, '"')
+  let end_tag = escaped_end_tag_for(child)
+  sanitize_container_children(child, policy)
+  ignore(parent.children.remove(index))
+  if child.parent is Some(current_parent) &&
+    physical_equal(parent, current_parent) {
+    child.parent = None
+  }
+  let mut inserted = 0
+  insert_sanitized_escape_text(parent, index + inserted, start_tag)
+  inserted += 1
+  while !child.children.is_empty() {
+    let grandchild = child.children[0]
+    ignore(child.children.remove(0))
+    grandchild.parent = Some(parent)
+    parent.children.insert(index + inserted, grandchild)
+    inserted += 1
+  }
+  match end_tag {
+    Some(value) => {
+      insert_sanitized_escape_text(parent, index + inserted, value)
+      inserted += 1
+    }
+    None => ()
   }
   inserted
 }
@@ -347,6 +403,10 @@ fn sanitize_container_children(
         } else if !policy.allowed_tags.contains(tag_name) {
           match policy.disallowed_tag_handling {
             Drop => remove_child_at(parent, index)
+            Escape => {
+              let inserted = escape_child_at(parent, index, policy)
+              index += inserted
+            }
             Unwrap => {
               sanitize_container_children(child, policy)
               let inserted = unwrap_child_at(parent, index)

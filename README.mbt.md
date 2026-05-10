@@ -17,7 +17,8 @@ The current slice provides:
   meta-charset prescan.
 - Default-policy DOM sanitization with tag/attribute allowlists, comment and
   doctype handling, unsafe attribute filtering, basic URL checks, and explicit
-  parse-time sanitization via `sanitize=true`.
+  parse-time sanitization via `sanitize=true`. Custom policies can unwrap,
+  drop, or escape disallowed tags.
 - Initial Markdown conversion for text, paragraphs, headings, inline
   formatting, links, code, lists, blockquotes, and raw HTML passthrough.
 

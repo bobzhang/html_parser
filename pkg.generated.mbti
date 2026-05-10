@@ -49,6 +49,7 @@ pub(all) suberror HtmlError {
 // Types and methods
 pub(all) enum DisallowedTagHandling {
   Unwrap
+  Escape
   Drop
 } derive(Eq, @debug.Debug)
 

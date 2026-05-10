@@ -303,6 +303,11 @@ JustHTML from Python to MoonBit.
   booleans from explicit defaults, implement and test `sanitize=true` first,
   then flip the default only after raw parser tests consistently pass
   `sanitize=false`.
+- Python's sanitizer can escape disallowed tags using original token spans.
+  Until the MoonBit parser stores source-tag metadata, escape handling must
+  reconstruct tag text from the normalized DOM. That keeps output safe and
+  deterministic, but it cannot preserve source spelling details such as single
+  quotes, self-closing slashes on non-void HTML elements, or missing end tags.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone.
