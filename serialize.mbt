@@ -1203,6 +1203,7 @@ fn functional_pseudo_parts(name : StringView) -> (StringView, StringView)? {
 fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
   let lower_name = lower_ascii(name)
   match lower_name[:] {
+    "comment" => node.kind == Comment
     "first-child" => is_first_element_child(node)
     "last-child" => is_last_element_child(node)
     "only-child" => is_only_element_child(node)
@@ -1219,6 +1220,7 @@ fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
             "nth-of-type" => is_nth_of_type(node, arg)
             "not" => !matches_selector_list(node, arg)
             "contains" => contains_text(node, arg)
+            "comment" => node.kind == Comment
             _ => false
           }
         _ => false
@@ -1233,14 +1235,7 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
     return false
   }
   if node.kind != Element {
-    return match selector.get_char(0) {
-      Some(':') => {
-        let start = ':'.utf16_len()
-        let name = selector[start:selector.length()]
-        node.kind == Comment && lower_ascii(name) == "comment"
-      }
-      _ => false
-    }
+    return non_element_simple_selector_matches(node, selector)
   }
   let mut pos = 0
   match selector.get_char(pos) {
@@ -1307,6 +1302,25 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
         return false
       }
     } else if !id_selector_matches(node, name) {
+      return false
+    }
+    pos = end
+  }
+  true
+}
+
+///|
+fn non_element_simple_selector_matches(
+  node : Node,
+  selector : StringView,
+) -> Bool {
+  let mut pos = 0
+  while pos < selector.length() {
+    guard selector.get_char(pos) is Some(':') else { return false }
+    let start = pos + ':'.utf16_len()
+    let end = next_simple_selector_marker(selector, start)
+    guard selector.get_view(start~, end~) is Some(name) else { return false }
+    if name.is_empty() || !pseudo_selector_matches(node, name) {
       return false
     }
     pos = end
@@ -1441,6 +1455,67 @@ fn split_complex_selector(
   } else {
     Some((parts, combinators))
   }
+}
+
+///|
+fn selector_identifier_end(selector : StringView, start : Int) -> Int {
+  guard selector.get_char(start) is Some(first) else { return start }
+  if !selector_identifier_start(first) {
+    return start
+  }
+  let mut pos = start + first.utf16_len()
+  while pos < selector.length() {
+    match selector.get_char(pos) {
+      Some(ch) if selector_identifier_char(ch) => pos += ch.utf16_len()
+      _ => return pos
+    }
+  }
+  pos
+}
+
+///|
+fn selector_allows_non_elements(selector : StringView) -> Bool {
+  let mut pos = 0
+  let mut bracket_depth = 0
+  let mut paren_depth = 0
+  let mut quote : Char? = None
+  let mut escaped = false
+  for ch in selector {
+    match quote {
+      Some(q) =>
+        if escaped {
+          escaped = false
+        } else if ch == '\\' {
+          escaped = true
+        } else if ch == q {
+          quote = None
+        }
+      None =>
+        if bracket_depth > 0 && (ch == '"' || ch == '\'') {
+          quote = Some(ch)
+          escaped = false
+        } else if ch == '[' {
+          bracket_depth += 1
+        } else if ch == ']' && bracket_depth > 0 {
+          bracket_depth -= 1
+        } else if bracket_depth == 0 && ch == '(' {
+          paren_depth += 1
+        } else if bracket_depth == 0 && ch == ')' && paren_depth > 0 {
+          paren_depth -= 1
+        } else if bracket_depth == 0 && paren_depth == 0 && ch == ':' {
+          let start = pos + ch.utf16_len()
+          let end = selector_identifier_end(selector, start)
+          if end > start {
+            let name = selector[start:end]
+            if lower_ascii(name) == "comment" {
+              return true
+            }
+          }
+        }
+    }
+    pos += ch.utf16_len()
+  }
+  false
 }
 
 ///|
@@ -1601,20 +1676,27 @@ fn matches_selector_list(node : Node, selector : StringView) -> Bool {
 }
 
 ///|
-fn walk_query(node : Node, selector : StringView, out : Array[Node]) -> Unit {
-  if matches_selector_list(node, selector) {
+fn walk_query(
+  node : Node,
+  selector : StringView,
+  out : Array[Node],
+  allow_non_elements : Bool,
+) -> Unit {
+  if (allow_non_elements || node.kind == Element) &&
+    matches_selector_list(node, selector) {
     out.push(node)
   }
   for child in node.children {
-    walk_query(child, selector, out)
+    walk_query(child, selector, out, allow_non_elements)
   }
 }
 
 ///|
 pub fn Node::query(self : Node, selector : StringView) -> Array[Node] {
   let out : Array[Node] = []
+  let allow_non_elements = selector_allows_non_elements(selector)
   for child in self.children {
-    walk_query(child, selector, out)
+    walk_query(child, selector, out, allow_non_elements)
   }
   out
 }

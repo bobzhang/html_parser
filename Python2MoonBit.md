@@ -364,8 +364,11 @@ JustHTML from Python to MoonBit.
   splitter parenthesis-aware so commas and markers inside `:not(.a, .b)` stay
   inside the argument.
 - `:comment` is an explicit non-element selector. Keep universal, tag, class,
-  id, and normal pseudo matching element-only, but allow comment nodes to match
-  exactly `:comment` so combinators such as `div > :comment` work.
+  id, and attribute matching element-only. Direct `matches(comment, ...)` still
+  evaluates pseudo selectors such as `:empty`, `:not(...)`, and
+  `:comment(...)`, but `query(...)` should only consider non-elements when an
+  outer compound selector contains `:comment`; otherwise queries such as
+  `:empty` should not return text or comment nodes.
 - Keep `query()` and `matches()` semantics separate. Python `node.query(...)`
   searches descendants only and does not include `node` itself; use
   `matches(node, ...)` when the receiver should be tested directly.
