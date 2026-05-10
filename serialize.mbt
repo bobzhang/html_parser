@@ -391,6 +391,8 @@ fn node_to_html_pretty(
     Element =>
       if node.children.is_empty() || is_void_element(node.name) {
         " ".repeat(indent) + node_to_html_compact(node, quote)
+      } else if pretty_text_preserves_whitespace(node.name) {
+        " ".repeat(indent) + node_to_html_compact(node, quote)
       } else if element_has_only_text_children(node) {
         let out = StringBuilder::new()
         out.write_string(" ".repeat(indent))

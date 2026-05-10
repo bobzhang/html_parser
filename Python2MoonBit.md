@@ -369,7 +369,9 @@ JustHTML from Python to MoonBit.
   and trims the result, but vertical tab is not HTML whitespace and must remain
   a normal character. Raw/preformatted text-only elements such as `script`,
   `style`, `pre`, and `textarea` should stay compact while preserving their
-  text whitespace.
+  text whitespace. Keep those raw/preformatted elements on the compact path
+  even when a programmatic DOM gives them mixed children, because pretty
+  indentation would inject new text into raw content.
 - The html5lib tree-test serializer is line-oriented and does not emit wrapper
   lines for `#document` or `#document-fragment`. Build it as an array of lines
   joined by `\n` so it has no trailing newline, and sort attribute lines by

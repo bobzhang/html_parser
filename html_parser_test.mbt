@@ -208,6 +208,22 @@ test "pretty serializer preserves raw and preformatted text-only elements" {
     @html_parser.text("<x>\n"),
   ])
   assert_eq(textarea.to_html(pretty=true), "<textarea>&lt;x&gt;\n</textarea>")
+  let mixed_script = @html_parser.element("script", children=[
+    @html_parser.text("a\nb"),
+    @html_parser.element("span"),
+  ])
+  assert_eq(
+    mixed_script.to_html(pretty=true),
+    "<script>a\nb<span></span></script>",
+  )
+  let mixed_style = @html_parser.element("style", children=[
+    @html_parser.text("a {\n  b: c; }"),
+    @html_parser.element("span"),
+  ])
+  assert_eq(
+    mixed_style.to_html(pretty=true),
+    "<style>a {\n  b: c; }<span></span></style>",
+  )
 }
 
 ///|
