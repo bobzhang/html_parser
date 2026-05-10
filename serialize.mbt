@@ -849,6 +849,40 @@ fn is_root_for_selector(node : Node) -> Bool {
 }
 
 ///|
+fn is_first_of_type(node : Node) -> Bool {
+  match node.parent {
+    Some(parent) => {
+      for child in parent.children {
+        if child.kind == Element && child.name == node.name {
+          return physical_equal(child, node)
+        }
+      }
+      false
+    }
+    None => false
+  }
+}
+
+///|
+fn is_last_of_type(node : Node) -> Bool {
+  match node.parent {
+    Some(parent) => {
+      let mut last : Node? = None
+      for child in parent.children {
+        if child.kind == Element && child.name == node.name {
+          last = Some(child)
+        }
+      }
+      match last {
+        Some(child) => physical_equal(child, node)
+        None => false
+      }
+    }
+    None => false
+  }
+}
+
+///|
 fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
   match name {
     "first-child" => is_first_element_child(node)
@@ -856,6 +890,8 @@ fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
     "only-child" => is_only_element_child(node)
     "empty" => is_empty_for_selector(node)
     "root" => is_root_for_selector(node)
+    "first-of-type" => is_first_of_type(node)
+    "last-of-type" => is_last_of_type(node)
     _ => false
   }
 }

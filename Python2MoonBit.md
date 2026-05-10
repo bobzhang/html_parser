@@ -89,6 +89,8 @@ JustHTML from Python to MoonBit.
 - `:root` is still an element selector in the Python matcher: the document node
   itself does not match, but an element whose parent is the document or fragment
   root does.
+- Type-position pseudo-classes such as `:first-of-type` and `:last-of-type`
+  use the node's normalized element name and ignore non-element siblings.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
