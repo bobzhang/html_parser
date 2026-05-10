@@ -788,6 +788,130 @@ test "sanitize_dom raises for disallowed standalone root" {
 }
 
 ///|
+test "sanitize_dom raise mode reports dropped content and child tags" {
+  let root_script_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={},
+    unsafe_handling=Raise,
+  )
+  let root_script_fragment = @html_parser.parse_fragment(
+    "<script>alert(1)</script>",
+    sanitize=false,
+  )
+  guard root_script_fragment.root.children().get(0) is Some(root_script) else {
+    fail("expected script root")
+  }
+  let root_script_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    root_script,
+    policy=root_script_policy,
+  )
+  match root_script_result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(message, "Unsafe tag 'script' was dropped with its content")
+    _ => fail("expected dropped-content root to raise UnsafeHtml")
+  }
+
+  let child_script_policy = @html_parser.SanitizationPolicy::new(
+    ["div"],
+    allowed_attributes={ "div": [] },
+    unsafe_handling=Raise,
+  )
+  let child_script_fragment = @html_parser.parse_fragment(
+    "<div><script>alert(1)</script></div>",
+    sanitize=false,
+  )
+  guard child_script_fragment.root.children().get(0) is Some(child_script_root) else {
+    fail("expected div root")
+  }
+  let child_script_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    child_script_root,
+    policy=child_script_policy,
+  )
+  match child_script_result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(message, "Unsafe tag 'script' was dropped with its content")
+    _ => fail("expected dropped-content child to raise UnsafeHtml")
+  }
+
+  let child_tag_policy = @html_parser.SanitizationPolicy::new(
+    ["div"],
+    allowed_attributes={ "div": [] },
+    unsafe_handling=Raise,
+  )
+  let child_tag_fragment = @html_parser.parse_fragment(
+    "<div><foo></foo></div>",
+    sanitize=false,
+  )
+  guard child_tag_fragment.root.children().get(0) is Some(child_tag_root) else {
+    fail("expected div root")
+  }
+  let child_tag_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    child_tag_root,
+    policy=child_tag_policy,
+  )
+  match child_tag_result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(
+        message, "Unsafe tag 'foo' was dropped because it is not allowed",
+      )
+    _ => fail("expected disallowed child tag to raise UnsafeHtml")
+  }
+}
+
+///|
+test "sanitize_dom raise mode reports foreign namespace drops" {
+  let root_policy = @html_parser.SanitizationPolicy::new(
+    ["svg"],
+    allowed_attributes={ "svg": [] },
+    drop_foreign_namespaces=true,
+    unsafe_handling=Raise,
+  )
+  let root_fragment = @html_parser.parse_fragment(
+    "<svg><title>foo</title></svg>",
+    sanitize=false,
+  )
+  guard root_fragment.root.children().get(0) is Some(svg_root) else {
+    fail("expected svg root")
+  }
+  let root_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    svg_root,
+    policy=root_policy,
+  )
+  match root_result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(
+        message, "Unsafe tag 'svg' was dropped because it is in a foreign namespace",
+      )
+    _ => fail("expected foreign namespace root to raise UnsafeHtml")
+  }
+
+  let child_policy = @html_parser.SanitizationPolicy::new(
+    ["div"],
+    allowed_attributes={ "div": [] },
+    drop_foreign_namespaces=true,
+    unsafe_handling=Raise,
+  )
+  let child_fragment = @html_parser.parse_fragment(
+    "<div><svg></svg></div>",
+    sanitize=false,
+  )
+  guard child_fragment.root.children().get(0) is Some(div_root) else {
+    fail("expected div root")
+  }
+  let child_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    div_root,
+    policy=child_policy,
+  )
+  match child_result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(
+        message, "Unsafe tag 'svg' was dropped because it is in a foreign namespace",
+      )
+    _ => fail("expected foreign namespace child to raise UnsafeHtml")
+  }
+}
+
+///|
 test "sanitize_dom drop mode returns empty fragment for disallowed standalone root" {
   let policy = @html_parser.SanitizationPolicy::new(
     [],
