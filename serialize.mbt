@@ -1451,7 +1451,9 @@ fn walk_query(node : Node, selector : StringView, out : Array[Node]) -> Unit {
 ///|
 pub fn Node::query(self : Node, selector : StringView) -> Array[Node] {
   let out : Array[Node] = []
-  walk_query(self, selector, out)
+  for child in self.children {
+    walk_query(child, selector, out)
+  }
   out
 }
 

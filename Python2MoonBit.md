@@ -105,6 +105,9 @@ JustHTML from Python to MoonBit.
 - `:comment` is an explicit non-element selector. Keep universal, tag, class,
   id, and normal pseudo matching element-only, but allow comment nodes to match
   exactly `:comment` so combinators such as `div > :comment` work.
+- Keep `query()` and `matches()` semantics separate. Python `node.query(...)`
+  searches descendants only and does not include `node` itself; use
+  `matches(node, ...)` when the receiver should be tested directly.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
