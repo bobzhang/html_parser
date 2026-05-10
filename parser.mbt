@@ -320,7 +320,7 @@ fn Parser::report_unexpected_table_body_cell_start(
 ///|
 fn table_body_start_closes_current_section(name : StringView) -> Bool {
   match name {
-    "caption" | "colgroup" | "tbody" | "tfoot" | "thead" => true
+    "caption" | "col" | "colgroup" | "tbody" | "tfoot" | "thead" => true
     _ => false
   }
 }

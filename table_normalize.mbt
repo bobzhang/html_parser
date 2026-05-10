@@ -52,18 +52,43 @@ fn table_implicit_body(table : Node, current_body : Node?) -> (Node, Node?) {
 }
 
 ///|
+fn table_implicit_colgroup(
+  table : Node,
+  current_colgroup : Node?,
+) -> (Node, Node?) {
+  match current_colgroup {
+    Some(colgroup) => (colgroup, current_colgroup)
+    None => {
+      let colgroup = element("colgroup")
+      table.append_child(colgroup)
+      (colgroup, Some(colgroup))
+    }
+  }
+}
+
+///|
 fn normalize_table(table : Node) -> Unit {
   let original = table.children.copy()
   table.children.clear()
   let mut current_body : Node? = None
   let mut current_row : Node? = None
+  let mut current_colgroup : Node? = None
   for child in original {
     normalize_tables(child)
-    if child.kind == Element && child.name == "tr" {
+    if child.kind == Element && child.name == "col" {
+      let (colgroup, next_colgroup) = table_implicit_colgroup(
+        table, current_colgroup,
+      )
+      current_colgroup = next_colgroup
+      colgroup.append_child(child)
+      current_body = None
+      current_row = None
+    } else if child.kind == Element && child.name == "tr" {
       let (body, next_body) = table_implicit_body(table, current_body)
       current_body = next_body
       body.append_child(child)
       current_row = None
+      current_colgroup = None
     } else if child.kind == Element && is_table_cell_name(child.name) {
       let (body, next_body) = table_implicit_body(table, current_body)
       current_body = next_body
@@ -77,10 +102,12 @@ fn normalize_table(table : Node) -> Unit {
         }
       }
       row.append_child(child)
+      current_colgroup = None
     } else {
       table.append_child(child)
       current_body = None
       current_row = None
+      current_colgroup = None
     }
   }
 }
