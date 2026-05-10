@@ -104,8 +104,10 @@ JustHTML from Python to MoonBit.
 - Scope-sensitive implied end tags need the same terminators as Python's tree
   builder. For example, a new `<li>` closes an earlier `<li>` only in list-item
   scope; a nested `<ul>` or `<ol>` terminates that search and must not close the
-  parent list item. The same pattern applies to `<dt>`/`<dd>` in definition
-  scope, where a nested `<dl>` terminates the search.
+  parent list item. Non-terminator descendants such as `<span>` are skipped
+  while searching for that earlier `<li>`. The same pattern applies to
+  `<dt>`/`<dd>` in definition scope, where a nested `<dl>` terminates the
+  search.
 - Ruby annotation tags have their own implied-end rules. `<rp>` and `<rt>`
   generate implied end tags except for an open `<rtc>`, while `<rb>` and
   `<rtc>` only do so when the current node is already a ruby annotation. The
