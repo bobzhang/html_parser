@@ -33,7 +33,8 @@ JustHTML from Python to MoonBit.
   rejected by normalizing them to Windows-1252.
 - Encoding prescan works on raw bytes, not decoded text. Skip comments and
   quoted attributes in non-`meta` tags before trusting a `<meta charset=...>`
-  declaration, and normalize meta-declared UTF-16 labels back to UTF-8.
+  declaration, trim the raw charset value range before label normalization, and
+  normalize meta-declared UTF-16 labels back to UTF-8.
 - The `http-equiv="Content-Type"` path is also byte-level. Extract `charset`
   from the `content` attribute after ASCII lowercasing and whitespace
   normalization; quoted, unquoted, and invalid/unterminated charset values have
