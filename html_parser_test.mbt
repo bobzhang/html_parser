@@ -2902,6 +2902,25 @@ test "fragment context seeds table insertion mode" {
   )
   assert_eq(ignored_table_end.errors.length(), 1)
   assert_eq(ignored_table_end.errors[0].code, "unexpected-end-tag")
+  let br_end = @html_parser.parse_fragment(
+    "</br>x",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(br_end.to_html(pretty=false), "<br>x")
+  assert_eq(br_end.errors.length(), 3)
+  assert_eq(br_end.errors[0].code, "unexpected-end-tag")
+  assert_eq(br_end.errors[1].code, "unexpected-end-tag-implies-table-voodoo")
+  assert_eq(br_end.errors[2].code, "foster-parenting-character")
+  guard br_end.errors[0].column is Some(1) else {
+    fail("expected table fragment br end tag error at opener")
+  }
+  guard br_end.errors[1].column is Some(5) else {
+    fail("expected table fragment br voodoo error at tag close")
+  }
+  guard br_end.errors[2].column is Some(6) else {
+    fail("expected table fragment fostered text after br")
+  }
   let nested_table = @html_parser.parse_fragment(
     "<table>x</table>",
     context=@html_parser.FragmentContext::new("table"),

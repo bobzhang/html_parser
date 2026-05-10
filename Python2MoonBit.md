@@ -495,7 +495,12 @@ JustHTML from Python to MoonBit.
   visible table wrapper, and `</table>` reports `unexpected-end-tag` instead of
   closing the synthetic context. A nested `<table>` start in that mode also
   reports the failed synthetic close as `unexpected-end-tag` after
-  `unexpected-start-tag-implies-end-tag`.
+  `unexpected-start-tag-implies-end-tag`. Body-mode repairs such as `</br>`
+  should insert their generated node at the synthetic table position before the
+  wrapper is unwrapped, so the returned fragment contains `<br>`. `</br>` is
+  also an error-order exception in table context: report its
+  `unexpected-end-tag` at the opener before the table-voodoo error at the tag
+  close.
 - Row-group fragment contexts (`tbody`, `thead`, `tfoot`) need a synthetic
   table plus synthetic row group for insertion, then both wrappers are unwrapped
   from the returned fragment. Top-level table-structural starts other than rows

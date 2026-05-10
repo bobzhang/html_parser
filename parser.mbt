@@ -2250,6 +2250,13 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_table_end_tag(name) {
     return
   }
+  if name == "br" && self.in_table_body_mode_context() {
+    self.error_at("unexpected-end-tag", start)
+    self.report_table_context_end_tag_voodoo(name, tag_close_pos)
+    self.close_open_p_element()
+    self.insert_body_mode_node(element("br"))
+    return
+  }
   self.report_table_context_end_tag_voodoo(name, start)
   if name == "br" {
     self.error_at("unexpected-end-tag", tag_close_pos)
