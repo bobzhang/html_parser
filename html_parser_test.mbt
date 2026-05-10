@@ -1793,6 +1793,21 @@ test "parse_bytes ignores invalid transport encoding labels" {
 }
 
 ///|
+test "parse_bytes valid transport encoding overrides sniffing" {
+  let meta = b"<meta charset=utf-8><p>\x80</p>"
+  let meta_doc = @html_parser.parse_bytes(meta, encoding="windows-1252")
+  assert_eq(meta_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard meta_doc.encoding is Some("windows-1252") else {
+    fail("expected transport encoding to override meta")
+  }
+  let utf16_bom = b"\xff\xfe\x3c\x00\x70\x00\x3e\x00\x80\x00\x3c\x00\x2f\x00\x70\x00\x3e\x00"
+  let bom_doc = @html_parser.parse_bytes(utf16_bom, encoding="windows-1252")
+  guard bom_doc.encoding is Some("windows-1252") else {
+    fail("expected transport encoding to override bom")
+  }
+}
+
+///|
 test "parse_bytes sniffs utf8 bom before windows1252 fallback" {
   let bytes = b"\xef\xbb\xbf\x3c\x70\x3e\x62\x6f\x6d\x3c\x2f\x70\x3e"
   let doc = @html_parser.parse_bytes(bytes)

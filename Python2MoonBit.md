@@ -40,6 +40,9 @@ JustHTML from Python to MoonBit.
 - Invalid transport encoding labels should not become the reported encoding.
   Treat them like a missing transport label and continue with BOM/meta/default
   sniffing.
+- Valid transport encoding labels take precedence over BOM and meta sniffing.
+  Keep tests for this because a natural refactor is to sniff BOM first, which
+  would silently change byte-entry behavior.
 - Byte-level prescan edge cases are easy to accidentally "fix" by decoding
   first. Keep explicit tests for unfinished comments/tags and unterminated
   quotes so malformed sniff-only markup does not change the selected encoding.
