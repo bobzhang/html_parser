@@ -933,6 +933,26 @@ test "parser and tokenizer handle malformed doctype names" {
   guard eof.errors[0].column is Some(9) else {
     fail("expected doctype EOF at final character")
   }
+  let eof_token = @html_parser.tokenize("<!doctype", collect_errors=true)
+  guard eof_token.tokens[0] is @html_parser.HtmlToken::DoctypeToken(eof_info) else {
+    fail("expected EOF doctype token")
+  }
+  assert_eq(eof_info.name, "")
+  assert_eq(eof_info.force_quirks, true)
+  assert_eq(eof_token.errors.length(), 1)
+  assert_eq(eof_token.errors[0].code, "eof-in-doctype")
+  let name_eof_token = @html_parser.tokenize(
+    "<!doctype html",
+    collect_errors=true,
+  )
+  guard name_eof_token.tokens[0]
+    is @html_parser.HtmlToken::DoctypeToken(name_eof_info) else {
+    fail("expected named EOF doctype token")
+  }
+  assert_eq(name_eof_info.name, "html")
+  assert_eq(name_eof_info.force_quirks, true)
+  assert_eq(name_eof_token.errors.length(), 1)
+  assert_eq(name_eof_token.errors[0].code, "eof-in-doctype")
 }
 
 ///|
@@ -5785,6 +5805,29 @@ test "tokenize preserves end tag attributes and self closing solidus" {
   }
   assert_eq(attr_tag.self_closing, false)
   assert_eq(attrs.errors.length(), 0)
+  let null_name = @html_parser.tokenize("</d\u{0000}iv>", collect_errors=true)
+  guard null_name.tokens[0] is @html_parser.HtmlToken::Tag(null_tag) else {
+    fail("expected null-containing end tag")
+  }
+  assert_true(null_tag.kind is @html_parser.TagKind::EndTag)
+  assert_eq(null_tag.name, "d\u{FFFD}iv")
+  assert_eq(null_name.errors.length(), 1)
+  assert_eq(null_name.errors[0].code, "unexpected-null-character")
+  let bad_solidus = @html_parser.tokenize("</div/ x>", collect_errors=true)
+  guard bad_solidus.tokens[0] is @html_parser.HtmlToken::Tag(bad_tag) else {
+    fail("expected recovered end tag after bad solidus")
+  }
+  assert_true(bad_tag.kind is @html_parser.TagKind::EndTag)
+  assert_eq(bad_tag.name, "div")
+  assert_eq(bad_tag.self_closing, false)
+  guard bad_tag.attrs["x"] is Some("") else {
+    fail("expected recovered attr after bad end-tag solidus")
+  }
+  assert_eq(bad_solidus.errors.length(), 1)
+  assert_eq(
+    bad_solidus.errors[0].code,
+    "unexpected-character-after-solidus-in-tag",
+  )
 }
 
 ///|
@@ -6103,6 +6146,18 @@ test "tokenize reports selected EOF and null fixture errors" {
     fail("expected replacement char in attr")
   }
   assert_eq(nul_attr.errors[0].code, "unexpected-null-character")
+  let nul_unquoted_attr = @html_parser.tokenize(
+    "<div foo=a\u{0000}b>",
+    collect_errors=true,
+  )
+  guard nul_unquoted_attr.tokens[0] is @html_parser.HtmlToken::Tag(unquoted_tag) else {
+    fail("expected div tag with unquoted null attr")
+  }
+  guard unquoted_tag.attrs["foo"] is Some("a\u{FFFD}b") else {
+    fail("expected replacement char in unquoted attr")
+  }
+  assert_eq(nul_unquoted_attr.errors.length(), 1)
+  assert_eq(nul_unquoted_attr.errors[0].code, "unexpected-null-character")
   let nul_attr_name = @html_parser.tokenize(
     "<div a\u{0000}b='c'>",
     collect_errors=true,
@@ -6617,6 +6672,25 @@ test "parser and tokenizer report noncharacters in input stream" {
   assert_eq(invalid_open.errors[0].code, "noncharacter-in-input-stream")
   assert_eq(invalid_open.errors[1].code, "invalid-first-character-of-tag-name")
   assert_eq(invalid_open.errors[2].code, "noncharacter-in-input-stream")
+  let invalid_xml = @html_parser.tokenize(
+    "<\u{000C}\u{FDD0}&lt;",
+    collect_errors=true,
+    xml_coercion=true,
+  )
+  guard invalid_xml.tokens[0] is @html_parser.HtmlToken::Characters("< �<") else {
+    fail("expected invalid tag-open text to decode and XML-coerce")
+  }
+  assert_eq(invalid_xml.errors.length(), 2)
+  assert_eq(invalid_xml.errors[0].code, "invalid-first-character-of-tag-name")
+  assert_eq(invalid_xml.errors[1].code, "noncharacter-in-input-stream")
+  let invalid_null = @html_parser.tokenize("<\u{0000}", collect_errors=true)
+  guard invalid_null.tokens[0]
+    is @html_parser.HtmlToken::Characters("<\u{0000}") else {
+    fail("expected invalid tag-open null text")
+  }
+  assert_eq(invalid_null.errors.length(), 2)
+  assert_eq(invalid_null.errors[0].code, "invalid-first-character-of-tag-name")
+  assert_eq(invalid_null.errors[1].code, "unexpected-null-character")
   let fragment = @html_parser.parse_fragment(
     "ab\u{FDD0}cd",
     collect_errors=true,
@@ -6943,6 +7017,26 @@ test "tokenize preserves rawtext and rcdata element contents" {
   let iframe = @html_parser.tokenize("<iframe><b>x</b></iframe>")
   guard iframe.tokens[1] is @html_parser.HtmlToken::Characters("<b>x</b>") else {
     fail("expected iframe raw text")
+  }
+  let empty_title = @html_parser.tokenize("<title></title>")
+  guard empty_title.tokens[1] is @html_parser.HtmlToken::Tag(empty_title_end) else {
+    fail("expected immediate title end tag")
+  }
+  assert_true(empty_title_end.kind is @html_parser.TagKind::EndTag)
+  let eof_title = @html_parser.tokenize("<title>")
+  guard eof_title.tokens[1] is @html_parser.HtmlToken::Eof else {
+    fail("expected EOF after empty unclosed title")
+  }
+  let empty_plaintext = @html_parser.tokenize("<plaintext>")
+  guard empty_plaintext.tokens[1] is @html_parser.HtmlToken::Eof else {
+    fail("expected EOF after empty plaintext")
+  }
+  let xml_title = @html_parser.tokenize(
+    "<title>\u{000C}\u{FDD0}</title>",
+    xml_coercion=true,
+  )
+  guard xml_title.tokens[1] is @html_parser.HtmlToken::Characters(" �") else {
+    fail("expected XML coercion in RCDATA text")
   }
 }
 

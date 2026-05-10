@@ -309,6 +309,10 @@ JustHTML from Python to MoonBit.
 - Do not apply tree-builder text tweaks in tokenizer helpers. For example, the
   tokenizer preserves a leading newline in `<textarea>` text; the parser/tree
   builder is responsible for dropping it after the start tag has been inserted.
+- Tokenizer recovery states still need the same text post-processing as normal
+  data states. Invalid tag-open text decodes character references and honors
+  XML coercion, while empty raw/RCDATA/plaintext content should emit no
+  character token at all.
 - Literal U+0000 handling depends on the tokenizer/parser state. Normal text
   data reports `unexpected-null-character` and drops the character, while
   attribute values and raw/RCDATA text report the same error and replace it
