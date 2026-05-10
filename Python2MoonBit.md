@@ -371,6 +371,10 @@ JustHTML from Python to MoonBit.
   template-content context. Table structural tags inside `<template>` are not
   discarded by "outside table" guards, and `</template>` closes the template
   content stack without reporting generic misnesting for open descendants.
+- Template table recovery stays active after a template caption/column group is
+  closed. Structural starts such as `tbody` and direct `td`/`th` are reprocessed
+  into table context, while `script`, `style`, and nested `template` starts are
+  allowed without a foster-start error.
 - The Python tree builder performs some finish-time DOM population in addition
   to token insertion. `<selectedcontent>` is parsed in select mode with normal
   select-mode parse errors, then populated after tree construction by appending

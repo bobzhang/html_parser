@@ -2097,6 +2097,70 @@ test "template table recovery fosters ordinary body starts" {
 }
 
 ///|
+test "template table recovery accepts structural starts after caption" {
+  let section = @html_parser.parse_fragment(
+    "<template><caption>x</caption><tbody><tr><td>y</td></tr></tbody></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    section.to_html(pretty=false),
+    "<template><caption>x</caption><tbody><tr><td>y</td></tr></tbody></template>",
+  )
+  assert_eq(section.errors.length(), 2)
+  assert_eq(section.errors[0].code, "unexpected-end-tag")
+  assert_eq(section.errors[1].code, "unexpected-end-tag-implies-table-voodoo")
+  let direct_cell = @html_parser.parse_fragment(
+    "<template><caption>x</caption><td>y</td></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    direct_cell.to_html(pretty=false),
+    "<template><caption>x</caption><tbody><tr><td>y</td></tr></tbody></template>",
+  )
+  assert_eq(direct_cell.errors.length(), 1)
+  assert_eq(direct_cell.errors[0].code, "unexpected-cell-in-table-body")
+  let script = @html_parser.parse_fragment(
+    "<template><caption>x</caption><script>y</script></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    script.to_html(pretty=false),
+    "<template><caption>x</caption><script>y</script></template>",
+  )
+  assert_eq(script.errors.length(), 1)
+  assert_eq(script.errors[0].code, "unexpected-end-tag-implies-table-voodoo")
+}
+
+///|
+test "template caption end tags keep caption open for recovery" {
+  let table_body = @html_parser.parse_fragment(
+    "<template><caption>x</tbody></caption></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    table_body.to_html(pretty=false),
+    "<template><caption>x</caption></template>",
+  )
+  assert_eq(table_body.errors.length(), 2)
+  assert_eq(table_body.errors[0].code, "unexpected-end-tag")
+  assert_eq(
+    table_body.errors[1].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  let generic = @html_parser.parse_fragment(
+    "<template><caption>x</div></caption></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    generic.to_html(pretty=false),
+    "<template><caption>x</caption></template>",
+  )
+  assert_eq(generic.errors.length(), 2)
+  assert_eq(generic.errors[0].code, "unexpected-end-tag")
+  assert_eq(generic.errors[1].code, "unexpected-end-tag-implies-table-voodoo")
+}
+
+///|
 test "template column group keeps columns and drops text" {
   let text = @html_parser.parse_fragment(
     "<template><col>x<col></template>",
