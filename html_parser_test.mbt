@@ -1246,6 +1246,42 @@ test "parser and tokenizer report missing doctype identifiers" {
   assert_eq(public_info.name, "html")
   guard public_info.public_id is None else { fail("expected no public id") }
   assert_eq(public_info.force_quirks, true)
+  let public_whitespace_eof = @html_parser.parse(
+    "<!doctype html PUBLIC ",
+    collect_errors=true,
+  )
+  assert_eq(
+    public_whitespace_eof.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body></body></html>",
+  )
+  assert_eq(public_whitespace_eof.errors.length(), 1)
+  assert_eq(
+    public_whitespace_eof.errors[0].code,
+    "missing-doctype-public-identifier",
+  )
+  guard public_whitespace_eof.errors[0].column is Some(22) else {
+    fail("expected whitespace EOF missing public id at final whitespace")
+  }
+  let public_newline_eof = @html_parser.tokenize(
+    "<!doctype html PUBLIC \n",
+    collect_errors=true,
+  )
+  assert_eq(public_newline_eof.errors.length(), 1)
+  assert_eq(
+    public_newline_eof.errors[0].code,
+    "missing-doctype-public-identifier",
+  )
+  guard public_newline_eof.errors[0].line is Some(2) else {
+    fail("expected public identifier EOF after newline on line 2")
+  }
+  guard public_newline_eof.errors[0].column is Some(0) else {
+    fail("expected public identifier EOF after newline at column 0")
+  }
+  guard public_newline_eof.tokens[0] is DoctypeToken(public_newline_info) else {
+    fail("expected doctype token for newline EOF public id")
+  }
+  assert_eq(public_newline_info.name, "html")
+  assert_eq(public_newline_info.force_quirks, true)
   let system = @html_parser.parse("<!doctype html SYSTEM>", collect_errors=true)
   assert_eq(
     system.to_html(pretty=false),
@@ -1385,6 +1421,26 @@ test "parser reports doctype quoted identifier edge recovery" {
     fail("expected public id EOF at final character")
   }
   assert_eq(public_identifier_eof.errors[1].code, "unknown-doctype")
+  let public_identifier_newline_eof = @html_parser.parse(
+    "<!doctype html PUBLIC \"x\n",
+    collect_errors=true,
+  )
+  assert_eq(
+    public_identifier_newline_eof.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\n\"><html><head></head><body></body></html>",
+  )
+  assert_eq(public_identifier_newline_eof.errors.length(), 2)
+  assert_eq(
+    public_identifier_newline_eof.errors[0].code,
+    "eof-in-doctype-public-identifier",
+  )
+  guard public_identifier_newline_eof.errors[0].line is Some(2) else {
+    fail("expected public identifier newline EOF on line 2")
+  }
+  guard public_identifier_newline_eof.errors[0].column is Some(0) else {
+    fail("expected public identifier newline EOF at column 0")
+  }
+  assert_eq(public_identifier_newline_eof.errors[1].code, "unknown-doctype")
   let system_abrupt = @html_parser.parse(
     "<!doctype html SYSTEM \"x>",
     collect_errors=true,
@@ -1416,6 +1472,26 @@ test "parser reports doctype quoted identifier edge recovery" {
     fail("expected system id EOF at final character")
   }
   assert_eq(system_identifier_eof.errors[1].code, "unknown-doctype")
+  let system_identifier_newline_eof = @html_parser.parse(
+    "<!doctype html SYSTEM \"x\n",
+    collect_errors=true,
+  )
+  assert_eq(
+    system_identifier_newline_eof.to_html(pretty=false),
+    "<!DOCTYPE html SYSTEM \"x\n\"><html><head></head><body></body></html>",
+  )
+  assert_eq(system_identifier_newline_eof.errors.length(), 2)
+  assert_eq(
+    system_identifier_newline_eof.errors[0].code,
+    "eof-in-doctype-system-identifier",
+  )
+  guard system_identifier_newline_eof.errors[0].line is Some(2) else {
+    fail("expected system identifier newline EOF on line 2")
+  }
+  guard system_identifier_newline_eof.errors[0].column is Some(0) else {
+    fail("expected system identifier newline EOF at column 0")
+  }
+  assert_eq(system_identifier_newline_eof.errors[1].code, "unknown-doctype")
 }
 
 ///|
@@ -1535,6 +1611,22 @@ test "parser and tokenizer report post-public-identifier errors" {
   guard missing_system_after_space.errors[0].column is Some(26) else {
     fail("expected missing system quote at trailing whitespace EOF")
   }
+  let missing_system_after_newline = @html_parser.parse(
+    "<!doctype html PUBLIC \"x\" \n",
+    collect_errors=true,
+  )
+  assert_eq(missing_system_after_newline.errors.length(), 2)
+  assert_eq(
+    missing_system_after_newline.errors[0].code,
+    "missing-quote-before-doctype-system-identifier",
+  )
+  guard missing_system_after_newline.errors[0].line is Some(2) else {
+    fail("expected missing system quote newline EOF on line 2")
+  }
+  guard missing_system_after_newline.errors[0].column is Some(0) else {
+    fail("expected missing system quote newline EOF at column 0")
+  }
+  assert_eq(missing_system_after_newline.errors[1].code, "unknown-doctype")
   let unexpected = @html_parser.tokenize(
     "<!doctype html PUBLIC \"x\"x>",
     collect_errors=true,
@@ -1617,6 +1709,25 @@ test "parser and tokenizer report system identifier tail errors" {
     fail("expected system id at EOF")
   }
   assert_eq(system_eof_info.force_quirks, true)
+  let system_newline_eof = @html_parser.tokenize(
+    "<!doctype html SYSTEM \"x\" \n",
+    collect_errors=true,
+  )
+  assert_eq(system_newline_eof.errors.length(), 1)
+  assert_eq(system_newline_eof.errors[0].code, "eof-in-doctype")
+  guard system_newline_eof.errors[0].line is Some(2) else {
+    fail("expected system doctype newline EOF on line 2")
+  }
+  guard system_newline_eof.errors[0].column is Some(0) else {
+    fail("expected system doctype newline EOF at column 0")
+  }
+  guard system_newline_eof.tokens[0] is DoctypeToken(system_newline_info) else {
+    fail("expected system doctype token at newline EOF")
+  }
+  guard system_newline_info.system_id is Some("x") else {
+    fail("expected system id before newline EOF")
+  }
+  assert_eq(system_newline_info.force_quirks, true)
   let public_system_extra = @html_parser.parse(
     "<!doctype html PUBLIC \"p\" \"s\"x>",
     collect_errors=true,

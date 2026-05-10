@@ -4191,6 +4191,15 @@ fn view_last_char_offset(input : StringView) -> Int {
 }
 
 ///|
+fn doctype_eof_error_offset(input : StringView) -> Int {
+  if input_ends_with_newline(input) {
+    input.length()
+  } else {
+    view_last_char_offset(input)
+  }
+}
+
+///|
 priv struct DoctypeExternalError {
   code : String
   offset : Int
@@ -4228,7 +4237,7 @@ fn doctype_after_system_identifier(
       push_doctype_external_error(
         errors,
         "eof-in-doctype",
-        view_last_char_offset(input),
+        doctype_eof_error_offset(input),
       )
       true
     }
@@ -4261,7 +4270,7 @@ fn parse_doctype_system_identifier_at(
       push_doctype_external_error(
         errors,
         "eof-in-doctype-system-identifier",
-        view_last_char_offset(input),
+        doctype_eof_error_offset(input),
       )
     }
     (system_id, true)
@@ -4306,7 +4315,7 @@ fn parse_doctype_system_after_keyword(
           if closed {
             input.length()
           } else {
-            view_last_char_offset(input)
+            doctype_eof_error_offset(input)
           },
         )
         (None, true)
@@ -4353,7 +4362,7 @@ fn parse_doctype_after_public_identifier(
         push_doctype_external_error(
           errors,
           "missing-whitespace-between-doctype-public-and-system-identifiers",
-          view_last_char_offset(input),
+          doctype_eof_error_offset(input),
         )
         (None, true)
       }
@@ -4366,7 +4375,7 @@ fn parse_doctype_after_public_identifier(
           push_doctype_external_error(
             errors,
             "missing-quote-before-doctype-system-identifier",
-            view_last_char_offset(input),
+            doctype_eof_error_offset(input),
           )
           (None, true)
         }
@@ -4437,7 +4446,7 @@ fn parse_doctype_public_after_keyword(
           if closed {
             input.length()
           } else {
-            view_last_char_offset(input)
+            doctype_eof_error_offset(input)
           },
         )
         force_quirks = true
@@ -4486,7 +4495,7 @@ fn parse_doctype_public_after_keyword(
           push_doctype_external_error(
             errors,
             "eof-in-doctype-public-identifier",
-            view_last_char_offset(input),
+            doctype_eof_error_offset(input),
           )
         }
         (public_id, None, true)

@@ -13,6 +13,10 @@ JustHTML from Python to MoonBit.
   come from arbitrary code-unit arithmetic, use `get_view(...)` and handle
   `None` instead of assuming the slice is valid.
 - When a parser consumes a `Char`, advance by `ch.utf16_len()`, not by `1`.
+- Error positions are still UTF-16 offsets until converted to line/column.
+  Match Python's EOF conventions deliberately: EOF after a trailing newline is
+  reported at the next line, column 0, while EOF after trailing non-newline text
+  uses the last character offset.
 - For numeric HTML entities, use `Int::to_char()` and handle `None` for
   invalid Unicode scalar values. Do not use unchecked conversion unless the
   value has already been validated. Match the Python reference error order:
