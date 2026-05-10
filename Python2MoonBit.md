@@ -72,6 +72,10 @@ JustHTML from Python to MoonBit.
   content, not a fixed triple-backtick string. Strip trailing newlines and the
   spaces/tabs that would sit immediately before the closing fence, and choose a
   fence longer than any backtick run inside the code.
+- Markdown block elements are not just tags with recursive children. Generic
+  containers such as `div`, `section`, `article`, `footer`, and `aside` need
+  block-boundary newlines around their rendered children, while inline/unknown
+  containers can still stream their children directly.
 - Attribute serialization has policy baked into the Python helper: `None`,
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids

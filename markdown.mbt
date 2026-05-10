@@ -337,6 +337,21 @@ fn markdown_heading_level(name : StringView) -> Int {
 }
 
 ///|
+fn markdown_block_container_name(name : StringView) -> Bool {
+  match name {
+    "div"
+    | "section"
+    | "article"
+    | "header"
+    | "footer"
+    | "main"
+    | "nav"
+    | "aside" => true
+    _ => false
+  }
+}
+
+///|
 fn markdown_wrapped_inline(
   node : Node,
   builder : MarkdownBuilder,
@@ -550,7 +565,14 @@ fn markdown_walk(
             builder.raw(node.to_html(pretty=false))
             builder.ensure_newlines(2)
           }
-          _ => markdown_render_children(node, builder, html_passthrough)
+          _ =>
+            if markdown_block_container_name(node.name) {
+              builder.ensure_newlines(2)
+              markdown_render_children(node, builder, html_passthrough)
+              builder.ensure_newlines(2)
+            } else {
+              markdown_render_children(node, builder, html_passthrough)
+            }
         }
       }
     }

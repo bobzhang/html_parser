@@ -188,6 +188,18 @@ test "to_markdown renders code spans blocks lists and blockquotes" {
 }
 
 ///|
+test "to_markdown separates generic block containers" {
+  let doc = @html_parser.parse_fragment(
+    "<div>A</div><section><span>B</span></section><aside>C</aside>",
+  )
+  assert_eq(doc.to_markdown(), "A\n\nB\n\nC")
+  let nested = @html_parser.parse_fragment(
+    "<article><p>A</p><p>B</p></article><footer>C</footer>",
+  )
+  assert_eq(nested.to_markdown(), "A\n\nB\n\nC")
+}
+
+///|
 test "to_markdown escapes text and line starting markdown markers" {
   let escaped = @html_parser.parse_fragment(
     "<p>&lt;img src=x onerror=alert(1)&gt;</p>",
