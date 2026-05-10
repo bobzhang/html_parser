@@ -5808,6 +5808,58 @@ test "parser honors scripting enabled for noscript text mode" {
 }
 
 ///|
+test "parser handles disabled scripting noscript in head" {
+  let doctype = @html_parser.parse(
+    "<head><noscript><!DOCTYPE html></noscript>",
+    collect_errors=true,
+    scripting_enabled=false,
+  )
+  assert_eq(
+    doctype.to_html(pretty=false),
+    "<html><head><noscript></noscript></head><body></body></html>",
+  )
+  assert_eq(doctype.errors.length(), 2)
+  assert_eq(doctype.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(doctype.errors[1].code, "unexpected-doctype")
+  let stray_end = @html_parser.parse(
+    "<head><noscript></p></noscript>",
+    collect_errors=true,
+    scripting_enabled=false,
+  )
+  assert_eq(
+    stray_end.to_html(pretty=false),
+    "<html><head><noscript></noscript></head><body></body></html>",
+  )
+  assert_eq(stray_end.errors.length(), 2)
+  assert_eq(stray_end.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(stray_end.errors[1].code, "unexpected-end-tag")
+  let paragraph = @html_parser.parse(
+    "<head><noscript><p>x</noscript>",
+    collect_errors=true,
+    scripting_enabled=false,
+  )
+  assert_eq(
+    paragraph.to_html(pretty=false),
+    "<html><head><noscript></noscript></head><body><p>x</p></body></html>",
+  )
+  assert_eq(paragraph.errors.length(), 3)
+  assert_eq(paragraph.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(paragraph.errors[1].code, "unexpected-start-tag")
+  assert_eq(paragraph.errors[2].code, "unexpected-end-tag")
+  let allowed = @html_parser.parse(
+    "<head><noscript><link rel=x></noscript><p>y",
+    collect_errors=true,
+    scripting_enabled=false,
+  )
+  assert_eq(
+    allowed.to_html(pretty=false),
+    "<html><head><noscript><link rel=\"x\"></noscript></head><body><p>y</p></body></html>",
+  )
+  assert_eq(allowed.errors.length(), 1)
+  assert_eq(allowed.errors[0].code, "expected-doctype-but-got-start-tag")
+}
+
+///|
 test "parser ignores one initial newline in pre listing and textarea" {
   let pre = @html_parser.parse_fragment(
     "<pre>\r\nline</pre><listing>\nitem</listing>",

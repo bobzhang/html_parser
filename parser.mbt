@@ -123,6 +123,14 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if cleaned.is_empty() {
     return
   }
+  if self.current_is_disabled_head_noscript() &&
+    text_has_non_ascii_whitespace(cleaned) {
+    self.error_at("unexpected-start-tag", start)
+    self.pop_disabled_head_noscript_for_reprocess()
+  }
+  if self.current_is_document_head() && text_has_non_ascii_whitespace(cleaned) {
+    ignore(self.stack.pop())
+  }
   if self.uses_document_frameset_rules() &&
     (self.after_frameset || self.has_open_element("frameset")) {
     let whitespace = ascii_whitespace_chars_only(cleaned)
@@ -2154,6 +2162,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_foster_parented_end_tag(name, start) {
     return
   }
+  if self.handle_disabled_head_noscript_end_tag(name, start) {
+    return
+  }
   self.close_current_column_group_for_end(name)
   if self.handle_caption_end_tag(name, start) {
     return
@@ -2355,6 +2366,121 @@ fn Parser::close_open_element(self : Parser, name : String) -> Bool {
       Some(_) => ()
       None => break
     }
+  }
+  true
+}
+
+///|
+fn Parser::current_is_disabled_head_noscript(self : Parser) -> Bool {
+  if self.scripting_enabled {
+    return false
+  }
+  let current = self.current_node()
+  if !(current.kind == Element && current.name == "noscript") {
+    return false
+  }
+  for node in self.stack {
+    if physical_equal(node, current) {
+      return false
+    }
+    if node.kind == Element && node.name == "head" {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn disabled_head_noscript_allows_start(name : StringView) -> Bool {
+  match name {
+    "basefont" | "bgsound" | "link" | "meta" | "noframes" | "style" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::current_is_document_head(self : Parser) -> Bool {
+  let current = self.current_node()
+  if !(current.kind == Element && current.name == "head") {
+    return false
+  }
+  match current.parent {
+    Some(parent) =>
+      parent.kind == Document ||
+      parent.kind == Fragment ||
+      (parent.kind == Element && parent.name == "html")
+    None => false
+  }
+}
+
+///|
+fn Parser::close_current_document_head_for_start(
+  self : Parser,
+  name : StringView,
+  start : Int,
+) -> Bool {
+  if !self.current_is_document_head() {
+    return false
+  }
+  if is_document_head_element_name(name) {
+    return false
+  }
+  if name == "head" {
+    self.error_at("unexpected-start-tag", start)
+    return true
+  }
+  ignore(self.stack.pop())
+  false
+}
+
+///|
+fn Parser::pop_disabled_head_noscript_for_reprocess(self : Parser) -> Unit {
+  ignore(self.stack.pop())
+  match self.stack.last() {
+    Some(node) if node.kind == Element && node.name == "head" =>
+      ignore(self.stack.pop())
+    _ => ()
+  }
+}
+
+///|
+fn Parser::handle_disabled_head_noscript_start_tag(
+  self : Parser,
+  name : StringView,
+  start : Int,
+) -> Bool {
+  if !self.current_is_disabled_head_noscript() {
+    return false
+  }
+  if disabled_head_noscript_allows_start(name) {
+    return false
+  }
+  if name == "head" || name == "noscript" {
+    self.error_at("unexpected-start-tag", start)
+    return true
+  }
+  self.error_at("unexpected-start-tag", start)
+  self.pop_disabled_head_noscript_for_reprocess()
+  false
+}
+
+///|
+fn Parser::handle_disabled_head_noscript_end_tag(
+  self : Parser,
+  name : StringView,
+  start : Int,
+) -> Bool {
+  if !self.current_is_disabled_head_noscript() {
+    return false
+  }
+  if name == "noscript" {
+    ignore(self.stack.pop())
+    return true
+  }
+  self.error_at("unexpected-end-tag", start)
+  if name == "br" {
+    self.pop_disabled_head_noscript_for_reprocess()
+    return false
   }
   true
 }
@@ -3281,6 +3407,12 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         return
       }
       if self.handle_fragment_shell_start_tag(name, attrs, start) {
+        return
+      }
+      if self.handle_disabled_head_noscript_start_tag(name, start) {
+        return
+      }
+      if self.close_current_document_head_for_start(name, start) {
         return
       }
       if self.has_open_element("select") && name == "frame" {
@@ -4922,6 +5054,7 @@ fn is_document_head_element_name(name : StringView) -> Bool {
     | "link"
     | "meta"
     | "noframes"
+    | "noscript"
     | "script"
     | "style"
     | "template"

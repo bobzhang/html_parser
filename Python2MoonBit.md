@@ -436,6 +436,10 @@ JustHTML from Python to MoonBit.
   first token is read. Do not parse the input normally and try to repair the
   tree afterwards; contexts like `textarea` and `script` change whether `<` and
   `&` are markup at all.
+- Disabled-scripting `<noscript>` under `<head>` is still head-mode recovery,
+  not normal body parsing. Allow only head-safe start tags such as `link`,
+  `meta`, and `style`; for most other starts or non-whitespace text, report the
+  recovery error, pop `noscript`, and let the same token land in body mode.
 - A function receiving an already optional value, such as a stored `String?`,
   should usually take a normal `arg : String?` parameter. Do not use an
   optional labeled parameter when the caller needs to pass `None` or `Some(...)`
