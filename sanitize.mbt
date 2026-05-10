@@ -698,6 +698,74 @@ fn rawtext_serialization_element_name(node : Node) -> String? {
 }
 
 ///|
+fn is_math_text_integration_child_exception(node : Node) -> Bool {
+  if node.kind != Element {
+    false
+  } else {
+    match node.ns {
+      Some("math") =>
+        match sanitize_node_name(node) {
+          "mglyph" | "malignmark" => true
+          _ => false
+        }
+      _ => false
+    }
+  }
+}
+
+///|
+fn foreign_text_integration_namespace(node : Node) -> String? {
+  let name = sanitize_node_name(node)
+  match node.ns {
+    Some("svg") =>
+      match name {
+        "desc" | "title" => Some("svg")
+        _ => None
+      }
+    Some("math") =>
+      match name {
+        "mi" | "mn" | "mo" | "ms" | "mtext" => Some("math")
+        _ => None
+      }
+    _ => None
+  }
+}
+
+///|
+fn sanitize_foreign_text_integration_children(
+  node : Node,
+  policy : SanitizationPolicy,
+) -> Bool {
+  guard foreign_text_integration_namespace(node) is Some(ns) else {
+    return false
+  }
+  let original = node.children.copy()
+  node.children.clear()
+  for child in original {
+    if child.parent is Some(parent) && physical_equal(parent, node) {
+      child.parent = None
+    }
+    match child.kind {
+      Text =>
+        match sanitized_text_node_data(child, policy) {
+          Some(stripped) => node.append_child(text(stripped))
+          None => node.append_child(child)
+        }
+      Element if ns == "math" && is_math_text_integration_child_exception(child) => {
+        let child_name = sanitize_node_name(child)
+        if policy.allowed_tags.contains(child_name) &&
+          !policy.drop_content_tags.contains(child_name) {
+          sanitize_element_attributes(child, policy)
+          node.append_child(child)
+        }
+      }
+      _ => ()
+    }
+  }
+  true
+}
+
+///|
 fn sanitize_rawtext_element_children(
   node : Node,
   policy : SanitizationPolicy,
@@ -803,7 +871,9 @@ fn sanitize_container_children(
           }
         } else {
           sanitize_element_attributes(child, policy)
-          if !sanitize_rawtext_element_children(child, policy) {
+          if sanitize_foreign_text_integration_children(child, policy) {
+            ()
+          } else if !sanitize_rawtext_element_children(child, policy) {
             sanitize_container_children(child, policy)
           }
           index += 1

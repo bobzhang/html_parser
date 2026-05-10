@@ -141,6 +141,11 @@ JustHTML from Python to MoonBit.
   `malignmark` are explicit exceptions that stay in MathML. When checking
   foreign-content recovery against Python, remember to enable `collect_errors`;
   otherwise output may match while tree-builder error parity is untested.
+- Sanitizer handling for foreign text integration points is stricter than
+  ordinary child sanitization. SVG `title`/`desc` and MathML
+  `mi`/`mn`/`mo`/`ms`/`mtext` should keep text only, with MathML `mglyph` and
+  `malignmark` as the exceptions. Do this before unwrapping allowed or
+  disallowed HTML descendants, or an active child can turn into surviving text.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside
