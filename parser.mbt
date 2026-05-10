@@ -1155,6 +1155,51 @@ fn Parser::handle_table_structural_end_tag(
 }
 
 ///|
+fn template_table_context_end_tag_reports_voodoo(name : StringView) -> Bool {
+  match name {
+    "colgroup" | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::handle_template_table_context_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if !self.in_template_content_without_inner_table() ||
+    !template_table_context_end_tag_reports_voodoo(name) {
+    return false
+  }
+  if self.close_open_element(name) {
+    self.error_at("unexpected-end-tag-implies-table-voodoo", start)
+    return true
+  }
+  false
+}
+
+///|
+fn Parser::handle_template_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if name != "template" {
+    return false
+  }
+  let template_index = self.last_open_template_index()
+  if template_index < 0 {
+    self.error_at("unexpected-end-tag", start)
+    return true
+  }
+  while self.stack.length() > template_index {
+    ignore(self.stack.pop())
+  }
+  true
+}
+
+///|
 fn Parser::insert_body_mode_node(self : Parser, node : Node) -> Unit {
   let table_index = self.table_context_without_cell_or_caption()
   if table_index >= 0 {
@@ -1741,6 +1786,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_table_context_ignored_end_tag(name, start) {
     return
   }
+  if self.handle_template_table_context_end_tag(name, start) {
+    return
+  }
   if self.handle_table_structural_end_tag(name) {
     return
   }
@@ -1768,6 +1816,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if name == "form" {
     self.report_form_end_tag_table_voodoo(name, start)
     self.handle_form_end_tag(start)
+    return
+  }
+  if self.handle_template_end_tag(name, start) {
     return
   }
   if self.fragment_end_tag_is_ignored(name) {
@@ -2459,6 +2510,17 @@ fn Parser::last_stack_index_of(self : Parser, name : String) -> Int {
 }
 
 ///|
+fn Parser::last_open_template_index(self : Parser) -> Int {
+  self.last_stack_index_of("template")
+}
+
+///|
+fn Parser::in_template_content_without_inner_table(self : Parser) -> Bool {
+  let template_index = self.last_open_template_index()
+  template_index >= 0 && self.last_open_table_index() < template_index
+}
+
+///|
 fn Parser::last_stack_index_of_node(self : Parser, target : Node) -> Int {
   let mut index = self.stack.length()
   while index > 0 {
@@ -2583,7 +2645,10 @@ fn Parser::col_start_tag_is_ignored_outside_table(
   self : Parser,
   name : StringView,
 ) -> Bool {
-  name == "col" && !self.is_fragment_parser() && !self.has_open_element("table")
+  name == "col" &&
+  !self.is_fragment_parser() &&
+  !self.has_open_element("table") &&
+  !self.in_template_content_without_inner_table()
 }
 
 ///|
@@ -2863,11 +2928,15 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.handle_fragment_context_caption_start_tag(name, start) {
         return
       }
-      if !self.has_open_element("table") && name == "caption" {
+      let in_template_table_context = self.in_template_content_without_inner_table()
+      if !self.has_open_element("table") &&
+        !in_template_table_context &&
+        name == "caption" {
         self.error_at("unexpected-start-tag", start)
         return
       }
       if !self.has_open_element("table") &&
+        !in_template_table_context &&
         table_start_tag_is_ignored_outside_table(name) {
         self.error_at("unexpected-start-tag-ignored", start)
         return
@@ -4418,6 +4487,7 @@ fn is_document_head_element_name(name : StringView) -> Bool {
     | "noframes"
     | "script"
     | "style"
+    | "template"
     | "title" => true
     _ => false
   }

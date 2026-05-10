@@ -294,6 +294,12 @@ JustHTML from Python to MoonBit.
   frameset is allowed even though normal fragments reject document-shell
   behavior, whitespace after it is preserved, and non-whitespace tokens after
   the closed frameset are ignored with `unexpected-token-after-frameset`.
+- Template contents are not ordinary children in the Python reference: they live
+  in `Template.template_content`. A direct-child representation can serialize
+  the same for early parser slices, but tree-construction rules still need a
+  template-content context. Table structural tags inside `<template>` are not
+  discarded by "outside table" guards, and `</template>` closes the template
+  content stack without reporting generic misnesting for open descendants.
 - Document scaffolding also has to preserve explicit root-level `<head>` and
   `<body>` nodes, including attributes on `<body>`. Do not always synthesize
   fresh elements and then nest the parsed ones inside the body.
