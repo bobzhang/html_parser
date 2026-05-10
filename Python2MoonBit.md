@@ -71,6 +71,10 @@ JustHTML from Python to MoonBit.
   must survive normalization. HTML integration points such as SVG
   `foreignObject`/`desc`/`title` and MathML `annotation-xml` with HTML
   encodings switch descendants back into the HTML namespace.
+- Keep fixtures for the long-tail SVG adjustment table. Names such as
+  `altGlyphDef`, `feMorphology`, `glyphRef`, and `textPath` are easy to miss,
+  and SVG `<font>` only breaks out to HTML when `color`, `face`, or `size`
+  attributes are present.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open, and non-whitespace tokens

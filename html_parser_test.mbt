@@ -3208,6 +3208,41 @@ test "parser adjusts SVG edge names and foreign attributes" {
 }
 
 ///|
+test "parser adjusts long tail SVG names attributes and font breakouts" {
+  let svg = @html_parser.parse_fragment(
+    "<svg><altglyphdef><altglyphitem><femorphology basefrequency='x' gradientunits='u' xlink:arcrole='r'></femorphology><glyphref></glyphref><textpath></textpath></altglyphitem></altglyphdef></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    svg.to_html(pretty=false),
+    "<svg><altGlyphDef><altGlyphItem><feMorphology baseFrequency=\"x\" gradientUnits=\"u\" xlink:arcrole=\"r\"></feMorphology><glyphRef></glyphRef><textPath></textPath></altGlyphItem></altGlyphDef></svg>",
+  )
+  assert_eq(svg.errors.length(), 0)
+  let face = @html_parser.parse_fragment(
+    "<svg><font face='serif'>text</font></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    face.to_html(pretty=false),
+    "<svg></svg><font face=\"serif\">text</font>",
+  )
+  assert_eq(face.errors.length(), 2)
+  assert_eq(face.errors[0].code, "unexpected-html-element-in-foreign-content")
+  assert_eq(face.errors[1].code, "unexpected-end-tag")
+  let size = @html_parser.parse_fragment(
+    "<svg><font size='3'>text</font></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    size.to_html(pretty=false),
+    "<svg></svg><font size=\"3\">text</font>",
+  )
+  assert_eq(size.errors.length(), 2)
+  assert_eq(size.errors[0].code, "unexpected-html-element-in-foreign-content")
+  assert_eq(size.errors[1].code, "unexpected-end-tag")
+}
+
+///|
 test "parser treats foreign integration points as HTML islands" {
   let svg = @html_parser.parse_fragment(
     "<svg><foreignobject><div><span>x</span></div></foreignobject></svg>",
