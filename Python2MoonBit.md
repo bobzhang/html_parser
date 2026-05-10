@@ -383,6 +383,8 @@ JustHTML from Python to MoonBit.
   and update every parent pointer. Default-policy and document-policy behavior
   differ: the document policy keeps the document shell and doctype, while the
   regular default policy unwraps document scaffolding and drops doctype nodes.
+  Nested `Document`/`Fragment` containers are not tags; recurse through their
+  children instead of applying tag allowlists to the container itself.
   Standalone non-container roots such as `Text`, `Comment`, and `Doctype`
   still need the same policy decisions, so wrap them in a temporary fragment
   during sanitization and unwrap the result afterwards.
