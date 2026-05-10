@@ -5647,6 +5647,22 @@ test "fragment context seeds html insertion mode" {
   )
   assert_eq(late_body.errors.length(), 1)
   assert_eq(late_body.errors[0].code, "unexpected-start-tag")
+  let body_markers = [
+    ("x<body id=b>y", 1, 1, 2),
+    ("<p>x</p><body id=b>y", 8, 1, 9),
+  ]
+  for marker in body_markers {
+    let (input, offset, line, col) = marker
+    let doc = @html_parser.parse_fragment(
+      input,
+      context=@html_parser.FragmentContext::new("html"),
+      track_node_locations=true,
+    )
+    guard doc.query_one("body") is Some(body) else {
+      fail("expected html fragment body marker")
+    }
+    assert_node_origin(body, offset, line, col)
+  }
   let late_html = @html_parser.parse_fragment(
     "<p>x</p><html lang=en>y</html>",
     context=@html_parser.FragmentContext::new("html"),

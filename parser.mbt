@@ -3085,9 +3085,16 @@ fn Parser::current_node_allows_html_fragment_body(self : Parser) -> Bool {
 fn Parser::insert_html_fragment_body_marker(
   self : Parser,
   attrs : Map[String, String?],
+  start : Int?,
 ) -> Unit {
   match self.fragment_context_html_root {
-    Some(html) => html.append_child(element("body", attrs~))
+    Some(html) => {
+      let node = match start {
+        Some(offset) => self.node_with_origin(element("body", attrs~), offset)
+        None => element("body", attrs~)
+      }
+      html.append_child(node)
+    }
     None => ()
   }
 }
@@ -3095,7 +3102,7 @@ fn Parser::insert_html_fragment_body_marker(
 ///|
 fn Parser::insert_empty_html_fragment_body_marker(self : Parser) -> Unit {
   let attrs : Map[String, String?] = {}
-  self.insert_html_fragment_body_marker(attrs)
+  self.insert_html_fragment_body_marker(attrs, None)
 }
 
 ///|
@@ -3128,14 +3135,14 @@ fn Parser::handle_html_fragment_shell_start_tag(
         self.error_at("unexpected-token-after-body", start)
         self.error_at("unexpected-start-tag", start)
         self.frameset_ok = false
-        self.insert_html_fragment_body_marker(attrs)
+        self.insert_html_fragment_body_marker(attrs, Some(start))
         true
       } else if self.current_node_allows_html_fragment_body() {
         false
       } else {
         self.error_at("unexpected-start-tag", start)
         self.frameset_ok = false
-        self.insert_html_fragment_body_marker(attrs)
+        self.insert_html_fragment_body_marker(attrs, Some(start))
         true
       }
     "html" =>
