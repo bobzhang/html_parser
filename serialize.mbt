@@ -841,12 +841,21 @@ fn is_empty_for_selector(node : Node) -> Bool {
 }
 
 ///|
+fn is_root_for_selector(node : Node) -> Bool {
+  match node.parent {
+    Some(parent) => parent.kind == Document || parent.kind == Fragment
+    None => false
+  }
+}
+
+///|
 fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
   match name {
     "first-child" => is_first_element_child(node)
     "last-child" => is_last_element_child(node)
     "only-child" => is_only_element_child(node)
     "empty" => is_empty_for_selector(node)
+    "root" => is_root_for_selector(node)
     _ => false
   }
 }

@@ -86,6 +86,9 @@ JustHTML from Python to MoonBit.
   siblings.
 - The Python `:empty` behavior treats whitespace-only text as empty, ignores
   comments, and treats child elements or non-whitespace text as content.
+- `:root` is still an element selector in the Python matcher: the document node
+  itself does not match, but an element whose parent is the document or fragment
+  root does.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
