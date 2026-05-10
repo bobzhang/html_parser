@@ -310,7 +310,9 @@ JustHTML from Python to MoonBit.
   with `unexpected-hidden-input-in-table` or `unexpected-form-in-table`, while
   row/cell/caption contexts use the normal body/table-cell behavior. `<style>`
   and `<script>` also stay in the current table context without foster-parenting
-  errors.
+  errors. A nested `<table>` start in `table`/row-group/`tr` context is not a
+  child table: report `unexpected-start-tag-implies-end-tag`, close the current
+  table, and then insert the new table as the reprocessed start tag.
 
 ## Optional Values and Defaults
 

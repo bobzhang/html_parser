@@ -284,6 +284,28 @@ fn Parser::handle_table_context_hidden_input_or_form_start(
 }
 
 ///|
+fn Parser::handle_nested_table_start_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if name != "table" {
+    return false
+  }
+  let table_index = self.table_context_without_cell_or_caption()
+  if table_index < 0 {
+    return false
+  }
+  let current = self.current_node()
+  if current.kind != Element || !is_table_start_foster_target(current.name) {
+    return false
+  }
+  self.error_at("unexpected-start-tag-implies-end-tag", start)
+  ignore(self.close_open_element("table"))
+  true
+}
+
+///|
 fn Parser::report_form_end_tag_table_voodoo(
   self : Parser,
   name : String,
@@ -1941,6 +1963,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         ) {
         return
       }
+      ignore(self.handle_nested_table_start_tag(name, start))
       if name == "form" && self.form_element is Some(_) {
         self.error_at("unexpected-start-tag", start)
         return
