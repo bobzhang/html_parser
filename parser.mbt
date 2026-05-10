@@ -943,6 +943,7 @@ fn Parser::handle_template_table_context_start_tag(
     let node = self.node_with_origin(element("caption", attrs~), start)
     self.current_node().append_child(node)
     self.stack.push(node)
+    self.push_active_formatting_marker()
     self.template_table_context_mode = false
     return true
   }
@@ -1181,7 +1182,7 @@ fn Parser::close_current_caption_for_start(
       return false
     }
     self.error_at("unexpected-start-tag-implies-end-tag", tag_close_pos)
-    ignore(self.close_open_element("caption"))
+    self.close_open_caption_element()
     self.template_table_context_mode = true
     return true
   }
@@ -1189,7 +1190,7 @@ fn Parser::close_current_caption_for_start(
     return false
   }
   self.error_at("unexpected-start-tag-implies-end-tag", tag_close_pos)
-  ignore(self.close_open_element("caption"))
+  self.close_open_caption_element()
   true
 }
 
@@ -1208,7 +1209,7 @@ fn Parser::handle_caption_end_tag(
     }
     match name {
       "caption" => {
-        ignore(self.close_open_element("caption"))
+        self.close_open_caption_element()
         self.template_table_context_mode = true
         true
       }
@@ -1223,7 +1224,7 @@ fn Parser::handle_caption_end_tag(
   } else {
     match name {
       "caption" => {
-        ignore(self.close_open_element("caption"))
+        self.close_open_caption_element()
         true
       }
       "tbody" | "tfoot" | "thead" => {
@@ -1231,7 +1232,7 @@ fn Parser::handle_caption_end_tag(
         true
       }
       "table" => {
-        ignore(self.close_open_element("caption"))
+        self.close_open_caption_element()
         false
       }
       _ => false
@@ -1622,6 +1623,7 @@ fn Parser::handle_template_end_tag(
   while self.stack.length() > template_index {
     ignore(self.stack.pop())
   }
+  self.clear_active_formatting_to_marker()
   true
 }
 
@@ -2962,10 +2964,24 @@ fn Parser::clear_active_formatting_to_marker(self : Parser) -> Unit {
 }
 
 ///|
+fn Parser::close_open_caption_element(self : Parser) -> Unit {
+  ignore(self.close_open_element("caption"))
+  self.clear_active_formatting_to_marker()
+}
+
+///|
 fn applet_like_element_name(name : StringView) -> Bool {
   match name {
     "applet" | "marquee" | "object" => true
     _ => false
+  }
+}
+
+///|
+fn active_formatting_marker_element_name(name : StringView) -> Bool {
+  match name {
+    "caption" | "template" => true
+    _ => applet_like_element_name(name)
   }
 }
 
@@ -4845,7 +4861,8 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
           }
           self.append_active_formatting_entry(node)
         }
-        if node_ns == "html" && applet_like_element_name(adjusted_name) {
+        if node_ns == "html" &&
+          active_formatting_marker_element_name(adjusted_name) {
           self.push_active_formatting_marker()
         }
         if node_ns == "html" && start_tag_ignores_initial_lf(adjusted_name) {
