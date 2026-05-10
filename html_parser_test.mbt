@@ -290,6 +290,21 @@ test "pretty serializer compacts inline whitespace separators" {
     inline.to_html(pretty=true),
     "<span><span></span> <span></span></span>",
   )
+  let large_gap = @html_parser.element("span", children=[
+    @html_parser.element("span"),
+    @html_parser.text("     "),
+    @html_parser.element("span"),
+  ])
+  assert_eq(
+    large_gap.to_html(pretty=true),
+    "<span><span></span> <span></span></span>",
+  )
+  let edge_gap = @html_parser.element("span", children=[
+    @html_parser.text(" \n"),
+    @html_parser.element("a"),
+    @html_parser.text("\t"),
+  ])
+  assert_eq(edge_gap.to_html(pretty=true), "<span><a></a></span>")
   let block = @html_parser.element("div", children=[
     @html_parser.element("span"),
     @html_parser.text("  "),
@@ -299,6 +314,33 @@ test "pretty serializer compacts inline whitespace separators" {
     block.to_html(pretty=true),
     "<div>\n  <span></span>\n  <span></span>\n</div>",
   )
+}
+
+///|
+test "pretty serializer keeps comment child runs compact" {
+  let commented = @html_parser.element("div", children=[
+    @html_parser.element("span"),
+    @html_parser.text(" "),
+    @html_parser.comment("x"),
+    @html_parser.text(" "),
+    @html_parser.element("span"),
+  ])
+  assert_eq(
+    commented.to_html(pretty=true),
+    "<div><span></span> <!--x--> <span></span></div>",
+  )
+  let edge_whitespace = @html_parser.element("div", children=[
+    @html_parser.text(" \n"),
+    @html_parser.element("a"),
+    @html_parser.comment("x"),
+    @html_parser.text(" \t\n"),
+  ])
+  assert_eq(edge_whitespace.to_html(pretty=true), "<div><a></a><!--x--></div>")
+  let block_child = @html_parser.element("div", children=[
+    @html_parser.comment("x"),
+    @html_parser.element("p"),
+  ])
+  assert_eq(block_child.to_html(pretty=true), "<div><!--x--><p></p></div>")
 }
 
 ///|

@@ -390,6 +390,11 @@ fn string_view_has_formatting_whitespace(value : StringView) -> Bool {
 }
 
 ///|
+fn compact_pretty_whitespace_separator(value : StringView) -> Bool {
+  string_view_has_formatting_whitespace(value) || value.length() > 2
+}
+
+///|
 fn normalize_formatting_whitespace(value : StringView) -> String {
   let mut has_formatting = false
   for ch in value {
@@ -559,7 +564,17 @@ fn element_has_compact_inline_children(node : Node) -> Bool {
 }
 
 ///|
-fn node_to_html_pretty_inline_compact(node : Node, quote : Char) -> String {
+fn element_has_comment_child(node : Node) -> Bool {
+  for child in node.children {
+    if child.kind == Comment {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn node_to_html_pretty_compact_children(node : Node, quote : Char) -> String {
   let out = StringBuilder::new()
   out.write_string(serialize_start_tag(node, quote))
   let child_count = node.children.length()
@@ -567,13 +582,14 @@ fn node_to_html_pretty_inline_compact(node : Node, quote : Char) -> String {
     let child = node.children[index]
     match child.kind {
       Text => {
-        let normalized = normalize_formatting_whitespace(child.data[:])
-        if normalized == "" &&
-          index > 0 &&
-          index + 1 < child_count &&
-          string_view_has_formatting_whitespace(child.data[:]) {
+        let data = child.data[:]
+        let has_visible = text_has_visible_char(data)
+        if !has_visible && (index == 0 || index + 1 == child_count) {
+          ()
+        } else if !has_visible && compact_pretty_whitespace_separator(data) {
           out.write_char(' ')
         } else {
+          let normalized = normalize_formatting_whitespace(data)
           out.write_string(escape_text(normalized))
         }
       }
@@ -639,7 +655,9 @@ fn node_to_html_pretty(
         out.write_char('>')
         out.to_string()
       } else if element_has_compact_inline_children(node) {
-        " ".repeat(indent) + node_to_html_pretty_inline_compact(node, quote)
+        " ".repeat(indent) + node_to_html_pretty_compact_children(node, quote)
+      } else if element_has_comment_child(node) {
+        " ".repeat(indent) + node_to_html_pretty_compact_children(node, quote)
       } else {
         let out = StringBuilder::new()
         out.write_string(" ".repeat(indent))

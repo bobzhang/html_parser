@@ -378,11 +378,15 @@ JustHTML from Python to MoonBit.
   with only inline element children still use multiline formatting for block
   containers unless there is visible text in the run. Inline containers can
   stay compact with only formatting-whitespace separators, but that separator
-  text should become one space only when it is between children; edge
-  formatting whitespace is dropped. Do not compact when an inline wrapper
-  contains a layout/block descendant. In the multiline fallback, trim rendered
-  text-node lines and skip whitespace-only text nodes so indentation does not
-  preserve source formatting gaps as visible text.
+  text should become one space only when it is between children; the same
+  applies to whitespace-only runs longer than two spaces. Edge whitespace is
+  dropped in the compact fallback. Direct comment children also force this
+  compact fallback, even when adjacent elements are block-level, because
+  inserting indentation around comments changes the Python reference output.
+  Do not compact when an inline wrapper contains a layout/block descendant. In
+  the multiline fallback, trim rendered text-node lines and skip
+  whitespace-only text nodes so indentation does not preserve source formatting
+  gaps as visible text.
 - The html5lib tree-test serializer is line-oriented and does not emit wrapper
   lines for `#document` or `#document-fragment`. Build it as an array of lines
   joined by `\n` so it has no trailing newline, and sort attribute lines by
