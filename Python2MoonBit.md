@@ -636,6 +636,10 @@ JustHTML from Python to MoonBit.
   reported. `unexpected-character-after-doctype-system-identifier` and missing
   whitespace before a quoted identifier do not force quirks, while EOF/abrupt
   identifier states and public-identifier garbage do.
+- Quoted doctype identifier recovery distinguishes `>` from EOF. An unclosed
+  public/system identifier ending at `>` reports `abrupt-doctype-*-identifier`
+  at the close bracket; the same input without `>` reports
+  `eof-in-doctype-*-identifier` at the final character.
 - Null-character handling is state-specific inside doctypes too. Names and
   quoted public/system identifiers report `unexpected-null-character` and store
   U+FFFD, so a helper that only lowercases or normalizes newlines will silently

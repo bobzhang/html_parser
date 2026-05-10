@@ -1250,6 +1250,153 @@ test "parser and tokenizer report missing doctype identifier quotes" {
 }
 
 ///|
+test "parser reports doctype quoted identifier edge recovery" {
+  let public_abrupt = @html_parser.parse(
+    "<!doctype html PUBLIC \"x>",
+    collect_errors=true,
+  )
+  assert_eq(
+    public_abrupt.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(public_abrupt.errors.length(), 2)
+  assert_eq(public_abrupt.errors[0].code, "abrupt-doctype-public-identifier")
+  guard public_abrupt.errors[0].column is Some(25) else {
+    fail("expected abrupt public id at close bracket")
+  }
+  assert_eq(public_abrupt.errors[1].code, "unknown-doctype")
+  let public_identifier_eof = @html_parser.parse(
+    "<!doctype html PUBLIC \"x",
+    collect_errors=true,
+  )
+  assert_eq(
+    public_identifier_eof.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(public_identifier_eof.errors.length(), 2)
+  assert_eq(
+    public_identifier_eof.errors[0].code,
+    "eof-in-doctype-public-identifier",
+  )
+  guard public_identifier_eof.errors[0].column is Some(24) else {
+    fail("expected public id EOF at final character")
+  }
+  assert_eq(public_identifier_eof.errors[1].code, "unknown-doctype")
+  let system_abrupt = @html_parser.parse(
+    "<!doctype html SYSTEM \"x>",
+    collect_errors=true,
+  )
+  assert_eq(
+    system_abrupt.to_html(pretty=false),
+    "<!DOCTYPE html SYSTEM \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(system_abrupt.errors.length(), 2)
+  assert_eq(system_abrupt.errors[0].code, "abrupt-doctype-system-identifier")
+  guard system_abrupt.errors[0].column is Some(25) else {
+    fail("expected abrupt system id at close bracket")
+  }
+  assert_eq(system_abrupt.errors[1].code, "unknown-doctype")
+  let system_identifier_eof = @html_parser.parse(
+    "<!doctype html SYSTEM \"x",
+    collect_errors=true,
+  )
+  assert_eq(
+    system_identifier_eof.to_html(pretty=false),
+    "<!DOCTYPE html SYSTEM \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(system_identifier_eof.errors.length(), 2)
+  assert_eq(
+    system_identifier_eof.errors[0].code,
+    "eof-in-doctype-system-identifier",
+  )
+  guard system_identifier_eof.errors[0].column is Some(24) else {
+    fail("expected system id EOF at final character")
+  }
+  assert_eq(system_identifier_eof.errors[1].code, "unknown-doctype")
+}
+
+///|
+test "parser reports doctype keyword spacing edge recovery" {
+  let public_direct_quote = @html_parser.parse(
+    "<!doctype html PUBLIC\"x\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    public_direct_quote.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(public_direct_quote.errors.length(), 2)
+  assert_eq(
+    public_direct_quote.errors[0].code,
+    "missing-whitespace-before-doctype-public-identifier",
+  )
+  guard public_direct_quote.errors[0].column is Some(22) else {
+    fail("expected missing whitespace before public id")
+  }
+  assert_eq(public_direct_quote.errors[1].code, "unknown-doctype")
+  let system_direct_quote = @html_parser.parse(
+    "<!doctype html SYSTEM\"x\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    system_direct_quote.to_html(pretty=false),
+    "<!DOCTYPE html SYSTEM \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(system_direct_quote.errors.length(), 2)
+  assert_eq(
+    system_direct_quote.errors[0].code,
+    "missing-whitespace-after-doctype-public-identifier",
+  )
+  guard system_direct_quote.errors[0].column is Some(22) else {
+    fail("expected missing whitespace after system keyword")
+  }
+  assert_eq(system_direct_quote.errors[1].code, "unknown-doctype")
+  let public_direct_junk = @html_parser.parse(
+    "<!doctype html PUBLICx>",
+    collect_errors=true,
+  )
+  assert_eq(
+    public_direct_junk.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body></body></html>",
+  )
+  assert_eq(public_direct_junk.errors.length(), 1)
+  assert_eq(
+    public_direct_junk.errors[0].code,
+    "unexpected-character-after-doctype-public-keyword",
+  )
+  let system_direct_junk = @html_parser.parse(
+    "<!doctype html SYSTEMx>",
+    collect_errors=true,
+  )
+  assert_eq(
+    system_direct_junk.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body></body></html>",
+  )
+  assert_eq(system_direct_junk.errors.length(), 1)
+  assert_eq(
+    system_direct_junk.errors[0].code,
+    "unexpected-character-after-doctype-system-keyword",
+  )
+  let immediate_system_quote = @html_parser.parse(
+    "<!doctype html PUBLIC \"x\"\"y\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    immediate_system_quote.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\" \"y\"><html><head></head><body></body></html>",
+  )
+  assert_eq(immediate_system_quote.errors.length(), 2)
+  assert_eq(
+    immediate_system_quote.errors[0].code,
+    "missing-whitespace-between-doctype-public-and-system-identifiers",
+  )
+  guard immediate_system_quote.errors[0].column is Some(26) else {
+    fail("expected missing whitespace before system id")
+  }
+  assert_eq(immediate_system_quote.errors[1].code, "unknown-doctype")
+}
+
+///|
 test "parser and tokenizer report post-public-identifier errors" {
   let missing_space = @html_parser.parse(
     "<!doctype html PUBLIC \"x\"",
