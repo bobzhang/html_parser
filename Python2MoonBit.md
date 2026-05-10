@@ -604,6 +604,10 @@ JustHTML from Python to MoonBit.
   direct SVG/MathML foreign text reports `invalid-codepoint-in-foreign-content`
   and inserts U+FFFD; MathML text integration points keep normal HTML text
   handling.
+- `<![CDATA[...]]>` is only a bogus comment in HTML content. Under an
+  SVG/MathML current node, port it as literal text without entity decoding;
+  then apply the same foreign-text null handling for direct foreign content and
+  normal HTML text null handling at MathML text integration points.
 
 ## Test Porting
 

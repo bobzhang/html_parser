@@ -1903,11 +1903,40 @@ fn Parser::parse_bogus_comment(self : Parser) -> Unit {
 fn Parser::parse_markup_declaration(self : Parser) -> Unit {
   self.pos += 2
   if self.starts_with("[CDATA[") {
+    if self.current_node_is_foreign_namespace() {
+      self.parse_foreign_cdata_section()
+      return
+    }
     self.error_at("cdata-in-html-content", self.pos + "[CDATA[".length() - 1)
   } else {
     self.error_at("incorrectly-opened-comment", self.pos - 1)
   }
   self.parse_bogus_comment()
+}
+
+///|
+fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
+  self.pos += "[CDATA[".length()
+  let start = self.pos
+  while !self.is_eof() && !self.starts_with("]]>") {
+    ignore(self.advance_char())
+  }
+  match self.input.get_view(start~, end=self.pos) {
+    Some(view) => {
+      let cleaned = if self.current_node_uses_foreign_content_for_text() {
+        self.clean_foreign_content_text(view, start)
+      } else {
+        self.remove_null_characters(view, start)
+      }
+      if !cleaned.is_empty() {
+        self.current_node().append_child(text(cleaned))
+      }
+    }
+    None => ()
+  }
+  if self.starts_with("]]>") {
+    self.pos += 3
+  }
 }
 
 ///|

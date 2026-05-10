@@ -346,6 +346,14 @@ fn Parser::current_node_uses_foreign_content_for_text(self : Parser) -> Bool {
 }
 
 ///|
+fn Parser::current_node_is_foreign_namespace(self : Parser) -> Bool {
+  match self.current_node().ns {
+    Some(ns) => is_foreign_namespace(ns)
+    None => false
+  }
+}
+
+///|
 fn Parser::clean_foreign_content_text(
   self : Parser,
   raw : StringView,
