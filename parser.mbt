@@ -395,18 +395,18 @@ fn Parser::handle_table_context_hidden_input_or_form_start(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
-  start : Int,
+  error_pos : Int,
 ) -> Bool {
   if !self.current_is_table_or_section_context() {
     return false
   }
   if name == "input" && input_attrs_type_is_hidden(attrs) {
-    self.error_at("unexpected-hidden-input-in-table", start)
+    self.error_at("unexpected-hidden-input-in-table", error_pos)
     self.current_node().append_child(element(name, attrs~))
     return true
   }
   if name == "form" {
-    self.error_at("unexpected-form-in-table", start)
+    self.error_at("unexpected-form-in-table", error_pos)
     if self.form_element is None {
       let node = element(name, attrs~)
       self.form_element = Some(node)
@@ -4171,7 +4171,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       self.close_current_column_group_for_start(name, start)
       if self.handle_table_context_hidden_input_or_form_start(
-          name, attrs, start,
+          name, attrs, tag_close_pos,
         ) {
         return
       }

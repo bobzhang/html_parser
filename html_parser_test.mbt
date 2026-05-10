@@ -9219,6 +9219,27 @@ test "parser foster parents table-context start tags" {
 }
 
 ///|
+test "tree builder matches Python reference hidden input in table branch fixture" {
+  let document_hidden = @html_parser.parse(
+    "<table><input id=\"x\" class=\"y\" type=\"hidden\"></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(document_hidden.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <table>\n|       <input>\n|         class=\"y\"\n|         id=\"x\"\n|         type=\"hidden\"",
+  )
+  assert_eq(document_hidden.errors.length(), 2)
+  assert_eq(
+    document_hidden.errors[0].code,
+    "expected-doctype-but-got-start-tag",
+  )
+  assert_eq(document_hidden.errors[1].code, "unexpected-hidden-input-in-table")
+  guard document_hidden.errors[1].column is Some(45) else {
+    fail("expected hidden input table error at input start close")
+  }
+}
+
+///|
 test "parser handles hidden input and form starts in table context" {
   let hidden = @html_parser.parse_fragment(
     "<table><input type=hidden name=x value=y></table>",
@@ -9230,6 +9251,9 @@ test "parser handles hidden input and form starts in table context" {
   )
   assert_eq(hidden.errors.length(), 1)
   assert_eq(hidden.errors[0].code, "unexpected-hidden-input-in-table")
+  guard hidden.errors[0].column is Some(41) else {
+    fail("expected hidden input table error at fragment input start close")
+  }
   let uppercase_hidden = @html_parser.parse_fragment(
     "<table><input TYPE=HIDDEN></table>",
     collect_errors=true,
@@ -9259,6 +9283,9 @@ test "parser handles hidden input and form starts in table context" {
   assert_eq(form.errors[0].code, "unexpected-form-in-table")
   assert_eq(form.errors[1].code, "unexpected-end-tag-implies-table-voodoo")
   assert_eq(form.errors[2].code, "unexpected-end-tag")
+  guard form.errors[0].column is Some(18) else {
+    fail("expected form table error at start tag close")
+  }
   let row_form = @html_parser.parse_fragment(
     "<table><tr><form id=f></form></tr></table>",
     collect_errors=true,

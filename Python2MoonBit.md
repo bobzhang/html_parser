@@ -13,6 +13,11 @@ JustHTML from Python to MoonBit.
   come from arbitrary code-unit arithmetic, use `get_view(...)` and handle
   `None` instead of assuming the slice is valid.
 - When a parser consumes a `Char`, advance by `ch.utf16_len()`, not by `1`.
+- Do not assume MoonBit's default `Array::sort()` ordering for `String` or
+  tuple values matches Python's lexicographic ordering. When a fixture format
+  requires stable code-point order, such as html5lib-style attribute output,
+  use an explicit comparator that walks `StringView.get_char()` and advances by
+  `Char::utf16_len()`.
 - Error positions are still UTF-16 offsets until converted to line/column.
   Match Python's EOF conventions deliberately: EOF after a trailing newline is
   reported at the next line, column 0, while EOF after trailing non-newline text

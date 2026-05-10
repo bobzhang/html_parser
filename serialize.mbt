@@ -2632,6 +2632,51 @@ fn test_format_attribute_name(node : Node, name : StringView) -> String {
 }
 
 ///|
+fn test_format_string_less(left : StringView, right : StringView) -> Bool {
+  let mut left_pos = 0
+  let mut right_pos = 0
+  while left_pos < left.length() && right_pos < right.length() {
+    let left_ch = left.get_char(left_pos).unwrap()
+    let right_ch = right.get_char(right_pos).unwrap()
+    if left_ch < right_ch {
+      return true
+    }
+    if left_ch > right_ch {
+      return false
+    }
+    left_pos += left_ch.utf16_len()
+    right_pos += right_ch.utf16_len()
+  }
+  left.length() < right.length()
+}
+
+///|
+fn test_format_attr_less(
+  left : (String, String),
+  right : (String, String),
+) -> Bool {
+  let (left_name, left_value) = left
+  let (right_name, right_value) = right
+  if left_name != right_name {
+    return test_format_string_less(left_name[:], right_name[:])
+  }
+  test_format_string_less(left_value[:], right_value[:])
+}
+
+///|
+fn sort_test_format_attrs(attrs : Array[(String, String)]) -> Unit {
+  for index in 1..<attrs.length() {
+    let current = attrs[index]
+    let mut cursor = index
+    while cursor > 0 && test_format_attr_less(current, attrs[cursor - 1]) {
+      attrs[cursor] = attrs[cursor - 1]
+      cursor -= 1
+    }
+    attrs[cursor] = current
+  }
+}
+
+///|
 fn write_test_format_attributes(
   node : Node,
   out : Array[String],
@@ -2646,7 +2691,7 @@ fn write_test_format_attributes(
     }
     attrs.push((display_name, value))
   }
-  attrs.sort()
+  sort_test_format_attrs(attrs)
   for attr in attrs {
     let (name, value) = attr
     out.push(test_format_line(indent + 2, name + "=\"" + value + "\""))
