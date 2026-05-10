@@ -294,6 +294,12 @@ JustHTML from Python to MoonBit.
   characters such as backspace/form-feed, `<`, `>`, and line/paragraph
   separators U+2028/U+2029. Match the reference context exactly: `&` is already
   HTML-escaped in the serialized markup and is not escaped again for JS.
+- Python node `.text` is direct text-node data and returns an empty string for
+  element/comment nodes; recursive text extraction is `to_text()`. The current
+  MoonBit API already exposes `Node::text()` as a recursive convenience wrapper
+  over `to_text(separator="", strip=false)`, so port Python `.text` assertions
+  as `data()` for text nodes or as `to_text()` cases rather than changing that
+  API casually.
 - Markdown rendering needs two output paths like the Python `_MarkdownBuilder`:
   escaped text should collapse whitespace and guard line-start Markdown markers,
   while raw Markdown syntax such as `**`, link brackets, and code fences must be

@@ -223,6 +223,27 @@ test "text nodes expose no children" {
 }
 
 ///|
+test "to_text handles empty whitespace and strip options" {
+  let root = @html_parser.element("div", children=[
+    @html_parser.text(""),
+    @html_parser.text("   "),
+    @html_parser.text("A"),
+  ])
+  assert_eq(root.to_text(), "A")
+  assert_eq(@html_parser.element("div").to_text(), "")
+  let spaced = @html_parser.text("  A  ")
+  assert_eq(spaced.to_text(strip=false), "  A  ")
+  assert_eq(spaced.to_text(strip=true), "A")
+  let whitespace_root = @html_parser.element("div", children=[
+    @html_parser.text("   "),
+  ])
+  assert_eq(
+    whitespace_root.to_text(separator="\n", separator_blocks_only=true),
+    "",
+  )
+}
+
+///|
 test "sanitize_dom default policy drops unsafe document content" {
   let doc = @html_parser.parse(
     "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",
