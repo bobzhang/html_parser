@@ -190,6 +190,9 @@ JustHTML from Python to MoonBit.
   while raw Markdown syntax such as `**`, link brackets, and code fences must be
   appended without escaping. A `to_text()` fallback misses both formatting and
   security-relevant escaping.
+- Markdown line-start escaping for ordered lists is intentionally narrow:
+  digit prefixes are escaped only for `N. ` and `N) ` forms. Similar prefixes
+  such as `3x`, `4.no-space`, and `5)no-space` stay literal.
 - Test Markdown through both parsed documents and direct DOM builders. The
   public `Node::to_markdown` path must ignore comments/doctypes, drop empty
   inline formatting, and escape direct text nodes exactly like parsed text.

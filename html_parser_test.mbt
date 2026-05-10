@@ -460,6 +460,13 @@ test "to_markdown escapes text and line starting markdown markers" {
     markers.to_markdown(),
     "a\n\\# heading\n\\- item\n\\+ next\n1\\. ordered\n2\\) ordered\n\\~~~\n\\`\\`\\`\n\\---\n\\===",
   )
+  let digit_prefixes = @html_parser.parse_fragment(
+    "<p>a<br>3x plain<br>4.no space<br>5)no space<br>6. ordered<br>7) ordered</p>",
+  )
+  assert_eq(
+    digit_prefixes.to_markdown(),
+    "a\n3x plain\n4.no space\n5)no space\n6\\. ordered\n7\\) ordered",
+  )
 }
 
 ///|
