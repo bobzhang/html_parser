@@ -276,6 +276,10 @@ JustHTML from Python to MoonBit.
   the current MoonBit API does not expose quirks mode; port the observable tree
   and parse errors without adding an API flag until quirks mode itself is
   represented.
+- Known-doctype checks are intentionally exact. Legacy doctypes such as HTML
+  4.01 Transitional with the loose DTD still produce a doctype node, but they
+  report `unknown-doctype`; do not collapse them into the accepted strict/legacy
+  compatibility cases just because the name is `html`.
 - Other select-mode starts report but stay inside the select: `<hr>` first
   closes the current `option`/`optgroup`, void-like starts such as `<br>` and
   `<img>` are inserted without pushing, and common containers such as `<div>`

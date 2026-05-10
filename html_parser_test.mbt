@@ -4844,6 +4844,23 @@ test "tree builder matches reference iframe srcdoc doctype edge" {
 }
 
 ///|
+test "tree builder matches reference legacy loose doctype fixture" {
+  let doc = @html_parser.parse(
+    "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//\" \"http://www.w3.org/TR/html4/loose.dtd\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <!DOCTYPE html \"-//W3C//DTD HTML 4.01 Transitional//\" \"http://www.w3.org/TR/html4/loose.dtd\">\n| <html>\n|   <head>\n|   <body>",
+  )
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "unknown-doctype")
+  guard doc.errors[0].column is Some(100) else {
+    fail("expected unknown loose doctype at close bracket")
+  }
+}
+
+///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(
