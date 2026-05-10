@@ -1777,6 +1777,22 @@ test "parse_bytes decodes iso8859-2 labels" {
 }
 
 ///|
+test "parse_bytes ignores invalid transport encoding labels" {
+  let bytes = b"<p>\x80</p>"
+  let doc = @html_parser.parse_bytes(bytes, encoding="koi8-r")
+  assert_eq(doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard doc.encoding is Some("windows-1252") else {
+    fail("expected invalid transport label to fall back")
+  }
+  let meta = @utf8.encode("<meta charset=utf-8><p>\u{20AC}</p>")
+  let meta_doc = @html_parser.parse_bytes(meta, encoding="bogus")
+  assert_eq(meta_doc.to_text(separator="", strip=false), "\u{20AC}")
+  guard meta_doc.encoding is Some("utf-8") else {
+    fail("expected invalid transport label to allow meta sniff")
+  }
+}
+
+///|
 test "parse_bytes sniffs utf8 bom before windows1252 fallback" {
   let bytes = b"\xef\xbb\xbf\x3c\x70\x3e\x62\x6f\x6d\x3c\x2f\x70\x3e"
   let doc = @html_parser.parse_bytes(bytes)

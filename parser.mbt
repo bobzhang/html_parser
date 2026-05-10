@@ -3084,8 +3084,7 @@ fn decode_html_bytes(input : BytesView, encoding : String?) -> (String, String) 
       } else {
         match normalize_supported_html_encoding_label(trimmed) {
           Some(encoding) => decode_supported_html_encoding(input, encoding)
-          None =>
-            (@utf8.decode_lossy(input, ignore_bom=true), trimmed.to_owned())
+          None => decode_html_bytes(input, None)
         }
       }
     }
