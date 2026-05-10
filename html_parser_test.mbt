@@ -3387,7 +3387,7 @@ test "query supports attribute presence and exact selectors" {
 ///|
 test "query supports attribute operator selectors" {
   let doc = @html_parser.parse_fragment(
-    "<div class='container secondary' lang='en-US' data-tags='alpha\tbeta' data-name='example item'><a href='http://example.com'>Link</a><p data-empty=''></p></div>",
+    "<div class='container secondary' lang='en-US' data-tags='alpha\tbeta' data-name='example item' data-quote='hello&quot;world' data-slash='a\\b' data-escape='x'><a href='http://example.com'>Link</a><p data-empty=''></p></div>",
   )
   assert_eq(doc.query("[class~='container']").length(), 1)
   assert_eq(doc.query("[class~='contain']").length(), 0)
@@ -3405,6 +3405,11 @@ test "query supports attribute operator selectors" {
   assert_eq(doc.query("[href^='']").length(), 0)
   assert_eq(doc.query("[href$='']").length(), 0)
   assert_eq(doc.query("[href*='']").length(), 0)
+  assert_eq(doc.query("[data-quote=\"hello\\\"world\"]").length(), 1)
+  assert_eq(doc.query("[data-slash=\"a\\\\b\"]").length(), 1)
+  assert_eq(doc.query("[data-escape=\"\\x\"]").length(), 1)
+  assert_eq(doc.query("[data-quote=\"hello\\\"world\"], p").length(), 2)
+  assert_eq(doc.query("div > [data-quote=\"hello\\\"world\"]").length(), 0)
   assert_eq(doc.query("[~=container]").length(), 0)
   assert_eq(doc.query("[href!=http://example.com]").length(), 0)
   assert_eq(doc.query("[lang|=e]").length(), 0)

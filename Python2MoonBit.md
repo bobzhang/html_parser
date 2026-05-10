@@ -303,6 +303,10 @@ JustHTML from Python to MoonBit.
   matcher: `^=`, `$=`, and `*=` do not match an empty expected value, while
   `~=` uses HTML-whitespace token matching and `|=` matches exact or
   hyphen-prefixed values.
+- Quoted attribute selector values consume backslash escapes like the Python
+  tokenizer: the backslash is dropped and the following character is literal.
+  Keep the same escape awareness in the selector-list and combinator splitters
+  so escaped quotes do not terminate the attribute selector early.
 - Selector lists should be evaluated per node, not by concatenating the results
   of separate queries. That preserves document order and prevents duplicate
   nodes for repeated entries such as `p, p`; split commas only outside

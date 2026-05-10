@@ -607,14 +607,23 @@ fn next_simple_selector_marker(selector : StringView, start : Int) -> Int {
 fn find_attribute_selector_end(selector : StringView, start : Int) -> Int? {
   let mut pos = start + 1
   let mut quote : Char? = None
+  let mut escaped = false
   while pos < selector.length() {
     match selector.get_char(pos) {
       Some(ch) => {
         match quote {
-          Some(q) => if ch == q { quote = None }
+          Some(q) =>
+            if escaped {
+              escaped = false
+            } else if ch == '\\' {
+              escaped = true
+            } else if ch == q {
+              quote = None
+            }
           None =>
             if ch == '"' || ch == '\'' {
               quote = Some(ch)
+              escaped = false
             } else if ch == ']' {
               return Some(pos)
             }
@@ -741,17 +750,34 @@ fn attribute_name_and_operator(
 }
 
 ///|
-fn quoted_attribute_selector_value(value : StringView) -> StringView? {
+fn quoted_attribute_selector_value(value : StringView) -> String? {
   let value = value.trim()
   if value.length() < 2 {
-    return Some(value)
+    return Some(value.to_owned())
   }
   let end = value.length() - 1
   match (value.get_char(0), value.get_char(end)) {
     (Some('"'), Some('"')) | (Some('\''), Some('\'')) =>
-      value.get_view(start=1, end~)
-    _ => Some(value)
+      Some(unescape_quoted_attribute_selector_value(value[1:end]))
+    _ => Some(value.to_owned())
   }
+}
+
+///|
+fn unescape_quoted_attribute_selector_value(value : StringView) -> String {
+  let out = StringBuilder::new(size_hint=value.length())
+  let mut escaped = false
+  for ch in value {
+    if escaped {
+      out.write_char(ch)
+      escaped = false
+    } else if ch == '\\' {
+      escaped = true
+    } else {
+      out.write_char(ch)
+    }
+  }
+  out.to_string()
 }
 
 ///|
@@ -818,7 +844,8 @@ fn attribute_selector_matches(node : Node, selector : StringView) -> Bool {
         return false
       }
       match attribute_value_by_name(node, name) {
-        Some(actual) => attribute_value_matches(actual[:], operator, expected)
+        Some(actual) =>
+          attribute_value_matches(actual[:], operator, expected[:])
         None => false
       }
     }
@@ -1315,15 +1342,24 @@ fn split_complex_selector(
   let mut bracket_depth = 0
   let mut paren_depth = 0
   let mut quote : Char? = None
+  let mut escaped = false
   let mut pending = DescendantCombinator
   while pos < selector.length() {
     match selector.get_char(pos) {
       Some(ch) => {
         match quote {
-          Some(q) => if ch == q { quote = None }
+          Some(q) =>
+            if escaped {
+              escaped = false
+            } else if ch == '\\' {
+              escaped = true
+            } else if ch == q {
+              quote = None
+            }
           None =>
             if bracket_depth > 0 && (ch == '"' || ch == '\'') {
               quote = Some(ch)
+              escaped = false
             } else if ch == '[' {
               bracket_depth += 1
             } else if ch == ']' && bracket_depth > 0 {
@@ -1491,14 +1527,23 @@ fn matches_selector_list(node : Node, selector : StringView) -> Bool {
   let mut bracket_depth = 0
   let mut paren_depth = 0
   let mut quote : Char? = None
+  let mut escaped = false
   while pos < selector.length() {
     match selector.get_char(pos) {
       Some(ch) => {
         match quote {
-          Some(q) => if ch == q { quote = None }
+          Some(q) =>
+            if escaped {
+              escaped = false
+            } else if ch == '\\' {
+              escaped = true
+            } else if ch == q {
+              quote = None
+            }
           None =>
             if bracket_depth > 0 && (ch == '"' || ch == '\'') {
               quote = Some(ch)
+              escaped = false
             } else if ch == '[' {
               bracket_depth += 1
             } else if ch == ']' && bracket_depth > 0 {
