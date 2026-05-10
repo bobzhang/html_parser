@@ -521,6 +521,10 @@ JustHTML from Python to MoonBit.
   missing root attributes, then process the nested html's children in order.
 - Repeated shell tags can appear as siblings too, not only nested nodes. Normalize
   root-level repeated `<html>` elements before the head/body scaffolding pass.
+- Finish-time document scaffolding has a few insertion-mode-shaped details:
+  strip the leading whitespace prefix from the first text node that starts an
+  implicit body under an explicit `<html>`, move children of a late `<head>` into
+  the body, and preserve whitespace/comments that trail a valid frameset.
 - Keep tokenizer flags separate from tree-builder effects. A `/>` slash should
   remain visible on the start-tag token, but in HTML tree construction only
   void elements actually self-close; non-void elements still receive later text
@@ -657,7 +661,9 @@ JustHTML from Python to MoonBit.
   recovery and reports again.
 - Repeated `<html>` start tags are not normal element insertion. Once the
   document html element exists, report `unexpected-start-tag`, merge only
-  missing attributes onto the existing html node, and drop the token.
+  missing attributes onto the existing html node, and drop the token. Keep
+  enough state for the following `<body>` or extra `</html>` to report the
+  after-body/repeated-shell errors even though the DOM merge already happened.
 - Repeated `<head>` starts are a JustHTML-specific recovery edge. A duplicate
   head start while the real head is open reports `unexpected-start-tag`, starts
   a transient duplicate head sibling, and either pops that duplicate when a

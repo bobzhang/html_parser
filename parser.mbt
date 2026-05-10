@@ -12,6 +12,7 @@ priv struct Parser {
   mut before_html_phase : Bool
   mut after_frameset : Bool
   mut after_frameset_ignored_depth : Int
+  mut document_after_body : Bool
   foster_parented_start_error_nodes : Array[Node]
   mut fragment_context_table : Node?
   mut fragment_context_table_section : Node?
@@ -28,6 +29,7 @@ priv struct Parser {
   mut template_detached_column_group_mode : Bool
   mut deferred_initial_doctype_error : ParseError?
   mut duplicate_head_element : Node?
+  mut repeated_document_html_shell : Bool
 }
 
 ///|
@@ -51,6 +53,7 @@ fn Parser::new(
     before_html_phase: root.kind == Document,
     after_frameset: false,
     after_frameset_ignored_depth: 0,
+    document_after_body: false,
     foster_parented_start_error_nodes: [],
     fragment_context_table: None,
     fragment_context_table_section: None,
@@ -67,6 +70,7 @@ fn Parser::new(
     template_detached_column_group_mode: false,
     deferred_initial_doctype_error: None,
     duplicate_head_element: None,
+    repeated_document_html_shell: false,
   }
 }
 
@@ -2295,6 +2299,12 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.close_ruby_end_tag(start)
     return
   }
+  if self.handle_document_after_body_html_end_tag(name, start) {
+    return
+  }
+  if self.handle_document_body_or_html_end_tag(name, tag_close_pos) {
+    return
+  }
   if name != "" {
     self.pop_until(name, tag_close_pos)
   }
@@ -2308,6 +2318,39 @@ fn Parser::is_fragment_parser(self : Parser) -> Bool {
 ///|
 fn Parser::uses_document_frameset_rules(self : Parser) -> Bool {
   !self.is_fragment_parser() || self.fragment_context_html
+}
+
+///|
+fn Parser::handle_document_after_body_html_end_tag(
+  self : Parser,
+  name : StringView,
+  start : Int,
+) -> Bool {
+  if self.is_fragment_parser() ||
+    !self.document_after_body ||
+    name != "html" ||
+    self.has_open_element("html") {
+    return false
+  }
+  self.error_at("unexpected-token-after-body", start)
+  true
+}
+
+///|
+fn Parser::handle_document_body_or_html_end_tag(
+  self : Parser,
+  name : String,
+  pos : Int,
+) -> Bool {
+  if self.is_fragment_parser() || (name != "body" && name != "html") {
+    return false
+  }
+  if !self.has_open_element(name) {
+    return false
+  }
+  self.pop_until(name, pos)
+  self.document_after_body = true
+  true
 }
 
 ///|
@@ -2376,7 +2419,9 @@ fn Parser::handle_document_frameset_end_tag(
     return false
   }
   if self.after_frameset {
-    if name == "frameset" {
+    if name == "html" {
+      ()
+    } else if name == "frameset" {
       self.error_at("unexpected-token-after-frameset", start)
     } else if self.after_frameset_ignored_depth > 0 {
       self.error_at("unexpected-token-in-frameset", start)
@@ -2582,6 +2627,59 @@ fn Parser::stack_contains_node(self : Parser, target : Node) -> Bool {
 }
 
 ///|
+fn node_has_direct_element_child(node : Node, name : String) -> Bool {
+  for child in node.children {
+    if child.kind == Element && child.name == name {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn Parser::document_head_exists(self : Parser) -> Bool {
+  if node_has_direct_element_child(self.root, "head") {
+    return true
+  }
+  match document_html_element(self.root) {
+    Some(html) => node_has_direct_element_child(html, "head")
+    None => false
+  }
+}
+
+///|
+fn Parser::document_head_start_is_late(self : Parser) -> Bool {
+  self.document_head_exists() ||
+  !self.frameset_ok ||
+  self.after_frameset ||
+  self.has_open_element("body") ||
+  self.has_open_element("frameset")
+}
+
+///|
+fn Parser::handle_late_document_head_start_tag(
+  self : Parser,
+  name : StringView,
+  start : Int,
+) -> Bool {
+  if self.is_fragment_parser() || name != "head" {
+    return false
+  }
+  if !self.document_head_start_is_late() {
+    return false
+  }
+  self.error_at("unexpected-start-tag", start)
+  let duplicate = element("head")
+  match self.open_html_element() {
+    Some(html) => html.append_child(duplicate)
+    None => self.root.append_child(duplicate)
+  }
+  self.stack.push(duplicate)
+  self.duplicate_head_element = Some(duplicate)
+  true
+}
+
+///|
 fn Parser::handle_repeated_document_html_start_tag(
   self : Parser,
   name : StringView,
@@ -2597,6 +2695,7 @@ fn Parser::handle_repeated_document_html_start_tag(
     Some(html) => {
       self.error_at("unexpected-start-tag", start)
       merge_missing_attrs_from_map(html, attrs)
+      self.repeated_document_html_shell = true
       if !self.stack_contains_node(html) {
         self.stack.push(html)
       }
@@ -2604,6 +2703,19 @@ fn Parser::handle_repeated_document_html_start_tag(
     }
     None => false
   }
+}
+
+///|
+fn Parser::report_body_start_after_repeated_document_html(
+  self : Parser,
+  name : StringView,
+  start : Int,
+) -> Unit {
+  if !self.repeated_document_html_shell || name != "body" {
+    return
+  }
+  self.error_at("unexpected-start-tag", start)
+  self.repeated_document_html_shell = false
 }
 
 ///|
@@ -3633,9 +3745,13 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.close_current_document_head_for_start(name, start) {
         return
       }
+      if self.handle_late_document_head_start_tag(name, start) {
+        return
+      }
       if self.handle_repeated_document_html_start_tag(name, attrs, start) {
         return
       }
+      self.report_body_start_after_repeated_document_html(name, start)
       if self.has_open_element("select") && name == "frame" {
         self.error_at("unexpected-start-tag-in-select", start)
         return

@@ -980,6 +980,56 @@ test "document parser merges root repeated html tags" {
 }
 
 ///|
+test "document parser preserves shell scaffolding edge ordering" {
+  let leading_text = @html_parser.parse(
+    "<html> \n\tBody</html>",
+    collect_errors=true,
+  )
+  assert_eq(
+    leading_text.to_html(pretty=false),
+    "<html><head></head><body>Body</body></html>",
+  )
+  assert_eq(leading_text.errors.length(), 1)
+  assert_eq(leading_text.errors[0].code, "expected-doctype-but-got-start-tag")
+  let late_head = @html_parser.parse(
+    "<html><body>x</body><head><title>T</title></head></html>",
+    collect_errors=true,
+  )
+  assert_eq(
+    late_head.to_html(pretty=false),
+    "<html><head></head><body>x<title>T</title></body></html>",
+  )
+  assert_eq(late_head.errors.length(), 3)
+  assert_eq(late_head.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(late_head.errors[1].code, "unexpected-start-tag")
+  assert_eq(late_head.errors[2].code, "unexpected-end-tag")
+  let frameset_tail = @html_parser.parse(
+    "<html><frameset></frameset>   <!--tail--></html>",
+    collect_errors=true,
+  )
+  assert_eq(
+    frameset_tail.to_html(pretty=false),
+    "<html><head></head><frameset></frameset>   <!--tail--></html>",
+  )
+  assert_eq(frameset_tail.errors.length(), 1)
+  assert_eq(frameset_tail.errors[0].code, "expected-doctype-but-got-start-tag")
+  let recursive_html = @html_parser.parse(
+    "<html lang=en></html><html dir=ltr><html data-x=1><body>x</body></html></html>",
+    collect_errors=true,
+  )
+  assert_eq(
+    recursive_html.to_html(pretty=false),
+    "<html lang=\"en\" dir=\"ltr\" data-x=\"1\"><head></head><body>x</body></html>",
+  )
+  assert_eq(recursive_html.errors.length(), 5)
+  assert_eq(recursive_html.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(recursive_html.errors[1].code, "unexpected-start-tag")
+  assert_eq(recursive_html.errors[2].code, "unexpected-start-tag")
+  assert_eq(recursive_html.errors[3].code, "unexpected-start-tag")
+  assert_eq(recursive_html.errors[4].code, "unexpected-token-after-body")
+}
+
+///|
 test "document parser places comments around implicit head like reference" {
   let before = @html_parser.parse("<!--c--><title>T</title><p>x</p>")
   assert_eq(
