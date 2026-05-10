@@ -269,6 +269,10 @@ JustHTML from Python to MoonBit.
 - `:nth-of-type(...)` reuses the An+B formula parser from `:nth-child(...)`,
   but the 1-based index counts only element siblings with the same normalized
   tag name.
+- `:nth-*` formulas should be normalized before parsing: remove whitespace and
+  lowercase ASCII so `ODD`, `+n`, `-2n+5`, and spaced forms behave like the
+  Python reference, while malformed signed pieces such as `+`, `2n+`, or
+  repeated `n` fragments simply fail to match.
 - `:not(...)` can reuse the selector-list matcher recursively. Keep the outer
   splitter parenthesis-aware so commas and markers inside `:not(.a, .b)` stay
   inside the argument.
@@ -281,6 +285,9 @@ JustHTML from Python to MoonBit.
 - `:contains(...)` is a non-standard pseudo-class in the reference. It is
   case-sensitive, uses descendant text content, accepts quoted or unquoted
   arguments, and a quoted empty string matches every element.
+- Quoted `:contains(...)` arguments use only minimal Python-style unescaping:
+  escaped matching quotes and doubled backslashes collapse, other backslash
+  sequences stay literal, and a trailing backslash remains part of the needle.
 - DOM mutation must keep parent links and child arrays in sync. Only document,
   fragment, and element nodes accept children; adopting an existing child should
   detach it from its old parent, and removing a child must clear the child's

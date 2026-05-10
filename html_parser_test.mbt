@@ -2497,6 +2497,7 @@ test "query supports tag class id and tag class selectors" {
   assert_eq(compound.query("div.container#main").length(), 1)
   assert_eq(compound.query("#main.container.featured").length(), 1)
   assert_eq(compound.query("div#main.missing").length(), 0)
+  assert_eq(@html_parser.query(compound.root, "p").length(), 1)
 }
 
 ///|
@@ -2541,6 +2542,15 @@ test "query supports attribute operator selectors" {
   assert_eq(doc.query("[href^='']").length(), 0)
   assert_eq(doc.query("[href$='']").length(), 0)
   assert_eq(doc.query("[href*='']").length(), 0)
+  assert_eq(doc.query("[lang|=e]").length(), 0)
+  let exact_lang = @html_parser.parse_fragment(
+    "<p lang='en'></p><p lang='en-US'></p><p lang='eng'></p>",
+  )
+  assert_eq(exact_lang.query("[lang|=en]").length(), 2)
+  let empty = @html_parser.parse_fragment(
+    "<p data-empty=''></p><p data-empty='x'></p>",
+  )
+  assert_eq(empty.query("[data-empty=]").length(), 1)
 }
 
 ///|
@@ -2728,8 +2738,16 @@ test "query supports nth child pseudo selector" {
   assert_eq(doc.query("li:nth-child(2n)").length(), 2)
   assert_eq(doc.query("li:nth-child(n)").length(), 5)
   assert_eq(doc.query("li:nth-child(-n+3)").length(), 3)
+  assert_eq(doc.query("li:nth-child(ODD)").length(), 3)
+  assert_eq(doc.query("li:nth-child(+n)").length(), 5)
+  assert_eq(doc.query("li:nth-child(-2n+5)").length(), 3)
   assert_eq(doc.query("li:nth-child( 2n + 1 )").length(), 3)
   assert_eq(doc.query("li:nth-child(abc)").length(), 0)
+  assert_eq(doc.query("li:nth-child(+)").length(), 0)
+  assert_eq(doc.query("li:nth-child(xn+1)").length(), 0)
+  assert_eq(doc.query("li:nth-child(2n+)").length(), 0)
+  assert_eq(doc.query("li:nth-child(2n+n)").length(), 0)
+  assert_eq(doc.query("li:nth-child(2n+x)").length(), 0)
   guard doc.query_one(".special") is Some(special) else {
     fail("expected special list item")
   }
@@ -2802,6 +2820,17 @@ test "query supports contains pseudo selector" {
   assert_eq(doc.query("button:contains()").length(), 0)
   guard doc.query_one("#a") is Some(first) else { fail("expected first div") }
   assert_true(@html_parser.matches(first, "div:contains(\"click me\")"))
+}
+
+///|
+test "query supports contains pseudo selector quoted escapes" {
+  let doc = @html_parser.parse_fragment(
+    "<div><span>don't</span><span>a\\b</span><span>don\\x</span><span>tail\\</span></div>",
+  )
+  assert_eq(doc.query("span:contains('don\\'t')").length(), 1)
+  assert_eq(doc.query("span:contains(\"a\\\\b\")").length(), 1)
+  assert_eq(doc.query("span:contains(\"don\\x\")").length(), 1)
+  assert_eq(doc.query("span:contains(\"tail\\\")").length(), 1)
 }
 
 ///|
