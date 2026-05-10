@@ -699,6 +699,15 @@ fn merge_forced_link_rel(node : Node, policy : SanitizationPolicy) -> Unit {
 }
 
 ///|
+fn sanitize_meta_refresh_content(node : Node) -> Unit {
+  match node.attrs.get("http-equiv") {
+    Some(Some(value)) if lower_ascii(value[:].trim()) == "refresh" =>
+      node.attrs.remove("content")
+    _ => ()
+  }
+}
+
+///|
 fn sanitize_element_attributes(
   node : Node,
   policy : SanitizationPolicy,
@@ -745,6 +754,9 @@ fn sanitize_element_attributes(
         None => ()
       }
     }
+  }
+  if tag_name == "meta" {
+    sanitize_meta_refresh_content(node)
   }
   if tag_name == "a" {
     merge_forced_link_rel(node, policy)

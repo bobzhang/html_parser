@@ -21,7 +21,7 @@ The current slice provides:
   drop, or escape disallowed tags, force hardened anchor `rel` tokens, and
   allowlist simple inline CSS properties while stripping invisible Unicode and
   hardening allowed raw-text, foreign text-integration, active foreign contents,
-  and foreign URL-function attributes.
+  foreign URL-function attributes, and meta refresh contents.
 - Initial Markdown conversion for text, paragraphs, headings, inline
   formatting, links, code, lists, blockquotes, and raw HTML passthrough.
 

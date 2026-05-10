@@ -156,6 +156,10 @@ JustHTML from Python to MoonBit.
   like `href`/`src`. For effective foreign nodes, allowlisted attributes such as
   `fill`, `filter`, `mask`, and marker attributes still need conservative
   `url(...)` filtering.
+- `meta` refresh is a URL-bearing construct split across attributes. If
+  `http-equiv` is `refresh`, drop the `content` attribute even when both names
+  are policy-allowlisted; do not apply that rule to ordinary `content-type`
+  metadata.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside

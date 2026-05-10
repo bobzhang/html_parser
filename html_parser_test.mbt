@@ -576,6 +576,23 @@ test "sanitize_dom drops foreign url function attributes without url policy" {
 }
 
 ///|
+test "sanitize_dom drops meta refresh content attributes" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["meta", "p"],
+    allowed_attributes={ "meta": ["http-equiv", "content"] },
+    drop_content_tags=[],
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<meta http-equiv='refresh' content='0;url=javascript:alert(1)'><meta http-equiv='Content-Type' content='text/html; charset=utf-8'><p>ok</p>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<meta http-equiv=\"refresh\"><meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\"><p>ok</p>",
+  )
+}
+
+///|
 test "sanitize_dom handles standalone nodes and url edge cases" {
   let allowed = @html_parser.element(
     "p",
