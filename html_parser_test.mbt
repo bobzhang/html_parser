@@ -299,6 +299,24 @@ test "sanitize_dom escape handling can return fragments for standalone roots" {
 }
 
 ///|
+test "sanitize_dom escape handling preserves disallowed template children" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["b"],
+    allowed_attributes={ "*": [], "b": [] },
+    drop_content_tags=[],
+    disallowed_tag_handling=Escape,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<template><b>x</b></template>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "&lt;template&gt;<b>x</b>&lt;/template&gt;",
+  )
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",

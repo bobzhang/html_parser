@@ -410,6 +410,8 @@ JustHTML from Python to MoonBit.
   reconstruct tag text from the normalized DOM. That keeps output safe and
   deterministic, but it cannot preserve source spelling details such as single
   quotes, self-closing slashes on non-void HTML elements, or missing end tags.
+  The escaped start/end text wraps sanitized surviving children; do not drop
+  children just because the disallowed element is `template`.
 - `force_link_rel` is both an attribute-allowlist rule and a rewrite rule in
   the Python sanitizer. If it is non-empty, `rel` must be kept on `<a>` even
   when `allowed_attributes["a"]` does not include it, then existing rel tokens
