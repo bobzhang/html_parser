@@ -40,6 +40,7 @@ priv struct Parser {
 
 ///|
 priv struct FormattingEntry {
+  marker : Bool
   name : String
   ns : String
   attrs : Map[String, String?]
@@ -2380,6 +2381,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.handle_form_end_tag(start)
     return
   }
+  if self.handle_applet_like_end_tag(name, tag_close_pos) {
+    return
+  }
   if self.handle_template_end_tag(name, tag_close_pos) {
     return
   }
@@ -2754,6 +2758,7 @@ fn Parser::append_active_formatting_entry(self : Parser, node : Node) -> Unit {
   match node.ns {
     Some(ns) =>
       self.active_formatting.push({
+        marker: false,
         name: node.name,
         ns,
         attrs: node.attrs.copy(),
@@ -2769,7 +2774,11 @@ fn Parser::active_formatting_index(self : Parser, name : StringView) -> Int {
   let mut index = self.active_formatting.length()
   while index > 0 {
     index -= 1
-    if self.active_formatting[index].name == target {
+    let entry = self.active_formatting[index]
+    if entry.marker {
+      break
+    }
+    if entry.name == target {
       return index
     }
   }
@@ -2807,7 +2816,10 @@ fn Parser::active_formatting_duplicate_index(
   let mut index = 0
   while index < self.active_formatting.length() {
     let entry = self.active_formatting[index]
-    if entry.name == target && formatting_attrs_equal(entry.attrs, attrs) {
+    if entry.marker {
+      first_match = -1
+      match_count = 0
+    } else if entry.name == target && formatting_attrs_equal(entry.attrs, attrs) {
       if first_match < 0 {
         first_match = index
       }
@@ -2831,7 +2843,11 @@ fn Parser::remove_last_active_formatting_by_name(
   let mut index = self.active_formatting.length()
   while index > 0 {
     index -= 1
-    if self.active_formatting[index].name == target {
+    let entry = self.active_formatting[index]
+    if entry.marker {
+      break
+    }
+    if entry.name == target {
       self.remove_active_formatting_index(index)
       return
     }
@@ -2878,7 +2894,8 @@ fn Parser::active_formatting_index_by_node(self : Parser, target : Node) -> Int 
   let mut index = self.active_formatting.length()
   while index > 0 {
     index -= 1
-    if physical_equal(self.active_formatting[index].node, target) {
+    let entry = self.active_formatting[index]
+    if !entry.marker && physical_equal(entry.node, target) {
       return index
     }
   }
@@ -2902,7 +2919,13 @@ fn formatting_entry_with_node(
   entry : FormattingEntry,
   node : Node,
 ) -> FormattingEntry {
-  { name: entry.name, ns: entry.ns, attrs: entry.attrs.copy(), node }
+  {
+    marker: false,
+    name: entry.name,
+    ns: entry.ns,
+    attrs: entry.attrs.copy(),
+    node,
+  }
 }
 
 ///|
@@ -2915,6 +2938,58 @@ fn element_from_formatting_entry(entry : FormattingEntry) -> Node {
 ///|
 fn Parser::remove_active_formatting_index(self : Parser, index : Int) -> Unit {
   ignore(self.active_formatting.remove(index))
+}
+
+///|
+fn Parser::push_active_formatting_marker(self : Parser) -> Unit {
+  self.active_formatting.push({
+    marker: true,
+    name: "",
+    ns: "",
+    attrs: {},
+    node: self.root,
+  })
+}
+
+///|
+fn Parser::clear_active_formatting_to_marker(self : Parser) -> Unit {
+  while !self.active_formatting.is_empty() {
+    match self.active_formatting.pop() {
+      Some(entry) if entry.marker => return
+      _ => ()
+    }
+  }
+}
+
+///|
+fn applet_like_element_name(name : StringView) -> Bool {
+  match name {
+    "applet" | "marquee" | "object" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::handle_applet_like_end_tag(
+  self : Parser,
+  name : String,
+  pos : Int,
+) -> Bool {
+  if !applet_like_element_name(name) {
+    return false
+  }
+  if !self.has_open_element_in_default_scope(name) {
+    self.error_at("unexpected-end-tag", pos)
+    return true
+  }
+  while self.stack.length() > 1 {
+    match self.stack.pop() {
+      Some(node) if node.kind == Element && node.name == name => break
+      _ => ()
+    }
+  }
+  self.clear_active_formatting_to_marker()
+  true
 }
 
 ///|
@@ -3044,23 +3119,30 @@ fn Parser::reconstruct_active_formatting_elements(self : Parser) -> Unit {
     return
   }
   let last_index = self.active_formatting.length() - 1
-  if self.stack_contains_node(self.active_formatting[last_index].node) {
+  if self.active_formatting[last_index].marker ||
+    self.stack_contains_node(self.active_formatting[last_index].node) {
     return
   }
   let mut index = last_index
   while index > 0 {
-    if self.stack_contains_node(self.active_formatting[index - 1].node) {
+    let previous = self.active_formatting[index - 1]
+    if previous.marker || self.stack_contains_node(previous.node) {
       break
     }
     index -= 1
   }
   while index < self.active_formatting.length() {
     let entry = self.active_formatting[index]
+    if entry.marker {
+      index += 1
+      continue
+    }
     let node = element(entry.name, attrs=entry.attrs.copy(), ns=entry.ns)
     node.copy_origin_from(entry.node)
     self.current_node().append_child(node)
     self.stack.push(node)
     self.active_formatting[index] = {
+      marker: false,
       name: entry.name,
       ns: entry.ns,
       attrs: entry.attrs,
@@ -4762,6 +4844,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
             self.remove_active_formatting_index(duplicate_index)
           }
           self.append_active_formatting_entry(node)
+        }
+        if node_ns == "html" && applet_like_element_name(adjusted_name) {
+          self.push_active_formatting_marker()
         }
         if node_ns == "html" && start_tag_ignores_initial_lf(adjusted_name) {
           self.skip_one_initial_lf()
