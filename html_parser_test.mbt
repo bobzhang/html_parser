@@ -5525,6 +5525,16 @@ test "parser closes captions before table structure starts and ends" {
   )
   assert_eq(row_group_end.errors.length(), 1)
   assert_eq(row_group_end.errors[0].code, "unexpected-end-tag")
+  let generic_end = @html_parser.parse_fragment(
+    "<table><caption>x</div>y</caption></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    generic_end.to_html(pretty=false),
+    "<table><caption>xy</caption></table>",
+  )
+  assert_eq(generic_end.errors.length(), 1)
+  assert_eq(generic_end.errors[0].code, "unexpected-end-tag")
 }
 
 ///|

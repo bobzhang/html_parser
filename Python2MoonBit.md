@@ -476,10 +476,11 @@ JustHTML from Python to MoonBit.
   `unexpected-start-tag-implies-end-tag`, then the token continues in table
   context. `</table>` closes the caption silently before closing the table,
   while `</tbody>`, `</tfoot>`, and `</thead>` inside a caption are just
-  `unexpected-end-tag` errors and leave the caption open. EOF in caption mode
-  follows body-mode EOF reporting (`expected-closing-tag-but-got-eof`) even
-  though a table is open; rows, cells, and column groups still report
-  `eof-in-table`.
+  `unexpected-end-tag` errors and leave the caption open. Generic end tags such
+  as `</div>` behave the same way, so a later `</caption>` still closes the
+  caption. EOF in caption mode follows body-mode EOF reporting
+  (`expected-closing-tag-but-got-eof`) even though a table is open; rows, cells,
+  and column groups still report `eof-in-table`.
   Column-group text is another special case: report
   `unexpected-characters-in-column-group`; non-whitespace is then reprocessed as
   table text and foster-parented, while whitespace stays in the colgroup.
