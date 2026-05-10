@@ -576,7 +576,9 @@ JustHTML from Python to MoonBit.
 - Named character references are case-sensitive and not all semicolonless
   forms are allowed. Port the Python `html.entities.html5` behavior in layers:
   exact semicolon matches, legacy semicolonless names, then text-only longest
-  legacy prefix recovery. `&nbsp;` is U+00A0, not an ASCII space.
+  legacy prefix recovery. This ordering is observable: `&notin;` is an exact
+  non-legacy name and must not degrade into `&not` prefix recovery. `&nbsp;` is
+  U+00A0, not an ASCII space.
 - RCDATA character-reference errors use the closing tag cursor in the Python
   tokenizer, not the local entity offset. Keep script/rawtext paths separate:
   they preserve `&...` literally and should not report entity errors.

@@ -5996,6 +5996,20 @@ test "entity decoding covers upstream fixture cases" {
     let parsed = @html_parser.parse_fragment("&" + name + ";")
     assert_eq(parsed.to_text(separator="", strip=false), value)
   }
+  let exact = @html_parser.parse_fragment(
+    "&notin; &hellip; &mdash; &ndash; &trade; &euro;",
+  )
+  assert_eq(
+    exact.to_text(separator="", strip=false),
+    "\u{2209} \u{2026} \u{2014} \u{2013} \u{2122} \u{20AC}",
+  )
+  let quotes = @html_parser.parse_fragment(
+    "&ldquo;quote&rdquo; &lsquo;x&rsquo; &rarr; &larr; &le; &ge; &ne;",
+  )
+  assert_eq(
+    quotes.to_text(separator="", strip=false),
+    "\u{201C}quote\u{201D} \u{2018}x\u{2019} \u{2192} \u{2190} \u{2264} \u{2265} \u{2260}",
+  )
 }
 
 ///|
@@ -6189,6 +6203,17 @@ test "attribute entity decoding reports upstream fixture errors" {
     legacy_named.errors[0].code,
     "missing-semicolon-after-character-reference",
   )
+  let exact_named = @html_parser.tokenize(
+    "<div a='&notin; &trade; &notin &trade'>x</div>",
+    collect_errors=true,
+  )
+  guard exact_named.tokens[0] is @html_parser.HtmlToken::Tag(exact_tag) else {
+    fail("expected exact named attr tag")
+  }
+  guard exact_tag.attrs["a"] is Some("\u{2209} \u{2122} &notin &trade") else {
+    fail("expected exact named attr decoding")
+  }
+  assert_eq(exact_named.errors.length(), 0)
 }
 
 ///|

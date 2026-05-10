@@ -5376,6 +5376,21 @@ fn legacy_named_entity_value(name : StringView) -> String? {
 fn semicolon_named_entity_value(name : StringView) -> String? {
   match name {
     "apos" => Some("'")
+    "euro" => Some("\u{20AC}")
+    "hellip" => Some("\u{2026}")
+    "larr" => Some("\u{2190}")
+    "rarr" => Some("\u{2192}")
+    "ldquo" => Some("\u{201C}")
+    "rdquo" => Some("\u{201D}")
+    "lsquo" => Some("\u{2018}")
+    "rsquo" => Some("\u{2019}")
+    "mdash" => Some("\u{2014}")
+    "ndash" => Some("\u{2013}")
+    "trade" => Some("\u{2122}")
+    "notin" => Some("\u{2209}")
+    "le" => Some("\u{2264}")
+    "ge" => Some("\u{2265}")
+    "ne" => Some("\u{2260}")
     _ => legacy_named_entity_value(name)
   }
 }
