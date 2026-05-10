@@ -19,6 +19,11 @@ JustHTML from Python to MoonBit.
 - HTML input-stream preprocessing is not the same as generic string handling:
   strip a leading U+FEFF BOM and normalize CR/CRLF to LF before exposing text,
   comment, or attribute values.
+- Byte-oriented parser entry points need encoding sniffing before creating the
+  parser string. Do not run every `BytesView` through UTF-8 lossy decoding:
+  UTF-16 BOMs must be detected first, decoded with explicit endianness, and the
+  resulting `ParsedHtml.encoding` should report the detected or transport
+  label.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.

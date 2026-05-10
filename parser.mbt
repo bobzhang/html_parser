@@ -2458,6 +2458,64 @@ pub fn parse_fragment(
 }
 
 ///|
+fn has_utf16le_bom(input : BytesView) -> Bool {
+  input.length() >= 2 && input[0] == b'\xff' && input[1] == b'\xfe'
+}
+
+///|
+fn has_utf16be_bom(input : BytesView) -> Bool {
+  input.length() >= 2 && input[0] == b'\xfe' && input[1] == b'\xff'
+}
+
+///|
+fn decode_utf16le_lossy(input : BytesView) -> String {
+  @utf16.decode_lossy(input, ignore_bom=true)
+}
+
+///|
+fn decode_utf16be_lossy(input : BytesView) -> String {
+  @utf16.decode_lossy(input, ignore_bom=true, endianness=Big)
+}
+
+///|
+fn decode_utf16_lossy(input : BytesView) -> String {
+  if has_utf16be_bom(input) {
+    decode_utf16be_lossy(input)
+  } else {
+    decode_utf16le_lossy(input)
+  }
+}
+
+///|
+fn decode_html_bytes(input : BytesView, encoding : String?) -> (String, String) {
+  match encoding {
+    Some(label) => {
+      let trimmed = label[:].trim()
+      if trimmed.is_empty() {
+        decode_html_bytes(input, None)
+      } else {
+        match trimmed.to_lower() {
+          "utf-8" | "utf8" =>
+            (@utf8.decode_lossy(input, ignore_bom=true), "utf-8")
+          "utf-16" | "utf16" => (decode_utf16_lossy(input), "utf-16")
+          "utf-16le" | "utf16le" => (decode_utf16le_lossy(input), "utf-16le")
+          "utf-16be" | "utf16be" => (decode_utf16be_lossy(input), "utf-16be")
+          _ => (@utf8.decode_lossy(input, ignore_bom=true), trimmed.to_owned())
+        }
+      }
+    }
+    None =>
+      if has_utf16le_bom(input) {
+        (decode_utf16le_lossy(input), "utf-16le")
+      } else if has_utf16be_bom(input) {
+        (decode_utf16be_lossy(input), "utf-16be")
+      } else {
+        (@utf8.decode_lossy(input, ignore_bom=true), "utf-8")
+      }
+  }
+}
+
+///|
 pub fn parse_bytes(
   input : BytesView,
   encoding? : String,
@@ -2466,7 +2524,7 @@ pub fn parse_bytes(
   strict? : Bool = false,
   scripting_enabled? : Bool = true,
 ) -> ParsedHtml raise HtmlError {
-  let decoded = @utf8.decode_lossy(input, ignore_bom=true)
+  let (decoded, detected_encoding) = decode_html_bytes(input, encoding)
   let parsed = parse(
     decoded,
     sanitize~,
@@ -2477,7 +2535,7 @@ pub fn parse_bytes(
   ParsedHtml::{
     root: parsed.root,
     errors: parsed.errors,
-    encoding: Some(encoding.unwrap_or("utf-8")),
+    encoding: Some(detected_encoding),
   }
 }
 
