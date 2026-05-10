@@ -351,6 +351,13 @@ JustHTML from Python to MoonBit.
   table mode; a nested `<colgroup>` additionally reports
   `unexpected-start-tag-implies-end-tag`. End tags inside a `colgroup` follow
   the same reprocessing rule except for `</col>` and `</colgroup>` themselves.
+- Fragment contexts for table elements are not ordinary body fragments. For a
+  `table` context, seed a synthetic table insertion context but unwrap that
+  synthetic wrapper before returning the fragment. Because there is no real
+  table element in Python's fragment stack, foster-parented text and starts are
+  appended at the current table-context position rather than moved before a
+  visible table wrapper, and `</table>` reports `unexpected-end-tag` instead of
+  closing the synthetic context.
 
 ## Optional Values and Defaults
 

@@ -11,6 +11,7 @@ priv struct Parser {
   mut after_frameset : Bool
   mut after_frameset_ignored_depth : Int
   foster_parented_start_error_nodes : Array[Node]
+  mut fragment_context_table : Node?
 }
 
 ///|
@@ -32,6 +33,7 @@ fn Parser::new(
     after_frameset: false,
     after_frameset_ignored_depth: 0,
     foster_parented_start_error_nodes: [],
+    fragment_context_table: None,
   }
 }
 
@@ -232,8 +234,12 @@ fn Parser::foster_parent_table_text(
     return false
   }
   ignore(self.report_foster_parenting_character_errors(cleaned, start))
-  let table = self.stack[table_index]
   let fostered = text(decode_entities(cleaned, in_attribute=false))
+  if self.table_index_is_fragment_context_table(table_index) {
+    self.current_node().append_child(fostered)
+    return true
+  }
+  let table = self.stack[table_index]
   match table.parent {
     Some(parent) => parent.insert_child_before(fostered, table)
     None => self.root.append_child(fostered)
@@ -402,7 +408,8 @@ fn Parser::close_current_table_row_for_start(
 ///|
 fn table_body_start_closes_current_section(name : StringView) -> Bool {
   match name {
-    "caption" | "col" | "colgroup" | "tbody" | "tfoot" | "thead" => true
+    "caption" | "col" | "colgroup" | "table" | "tbody" | "tfoot" | "thead" =>
+      true
     _ => false
   }
 }
@@ -452,6 +459,20 @@ fn Parser::table_context_without_cell_or_caption(self : Parser) -> Int {
     -1
   } else {
     table_index
+  }
+}
+
+///|
+fn Parser::table_index_is_fragment_context_table(
+  self : Parser,
+  table_index : Int,
+) -> Bool {
+  if table_index < 0 {
+    return false
+  }
+  match self.fragment_context_table {
+    Some(table) => physical_equal(self.stack[table_index], table)
+    None => false
   }
 }
 
@@ -526,6 +547,11 @@ fn Parser::append_start_tag_node(
   if foster_mode == 2 {
     self.error_at("foster-parenting-start-tag", start)
     self.foster_parented_start_error_nodes.push(node)
+  }
+  let table_index = self.last_open_table_index()
+  if self.table_index_is_fragment_context_table(table_index) {
+    self.current_node().append_child(node)
+    return
   }
   self.insert_node_before_open_table(node, self.last_open_table_index())
 }
@@ -793,6 +819,44 @@ fn Parser::handle_table_context_ignored_end_tag(
 }
 
 ///|
+fn Parser::handle_fragment_context_table_start_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if name != "table" {
+    return false
+  }
+  let table_index = self.table_context_without_cell_or_caption()
+  if !self.table_index_is_fragment_context_table(table_index) {
+    return false
+  }
+  let current = self.current_node()
+  if current.kind == Element && is_table_start_foster_target(current.name) {
+    self.error_at("unexpected-start-tag-implies-end-tag", start)
+    return true
+  }
+  false
+}
+
+///|
+fn Parser::handle_fragment_context_table_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if name != "table" {
+    return false
+  }
+  let table_index = self.last_open_table_index()
+  if !self.table_index_is_fragment_context_table(table_index) {
+    return false
+  }
+  self.error_at("unexpected-end-tag", start)
+  true
+}
+
+///|
 fn Parser::handle_table_end_tag(self : Parser, name : String) -> Bool {
   name == "table" && self.close_open_element("table")
 }
@@ -820,6 +884,10 @@ fn Parser::insert_body_mode_node(self : Parser, node : Node) -> Unit {
   if table_index >= 0 {
     let current = self.current_node()
     if current.kind == Element && is_table_start_foster_target(current.name) {
+      if self.table_index_is_fragment_context_table(table_index) {
+        current.append_child(node)
+        return
+      }
       self.insert_node_before_open_table(node, table_index)
       return
     }
@@ -1383,6 +1451,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   }
   self.close_current_column_group_for_end(name)
   if self.handle_caption_end_tag(name, start) {
+    return
+  }
+  if self.handle_fragment_context_table_end_tag(name, start) {
     return
   }
   if self.handle_table_context_ignored_end_tag(name, start) {
@@ -1966,6 +2037,18 @@ fn Parser::last_stack_index_of(self : Parser, name : String) -> Int {
 }
 
 ///|
+fn Parser::last_stack_index_of_node(self : Parser, target : Node) -> Int {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    if physical_equal(self.stack[index], target) {
+      return index
+    }
+  }
+  -1
+}
+
+///|
 fn Parser::close_open_select_common_element(
   self : Parser,
   name : String,
@@ -2376,6 +2459,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       let closed_table_cell = self.close_current_table_cell_for_start(name)
       self.close_current_table_row_for_start(name)
       self.close_current_table_section_for_start(name)
+      if self.handle_fragment_context_table_start_tag(name, start) {
+        return
+      }
       ignore(self.handle_nested_table_start_tag(name, start))
       if !closed_table_cell {
         self.report_unexpected_table_body_cell_start(name, start)
@@ -3355,6 +3441,42 @@ fn Parser::append_fragment_context_text(
 }
 
 ///|
+fn unwrap_fragment_context_element(parent : Node, wrapper : Node) -> Unit {
+  let original = parent.children.copy()
+  parent.children.clear()
+  for child in original {
+    if physical_equal(child, wrapper) {
+      let children = wrapper.children.copy()
+      wrapper.children.clear()
+      wrapper.parent = None
+      for grandchild in children {
+        parent.append_child(grandchild)
+      }
+    } else {
+      parent.append_child(child)
+    }
+  }
+}
+
+///|
+fn Parser::parse_table_fragment_context(self : Parser) -> Unit {
+  let table = element("table")
+  self.fragment_context_table = Some(table)
+  self.root.append_child(table)
+  self.stack.push(table)
+  self.parse_all()
+  normalize_tables(table)
+  unwrap_fragment_context_element(self.root, table)
+  let table_index = self.last_stack_index_of_node(table)
+  let caption_index = self.last_stack_index_of("caption")
+  if table_index < 0 || caption_index <= table_index {
+    self.stack.clear()
+    self.stack.push(self.root)
+  }
+  self.fragment_context_table = None
+}
+
+///|
 fn Parser::parse_fragment_context(
   self : Parser,
   context : FragmentContext,
@@ -3391,6 +3513,10 @@ fn Parser::parse_fragment_context(
         self.pos = self.input.length()
       }
     }
+    return true
+  }
+  if name == "table" {
+    self.parse_table_fragment_context()
     return true
   }
   false

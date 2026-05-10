@@ -1321,6 +1321,60 @@ test "fragment context seeds literal text modes" {
 }
 
 ///|
+test "fragment context seeds table insertion mode" {
+  let row = @html_parser.parse_fragment(
+    "<tr><td>x</td></tr>",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(row.to_html(pretty=false), "<tbody><tr><td>x</td></tr></tbody>")
+  assert_eq(row.errors.length(), 0)
+  let direct_cell = @html_parser.parse_fragment(
+    "<td>x</td>",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(
+    direct_cell.to_html(pretty=false),
+    "<tbody><tr><td>x</td></tr></tbody>",
+  )
+  assert_eq(direct_cell.errors.length(), 1)
+  assert_eq(direct_cell.errors[0].code, "unexpected-cell-in-table-body")
+  let after_caption_text = @html_parser.parse_fragment(
+    "<caption>c</caption>x",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(after_caption_text.to_html(pretty=false), "<caption>c</caption>x")
+  assert_eq(after_caption_text.errors.length(), 1)
+  assert_eq(after_caption_text.errors[0].code, "foster-parenting-character")
+  let fostered_start = @html_parser.parse_fragment(
+    "<div>x</div>",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(fostered_start.to_html(pretty=false), "<div>x</div>")
+  assert_eq(fostered_start.errors.length(), 3)
+  assert_eq(fostered_start.errors[0].code, "foster-parenting-start-tag")
+  assert_eq(fostered_start.errors[1].code, "foster-parenting-character")
+  assert_eq(
+    fostered_start.errors[2].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  let ignored_table_end = @html_parser.parse_fragment(
+    "<tr><td>x</table>y",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(
+    ignored_table_end.to_html(pretty=false),
+    "<tbody><tr><td>xy</td></tr></tbody>",
+  )
+  assert_eq(ignored_table_end.errors.length(), 1)
+  assert_eq(ignored_table_end.errors[0].code, "unexpected-end-tag")
+}
+
+///|
 test "query supports tag class id and tag class selectors" {
   let doc = @html_parser.parse_fragment(
     "<div><p id='first' class='intro lead first'>One</p><p>Two</p></div>",
