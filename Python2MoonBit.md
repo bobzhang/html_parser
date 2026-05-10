@@ -1051,6 +1051,10 @@ JustHTML from Python to MoonBit.
   finished, not necessarily at the character-reference offset. Attribute mode
   also blocks legacy prefix matches such as `&notit`, while text mode decodes
   the `&not` prefix and reports the missing-semicolon recovery.
+- Mirror those attribute character-reference fixtures through the parser, not
+  only the public tokenizer. Unquoted attribute values take the same deferred
+  error cursor path, so the parse error points at the consumed tag close rather
+  than at the original `&`.
 - Named character references are case-sensitive and not all semicolonless
   forms are allowed. Port the Python `html.entities.html5` behavior in layers:
   exact semicolon matches, legacy semicolonless names, then text-only longest
