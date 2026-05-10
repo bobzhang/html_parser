@@ -605,7 +605,9 @@ JustHTML from Python to MoonBit.
 - Document-mode doctype errors are tree-builder errors, not tokenizer errors.
   The initial insertion mode ignores leading whitespace and comments, accepts
   one initial doctype, reports the first real token when that doctype is
-  missing, and treats later or fragment doctypes as `unexpected-doctype`.
+  missing, and treats later or fragment doctypes as `unexpected-doctype`. If
+  the parser emits those leading comment/whitespace nodes before seeing the
+  doctype, the "initial doctype" check must still skip them.
 - Doctype parsing has tokenizer and tree-builder pieces. Missing names are
   tokenizer errors (`expected-doctype-name-but-got-right-bracket` or
   `eof-in-doctype`) and produce an empty-name doctype with force-quirks; the

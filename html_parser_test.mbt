@@ -910,6 +910,37 @@ test "document parser places comments around implicit head like reference" {
 }
 
 ///|
+test "document parser accepts doctype after leading comments and whitespace" {
+  let comment = @html_parser.parse(
+    "<!--c-->\n<!DOCTYPE html><p>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    comment.to_html(pretty=false),
+    "<!--c--><!DOCTYPE html><html><head></head><body><p>x</p></body></html>",
+  )
+  assert_eq(comment.errors.length(), 0)
+  let whitespace = @html_parser.parse(
+    " \n<!doctype html><p>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    whitespace.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body><p>x</p></body></html>",
+  )
+  assert_eq(whitespace.errors.length(), 0)
+  let mixed = @html_parser.parse(
+    "\t<!--a--><!doctype html><p>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    mixed.to_html(pretty=false),
+    "<!--a--><!DOCTYPE html><html><head></head><body><p>x</p></body></html>",
+  )
+  assert_eq(mixed.errors.length(), 0)
+}
+
+///|
 test "parser and tokenizer preserve doctype external ids" {
   let source = "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\">"
   let doc = @html_parser.parse(source)
