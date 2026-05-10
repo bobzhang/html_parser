@@ -4918,6 +4918,20 @@ test "tree builder matches reference table caption comment fixture" {
 }
 
 ///|
+test "tree builder matches reference select form-feed text fixture" {
+  let doc = @html_parser.parse(
+    "<select>\u{000C}text</select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       \" text\"",
+  )
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+}
+
+///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(
