@@ -7946,6 +7946,57 @@ test "parser and tokenizer optionally coerce XML-invalid text" {
 }
 
 ///|
+test "tree builder matches upstream XML coercion document fixtures" {
+  let comment = @html_parser.parse(
+    "<!-- normal comment -->",
+    collect_errors=true,
+    xml_coercion=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(comment.root),
+    "| <!--  normal comment  -->\n| <html>\n|   <head>\n|   <body>",
+  )
+  assert_eq(comment.errors.length(), 1)
+  assert_eq(comment.errors[0].code, "expected-doctype-but-got-eof")
+  guard comment.errors[0].column is Some(23) else {
+    fail("expected XML comment doctype EOF at final column")
+  }
+  let normal = @html_parser.parse(
+    "<div>normal text</div>",
+    collect_errors=true,
+    xml_coercion=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(normal.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <div>\n|       \"normal text\"",
+  )
+  assert_eq(normal.errors.length(), 1)
+  assert_eq(normal.errors[0].code, "expected-doctype-but-got-start-tag")
+  let non_ascii = @html_parser.parse(
+    "<div>über</div>",
+    collect_errors=true,
+    xml_coercion=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(non_ascii.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <div>\n|       \"über\"",
+  )
+  assert_eq(non_ascii.errors.length(), 1)
+  assert_eq(non_ascii.errors[0].code, "expected-doctype-but-got-start-tag")
+  let form_feed = @html_parser.parse(
+    "<div>über\u{000C}</div>",
+    collect_errors=true,
+    xml_coercion=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(form_feed.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <div>\n|       \"über \"",
+  )
+  assert_eq(form_feed.errors.length(), 1)
+  assert_eq(form_feed.errors[0].code, "expected-doctype-but-got-start-tag")
+}
+
+///|
 test "parser handles ruby annotation start exclusions" {
   let rtc_text = @html_parser.parse_fragment(
     "<ruby><rtc>a<rt>b</ruby>",
