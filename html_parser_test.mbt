@@ -248,6 +248,13 @@ test "url serialization context uses text content and utf8 percent encoding" {
     unicode.to_html(pretty=false, context=Url),
     "caf%C3%A9/%E2%98%83?x=1&y=two%20words%25",
   )
+  let controls = @html_parser.text(
+    "\u{0001}\u{0004}\u{0006}\u{000B}\u{000D}\u{000F}\u{007F}",
+  )
+  assert_eq(
+    controls.to_html(pretty=false, context=Url),
+    "%01%04%06%0B%0D%0F%7F",
+  )
 }
 
 ///|
@@ -2728,6 +2735,10 @@ test "query supports tag class id and tag class selectors" {
   assert_eq(spaced.query(".alpha.epsilon").length(), 1)
   assert_eq(spaced.query("p.beta.delta").length(), 1)
   assert_eq(spaced.query(".ta").length(), 0)
+  let leading_space = @html_parser.fragment(children=[
+    @html_parser.element("p", attrs={ "class": Some(" alpha") }),
+  ])
+  assert_eq(leading_space.query(".alpha").length(), 1)
   let compound = @html_parser.parse_fragment(
     "<div id='main' class='container featured'><p>Text</p></div>",
   )
@@ -2769,6 +2780,7 @@ test "query supports attribute operator selectors" {
   )
   assert_eq(doc.query("[class~='container']").length(), 1)
   assert_eq(doc.query("[class~='contain']").length(), 0)
+  assert_eq(doc.query("[class~='']").length(), 0)
   assert_eq(doc.query("[data-tags~=beta]").length(), 1)
   assert_eq(doc.query("[lang|=en]").length(), 1)
   assert_eq(doc.query("[lang|=eng]").length(), 0)
@@ -2859,6 +2871,7 @@ test "query supports adjacent sibling selectors" {
   assert_eq(doc.query(".first + span").length(), 0)
   assert_eq(doc.query("span + p").length(), 1)
   assert_eq(doc.query("h1+p").length(), 1)
+  assert_eq(doc.query("p + h1").length(), 0)
   guard doc.query_one(".second") is Some(second) else {
     fail("expected second paragraph")
   }
@@ -2876,6 +2889,7 @@ test "query supports general sibling selectors" {
   assert_eq(doc.query(".second ~ span").length(), 1)
   assert_eq(doc.query("span ~ h1").length(), 0)
   assert_eq(doc.query("h1~p").length(), 3)
+  assert_eq(doc.query("p ~ h1").length(), 0)
   assert_eq(doc.query("h1 ~ p span").length(), 1)
   guard doc.query_one(".third") is Some(third) else {
     fail("expected third paragraph")
@@ -2988,6 +3002,7 @@ test "query supports nth child pseudo selector" {
   assert_eq(doc.query("li:nth-child(2n+)").length(), 0)
   assert_eq(doc.query("li:nth-child(2n+n)").length(), 0)
   assert_eq(doc.query("li:nth-child(2n+x)").length(), 0)
+  assert_eq(doc.query("li:nth-child()").length(), 0)
   guard doc.query_one(".special") is Some(special) else {
     fail("expected special list item")
   }
@@ -3011,6 +3026,19 @@ test "query supports nth of type pseudo selector" {
   }
   assert_true(@html_parser.matches(second, "p:nth-of-type(2)"))
   assert_eq(@html_parser.matches(second, "p:nth-of-type(odd)"), false)
+}
+
+///|
+test "matches handles detached nodes for structural pseudo selectors" {
+  let item = @html_parser.element("li")
+  assert_eq(@html_parser.matches(item, ":first-child"), false)
+  assert_eq(@html_parser.matches(item, ":last-child"), false)
+  assert_eq(@html_parser.matches(item, ":first-of-type"), false)
+  assert_eq(@html_parser.matches(item, ":last-of-type"), false)
+  assert_eq(@html_parser.matches(item, ":nth-child(1)"), false)
+  assert_eq(@html_parser.matches(item, ":nth-of-type(1)"), false)
+  assert_eq(@html_parser.matches(item, "p + li"), false)
+  assert_eq(@html_parser.matches(item, "p ~ li"), false)
 }
 
 ///|

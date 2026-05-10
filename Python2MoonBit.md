@@ -146,7 +146,8 @@ JustHTML from Python to MoonBit.
 - URL serialization context is based on text content, not the serialized markup
   string. Match Python by trimming the text and percent-encoding its UTF-8
   bytes while preserving URL delimiter characters such as `/`, `?`, `&`, and
-  `=`.
+  `=`. Keep control-byte tests for the hex writer too; otherwise it is easy to
+  only exercise common digits from spaces and non-ASCII examples.
 - JavaScript-string serialization is not just quote and newline escaping.
   Preserve JSON/JS safety by escaping backslash, selected quote, control
   characters such as backspace/form-feed, `<`, `>`, and line/paragraph
