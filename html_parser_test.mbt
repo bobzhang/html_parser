@@ -171,7 +171,7 @@ test "builder preserves adjusted foreign element names" {
   let rect = @html_parser.element("rect", ns="SVG")
   assert_true(rect.namespace_uri() is Some("svg"))
   let div = @html_parser.element("DIV")
-  assert_eq(div.name(), "div")
+  assert_eq(div.name(), "DIV")
   assert_true(div.namespace_uri() is Some("html"))
 }
 
@@ -1532,6 +1532,18 @@ test "sanitize_dom filters allowed style rawtext resource loads" {
   assert_eq(
     @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
     "<style></style><style>body{color:red}</style>",
+  )
+}
+
+///|
+test "sanitize_dom filters mixed-case style rawtext resource loads" {
+  let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
+  let style = @html_parser.element("StYlE", children=[
+    @html_parser.text("@import 'https://evil.example/x.css';"),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(style, policy~).to_html(pretty=false),
+    "<StYlE></StYlE>",
   )
 }
 

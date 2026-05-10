@@ -67,14 +67,9 @@ pub fn element(
   ns? : String = "html",
 ) -> Node {
   let ns = normalize_element_namespace(ns)
-  let normalized_name = if ns == "html" {
-    lower_ascii(name)
-  } else {
-    name.to_owned()
-  }
   make_node(
     Element,
-    normalized_name,
+    name.to_owned(),
     Some(ns),
     attrs,
     "",
