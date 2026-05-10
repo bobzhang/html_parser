@@ -290,6 +290,10 @@ JustHTML from Python to MoonBit.
   `<head>` start is reported and ignored while its children continue in body
   mode, and a `<body>` start after body content only contributes missing body
   attributes.
+- Treat an explicit HTML namespace on `FragmentContext` the same as the default
+  namespace. `FragmentContext("table", namespace="html")` still uses table
+  fragment insertion mode; the namespace value should not make it fall back to
+  ordinary body mode.
 - Frameset state still matters inside `FragmentContext("html")`: a leading
   frameset is allowed even though normal fragments reject document-shell
   behavior, whitespace after it is preserved, and non-whitespace tokens after

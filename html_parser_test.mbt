@@ -1443,6 +1443,16 @@ test "fragment context seeds html insertion mode" {
   )
   assert_eq(frameset.errors.length(), 1)
   assert_eq(frameset.errors[0].code, "unexpected-token-after-frameset")
+  let explicit_html_ns = @html_parser.parse_fragment(
+    "<title>T</title>",
+    context=@html_parser.FragmentContext::new("html", ns="html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    explicit_html_ns.to_html(pretty=false),
+    "<head><title>T</title></head><body></body>",
+  )
+  assert_eq(explicit_html_ns.errors.length(), 0)
 }
 
 ///|
@@ -1873,6 +1883,20 @@ test "fragment context seeds table insertion mode" {
   )
   assert_eq(direct_cell.errors.length(), 1)
   assert_eq(direct_cell.errors[0].code, "unexpected-cell-in-table-body")
+  let explicit_html_ns_cell = @html_parser.parse_fragment(
+    "<td>x</td>",
+    context=@html_parser.FragmentContext::new("table", ns="html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    explicit_html_ns_cell.to_html(pretty=false),
+    "<tbody><tr><td>x</td></tr></tbody>",
+  )
+  assert_eq(explicit_html_ns_cell.errors.length(), 1)
+  assert_eq(
+    explicit_html_ns_cell.errors[0].code,
+    "unexpected-cell-in-table-body",
+  )
   let after_caption_text = @html_parser.parse_fragment(
     "<caption>c</caption>x",
     context=@html_parser.FragmentContext::new("table"),
