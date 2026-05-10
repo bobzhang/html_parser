@@ -573,6 +573,10 @@ JustHTML from Python to MoonBit.
   finished, not necessarily at the character-reference offset. Attribute mode
   also blocks legacy prefix matches such as `&notit`, while text mode decodes
   the `&not` prefix and reports the missing-semicolon recovery.
+- Named character references are case-sensitive and not all semicolonless
+  forms are allowed. Port the Python `html.entities.html5` behavior in layers:
+  exact semicolon matches, legacy semicolonless names, then text-only longest
+  legacy prefix recovery. `&nbsp;` is U+00A0, not an ASCII space.
 - RCDATA character-reference errors use the closing tag cursor in the Python
   tokenizer, not the local entity offset. Keep script/rawtext paths separate:
   they preserve `&...` literally and should not report entity errors.

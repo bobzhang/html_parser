@@ -5247,58 +5247,242 @@ fn named_entity_missing_semicolon_error_offset(
 }
 
 ///|
+fn named_entity_name_end(input : StringView, start : Int) -> Int {
+  let mut pos = start + 1
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some(ch) if ch.is_ascii_alphabetic() || (ch >= '0' && ch <= '9') =>
+        pos += ch.utf16_len()
+      _ => break
+    }
+  }
+  pos
+}
+
+///|
+fn legacy_named_entity_value(name : StringView) -> String? {
+  match name {
+    "gt" => Some(">")
+    "lt" => Some("<")
+    "amp" => Some("&")
+    "quot" => Some("\"")
+    "nbsp" => Some("\u{00A0}")
+    "AMP" => Some("&")
+    "QUOT" => Some("\"")
+    "GT" => Some(">")
+    "LT" => Some("<")
+    "COPY" => Some("\u{00A9}")
+    "REG" => Some("\u{00AE}")
+    "AElig" => Some("\u{00C6}")
+    "Aacute" => Some("\u{00C1}")
+    "Acirc" => Some("\u{00C2}")
+    "Agrave" => Some("\u{00C0}")
+    "Aring" => Some("\u{00C5}")
+    "Atilde" => Some("\u{00C3}")
+    "Auml" => Some("\u{00C4}")
+    "Ccedil" => Some("\u{00C7}")
+    "ETH" => Some("\u{00D0}")
+    "Eacute" => Some("\u{00C9}")
+    "Ecirc" => Some("\u{00CA}")
+    "Egrave" => Some("\u{00C8}")
+    "Euml" => Some("\u{00CB}")
+    "Iacute" => Some("\u{00CD}")
+    "Icirc" => Some("\u{00CE}")
+    "Igrave" => Some("\u{00CC}")
+    "Iuml" => Some("\u{00CF}")
+    "Ntilde" => Some("\u{00D1}")
+    "Oacute" => Some("\u{00D3}")
+    "Ocirc" => Some("\u{00D4}")
+    "Ograve" => Some("\u{00D2}")
+    "Oslash" => Some("\u{00D8}")
+    "Otilde" => Some("\u{00D5}")
+    "Ouml" => Some("\u{00D6}")
+    "THORN" => Some("\u{00DE}")
+    "Uacute" => Some("\u{00DA}")
+    "Ucirc" => Some("\u{00DB}")
+    "Ugrave" => Some("\u{00D9}")
+    "Uuml" => Some("\u{00DC}")
+    "Yacute" => Some("\u{00DD}")
+    "aacute" => Some("\u{00E1}")
+    "acirc" => Some("\u{00E2}")
+    "acute" => Some("\u{00B4}")
+    "aelig" => Some("\u{00E6}")
+    "agrave" => Some("\u{00E0}")
+    "aring" => Some("\u{00E5}")
+    "atilde" => Some("\u{00E3}")
+    "auml" => Some("\u{00E4}")
+    "brvbar" => Some("\u{00A6}")
+    "ccedil" => Some("\u{00E7}")
+    "cedil" => Some("\u{00B8}")
+    "cent" => Some("\u{00A2}")
+    "copy" => Some("\u{00A9}")
+    "curren" => Some("\u{00A4}")
+    "deg" => Some("\u{00B0}")
+    "divide" => Some("\u{00F7}")
+    "eacute" => Some("\u{00E9}")
+    "ecirc" => Some("\u{00EA}")
+    "egrave" => Some("\u{00E8}")
+    "eth" => Some("\u{00F0}")
+    "euml" => Some("\u{00EB}")
+    "frac12" => Some("\u{00BD}")
+    "frac14" => Some("\u{00BC}")
+    "frac34" => Some("\u{00BE}")
+    "iacute" => Some("\u{00ED}")
+    "icirc" => Some("\u{00EE}")
+    "iexcl" => Some("\u{00A1}")
+    "igrave" => Some("\u{00EC}")
+    "iquest" => Some("\u{00BF}")
+    "iuml" => Some("\u{00EF}")
+    "laquo" => Some("\u{00AB}")
+    "macr" => Some("\u{00AF}")
+    "micro" => Some("\u{00B5}")
+    "middot" => Some("\u{00B7}")
+    "not" => Some("\u{00AC}")
+    "ntilde" => Some("\u{00F1}")
+    "oacute" => Some("\u{00F3}")
+    "ocirc" => Some("\u{00F4}")
+    "ograve" => Some("\u{00F2}")
+    "ordf" => Some("\u{00AA}")
+    "ordm" => Some("\u{00BA}")
+    "oslash" => Some("\u{00F8}")
+    "otilde" => Some("\u{00F5}")
+    "ouml" => Some("\u{00F6}")
+    "para" => Some("\u{00B6}")
+    "plusmn" => Some("\u{00B1}")
+    "pound" => Some("\u{00A3}")
+    "raquo" => Some("\u{00BB}")
+    "reg" => Some("\u{00AE}")
+    "sect" => Some("\u{00A7}")
+    "shy" => Some("\u{00AD}")
+    "sup1" => Some("\u{00B9}")
+    "sup2" => Some("\u{00B2}")
+    "sup3" => Some("\u{00B3}")
+    "szlig" => Some("\u{00DF}")
+    "thorn" => Some("\u{00FE}")
+    "times" => Some("\u{00D7}")
+    "uacute" => Some("\u{00FA}")
+    "ucirc" => Some("\u{00FB}")
+    "ugrave" => Some("\u{00F9}")
+    "uml" => Some("\u{00A8}")
+    "uuml" => Some("\u{00FC}")
+    "yacute" => Some("\u{00FD}")
+    "yen" => Some("\u{00A5}")
+    "yuml" => Some("\u{00FF}")
+    _ => None
+  }
+}
+
+///|
+fn semicolon_named_entity_value(name : StringView) -> String? {
+  match name {
+    "apos" => Some("'")
+    _ => legacy_named_entity_value(name)
+  }
+}
+
+///|
+fn longest_legacy_named_entity(
+  input : StringView,
+  name_start : Int,
+  name_end : Int,
+) -> (String, Int)? {
+  let mut end = name_end
+  while end > name_start {
+    match input.get_view(start=name_start, end~) {
+      Some(name) =>
+        match legacy_named_entity_value(name) {
+          Some(value) => return Some((value, end))
+          None => ()
+        }
+      None => ()
+    }
+    end -= 1
+  }
+  None
+}
+
+///|
+fn consume_named_entity_with_errors(
+  input : StringView,
+  start : Int,
+  in_attribute~ : Bool,
+) -> EntityConsumeResult? {
+  let name_start = start + 1
+  let name_end = named_entity_name_end(input, start)
+  if name_end == name_start {
+    return None
+  }
+  let has_semicolon = input.get_char(name_end) == Some(';')
+  match input.get_view(start=name_start, end=name_end) {
+    Some(name) =>
+      if has_semicolon {
+        match semicolon_named_entity_value(name) {
+          Some(value) =>
+            return Some(EntityConsumeResult::{
+              value,
+              next: name_end + 1,
+              errors: [],
+            })
+          None => ()
+        }
+        if !in_attribute {
+          match longest_legacy_named_entity(input, name_start, name_end) {
+            Some((value, next)) =>
+              return Some(EntityConsumeResult::{
+                value,
+                next,
+                errors: [entity_without_semicolon_error(input, start)],
+              })
+            None => ()
+          }
+        }
+        None
+      } else {
+        match legacy_named_entity_value(name) {
+          Some(value) =>
+            if legacy_entity_blocked_in_attribute(
+                input,
+                name_end,
+                in_attribute~,
+              ) {
+              return None
+            } else {
+              return Some(EntityConsumeResult::{
+                value,
+                next: name_end,
+                errors: [entity_without_semicolon_error(input, start)],
+              })
+            }
+          None => ()
+        }
+        if in_attribute {
+          return None
+        }
+        match longest_legacy_named_entity(input, name_start, name_end) {
+          Some((value, next)) =>
+            Some(EntityConsumeResult::{
+              value,
+              next,
+              errors: [entity_without_semicolon_error(input, start)],
+            })
+          None => None
+        }
+      }
+    None => None
+  }
+}
+
+///|
 fn consume_entity_with_errors(
   input : StringView,
   start : Int,
   in_attribute~ : Bool,
 ) -> EntityConsumeResult? {
   let rest = input[start:]
-  if rest.has_prefix("&amp;") {
-    Some(EntityConsumeResult::{ value: "&", next: start + 5, errors: [] })
-  } else if rest.has_prefix("&amp") &&
-    !legacy_entity_blocked_in_attribute(input, start + 4, in_attribute~) {
-    Some(EntityConsumeResult::{
-      value: "&",
-      next: start + 4,
-      errors: [entity_without_semicolon_error(input, start)],
-    })
-  } else if rest.has_prefix("&lt;") {
-    Some(EntityConsumeResult::{ value: "<", next: start + 4, errors: [] })
-  } else if rest.has_prefix("&lt") &&
-    !legacy_entity_blocked_in_attribute(input, start + 3, in_attribute~) {
-    Some(EntityConsumeResult::{
-      value: "<",
-      next: start + 3,
-      errors: [entity_without_semicolon_error(input, start)],
-    })
-  } else if rest.has_prefix("&gt;") {
-    Some(EntityConsumeResult::{ value: ">", next: start + 4, errors: [] })
-  } else if rest.has_prefix("&gt") &&
-    !legacy_entity_blocked_in_attribute(input, start + 3, in_attribute~) {
-    Some(EntityConsumeResult::{
-      value: ">",
-      next: start + 3,
-      errors: [entity_without_semicolon_error(input, start)],
-    })
-  } else if rest.has_prefix("&quot;") {
-    Some(EntityConsumeResult::{ value: "\"", next: start + 6, errors: [] })
-  } else if rest.has_prefix("&apos;") {
-    Some(EntityConsumeResult::{ value: "'", next: start + 6, errors: [] })
-  } else if rest.has_prefix("&nbsp;") {
-    Some(EntityConsumeResult::{ value: " ", next: start + 6, errors: [] })
-  } else if rest.has_prefix("&not;") {
-    Some(EntityConsumeResult::{ value: "¬", next: start + 5, errors: [] })
-  } else if rest.has_prefix("&not") &&
-    !legacy_entity_blocked_in_attribute(input, start + 4, in_attribute~) {
-    Some(EntityConsumeResult::{
-      value: "¬",
-      next: start + 4,
-      errors: [entity_without_semicolon_error(input, start)],
-    })
-  } else if rest.has_prefix("&#") {
+  if rest.has_prefix("&#") {
     consume_numeric_entity(input, start)
   } else {
-    None
+    consume_named_entity_with_errors(input, start, in_attribute~)
   }
 }
 
