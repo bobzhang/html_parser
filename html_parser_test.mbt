@@ -277,6 +277,16 @@ test "pretty serializer keeps block descendants multiline" {
     only_inline_elements.to_html(pretty=true),
     "<div>\n  <span></span>\n  <em></em>\n</div>",
   )
+  let inline_wrapper = @html_parser.element("p", children=[
+    @html_parser.text("Link "),
+    @html_parser.element("a", children=[
+      @html_parser.element("summary", children=[@html_parser.text("S")]),
+    ]),
+  ])
+  assert_eq(
+    inline_wrapper.to_html(pretty=true),
+    "<p>\n  Link\n  <a>\n    <summary>S</summary>\n  </a>\n</p>",
+  )
 }
 
 ///|

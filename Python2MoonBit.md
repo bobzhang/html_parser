@@ -383,8 +383,11 @@ JustHTML from Python to MoonBit.
   dropped in the compact fallback. Direct comment children also force this
   compact fallback, even when adjacent elements are block-level, because
   inserting indentation around comments changes the Python reference output.
-  Do not compact when an inline wrapper contains a layout/block descendant. In
-  the multiline fallback, trim rendered text-node lines and skip
+  Do not compact when an inline wrapper contains a layout/block descendant.
+  This layout-block set is broader than the text-extraction block set and
+  includes names such as `caption`, `center`, `details`, `dialog`, `iframe`,
+  `listing`, `marquee`, `menu`, `noframes`, `noscript`, `plaintext`, `search`,
+  and `summary`. In the multiline fallback, trim rendered text-node lines and skip
   whitespace-only text nodes so indentation does not preserve source formatting
   gaps as visible text. Pretty `DocumentFragment` children need the same
   filtering: a whitespace-only fragment renders empty, and an element whose
