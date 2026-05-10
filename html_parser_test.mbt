@@ -827,6 +827,36 @@ test "sanitize_dom applies url policy host allowlists" {
 }
 
 ///|
+test "sanitize_dom applies srcset url policy rules" {
+  let srcset_rule = @html_parser.UrlRule::new(
+    allowed_schemes=["https"],
+    allowed_hosts=["trusted.example"],
+    allow_relative=false,
+  )
+  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
+    @html_parser.UrlPolicyRule::new("img", "srcset", srcset_rule),
+    @html_parser.UrlPolicyRule::new("link", "imagesrcset", srcset_rule),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["img", "link"],
+    allowed_attributes={
+      "img": ["srcset"],
+      "link": ["rel", "as", "imagesrcset"],
+    },
+    url_policy~,
+    drop_content_tags=[],
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<img srcset=' https://trusted.example/a 1x, , //trusted.example/b 2x '><img srcset='https://trusted.example/a 1x, https://evil.example/b 2x'><img srcset='  \t\n  '><link rel='preload' as='image' imagesrcset='https://trusted.example/a 1x, https://trusted.example/b 2x'><link rel='preload' as='image' imagesrcset='https://evil.example/a 1x'>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<img srcset=\"https://trusted.example/a 1x, https://trusted.example/b 2x\"><img><img><link rel=\"preload\" as=\"image\" imagesrcset=\"https://trusted.example/a 1x, https://trusted.example/b 2x\"><link rel=\"preload\" as=\"image\">",
+  )
+}
+
+///|
 test "sanitize_dom handles standalone nodes and url edge cases" {
   let allowed = @html_parser.element(
     "p",

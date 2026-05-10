@@ -26,9 +26,10 @@ The current slice provides:
   the default strip behavior, collect security findings, or raise on the first
   unsafe construct, and can define exact tag/attribute URL rules for schemes,
   hosts, fragments, relative URLs, protocol-relative rewrites, and allow/strip
-  handling while rejecting malformed host values and backslashes. Use
-  `css_preset_text()` for the conservative text-style property allowlist from
-  the reference sanitizer.
+  handling while rejecting malformed host values and backslashes, including
+  simple `srcset` and `imagesrcset` candidate lists. Use `css_preset_text()`
+  for the conservative text-style property allowlist from the reference
+  sanitizer.
 - Initial Markdown conversion for text, paragraphs, headings, inline
   formatting, links, code, lists, blockquotes, and raw HTML passthrough.
 

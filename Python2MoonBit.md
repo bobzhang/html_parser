@@ -165,9 +165,14 @@ JustHTML from Python to MoonBit.
   sanitization.
 - Until the port has Python's full URL attribute parsers, treat URL-bearing
   attributes without dedicated sanitizer support as unsafe when allowlisted.
-  This includes `srcset`, `imagesrcset`, `poster`, `action`, `formaction`,
-  `data`, `cite`, `background`, `ping`, and `attributionsrc`; do not confuse
-  object `data` with safe custom `data-*` attributes.
+  This includes `poster`, `action`, `formaction`, `data`, `cite`,
+  `background`, `ping`, and `attributionsrc`; do not confuse object `data`
+  with safe custom `data-*` attributes.
+- `srcset` and `imagesrcset` are URL lists rather than single URL values. Port
+  them as a separate attribute path: apply the exact tag/attribute rule, split
+  comma-separated candidates, sanitize the first whitespace-delimited URL token
+  of each non-empty candidate, preserve the descriptor, and drop the whole
+  attribute if any candidate URL is unsafe.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside

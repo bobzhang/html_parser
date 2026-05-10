@@ -776,6 +776,119 @@ fn sanitize_url_attribute_value(
 }
 
 ///|
+fn split_srcset_candidate(candidate : StringView) -> (StringView, StringView) {
+  let mut pos = 0
+  while pos < candidate.length() {
+    match candidate.get_char(pos) {
+      Some(ch) if is_html_whitespace_char(ch) => {
+        let url = candidate.get_view(start=0, end=pos).unwrap_or(candidate)
+        let descriptor = candidate
+          .get_view(start=pos, end=candidate.length())
+          .map(fn(view) { view.trim() })
+          .unwrap_or(""[:])
+        return (url, descriptor)
+      }
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  (candidate, ""[:])
+}
+
+///|
+fn push_sanitized_srcset_candidate(
+  out : Array[String],
+  url_policy : UrlPolicy,
+  rule : UrlRule,
+  candidate : StringView,
+) -> Bool {
+  let candidate = candidate.trim()
+  if candidate.is_empty() {
+    return true
+  }
+  let (url_token, descriptor) = split_srcset_candidate(candidate)
+  match
+    sanitize_url_attribute_value_with_rule(
+      url_policy,
+      rule,
+      url_token.to_owned(),
+    ) {
+    Some(cleaned_url) => {
+      if descriptor.is_empty() {
+        out.push(cleaned_url)
+      } else {
+        out.push(cleaned_url + " " + descriptor.to_owned())
+      }
+      true
+    }
+    None => false
+  }
+}
+
+///|
+fn sanitize_srcset_attribute_value(
+  policy : SanitizationPolicy,
+  tag_name : String,
+  attr_name : String,
+  value : String,
+) -> String? {
+  guard policy.url_policy.lookup_rule(tag_name, attr_name) is Some(rule) else {
+    return None
+  }
+  let view = value[:].trim()
+  if view.is_empty() {
+    return None
+  }
+  let out : Array[String] = []
+  let mut start = 0
+  let mut pos = 0
+  while pos < view.length() {
+    match view.get_char(pos) {
+      Some(',') => {
+        match view.get_view(start~, end=pos) {
+          Some(candidate) =>
+            if !push_sanitized_srcset_candidate(
+                out,
+                policy.url_policy,
+                rule,
+                candidate,
+              ) {
+              return None
+            }
+          None => ()
+        }
+        pos += 1
+        start = pos
+      }
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  match view.get_view(start~, end=view.length()) {
+    Some(candidate) =>
+      if !push_sanitized_srcset_candidate(
+          out,
+          policy.url_policy,
+          rule,
+          candidate,
+        ) {
+        return None
+      }
+    None => ()
+  }
+  if out.is_empty() {
+    None
+  } else {
+    Some(out.join(", "))
+  }
+}
+
+///|
+fn is_srcset_like_attr(name : String) -> Bool {
+  name == "srcset" || name == "imagesrcset"
+}
+
+///|
 fn is_unsupported_url_like_attr(name : String) -> Bool {
   match name {
     "srcset"
@@ -1028,6 +1141,8 @@ fn sanitize_attribute_value(
     is_foreign_url_function_like_attr(attr_name) &&
     css_value_may_load_external_resource(value) {
     None
+  } else if is_srcset_like_attr(attr_name) {
+    sanitize_srcset_attribute_value(policy, tag_name, attr_name, value)
   } else if is_unsupported_url_like_attr(attr_name) {
     None
   } else if attr_name == "style" {
