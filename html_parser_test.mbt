@@ -1066,6 +1066,28 @@ test "query supports attribute presence and exact selectors" {
 }
 
 ///|
+test "query supports attribute operator selectors" {
+  let doc = @html_parser.parse_fragment(
+    "<div class='container secondary' lang='en-US' data-tags='alpha\tbeta' data-name='example item'><a href='http://example.com'>Link</a><p data-empty=''></p></div>",
+  )
+  assert_eq(doc.query("[class~='container']").length(), 1)
+  assert_eq(doc.query("[class~='contain']").length(), 0)
+  assert_eq(doc.query("[data-tags~=beta]").length(), 1)
+  assert_eq(doc.query("[lang|=en]").length(), 1)
+  assert_eq(doc.query("[lang|=eng]").length(), 0)
+  assert_eq(doc.query("[href^='http']").length(), 1)
+  assert_eq(doc.query("[href^='https']").length(), 0)
+  assert_eq(doc.query("[href$='.com']").length(), 1)
+  assert_eq(doc.query("[href$='.org']").length(), 0)
+  assert_eq(doc.query("[href*='example']").length(), 1)
+  assert_eq(doc.query("[href *= 'example']").length(), 1)
+  assert_eq(doc.query("[href*='google']").length(), 0)
+  assert_eq(doc.query("[href^='']").length(), 0)
+  assert_eq(doc.query("[href$='']").length(), 0)
+  assert_eq(doc.query("[href*='']").length(), 0)
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)

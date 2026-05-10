@@ -655,6 +655,54 @@ fn attribute_value_by_name(node : Node, attr_name : StringView) -> String? {
 }
 
 ///|
+priv enum AttributeSelectorOperator {
+  AttrExact
+  AttrWord
+  AttrHyphen
+  AttrPrefix
+  AttrSuffix
+  AttrContains
+}
+
+///|
+fn attribute_name_with_operator(
+  name : StringView,
+  operator : AttributeSelectorOperator,
+) -> (StringView, AttributeSelectorOperator)? {
+  let end = name.length() - 1
+  guard name.get_view(start=0, end~) is Some(name) else { return None }
+  let name = name.trim()
+  if name.is_empty() {
+    None
+  } else {
+    Some((name, operator))
+  }
+}
+
+///|
+fn attribute_name_and_operator(
+  name : StringView,
+) -> (StringView, AttributeSelectorOperator)? {
+  let name = name.trim()
+  if name.is_empty() {
+    return None
+  }
+  if name.has_suffix("~") {
+    attribute_name_with_operator(name, AttrWord)
+  } else if name.has_suffix("|") {
+    attribute_name_with_operator(name, AttrHyphen)
+  } else if name.has_suffix("^") {
+    attribute_name_with_operator(name, AttrPrefix)
+  } else if name.has_suffix("$") {
+    attribute_name_with_operator(name, AttrSuffix)
+  } else if name.has_suffix("*") {
+    attribute_name_with_operator(name, AttrContains)
+  } else {
+    Some((name, AttrExact))
+  }
+}
+
+///|
 fn quoted_attribute_selector_value(value : StringView) -> StringView? {
   let value = value.trim()
   if value.length() < 2 {
@@ -669,6 +717,55 @@ fn quoted_attribute_selector_value(value : StringView) -> StringView? {
 }
 
 ///|
+fn string_view_contains(haystack : StringView, needle : StringView) -> Bool {
+  if needle.is_empty() || needle.length() > haystack.length() {
+    return false
+  }
+  let mut pos = 0
+  while pos + needle.length() <= haystack.length() {
+    match haystack.get_view(start=pos, end=pos + needle.length()) {
+      Some(part) if part == needle => return true
+      _ => ()
+    }
+    match haystack.get_char(pos) {
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  false
+}
+
+///|
+fn attribute_hyphen_matches(actual : StringView, expected : StringView) -> Bool {
+  if actual == expected {
+    return true
+  }
+  if actual.length() <= expected.length() || !actual.has_prefix(expected) {
+    return false
+  }
+  match actual.get_char(expected.length()) {
+    Some('-') => true
+    _ => false
+  }
+}
+
+///|
+fn attribute_value_matches(
+  actual : StringView,
+  operator : AttributeSelectorOperator,
+  expected : StringView,
+) -> Bool {
+  match operator {
+    AttrExact => actual == expected
+    AttrWord => class_contains(actual, expected)
+    AttrHyphen => attribute_hyphen_matches(actual, expected)
+    AttrPrefix => !expected.is_empty() && actual.has_prefix(expected)
+    AttrSuffix => !expected.is_empty() && actual.has_suffix(expected)
+    AttrContains => string_view_contains(actual, expected)
+  }
+}
+
+///|
 fn attribute_selector_matches(node : Node, selector : StringView) -> Bool {
   let selector = selector.trim()
   if selector.is_empty() {
@@ -676,20 +773,14 @@ fn attribute_selector_matches(node : Node, selector : StringView) -> Bool {
   }
   match selector.split_once("=") {
     Some((name, expected)) => {
-      let name = name.trim()
-      if name.is_empty() ||
-        name.has_suffix("~") ||
-        name.has_suffix("|") ||
-        name.has_suffix("^") ||
-        name.has_suffix("$") ||
-        name.has_suffix("*") {
+      guard attribute_name_and_operator(name) is Some((name, operator)) else {
         return false
       }
       guard quoted_attribute_selector_value(expected) is Some(expected) else {
         return false
       }
       match attribute_value_by_name(node, name) {
-        Some(actual) => actual[:] == expected
+        Some(actual) => attribute_value_matches(actual[:], operator, expected)
         None => false
       }
     }

@@ -54,6 +54,10 @@ JustHTML from Python to MoonBit.
   programmatically-created nodes whose attribute map may contain uppercase
   keys. Normalize names for matching, but keep exact attribute values
   case-sensitive.
+- Attribute selector operators have distinct empty-value rules in the Python
+  matcher: `^=`, `$=`, and `*=` do not match an empty expected value, while
+  `~=` uses HTML-whitespace token matching and `|=` matches exact or
+  hyphen-prefixed values.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
