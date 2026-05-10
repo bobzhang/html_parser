@@ -325,7 +325,10 @@ JustHTML from Python to MoonBit.
   `<tfoot>`, `<caption>`, or `<colgroup>` first closes the current row group so
   the new element becomes a table child, not a row-group child. A `<col>` start
   does the same, then table normalization must wrap contiguous `col` children in
-  an implied `colgroup`; an explicit `colgroup` breaks that contiguous run.
+  an implied `colgroup`; an explicit `colgroup` breaks that contiguous run. Row
+  mode has the same reprocessing shape for structural starts: close the current
+  `tr` first, then let row-group/table handling place the next `tr`, row group,
+  caption, colgroup, col, or table at the right level.
 
 ## Optional Values and Defaults
 

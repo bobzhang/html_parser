@@ -318,6 +318,36 @@ fn Parser::report_unexpected_table_body_cell_start(
 }
 
 ///|
+fn table_row_start_closes_current_row(name : StringView) -> Bool {
+  match name {
+    "caption"
+    | "col"
+    | "colgroup"
+    | "table"
+    | "tbody"
+    | "tfoot"
+    | "thead"
+    | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::close_current_table_row_for_start(
+  self : Parser,
+  name : String,
+) -> Unit {
+  if !table_row_start_closes_current_row(name) {
+    return
+  }
+  match self.stack.last() {
+    Some(node) if node.kind == Element && node.name == "tr" =>
+      ignore(self.stack.pop())
+    _ => ()
+  }
+}
+
+///|
 fn table_body_start_closes_current_section(name : StringView) -> Bool {
   match name {
     "caption" | "col" | "colgroup" | "tbody" | "tfoot" | "thead" => true
@@ -2121,6 +2151,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         ) {
         return
       }
+      self.close_current_table_row_for_start(name)
       self.close_current_table_section_for_start(name)
       ignore(self.handle_nested_table_start_tag(name, start))
       self.report_unexpected_table_body_cell_start(name, start)
