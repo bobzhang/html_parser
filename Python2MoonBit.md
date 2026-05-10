@@ -163,11 +163,11 @@ JustHTML from Python to MoonBit.
 - `<base href>` is not an ordinary link URL. Drop it even when allowlisted,
   because preserving it can alter how later relative URLs resolve after
   sanitization.
-- Until the port has Python's full `UrlPolicy`, treat URL-bearing attributes
-  without dedicated sanitizer support as unsafe when allowlisted. This includes
-  `srcset`, `imagesrcset`, `poster`, `action`, `formaction`, `data`, `cite`,
-  `background`, `ping`, and `attributionsrc`; do not confuse object `data` with
-  safe custom `data-*` attributes.
+- Until the port has Python's full URL attribute parsers, treat URL-bearing
+  attributes without dedicated sanitizer support as unsafe when allowlisted.
+  This includes `srcset`, `imagesrcset`, `poster`, `action`, `formaction`,
+  `data`, `cite`, `background`, `ping`, and `attributionsrc`; do not confuse
+  object `data` with safe custom `data-*` attributes.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside
@@ -338,6 +338,10 @@ JustHTML from Python to MoonBit.
   scheme while ignoring ASCII controls/whitespace in the scheme area, but keep
   the original value when it is allowed; protocol-relative links are rewritten
   only when the rule says to resolve them.
+- Python's `UrlPolicy.allow_rules` uses tuple keys. In MoonBit, expose a small
+  `UrlPolicyRule::new(tag, attr, rule)` wrapper and normalize it into an
+  internal string-keyed map; this avoids depending on tuple-key hashing in the
+  public API while still keeping exact tag/attribute rule semantics.
 - Python's `unsafe_handling` string mode maps more safely to a MoonBit enum.
   Keep `Strip` as the no-op default, make `Collect` append `ParseError` values
   with `category="security"`, and make `Raise` use a typed `HtmlError` variant

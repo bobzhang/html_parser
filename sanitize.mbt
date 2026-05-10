@@ -13,9 +13,39 @@ pub(all) enum UnsafeHandling {
 } derive(Debug, Eq)
 
 ///|
+pub(all) enum UrlHandling {
+  UrlAllow
+  UrlStrip
+} derive(Debug, Eq)
+
+///|
+pub struct UrlRule {
+  priv allow_fragment : Bool
+  priv resolve_protocol_relative : String?
+  priv allowed_schemes : Set[String]
+  priv handling : UrlHandling?
+  priv allow_relative : Bool?
+} derive(Debug)
+
+///|
+pub struct UrlPolicyRule {
+  priv tag : String
+  priv attr : String
+  priv rule : UrlRule
+} derive(Debug)
+
+///|
+pub struct UrlPolicy {
+  priv default_handling : UrlHandling
+  priv default_allow_relative : Bool
+  priv allow_rules : Map[String, UrlRule]
+} derive(Debug)
+
+///|
 pub struct SanitizationPolicy {
   priv allowed_tags : Set[String]
   priv allowed_attributes : Map[String, Set[String]]
+  priv url_policy : UrlPolicy
   priv drop_comments : Bool
   priv drop_doctype : Bool
   priv drop_foreign_namespaces : Bool
@@ -81,9 +111,92 @@ fn sanitize_allowed_attributes(
 }
 
 ///|
+pub fn UrlRule::new(
+  allowed_schemes? : Array[String] = [],
+  allow_fragment? : Bool = true,
+  resolve_protocol_relative? : String? = Some("https"),
+  handling? : UrlHandling,
+  allow_relative? : Bool,
+) -> UrlRule {
+  {
+    allow_fragment,
+    resolve_protocol_relative: resolve_protocol_relative.map(fn(scheme) {
+      lower_ascii(scheme[:].trim())
+    }),
+    allowed_schemes: sanitized_string_set(allowed_schemes),
+    handling,
+    allow_relative,
+  }
+}
+
+///|
+pub fn UrlPolicyRule::new(
+  tag : StringView,
+  attr : StringView,
+  rule : UrlRule,
+) -> UrlPolicyRule {
+  { tag: lower_ascii(tag.trim()), attr: lower_ascii(attr.trim()), rule }
+}
+
+///|
+fn url_policy_rule_key(tag : String, attr : String) -> String {
+  tag + "\u{0000}" + attr
+}
+
+///|
+fn sanitize_url_policy_rules(
+  rules : Array[UrlPolicyRule],
+) -> Map[String, UrlRule] {
+  let out : Map[String, UrlRule] = {}
+  for rule in rules {
+    if rule.tag != "" && rule.attr != "" {
+      out[url_policy_rule_key(rule.tag, rule.attr)] = rule.rule
+    }
+  }
+  out
+}
+
+///|
+pub fn UrlPolicy::new(
+  default_handling? : UrlHandling = UrlAllow,
+  default_allow_relative? : Bool = true,
+  allow_rules? : Array[UrlPolicyRule] = [],
+) -> UrlPolicy {
+  {
+    default_handling,
+    default_allow_relative,
+    allow_rules: sanitize_url_policy_rules(allow_rules),
+  }
+}
+
+///|
+fn default_url_policy() -> UrlPolicy {
+  UrlPolicy::new(default_handling=UrlStrip, allow_rules=[
+    UrlPolicyRule::new(
+      "a",
+      "href",
+      UrlRule::new(
+        allowed_schemes=["http", "https", "mailto", "tel"],
+        handling=UrlAllow,
+      ),
+    ),
+    UrlPolicyRule::new(
+      "img",
+      "src",
+      UrlRule::new(
+        allow_fragment=false,
+        resolve_protocol_relative=None,
+        handling=UrlAllow,
+      ),
+    ),
+  ])
+}
+
+///|
 pub fn SanitizationPolicy::new(
   allowed_tags : Array[String],
   allowed_attributes? : Map[String, Array[String]] = {},
+  url_policy? : UrlPolicy,
   drop_comments? : Bool = true,
   drop_doctype? : Bool = true,
   drop_foreign_namespaces? : Bool = true,
@@ -97,6 +210,7 @@ pub fn SanitizationPolicy::new(
   {
     allowed_tags: sanitized_string_set(allowed_tags),
     allowed_attributes: sanitize_allowed_attributes(allowed_attributes),
+    url_policy: url_policy.unwrap_or(default_url_policy()),
     drop_comments,
     drop_doctype,
     drop_foreign_namespaces,
@@ -386,6 +500,17 @@ fn is_url_ignored_scheme_char(ch : Char) -> Bool {
 }
 
 ///|
+fn string_contains_url_control(value : StringView) -> Bool {
+  for ch in value {
+    let code = ch.to_int()
+    if code < 0x20 || code == 0x7F {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn extract_url_scheme(value : StringView) -> String? {
   let out = StringBuilder::new()
   let mut pos = 0
@@ -423,40 +548,80 @@ fn extract_url_scheme(value : StringView) -> String? {
 }
 
 ///|
-fn sanitize_url_attribute_value(
+fn UrlPolicy::lookup_rule(
+  self : UrlPolicy,
   tag_name : String,
   attr_name : String,
+) -> UrlRule? {
+  self.allow_rules.get(url_policy_rule_key(tag_name, attr_name))
+}
+
+///|
+fn sanitize_url_attribute_value_with_rule(
+  policy : UrlPolicy,
+  rule : UrlRule,
   value : String,
 ) -> String? {
   let trimmed = value[:].trim().to_owned()
   if trimmed == "" {
     return None
+  } else if string_contains_url_control(trimmed) {
+    return None
+  } else {
+    let handling = rule.handling.unwrap_or(policy.default_handling)
+    let allow_relative = rule.allow_relative.unwrap_or(
+      policy.default_allow_relative,
+    )
+    if trimmed.has_prefix("#") {
+      if rule.allow_fragment && handling == UrlAllow {
+        Some(trimmed)
+      } else {
+        None
+      }
+    } else if trimmed.has_prefix("//") {
+      match rule.resolve_protocol_relative {
+        Some(scheme) if rule.allowed_schemes.contains(scheme) =>
+          if handling == UrlAllow {
+            Some(scheme + ":" + trimmed)
+          } else {
+            None
+          }
+        _ => None
+      }
+    } else {
+      match extract_url_scheme(trimmed) {
+        Some(scheme) =>
+          if rule.allowed_schemes.contains(scheme) && handling == UrlAllow {
+            Some(trimmed)
+          } else {
+            None
+          }
+        None =>
+          if allow_relative && handling == UrlAllow {
+            Some(trimmed)
+          } else {
+            None
+          }
+      }
+    }
   }
+}
+
+///|
+fn sanitize_url_attribute_value(
+  policy : SanitizationPolicy,
+  tag_name : String,
+  attr_name : String,
+  value : String,
+) -> String? {
   if tag_name == "base" && attr_name == "href" {
     None
-  } else if tag_name == "a" && attr_name == "href" {
-    if trimmed.has_prefix("#") {
-      return Some(trimmed)
-    }
-    if trimmed.has_prefix("//") {
-      return Some("https:" + trimmed)
-    }
-    match extract_url_scheme(trimmed) {
-      Some("http") | Some("https") | Some("mailto") | Some("tel") =>
-        Some(trimmed)
-      Some(_) => None
-      None => Some(trimmed)
-    }
-  } else if tag_name == "img" && attr_name == "src" {
-    if trimmed.has_prefix("#") || trimmed.has_prefix("//") {
-      return None
-    }
-    match extract_url_scheme(trimmed) {
-      Some(_) => None
-      None => Some(trimmed)
-    }
   } else {
-    Some(value)
+    match policy.url_policy.lookup_rule(tag_name, attr_name) {
+      Some(rule) =>
+        sanitize_url_attribute_value_with_rule(policy.url_policy, rule, value)
+      None => Some(value)
+    }
   }
 }
 
@@ -718,7 +883,7 @@ fn sanitize_attribute_value(
   } else if attr_name == "style" {
     sanitize_inline_style_value(policy, value)
   } else {
-    sanitize_url_attribute_value(tag_name, attr_name, value)
+    sanitize_url_attribute_value(policy, tag_name, attr_name, value)
   }
 }
 

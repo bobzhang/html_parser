@@ -757,6 +757,48 @@ test "sanitize_dom drops unsupported url-like attributes when allowlisted" {
 }
 
 ///|
+test "sanitize_dom applies custom url policy rules" {
+  let url_policy = @html_parser.UrlPolicy::new(
+    default_handling=UrlStrip,
+    default_allow_relative=false,
+    allow_rules=[
+      @html_parser.UrlPolicyRule::new(
+        "a",
+        "href",
+        @html_parser.UrlRule::new(
+          allowed_schemes=["https"],
+          allow_fragment=false,
+          allow_relative=false,
+          handling=UrlAllow,
+        ),
+      ),
+      @html_parser.UrlPolicyRule::new(
+        "img",
+        "src",
+        @html_parser.UrlRule::new(
+          allowed_schemes=["https"],
+          allow_relative=false,
+          resolve_protocol_relative=None,
+        ),
+      ),
+    ],
+  )
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a", "img"],
+    allowed_attributes={ "a": ["href"], "img": ["src"] },
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a href='http://drop.test/'>http</a><a href='https://ok.test/'>https</a><a href='/rel'>rel</a><a href='#frag'>frag</a><a href='//ok.test/path'>proto</a><img src='https://ok.test/i.png'><img src='/rel.png'>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a>http</a><a href=\"https://ok.test/\">https</a><a>rel</a><a>frag</a><a href=\"https://ok.test/path\">proto</a><img><img>",
+  )
+}
+
+///|
 test "sanitize_dom handles standalone nodes and url edge cases" {
   let allowed = @html_parser.element(
     "p",
@@ -796,12 +838,12 @@ test "sanitize_dom handles standalone nodes and url edge cases" {
     "<p>ok</p>",
   )
   let urls = @html_parser.parse_fragment(
-    "<a href='#frag'>f</a><a href='HTTP://ok'>h</a><a href='/rel'>r</a><a href='java\t\nscript:evil'>bad</a><img src='//x'><img src>",
+    "<a href='#frag'>f</a><a href='HTTP://ok'>h</a><a href='/rel'>r</a><a href='java\t\nscript:evil'>bad</a><a href='/bad\npath'>control</a><img src='//x'><img src>",
     sanitize=false,
   )
   assert_eq(
     @html_parser.sanitize_dom(urls.root).to_html(pretty=false),
-    "<a href=\"#frag\">f</a><a href=\"HTTP://ok\">h</a><a href=\"/rel\">r</a><a>bad</a><img><img>",
+    "<a href=\"#frag\">f</a><a href=\"HTTP://ok\">h</a><a href=\"/rel\">r</a><a>bad</a><a>control</a><img><img>",
   )
 }
 

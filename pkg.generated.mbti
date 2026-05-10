@@ -140,7 +140,7 @@ pub struct SanitizationPolicy {
   // private fields
 } derive(@debug.Debug)
 pub fn SanitizationPolicy::collected_security_errors(Self) -> Array[ParseError]
-pub fn SanitizationPolicy::new(Array[String], allowed_attributes? : Map[String, Array[String]], drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling, force_link_rel? : Array[String], allowed_css_properties? : Array[String], strip_invisible_unicode? : Bool, unsafe_handling? : UnsafeHandling) -> Self
+pub fn SanitizationPolicy::new(Array[String], allowed_attributes? : Map[String, Array[String]], url_policy? : UrlPolicy, drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling, force_link_rel? : Array[String], allowed_css_properties? : Array[String], strip_invisible_unicode? : Bool, unsafe_handling? : UnsafeHandling) -> Self
 pub fn SanitizationPolicy::reset_collected_security_errors(Self) -> Unit
 
 pub(all) enum TagKind {
@@ -165,6 +165,26 @@ pub(all) enum UnsafeHandling {
   Raise
   Collect
 } derive(Eq, @debug.Debug)
+
+pub(all) enum UrlHandling {
+  UrlAllow
+  UrlStrip
+} derive(Eq, @debug.Debug)
+
+pub struct UrlPolicy {
+  // private fields
+} derive(@debug.Debug)
+pub fn UrlPolicy::new(default_handling? : UrlHandling, default_allow_relative? : Bool, allow_rules? : Array[UrlPolicyRule]) -> Self
+
+pub struct UrlPolicyRule {
+  // private fields
+} derive(@debug.Debug)
+pub fn UrlPolicyRule::new(StringView, StringView, UrlRule) -> Self
+
+pub struct UrlRule {
+  // private fields
+} derive(@debug.Debug)
+pub fn UrlRule::new(allowed_schemes? : Array[String], allow_fragment? : Bool, resolve_protocol_relative? : String?, handling? : UrlHandling, allow_relative? : Bool) -> Self
 
 // Type aliases
 
