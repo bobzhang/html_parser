@@ -759,8 +759,23 @@ fn quoted_attribute_selector_value(value : StringView) -> String? {
   match (value.get_char(0), value.get_char(end)) {
     (Some('"'), Some('"')) | (Some('\''), Some('\'')) =>
       Some(unescape_quoted_attribute_selector_value(value[1:end]))
-    _ => Some(value.to_owned())
+    _ =>
+      if string_view_has_html_whitespace(value) {
+        None
+      } else {
+        Some(value.to_owned())
+      }
   }
+}
+
+///|
+fn string_view_has_html_whitespace(value : StringView) -> Bool {
+  for ch in value {
+    if is_html_whitespace_char(ch) {
+      return true
+    }
+  }
+  false
 }
 
 ///|

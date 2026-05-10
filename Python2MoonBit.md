@@ -307,6 +307,10 @@ JustHTML from Python to MoonBit.
   tokenizer: the backslash is dropped and the following character is literal.
   Keep the same escape awareness in the selector-list and combinator splitters
   so escaped quotes do not terminate the attribute selector early.
+- Unquoted attribute selector values end at CSS whitespace in Python, after
+  which `]` must follow. In MoonBit's non-throwing API, selectors such as
+  `[data-name=example item]` should no-match instead of treating the whole
+  whitespace-containing text as the expected value.
 - Selector lists should be evaluated per node, not by concatenating the results
   of separate queries. That preserves document order and prevents duplicate
   nodes for repeated entries such as `p, p`; split commas only outside

@@ -3402,6 +3402,8 @@ test "query supports attribute operator selectors" {
   assert_eq(doc.query("[href*='example']").length(), 1)
   assert_eq(doc.query("[href *= 'example']").length(), 1)
   assert_eq(doc.query("[href*='google']").length(), 0)
+  assert_eq(doc.query("[data-name='example item']").length(), 1)
+  assert_eq(doc.query("[data-name=example item]").length(), 0)
   assert_eq(doc.query("[href^='']").length(), 0)
   assert_eq(doc.query("[href$='']").length(), 0)
   assert_eq(doc.query("[href*='']").length(), 0)
