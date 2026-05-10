@@ -637,6 +637,10 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_select_end_tag(name, start) {
     return
   }
+  if name == "ruby" {
+    self.close_ruby_end_tag(start)
+    return
+  }
   if name != "" {
     self.pop_until(name, start)
   }
@@ -713,6 +717,19 @@ fn is_implied_end_tag_name(name : StringView) -> Bool {
 }
 
 ///|
+fn Parser::generate_implied_end_tags(self : Parser, exclude : String?) -> Unit {
+  while self.stack.length() > 1 {
+    match self.stack.last() {
+      Some(node) if node.kind == Element &&
+        is_implied_end_tag_name(node.name) &&
+        !(exclude is Some(excluded) && node.name == excluded) =>
+        ignore(self.stack.pop())
+      _ => break
+    }
+  }
+}
+
+///|
 fn Parser::close_open_element(self : Parser, name : String) -> Bool {
   let mut found = false
   for node in self.stack {
@@ -731,6 +748,121 @@ fn Parser::close_open_element(self : Parser, name : String) -> Bool {
     }
   }
   true
+}
+
+///|
+fn is_special_element_for_any_other_end_tag(name : StringView) -> Bool {
+  match name {
+    "address"
+    | "applet"
+    | "area"
+    | "article"
+    | "aside"
+    | "base"
+    | "basefont"
+    | "bgsound"
+    | "blockquote"
+    | "body"
+    | "br"
+    | "button"
+    | "caption"
+    | "center"
+    | "col"
+    | "colgroup"
+    | "dd"
+    | "details"
+    | "dialog"
+    | "dir"
+    | "div"
+    | "dl"
+    | "dt"
+    | "embed"
+    | "fieldset"
+    | "figcaption"
+    | "figure"
+    | "footer"
+    | "form"
+    | "frame"
+    | "frameset"
+    | "h1"
+    | "h2"
+    | "h3"
+    | "h4"
+    | "h5"
+    | "h6"
+    | "head"
+    | "header"
+    | "hgroup"
+    | "hr"
+    | "html"
+    | "iframe"
+    | "img"
+    | "input"
+    | "keygen"
+    | "li"
+    | "link"
+    | "listing"
+    | "main"
+    | "marquee"
+    | "menu"
+    | "menuitem"
+    | "meta"
+    | "nav"
+    | "noembed"
+    | "noframes"
+    | "noscript"
+    | "object"
+    | "ol"
+    | "p"
+    | "param"
+    | "plaintext"
+    | "pre"
+    | "script"
+    | "search"
+    | "section"
+    | "select"
+    | "source"
+    | "style"
+    | "summary"
+    | "table"
+    | "tbody"
+    | "td"
+    | "template"
+    | "textarea"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "title"
+    | "tr"
+    | "track"
+    | "ul"
+    | "wbr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::close_ruby_end_tag(self : Parser, start : Int) -> Unit {
+  let mut index = self.stack.length()
+  while index > 1 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element && node.name == "ruby" {
+      if index != self.stack.length() - 1 {
+        self.error_at("end-tag-too-early", start)
+      }
+      while self.stack.length() > index {
+        ignore(self.stack.pop())
+      }
+      return
+    }
+    if node.kind == Element &&
+      is_special_element_for_any_other_end_tag(node.name) {
+      self.error_at("unexpected-end-tag", start)
+      return
+    }
+  }
+  self.error_at("unexpected-end-tag", start)
 }
 
 ///|
@@ -1108,6 +1240,17 @@ fn start_tag_closes_p(name : StringView) -> Bool {
 }
 
 ///|
+fn current_node_is_ruby_annotation(node : Node) -> Bool {
+  node.kind == Element &&
+  (
+    node.name == "rb" ||
+    node.name == "rp" ||
+    node.name == "rt" ||
+    node.name == "rtc"
+  )
+}
+
+///|
 fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
   let start = self.pos
   self.pos += 1
@@ -1182,6 +1325,12 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if name == "form" && self.form_element is Some(_) {
         self.error_at("unexpected-start-tag", start)
         return
+      }
+      if name == "rp" || name == "rt" {
+        self.generate_implied_end_tags(Some("rtc"))
+      } else if (name == "rb" || name == "rtc") &&
+        current_node_is_ruby_annotation(self.current_node()) {
+        self.generate_implied_end_tags(None)
       }
       if start_tag_closes_p(name) {
         self.close_open_p_element()

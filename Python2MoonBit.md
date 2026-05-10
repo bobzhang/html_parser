@@ -56,6 +56,11 @@ JustHTML from Python to MoonBit.
   scope; a nested `<ul>` or `<ol>` terminates that search and must not close the
   parent list item. The same pattern applies to `<dt>`/`<dd>` in definition
   scope, where a nested `<dl>` terminates the search.
+- Ruby annotation tags have their own implied-end rules. `<rp>` and `<rt>`
+  generate implied end tags except for an open `<rtc>`, while `<rb>` and
+  `<rtc>` only do so when the current node is already a ruby annotation. The
+  later `</ruby>` follows the "any other end tag" path, so open annotations
+  make it report `end-tag-too-early`.
 - Some start tags have their own scope rules even when they look like ordinary
   elements. A repeated `<button>` searches default scope, reports
   `unexpected-start-tag-implies-end-tag`, closes the previous button, and then
