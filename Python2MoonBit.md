@@ -78,6 +78,11 @@ JustHTML from Python to MoonBit.
   contents are entity-decoded but still stop only at their matching end tag.
   Body-mode start handling is still tag-specific: `<xmp>` and `<plaintext>`
   close an open `<p>` first, but `<title>` and `<textarea>` do not.
+- Fragment contexts for literal text elements still need input-stream
+  preprocessing. Even when `script`/`style`/`textarea` bypass normal tag
+  insertion, normalize CR/CRLF to LF, replace U+0000 with U+FFFD and report
+  `unexpected-null-character`, and let `textarea`/`title` stop before the
+  matching end tag so the remainder is parsed as markup.
 - `script` raw text has its own escaped and double-escaped state machine.
   Port it with direct scanner-level tests in addition to tokenizer tests: public
   token streams often hide whether `<!--`, `--`, `<script`, non-`script`
