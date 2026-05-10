@@ -649,7 +649,8 @@ JustHTML from Python to MoonBit.
   discarded by "outside table" guards, and `</template>` closes the template
   content stack without reporting generic misnesting for open descendants.
   Sanitizer code must also recurse through the chosen template-content
-  representation so allowlisted template contents are preserved.
+  representation so allowlisted template contents are preserved, and so a
+  disallowed template unwraps to its sanitized content instead of dropping it.
 - Template table recovery stays active after a template caption/column group is
   closed. Structural starts such as `tbody` and direct `td`/`th` are reprocessed
   into table context, while `script`, `style`, and nested `template` starts are
