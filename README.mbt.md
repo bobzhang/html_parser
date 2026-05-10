@@ -27,10 +27,11 @@ The current slice provides:
   unsafe construct, and can define exact tag/attribute URL rules for schemes,
   hosts, fragments, relative URLs, protocol-relative rewrites, and allow/strip
   handling while rejecting malformed host values and backslashes. URL handling
-  can also proxy validated URLs through a policy-level or per-rule
-  `UrlProxy`, including single URL attributes, simple `srcset`/`imagesrcset`
-  candidate lists, `ping`/`attributionsrc` URL-token lists, and plain CSS
-  `url(...)` values on allowlisted inline-style properties. Use
+  can also rewrite or drop URLs through `UrlFilter`, then proxy validated URLs
+  through a policy-level or per-rule `UrlProxy`, including single URL
+  attributes, simple `srcset`/`imagesrcset` candidate lists,
+  `ping`/`attributionsrc` URL-token lists, and plain CSS `url(...)` values on
+  allowlisted inline-style properties. Use
   `css_preset_text()` for the
   conservative text-style property allowlist from the reference sanitizer.
 - Initial Markdown conversion for text, paragraphs, headings, inline

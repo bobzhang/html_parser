@@ -570,6 +570,74 @@ test "sanitize_dom proxies validated URL values" {
 }
 
 ///|
+test "sanitize_dom applies URL filter before validation" {
+  let url_filter = @html_parser.UrlFilter::new(fn(_tag, attr, value) {
+    match attr {
+      "href" =>
+        if value == "drop" {
+          None
+        } else {
+          Some("https://trusted.example" + value)
+        }
+      "srcset" =>
+        Some("https://trusted.example/a 1x, https://trusted.example/b 2x")
+      "ping" => Some("https://trusted.example/p https://trusted.example/q")
+      "style:background-image" => Some("https://trusted.example/bg.png")
+      _ => Some(value)
+    }
+  })
+  let url_policy = @html_parser.UrlPolicy::new(url_filter~, allow_rules=[
+    @html_parser.UrlPolicyRule::new(
+      "a",
+      "href",
+      @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+        "trusted.example",
+      ]),
+    ),
+    @html_parser.UrlPolicyRule::new(
+      "a",
+      "ping",
+      @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+        "trusted.example",
+      ]),
+    ),
+    @html_parser.UrlPolicyRule::new(
+      "img",
+      "srcset",
+      @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+        "trusted.example",
+      ]),
+    ),
+    @html_parser.UrlPolicyRule::new(
+      "p",
+      "style:background-image",
+      @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+        "trusted.example",
+      ]),
+    ),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a", "img", "p"],
+    allowed_attributes={
+      "*": [],
+      "a": ["href", "ping"],
+      "img": ["srcset"],
+      "p": ["style"],
+    },
+    allowed_css_properties=["background-image"],
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a href='/ok'>ok</a><a href='drop'>drop</a><img srcset='ignored'><a ping='ignored'>ping</a><p style=\"background-image: url('/ignored.png')\">p</p>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a href=\"https://trusted.example/ok\">ok</a><a>drop</a><img srcset=\"https://trusted.example/a 1x, https://trusted.example/b 2x\"><a ping=\"https://trusted.example/p https://trusted.example/q\">ping</a><p style=\"background-image: url('https://trusted.example/bg.png')\">p</p>",
+  )
+}
+
+///|
 test "css_preset_text allows conservative inline text styling" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["div"],

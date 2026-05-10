@@ -166,6 +166,12 @@ pub(all) enum UnsafeHandling {
   Collect
 } derive(Eq, @debug.Debug)
 
+pub struct UrlFilter {
+  // private fields
+}
+pub fn UrlFilter::new((String, String, String) -> String?) -> Self
+pub impl @debug.Debug for UrlFilter
+
 pub(all) enum UrlHandling {
   UrlAllow
   UrlStrip
@@ -175,7 +181,7 @@ pub(all) enum UrlHandling {
 pub struct UrlPolicy {
   // private fields
 } derive(@debug.Debug)
-pub fn UrlPolicy::new(default_handling? : UrlHandling, default_allow_relative? : Bool, allow_rules? : Array[UrlPolicyRule], proxy? : UrlProxy) -> Self
+pub fn UrlPolicy::new(default_handling? : UrlHandling, default_allow_relative? : Bool, allow_rules? : Array[UrlPolicyRule], proxy? : UrlProxy, url_filter? : UrlFilter) -> Self
 
 pub struct UrlPolicyRule {
   // private fields

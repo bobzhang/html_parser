@@ -20,6 +20,16 @@ pub(all) enum UrlHandling {
 } derive(Debug, Eq)
 
 ///|
+pub struct UrlFilter {
+  priv callback : (String, String, String) -> String?
+}
+
+///|
+pub impl Debug for UrlFilter with to_repr(_) {
+  Repr::opaque_("UrlFilter", Repr::unit())
+}
+
+///|
 pub struct UrlProxy {
   priv url : String
   priv param : String
@@ -49,6 +59,7 @@ pub struct UrlPolicy {
   priv default_allow_relative : Bool
   priv allow_rules : Map[String, UrlRule]
   priv proxy : UrlProxy?
+  priv url_filter : UrlFilter?
 } derive(Debug)
 
 ///|
@@ -121,6 +132,13 @@ fn sanitize_allowed_attributes(
 }
 
 ///|
+pub fn UrlFilter::new(
+  callback : (String, String, String) -> String?,
+) -> UrlFilter {
+  { callback, }
+}
+
+///|
 pub fn UrlProxy::new(url : StringView, param? : String = "url") -> UrlProxy {
   { url: url.to_owned(), param }
 }
@@ -181,12 +199,14 @@ pub fn UrlPolicy::new(
   default_allow_relative? : Bool = true,
   allow_rules? : Array[UrlPolicyRule] = [],
   proxy? : UrlProxy,
+  url_filter? : UrlFilter,
 ) -> UrlPolicy {
   {
     default_handling,
     default_allow_relative,
     allow_rules: sanitize_url_policy_rules(allow_rules),
     proxy,
+    url_filter,
   }
 }
 
@@ -778,6 +798,19 @@ fn apply_url_handling(
 }
 
 ///|
+fn UrlPolicy::apply_url_filter(
+  self : UrlPolicy,
+  tag_name : String,
+  attr_name : String,
+  value : String,
+) -> String? {
+  match self.url_filter {
+    Some(filter) => (filter.callback)(tag_name, attr_name, value)
+    None => Some(value)
+  }
+}
+
+///|
 fn UrlPolicy::lookup_rule(
   self : UrlPolicy,
   tag_name : String,
@@ -790,8 +823,19 @@ fn UrlPolicy::lookup_rule(
 fn sanitize_url_attribute_value_with_rule(
   policy : UrlPolicy,
   rule : UrlRule,
+  tag_name : String,
+  attr_name : String,
   value : String,
+  apply_filter? : Bool = true,
 ) -> String? {
+  let value = if apply_filter {
+    match policy.apply_url_filter(tag_name, attr_name, value) {
+      Some(filtered) => filtered
+      None => return None
+    }
+  } else {
+    value
+  }
   let trimmed = value[:].trim().to_owned()
   if trimmed == "" {
     return None
@@ -852,7 +896,13 @@ fn sanitize_single_url_attribute_value(
   } else {
     match policy.url_policy.lookup_rule(tag_name, attr_name) {
       Some(rule) =>
-        sanitize_url_attribute_value_with_rule(policy.url_policy, rule, value)
+        sanitize_url_attribute_value_with_rule(
+          policy.url_policy,
+          rule,
+          tag_name,
+          attr_name,
+          value,
+        )
       None => None
     }
   }
@@ -883,6 +933,8 @@ fn push_sanitized_srcset_candidate(
   out : Array[String],
   url_policy : UrlPolicy,
   rule : UrlRule,
+  tag_name : String,
+  attr_name : String,
   candidate : StringView,
 ) -> Bool {
   let candidate = candidate.trim()
@@ -894,7 +946,10 @@ fn push_sanitized_srcset_candidate(
     sanitize_url_attribute_value_with_rule(
       url_policy,
       rule,
+      tag_name,
+      attr_name,
       url_token.to_owned(),
+      apply_filter=false,
     ) {
     Some(cleaned_url) => {
       if descriptor.is_empty() {
@@ -918,6 +973,11 @@ fn sanitize_srcset_attribute_value(
   guard policy.url_policy.lookup_rule(tag_name, attr_name) is Some(rule) else {
     return None
   }
+  let value = match
+    policy.url_policy.apply_url_filter(tag_name, attr_name, value) {
+    Some(filtered) => filtered
+    None => return None
+  }
   let view = value[:].trim()
   if view.is_empty() {
     return None
@@ -934,6 +994,8 @@ fn sanitize_srcset_attribute_value(
                 out,
                 policy.url_policy,
                 rule,
+                tag_name,
+                attr_name,
                 candidate,
               ) {
               return None
@@ -953,6 +1015,8 @@ fn sanitize_srcset_attribute_value(
           out,
           policy.url_policy,
           rule,
+          tag_name,
+          attr_name,
           candidate,
         ) {
         return None
@@ -971,6 +1035,8 @@ fn push_sanitized_url_list_token(
   out : Array[String],
   url_policy : UrlPolicy,
   rule : UrlRule,
+  tag_name : String,
+  attr_name : String,
   token : StringView,
 ) -> Bool {
   let token = token.trim()
@@ -978,7 +1044,14 @@ fn push_sanitized_url_list_token(
     return true
   }
   match
-    sanitize_url_attribute_value_with_rule(url_policy, rule, token.to_owned()) {
+    sanitize_url_attribute_value_with_rule(
+      url_policy,
+      rule,
+      tag_name,
+      attr_name,
+      token.to_owned(),
+      apply_filter=false,
+    ) {
     Some(cleaned) => {
       out.push(cleaned)
       true
@@ -997,6 +1070,11 @@ fn sanitize_space_separated_url_list_attribute_value(
   guard policy.url_policy.lookup_rule(tag_name, attr_name) is Some(rule) else {
     return None
   }
+  let value = match
+    policy.url_policy.apply_url_filter(tag_name, attr_name, value) {
+    Some(filtered) => filtered
+    None => return None
+  }
   let view = value[:].trim()
   if view.is_empty() {
     return None
@@ -1013,6 +1091,8 @@ fn sanitize_space_separated_url_list_attribute_value(
                 out,
                 policy.url_policy,
                 rule,
+                tag_name,
+                attr_name,
                 token,
               ) {
               return None
@@ -1028,7 +1108,14 @@ fn sanitize_space_separated_url_list_attribute_value(
   }
   match view.get_view(start~, end=view.length()) {
     Some(token) =>
-      if !push_sanitized_url_list_token(out, policy.url_policy, rule, token) {
+      if !push_sanitized_url_list_token(
+          out,
+          policy.url_policy,
+          rule,
+          tag_name,
+          attr_name,
+          token,
+        ) {
         return None
       }
     None => ()
@@ -1304,6 +1391,7 @@ fn sanitize_css_url_functions(
   guard policy.url_policy.lookup_css_rule(tag_name, prop) is Some(rule) else {
     return None
   }
+  let attr_name = "style:" + prop
   if css_value_has_disallowed_resource_functions(value) {
     return None
   }
@@ -1364,6 +1452,8 @@ fn sanitize_css_url_functions(
           sanitize_url_attribute_value_with_rule(
             policy.url_policy,
             rule,
+            tag_name,
+            attr_name,
             url_raw.to_owned(),
           ) {
           Some(sanitized_url) if css_url_value_is_safe_to_quote(

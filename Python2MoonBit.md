@@ -185,6 +185,13 @@ JustHTML from Python to MoonBit.
   through the policy-level or per-rule proxy. Encode the proxied parameter as
   UTF-8 with query-component safety only (`A-Z`, `a-z`, `0-9`, `-`, `.`, `_`,
   `~` stay unescaped), so `/`, `:`, `?`, `=`, and `#` are percent-encoded.
+- Python accepts a raw callable as `UrlPolicy.url_filter`; in MoonBit, wrap the
+  callback with `UrlFilter::new` so `UrlPolicy` can still derive `Debug`.
+  Apply the filter before validation and handling. For single URL attributes
+  and CSS `url(...)`, filter each URL value with the exact tag/attribute key
+  (`style:<property>` for CSS). For `srcset`/`imagesrcset`,
+  `ping`/`attributionsrc`, filter the whole attribute value once before
+  splitting it into candidates or tokens.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside
