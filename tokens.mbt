@@ -182,7 +182,11 @@ fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
   }
   match self.input.get_view(start~, end=self.pos) {
     Some(view) if !view.is_empty() => {
-      let data = decode_entities(view, in_attribute=false)
+      let decoded = decode_entities_with_errors(view, in_attribute=false)
+      for error in decoded.errors {
+        self.error_at(error.code, start + error.offset)
+      }
+      let data = decoded.data
       let data = if self.xml_coercion {
         coerce_text_for_xml(data[:])
       } else {
@@ -464,7 +468,11 @@ fn SourceTokenizer::parse_invalid_tag_open_as_text(
   }
   match self.input.get_view(start~, end=self.pos) {
     Some(view) if !view.is_empty() => {
-      let data = decode_entities(view, in_attribute=false)
+      let decoded = decode_entities_with_errors(view, in_attribute=false)
+      for error in decoded.errors {
+        self.error_at(error.code, start + error.offset)
+      }
+      let data = decoded.data
       let data = if self.xml_coercion {
         coerce_text_for_xml(data[:])
       } else {

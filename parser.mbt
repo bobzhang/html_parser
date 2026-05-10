@@ -188,7 +188,11 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     ignore(self.report_foster_parenting_character_errors(cleaned, start))
   }
   self.report_foster_parented_table_context_text(cleaned, start)
-  let decoded = decode_entities(cleaned, in_attribute=false)
+  let decoded_result = decode_entities_with_errors(cleaned, in_attribute=false)
+  for error in decoded_result.errors {
+    self.error_at(error.code, start + error.offset)
+  }
+  let decoded = decoded_result.data
   let data = if self.xml_coercion {
     coerce_text_for_xml(decoded[:])
   } else {
@@ -5036,17 +5040,48 @@ fn write_normalized_char(
 }
 
 ///|
+priv struct EntityDecodeError {
+  code : String
+  offset : Int
+}
+
+///|
+priv struct EntityDecodeResult {
+  data : String
+  errors : Array[EntityDecodeError]
+}
+
+///|
+priv struct EntityConsumeResult {
+  value : String
+  next : Int
+  errors : Array[EntityDecodeError]
+}
+
+///|
 fn decode_entities(input : StringView, in_attribute~ : Bool) -> String {
+  decode_entities_with_errors(input, in_attribute~).data
+}
+
+///|
+fn decode_entities_with_errors(
+  input : StringView,
+  in_attribute~ : Bool,
+) -> EntityDecodeResult {
   ignore(in_attribute)
   let out = StringBuilder::new(size_hint=input.length())
+  let errors : Array[EntityDecodeError] = []
   let mut pos = 0
   while pos < input.length() {
     match input.get_char(pos) {
       Some('&') =>
-        match consume_entity(input, pos) {
-          Some((value, next)) => {
-            out.write_string(value)
-            pos = next
+        match consume_entity_with_errors(input, pos) {
+          Some(consumed) => {
+            out.write_string(consumed.value)
+            for error in consumed.errors {
+              errors.push(error)
+            }
+            pos = consumed.next
           }
           None => {
             out.write_char('&')
@@ -5057,7 +5092,7 @@ fn decode_entities(input : StringView, in_attribute~ : Bool) -> String {
       None => break
     }
   }
-  out.to_string()
+  EntityDecodeResult::{ data: out.to_string(), errors }
 }
 
 ///|
@@ -5080,30 +5115,80 @@ fn starts_with_case_insensitive(
 }
 
 ///|
-fn consume_entity(input : StringView, start : Int) -> (String, Int)? {
+fn entity_without_semicolon_error(
+  input : StringView,
+  start : Int,
+) -> EntityDecodeError {
+  EntityDecodeError::{
+    code: "missing-semicolon-after-character-reference",
+    offset: named_entity_missing_semicolon_error_offset(input, start),
+  }
+}
+
+///|
+fn named_entity_missing_semicolon_error_offset(
+  input : StringView,
+  start : Int,
+) -> Int {
+  let mut pos = start + 1
+  let mut last = start
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some(ch) if ch.is_ascii_alphabetic() || (ch >= '0' && ch <= '9') => {
+        last = pos
+        pos += ch.utf16_len()
+      }
+      Some(';') => return pos
+      _ => return last
+    }
+  }
+  last
+}
+
+///|
+fn consume_entity_with_errors(
+  input : StringView,
+  start : Int,
+) -> EntityConsumeResult? {
   let rest = input[start:]
   if rest.has_prefix("&amp;") {
-    Some(("&", start + 5))
+    Some(EntityConsumeResult::{ value: "&", next: start + 5, errors: [] })
   } else if rest.has_prefix("&amp") {
-    Some(("&", start + 4))
+    Some(EntityConsumeResult::{
+      value: "&",
+      next: start + 4,
+      errors: [entity_without_semicolon_error(input, start)],
+    })
   } else if rest.has_prefix("&lt;") {
-    Some(("<", start + 4))
+    Some(EntityConsumeResult::{ value: "<", next: start + 4, errors: [] })
   } else if rest.has_prefix("&lt") {
-    Some(("<", start + 3))
+    Some(EntityConsumeResult::{
+      value: "<",
+      next: start + 3,
+      errors: [entity_without_semicolon_error(input, start)],
+    })
   } else if rest.has_prefix("&gt;") {
-    Some((">", start + 4))
+    Some(EntityConsumeResult::{ value: ">", next: start + 4, errors: [] })
   } else if rest.has_prefix("&gt") {
-    Some((">", start + 3))
+    Some(EntityConsumeResult::{
+      value: ">",
+      next: start + 3,
+      errors: [entity_without_semicolon_error(input, start)],
+    })
   } else if rest.has_prefix("&quot;") {
-    Some(("\"", start + 6))
+    Some(EntityConsumeResult::{ value: "\"", next: start + 6, errors: [] })
   } else if rest.has_prefix("&apos;") {
-    Some(("'", start + 6))
+    Some(EntityConsumeResult::{ value: "'", next: start + 6, errors: [] })
   } else if rest.has_prefix("&nbsp;") {
-    Some((" ", start + 6))
+    Some(EntityConsumeResult::{ value: " ", next: start + 6, errors: [] })
   } else if rest.has_prefix("&not;") {
-    Some(("¬", start + 5))
+    Some(EntityConsumeResult::{ value: "¬", next: start + 5, errors: [] })
   } else if rest.has_prefix("&not") {
-    Some(("¬", start + 4))
+    Some(EntityConsumeResult::{
+      value: "¬",
+      next: start + 4,
+      errors: [entity_without_semicolon_error(input, start)],
+    })
   } else if rest.has_prefix("&#") {
     consume_numeric_entity(input, start)
   } else {
@@ -5112,7 +5197,10 @@ fn consume_entity(input : StringView, start : Int) -> (String, Int)? {
 }
 
 ///|
-fn consume_numeric_entity(input : StringView, start : Int) -> (String, Int)? {
+fn consume_numeric_entity(
+  input : StringView,
+  start : Int,
+) -> EntityConsumeResult? {
   let mut pos = start + 2
   let mut base = 10
   if pos < input.length() {
@@ -5142,13 +5230,55 @@ fn consume_numeric_entity(input : StringView, start : Int) -> (String, Int)? {
   if pos == digits_start {
     return None
   }
+  let errors : Array[EntityDecodeError] = []
+  let mut error_offset = pos - 1
   if pos < input.length() && input.get_char(pos) == Some(';') {
     pos += 1
+    error_offset = pos - 1
+  } else {
+    errors.push(EntityDecodeError::{
+      code: "missing-semicolon-after-character-reference",
+      offset: error_offset,
+    })
+  }
+  if numeric_reference_can_report_character_error(value) {
+    if is_character_reference_control(value) {
+      errors.push(EntityDecodeError::{
+        code: "control-character-reference",
+        offset: error_offset,
+      })
+    }
+    if is_xml_noncharacter_code(value) {
+      errors.push(EntityDecodeError::{
+        code: "noncharacter-character-reference",
+        offset: error_offset,
+      })
+    }
   }
   match html_numeric_entity_replacement(value).to_char() {
-    Some(ch) => Some((ch.to_string(), pos))
-    None => Some(("\u{FFFD}", pos))
+    Some(ch) =>
+      Some(EntityConsumeResult::{ value: ch.to_string(), next: pos, errors })
+    None => Some(EntityConsumeResult::{ value: "\u{FFFD}", next: pos, errors })
   }
+}
+
+///|
+fn numeric_reference_can_report_character_error(value : Int) -> Bool {
+  value >= 0 && value <= 0x10FFFF && !(value >= 0xD800 && value <= 0xDFFF)
+}
+
+///|
+fn is_character_reference_control(value : Int) -> Bool {
+  (value >= 0x00 && value <= 0x1F) || (value >= 0x7F && value <= 0x9F)
+}
+
+///|
+fn is_xml_noncharacter_code(code : Int) -> Bool {
+  if code >= 0xFDD0 && code <= 0xFDEF {
+    return true
+  }
+  let low = code % 0x10000
+  low == 0xFFFE || low == 0xFFFF
 }
 
 ///|

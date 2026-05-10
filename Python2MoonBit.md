@@ -473,6 +473,10 @@ JustHTML from Python to MoonBit.
   `noncharacter-in-input-stream` while scanning data-state text and invalid
   tag-open recovery, but do not put it in a low-level `advance_char` helper or
   attributes and raw-text states will over-report compared with Python.
+- Character-reference decoding has two results: decoded text and recoverable
+  tokenizer errors. In MoonBit, keep those together in a small result record so
+  callers can add the local slice offset before turning them into `ParseError`
+  line/column positions.
 - Tree-builder EOF diagnostics are not one error per open stack entry. Match
   the reference by reporting the first still-open non-implied element, while
   allowing tags such as `p`, `li`, `option`, and table row/cell wrappers to
