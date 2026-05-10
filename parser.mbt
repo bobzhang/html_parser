@@ -1838,14 +1838,22 @@ fn Parser::eof_error_pos(self : Parser) -> Int {
 fn eof_error_pos(input : StringView) -> Int {
   let mut pos = 0
   let mut last = 0
+  let mut last_char : Char? = None
   while pos < input.length() {
     last = pos
     match input.get_char(pos) {
-      Some(ch) => pos += ch.utf16_len()
+      Some(ch) => {
+        last_char = Some(ch)
+        pos += ch.utf16_len()
+      }
       None => break
     }
   }
-  last
+  match last_char {
+    Some('\r') | Some('\n') => input.length()
+    Some(_) => last
+    None => 0
+  }
 }
 
 ///|
@@ -4852,6 +4860,9 @@ fn Parser::parse_fragment_context(
 
 ///|
 fn line_col_at(input : StringView, target : Int) -> (Int, Int) {
+  if target == input.length() && input_ends_with_newline(input) {
+    return eof_line_col(input)
+  }
   let mut offset = 0
   let mut line = 1
   let mut col = 1
@@ -4868,6 +4879,55 @@ fn line_col_at(input : StringView, target : Int) -> (Int, Int) {
       Some('\n') => {
         line += 1
         col = 1
+        offset += 1
+      }
+      Some(ch) => {
+        col += 1
+        offset += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  (line, col)
+}
+
+///|
+fn input_ends_with_newline(input : StringView) -> Bool {
+  let mut pos = 0
+  let mut last : Char? = None
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some(ch) => {
+        last = Some(ch)
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  match last {
+    Some('\r') | Some('\n') => true
+    _ => false
+  }
+}
+
+///|
+fn eof_line_col(input : StringView) -> (Int, Int) {
+  let mut offset = 0
+  let mut line = 1
+  let mut col = 0
+  while offset < input.length() {
+    match input.get_char(offset) {
+      Some('\r') => {
+        line += 1
+        col = 0
+        offset += 1
+        if offset < input.length() && input.get_char(offset) == Some('\n') {
+          offset += 1
+        }
+      }
+      Some('\n') => {
+        line += 1
+        col = 0
         offset += 1
       }
       Some(ch) => {

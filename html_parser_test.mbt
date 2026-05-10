@@ -5737,6 +5737,64 @@ test "tokenize normalizes BOM and CRLF edge cases" {
 }
 
 ///|
+test "tokenize handles comment dash EOF and null edge cases" {
+  let crlf_eof = @html_parser.tokenize("<!----!\r\n", collect_errors=true)
+  guard crlf_eof.tokens[0] is @html_parser.HtmlToken::CommentToken("--!\n") else {
+    fail("expected CRLF EOF comment data")
+  }
+  assert_eq(crlf_eof.errors.length(), 1)
+  assert_eq(crlf_eof.errors[0].code, "eof-in-comment")
+  guard crlf_eof.errors[0].line is Some(2) else {
+    fail("expected EOF comment error on line 2")
+  }
+  guard crlf_eof.errors[0].column is Some(0) else {
+    fail("expected EOF comment error at column 0")
+  }
+  let parsed_crlf_eof = @html_parser.parse("<!----!\r\n", collect_errors=true)
+  assert_eq(parsed_crlf_eof.errors.length(), 2)
+  assert_eq(parsed_crlf_eof.errors[0].code, "eof-in-comment")
+  assert_eq(parsed_crlf_eof.errors[1].code, "expected-doctype-but-got-eof")
+  guard parsed_crlf_eof.errors[0].column is Some(0) else {
+    fail("expected parser comment EOF error at column 0")
+  }
+  guard parsed_crlf_eof.errors[1].column is Some(0) else {
+    fail("expected parser doctype EOF error at column 0")
+  }
+  let bang_null = @html_parser.tokenize(
+    "<!--x--!\u{0000}-->",
+    collect_errors=true,
+  )
+  guard bang_null.tokens[0] is @html_parser.HtmlToken::CommentToken("x--!�") else {
+    fail("expected replacement after --! null")
+  }
+  assert_eq(bang_null.errors.length(), 1)
+  assert_eq(bang_null.errors[0].code, "unexpected-null-character")
+  guard bang_null.errors[0].column is Some(9) else {
+    fail("expected --! null error at column 9")
+  }
+  let incorrectly_closed = @html_parser.tokenize(
+    "<!--x---a-->",
+    collect_errors=true,
+  )
+  guard incorrectly_closed.tokens[0]
+    is @html_parser.HtmlToken::CommentToken("x---a") else {
+    fail("expected incorrectly closed dash run data")
+  }
+  assert_eq(incorrectly_closed.errors.length(), 1)
+  assert_eq(incorrectly_closed.errors[0].code, "incorrectly-closed-comment")
+  guard incorrectly_closed.errors[0].column is Some(9) else {
+    fail("expected incorrect close error at column 9")
+  }
+  let dash_null = @html_parser.tokenize("<!--x--\u{0000}>", collect_errors=true)
+  guard dash_null.tokens[0] is @html_parser.HtmlToken::CommentToken("x--�>") else {
+    fail("expected replacement after -- null")
+  }
+  assert_eq(dash_null.errors.length(), 2)
+  assert_eq(dash_null.errors[0].code, "unexpected-null-character")
+  assert_eq(dash_null.errors[1].code, "eof-in-comment")
+}
+
+///|
 test "parser normalizes leading BOM and CRLF in text comment and attr" {
   let doc = @html_parser.parse_fragment(
     "\u{FEFF}<p title='a\rb'>a\r\nb<!--x\ry--></p>",

@@ -475,6 +475,10 @@ JustHTML from Python to MoonBit.
   location of the final input character with `input.length() - 1`; that can
   land in the middle of a surrogate pair. Walk by `Char.utf16_len()` and keep
   the last valid offset.
+- EOF after a final newline is different from EOF after ordinary text. The
+  Python reference reports column zero on the next line for inputs ending in
+  LF, CR, or CRLF, so EOF helpers need a separate newline-ending path instead
+  of always reusing the final character column.
 - EOF-before-tag-name uses that final-character location too. A bare `<`
   reports on `<`, and `</` reports on `/`; do not report the cursor position
   just past the end of the string.
