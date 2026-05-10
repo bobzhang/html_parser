@@ -562,7 +562,9 @@ JustHTML from Python to MoonBit.
   the DOM stack. For example, `<col>` inside `<template>` enters column-group
   handling while the current node is still `template`: preserve leading
   whitespace, drop the rest of the character token, and report the
-  template-specific column-group error.
+  template-specific column-group error. If an unrelated end tag exits that
+  state, keep enough synthetic table-mode state to report the reprocessed
+  table-voodoo diagnostics on following end tags.
 
 ## Test Porting
 

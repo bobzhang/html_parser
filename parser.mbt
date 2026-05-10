@@ -20,6 +20,8 @@ priv struct Parser {
   mut fragment_context_html : Bool
   mut fragment_context_html_root : Node?
   mut template_column_group_mode : Bool
+  mut template_table_context_mode : Bool
+  mut template_detached_column_group_mode : Bool
 }
 
 ///|
@@ -50,6 +52,8 @@ fn Parser::new(
     fragment_context_html: false,
     fragment_context_html_root: None,
     template_column_group_mode: false,
+    template_table_context_mode: false,
+    template_detached_column_group_mode: false,
   }
 }
 
@@ -755,6 +759,35 @@ fn Parser::handle_template_column_group_start_tag(
 }
 
 ///|
+fn Parser::handle_template_table_context_start_tag(
+  self : Parser,
+  name : String,
+  attrs : Map[String, String?],
+) -> Bool {
+  if !self.template_table_context_mode {
+    return false
+  }
+  if name == "col" {
+    let colgroup = element("colgroup")
+    self.current_node().append_child(colgroup)
+    colgroup.append_child(element("col", attrs~))
+    self.stack.push(colgroup)
+    self.template_table_context_mode = false
+    self.template_detached_column_group_mode = true
+    return true
+  }
+  if name == "colgroup" {
+    let node = element("colgroup", attrs~)
+    self.current_node().append_child(node)
+    self.stack.push(node)
+    self.template_table_context_mode = false
+    self.template_detached_column_group_mode = true
+    return true
+  }
+  false
+}
+
+///|
 fn Parser::handle_template_column_group_end_tag(
   self : Parser,
   name : String,
@@ -776,11 +809,38 @@ fn Parser::handle_template_column_group_end_tag(
     return true
   }
   self.template_column_group_mode = false
+  self.template_table_context_mode = true
   let template_index = self.last_open_template_index()
   if template_index >= 0 {
     while self.stack.length() > template_index {
       ignore(self.stack.pop())
     }
+  }
+  false
+}
+
+///|
+fn Parser::handle_template_detached_column_group_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if !self.template_detached_column_group_mode {
+    return false
+  }
+  if name == "template" {
+    ignore(self.pop_current_element_if_name("colgroup"))
+    self.template_detached_column_group_mode = false
+    return true
+  }
+  if name == "colgroup" {
+    ignore(self.pop_current_element_if_name("colgroup"))
+    self.template_detached_column_group_mode = false
+    return true
+  }
+  if name == "col" {
+    self.error_at("unexpected-end-tag", start)
+    return true
   }
   false
 }
@@ -1015,6 +1075,11 @@ fn Parser::report_table_context_end_tag_voodoo(
   name : String,
   start : Int,
 ) -> Unit {
+  if self.template_table_context_mode &&
+    table_context_end_tag_uses_table_voodoo(name) {
+    self.error_at("unexpected-end-tag-implies-table-voodoo", start)
+    return
+  }
   if self.in_table_body_mode_context() &&
     table_context_end_tag_uses_table_voodoo(name) {
     self.error_at("unexpected-end-tag-implies-table-voodoo", start)
@@ -1282,6 +1347,8 @@ fn Parser::handle_template_end_tag(
     return true
   }
   self.template_column_group_mode = false
+  self.template_table_context_mode = false
+  self.template_detached_column_group_mode = false
   while self.stack.length() > template_index {
     ignore(self.stack.pop())
   }
@@ -1854,6 +1921,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   if self.handle_document_frameset_end_tag(name, start) {
+    return
+  }
+  if self.handle_template_detached_column_group_end_tag(name, start) {
     return
   }
   if self.handle_template_column_group_end_tag(name, start) {
@@ -3007,6 +3077,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if !self.is_fragment_parser() && name == "frame" {
         self.error_at("unexpected-start-tag-ignored", start)
+        return
+      }
+      if self.handle_template_table_context_start_tag(name, attrs) {
         return
       }
       let in_template_table_context = self.in_template_content_without_inner_table()
