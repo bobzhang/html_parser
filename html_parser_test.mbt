@@ -3282,6 +3282,24 @@ test "parser adjusts long tail SVG names attributes and font breakouts" {
     "<svg><animateColor baseProfile=\"tiny\"></animateColor><feOffset kernelMatrix=\"k\" xlink:href=\"#f\"></feOffset></svg>",
   )
   assert_eq(remaining.errors.length(), 0)
+  let motion = @html_parser.parse_fragment(
+    "<svg><animatemotion calcmode='paced'></animatemotion><fepointlight kernelunitlength='1 1' xlink:role='r'></fepointlight></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    motion.to_html(pretty=false),
+    "<svg><animateMotion calcMode=\"paced\"></animateMotion><fePointLight kernelUnitLength=\"1 1\" xlink:role=\"r\"></fePointLight></svg>",
+  )
+  assert_eq(motion.errors.length(), 0)
+  let transform = @html_parser.parse_fragment(
+    "<svg><animatetransform clippathunits='userSpaceOnUse' keypoints='0;1' xlink:show='new'></animatetransform><fespecularlighting></fespecularlighting></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    transform.to_html(pretty=false),
+    "<svg><animateTransform clipPathUnits=\"userSpaceOnUse\" keyPoints=\"0;1\" xlink:show=\"new\"></animateTransform><feSpecularLighting></feSpecularLighting></svg>",
+  )
+  assert_eq(transform.errors.length(), 0)
   let face = @html_parser.parse_fragment(
     "<svg><font face='serif'>text</font></svg>",
     collect_errors=true,
