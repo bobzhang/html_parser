@@ -558,6 +558,11 @@ JustHTML from Python to MoonBit.
 - Do not normalize empty doctype names to `"html"` in serialization. The builder
   default should create `"html"`, but a parsed empty-name doctype serializes as
   `<!DOCTYPE>`.
+- Python insertion modes sometimes carry parser state that is not visible in
+  the DOM stack. For example, `<col>` inside `<template>` enters column-group
+  handling while the current node is still `template`: preserve leading
+  whitespace, drop the rest of the character token, and report the
+  template-specific column-group error.
 
 ## Test Porting
 

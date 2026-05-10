@@ -19,6 +19,7 @@ priv struct Parser {
   mut fragment_context_colgroup : Bool
   mut fragment_context_html : Bool
   mut fragment_context_html_root : Node?
+  mut template_column_group_mode : Bool
 }
 
 ///|
@@ -48,6 +49,7 @@ fn Parser::new(
     fragment_context_colgroup: false,
     fragment_context_html: false,
     fragment_context_html_root: None,
+    template_column_group_mode: false,
   }
 }
 
@@ -124,6 +126,9 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if self.uses_document_frameset_rules() &&
     text_has_non_ascii_whitespace(cleaned) {
     self.frameset_ok = false
+  }
+  if self.handle_template_column_group_text(cleaned, start) {
+    return
   }
   if self.handle_fragment_context_colgroup_text(cleaned, start) {
     return
@@ -698,6 +703,89 @@ fn Parser::handle_fragment_context_colgroup_text(
 }
 
 ///|
+fn Parser::handle_template_column_group_text(
+  self : Parser,
+  cleaned : StringView,
+  start : Int,
+) -> Bool {
+  if !self.template_column_group_mode {
+    return false
+  }
+  if !self.in_template_content_without_inner_table() {
+    self.template_column_group_mode = false
+    return false
+  }
+  let whitespace = leading_ascii_whitespace(cleaned)
+  if !whitespace.is_empty() {
+    self
+    .current_node()
+    .append_child(text(decode_entities(whitespace[:], in_attribute=false)))
+  }
+  self.error_at("unexpected-characters-in-template-column-group", start)
+  true
+}
+
+///|
+fn Parser::handle_template_column_group_start_tag(
+  self : Parser,
+  name : String,
+  attrs : Map[String, String?],
+  start : Int,
+) -> Bool {
+  if !self.template_column_group_mode {
+    return false
+  }
+  if !self.in_template_content_without_inner_table() {
+    self.template_column_group_mode = false
+    return false
+  }
+  if name == "html" || name == "template" {
+    return false
+  }
+  if name == "col" {
+    self.current_node().append_child(element("col", attrs~))
+    return true
+  }
+  if name == "colgroup" {
+    self.error_at("unexpected-start-tag-implies-end-tag", start)
+  } else {
+    self.error_at("unexpected-start-tag-in-template-column-group", start)
+  }
+  true
+}
+
+///|
+fn Parser::handle_template_column_group_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if !self.template_column_group_mode {
+    return false
+  }
+  if !self.in_template_content_without_inner_table() {
+    self.template_column_group_mode = false
+    return false
+  }
+  if name == "template" {
+    self.template_column_group_mode = false
+    return false
+  }
+  if name == "col" || name == "colgroup" {
+    self.error_at("unexpected-end-tag", start)
+    return true
+  }
+  self.template_column_group_mode = false
+  let template_index = self.last_open_template_index()
+  if template_index >= 0 {
+    while self.stack.length() > template_index {
+      ignore(self.stack.pop())
+    }
+  }
+  false
+}
+
+///|
 fn Parser::handle_fragment_context_colgroup_start_tag(
   self : Parser,
   name : String,
@@ -1193,6 +1281,7 @@ fn Parser::handle_template_end_tag(
     self.error_at("unexpected-end-tag", start)
     return true
   }
+  self.template_column_group_mode = false
   while self.stack.length() > template_index {
     ignore(self.stack.pop())
   }
@@ -1765,6 +1854,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   if self.handle_document_frameset_end_tag(name, start) {
+    return
+  }
+  if self.handle_template_column_group_end_tag(name, start) {
     return
   }
   if self.handle_fragment_context_colgroup_end_tag(name, start) {
@@ -2917,6 +3009,16 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at("unexpected-start-tag-ignored", start)
         return
       }
+      let in_template_table_context = self.in_template_content_without_inner_table()
+      if name == "col" && in_template_table_context {
+        let current = self.current_node()
+        if current.kind == Element && current.name == "template" {
+          self.template_column_group_mode = true
+        }
+      }
+      if self.handle_template_column_group_start_tag(name, attrs, start) {
+        return
+      }
       if self.handle_fragment_context_colgroup_start_tag(name, attrs, start) {
         return
       }
@@ -2928,7 +3030,6 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.handle_fragment_context_caption_start_tag(name, start) {
         return
       }
-      let in_template_table_context = self.in_template_content_without_inner_table()
       if !self.has_open_element("table") &&
         !in_template_table_context &&
         name == "caption" {
