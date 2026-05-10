@@ -152,6 +152,10 @@ JustHTML from Python to MoonBit.
   effectively foreign. "Effectively foreign" includes non-HTML namespaces and
   programmatic HTML-namespace descendants under an `svg` or `math` root; use
   that same broader predicate for `drop_foreign_namespaces`.
+- Treat SVG paint/filter attributes as URL-capable even though they do not look
+  like `href`/`src`. For effective foreign nodes, allowlisted attributes such as
+  `fill`, `filter`, `mask`, and marker attributes still need conservative
+  `url(...)` filtering.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside

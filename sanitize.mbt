@@ -409,6 +409,22 @@ fn sanitize_url_attribute_value(
 }
 
 ///|
+fn is_foreign_url_function_like_attr(name : String) -> Bool {
+  match name {
+    "clip-path"
+    | "cursor"
+    | "filter"
+    | "fill"
+    | "marker-end"
+    | "marker-mid"
+    | "marker-start"
+    | "mask"
+    | "stroke" => true
+    _ => false
+  }
+}
+
+///|
 fn is_invisible_unicode_char(ch : Char) -> Bool {
   let code = ch.to_int()
   code == 0x061C ||
@@ -622,8 +638,13 @@ fn sanitize_attribute_value(
   tag_name : String,
   attr_name : String,
   value : String,
+  effectively_foreign? : Bool = false,
 ) -> String? {
-  if attr_name == "style" {
+  if effectively_foreign &&
+    is_foreign_url_function_like_attr(attr_name) &&
+    css_value_may_load_external_resource(value) {
+    None
+  } else if attr_name == "style" {
     sanitize_inline_style_value(policy, value)
   } else {
     sanitize_url_attribute_value(tag_name, attr_name, value)
@@ -683,6 +704,7 @@ fn sanitize_element_attributes(
   policy : SanitizationPolicy,
 ) -> Unit {
   let tag_name = sanitize_node_name(node)
+  let effectively_foreign = node_is_effectively_foreign(node)
   let keys = node.attrs.keys().to_array()
   for key in keys {
     let attr_name = lower_ascii(key[:])
@@ -696,7 +718,14 @@ fn sanitize_element_attributes(
           } else {
             raw_value
           }
-          match sanitize_attribute_value(policy, tag_name, attr_name, value) {
+          match
+            sanitize_attribute_value(
+              policy,
+              tag_name,
+              attr_name,
+              value,
+              effectively_foreign~,
+            ) {
             Some(cleaned) =>
               if cleaned != raw_value || attr_name != key {
                 node.attrs.remove(key)

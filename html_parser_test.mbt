@@ -546,6 +546,36 @@ test "sanitize_dom drops html namespace foreign roots when namespace dropping is
 }
 
 ///|
+test "sanitize_dom drops foreign url function attributes without url policy" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["svg", "rect"],
+    allowed_attributes={
+      "rect": ["fill", "filter", "marker-start", "stroke", "width", "height"],
+    },
+    drop_foreign_namespaces=false,
+    drop_content_tags=[],
+  )
+  let parsed = @html_parser.parse_fragment(
+    "<svg><rect width='10' height='10' fill='url(https://evil.example/fill.svg#x) red' filter='URL ( #shadow )' marker-start='image-set(/x.png 1x)' stroke='u/**/rl(#paint)'></rect><rect fill='red' marker-start='none'></rect></svg>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(parsed.root, policy~).to_html(pretty=false),
+    "<svg><rect width=\"10\" height=\"10\"></rect><rect fill=\"red\" marker-start=\"none\"></rect></svg>",
+  )
+  let svg = @html_parser.element("svg", ns="html", children=[
+    @html_parser.element("rect", ns="html", attrs={
+      "fill": Some("url(https://evil.example/fill.svg#x)"),
+      "width": Some("10"),
+    }),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(svg, policy~).to_html(pretty=false),
+    "<svg><rect width=\"10\"></rect></svg>",
+  )
+}
+
+///|
 test "sanitize_dom handles standalone nodes and url edge cases" {
   let allowed = @html_parser.element(
     "p",

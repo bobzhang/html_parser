@@ -20,8 +20,8 @@ The current slice provides:
   parse-time sanitization via `sanitize=true`. Custom policies can unwrap,
   drop, or escape disallowed tags, force hardened anchor `rel` tokens, and
   allowlist simple inline CSS properties while stripping invisible Unicode and
-  hardening allowed raw-text, foreign text-integration, and active foreign
-  contents.
+  hardening allowed raw-text, foreign text-integration, active foreign contents,
+  and foreign URL-function attributes.
 - Initial Markdown conversion for text, paragraphs, headings, inline
   formatting, links, code, lists, blockquotes, and raw HTML passthrough.
 
