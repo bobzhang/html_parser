@@ -84,6 +84,8 @@ JustHTML from Python to MoonBit.
 - `:only-child` should reuse the same element-only child semantics, not raw
   child-array length, because parser-inserted text nodes are not element
   siblings.
+- The Python `:empty` behavior treats whitespace-only text as empty, ignores
+  comments, and treats child elements or non-whitespace text as content.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

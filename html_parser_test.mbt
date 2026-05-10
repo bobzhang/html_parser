@@ -1209,6 +1209,17 @@ test "query supports only child pseudo selector" {
 }
 
 ///|
+test "query supports empty pseudo selector" {
+  let doc = @html_parser.parse_fragment(
+    "<div class='empty'></div><div class='whitespace'>   </div><div class='text'>content</div><div class='nested'><span></span></div><!-- ignored -->",
+  )
+  assert_eq(doc.query(".empty:empty").length(), 1)
+  assert_eq(doc.query(".whitespace:empty").length(), 1)
+  assert_eq(doc.query(".text:empty").length(), 0)
+  assert_eq(doc.query(".nested:empty").length(), 0)
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)

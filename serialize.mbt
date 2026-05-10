@@ -829,11 +829,24 @@ fn is_only_element_child(node : Node) -> Bool {
 }
 
 ///|
+fn is_empty_for_selector(node : Node) -> Bool {
+  for child in node.children {
+    match child.kind {
+      Element => return false
+      Text if !child.data[:].trim().is_empty() => return false
+      _ => ()
+    }
+  }
+  true
+}
+
+///|
 fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
   match name {
     "first-child" => is_first_element_child(node)
     "last-child" => is_last_element_child(node)
     "only-child" => is_only_element_child(node)
+    "empty" => is_empty_for_selector(node)
     _ => false
   }
 }
