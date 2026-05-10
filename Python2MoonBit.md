@@ -203,6 +203,10 @@ JustHTML from Python to MoonBit.
   therefore escapes existing `&gt;`/`&#39;` sequences again, while `JsString`
   applies JavaScript escapes after HTML serialization. Pretty output is a
   separate path and should be tested alongside compact output.
+- The html5lib tree-test serializer is line-oriented and does not emit wrapper
+  lines for `#document` or `#document-fragment`. Build it as an array of lines
+  joined by `\n` so it has no trailing newline, and sort attribute lines by
+  their displayed test-format names.
 - DOM nodes are mutable object graphs, so port Python operations by preserving
   identity semantics instead of structural equality. Moving a node must detach
   it from its old parent, insert-before needs an identity scan with an append

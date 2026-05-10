@@ -1534,21 +1534,135 @@ pub fn query(root : Node, selector : StringView) -> Array[Node] {
 
 ///|
 pub fn to_test_format(node : Node) -> String {
-  let out = StringBuilder::new()
-  write_test_format(node, out, 0)
+  let lines : Array[String] = []
+  match node.kind {
+    Document | Fragment =>
+      for child in node.children {
+        write_test_format(child, lines, 0)
+      }
+    _ => write_test_format(node, lines, 0)
+  }
+  lines.join("\n")
+}
+
+///|
+fn test_format_line(indent : Int, content : StringView) -> String {
+  "| " + " ".repeat(indent) + content.to_owned()
+}
+
+///|
+fn test_format_qualified_name(node : Node) -> String {
+  match node.ns {
+    Some(ns) if ns != "html" => ns + " " + node.name
+    _ => node.name
+  }
+}
+
+///|
+fn is_foreign_attribute_for_test_format(name : StringView) -> Bool {
+  match lower_ascii(name) {
+    "xlink:actuate"
+    | "xlink:arcrole"
+    | "xlink:href"
+    | "xlink:role"
+    | "xlink:show"
+    | "xlink:title"
+    | "xlink:type"
+    | "xml:lang"
+    | "xml:space"
+    | "xmlns"
+    | "xmlns:xlink" => true
+    _ => false
+  }
+}
+
+///|
+fn replace_colons_for_test_format(name : StringView) -> String {
+  let out = StringBuilder::new(size_hint=name.length())
+  for ch in name {
+    if ch == ':' {
+      out.write_char(' ')
+    } else {
+      out.write_char(ch)
+    }
+  }
   out.to_string()
 }
 
 ///|
-fn write_test_format(node : Node, out : StringBuilder, indent : Int) -> Unit {
-  let pad = " ".repeat(indent)
+fn test_format_attribute_name(node : Node, name : StringView) -> String {
+  match node.ns {
+    Some(ns) if ns != "html" && is_foreign_attribute_for_test_format(name) =>
+      replace_colons_for_test_format(name)
+    _ => name.to_owned()
+  }
+}
+
+///|
+fn write_test_format_attributes(
+  node : Node,
+  out : Array[String],
+  indent : Int,
+) -> Unit {
+  let attrs : Array[(String, String)] = []
+  for name, value in node.attrs {
+    let display_name = test_format_attribute_name(node, name[:])
+    let value = match value {
+      Some(value) => value
+      None => ""
+    }
+    attrs.push((display_name, value))
+  }
+  attrs.sort()
+  for attr in attrs {
+    let (name, value) = attr
+    out.push(test_format_line(indent + 2, name + "=\"" + value + "\""))
+  }
+}
+
+///|
+fn doctype_test_format(node : Node) -> String {
+  let out = StringBuilder::new()
+  out.write_string("| <!DOCTYPE")
+  if node.data == "" {
+    out.write_char(' ')
+  } else {
+    out.write_char(' ')
+    out.write_string(node.data)
+  }
+  if node.public_id is Some(_) || node.system_id is Some(_) {
+    let public_id = match node.public_id {
+      Some(value) => value
+      None => ""
+    }
+    let system_id = match node.system_id {
+      Some(value) => value
+      None => ""
+    }
+    out.write_string(" \"")
+    out.write_string(public_id)
+    out.write_string("\" \"")
+    out.write_string(system_id)
+    out.write_char('"')
+  }
+  out.write_char('>')
+  out.to_string()
+}
+
+///|
+fn write_test_format(node : Node, out : Array[String], indent : Int) -> Unit {
   match node.kind {
-    Document => out.write_string("#document\n")
-    Fragment => out.write_string("#document-fragment\n")
-    Element => out.write_string(pad + "| <" + node.name + ">\n")
-    Text => out.write_string(pad + "| \"" + node.data + "\"\n")
-    Comment => out.write_string(pad + "| <!-- " + node.data + " -->\n")
-    Doctype => out.write_string(pad + "| <!DOCTYPE " + node.data + ">\n")
+    Document | Fragment =>
+      out.push(test_format_line(indent, "<" + node.name + ">"))
+    Element => {
+      out.push(
+        test_format_line(indent, "<" + test_format_qualified_name(node) + ">"),
+      )
+      write_test_format_attributes(node, out, indent)
+    }
+    Text => out.push(test_format_line(indent, "\"" + node.data + "\""))
+    Comment => out.push(test_format_line(indent, "<!-- " + node.data + " -->"))
+    Doctype => out.push(doctype_test_format(node))
   }
   for child in node.children {
     write_test_format(child, out, indent + 2)
