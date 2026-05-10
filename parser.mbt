@@ -2,6 +2,7 @@
 priv struct Parser {
   input : StringView
   scripting_enabled : Bool
+  xml_coercion : Bool
   mut pos : Int
   errors : Array[ParseError]
   root : Node
@@ -30,11 +31,13 @@ fn Parser::new(
   input : StringView,
   root : Node,
   scripting_enabled~ : Bool,
+  xml_coercion~ : Bool,
 ) -> Parser {
   let input = strip_leading_bom(input)
   Parser::{
     input,
     scripting_enabled,
+    xml_coercion,
     pos: 0,
     errors: [],
     root,
@@ -156,9 +159,13 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     ignore(self.report_foster_parenting_character_errors(cleaned, start))
   }
   self.report_foster_parented_table_context_text(cleaned, start)
-  self
-  .current_node()
-  .append_child(text(decode_entities(cleaned, in_attribute=false)))
+  let decoded = decode_entities(cleaned, in_attribute=false)
+  let data = if self.xml_coercion {
+    coerce_text_for_xml(decoded[:])
+  } else {
+    decoded
+  }
+  self.current_node().append_child(text(data))
 }
 
 ///|
@@ -1880,7 +1887,12 @@ fn Parser::parse_comment(self : Parser) -> Unit {
     self.error_at(error.code, error.offset)
   }
   self.pos = scan.end
-  self.current_node().append_child(comment(scan.data))
+  let data = if self.xml_coercion {
+    coerce_comment_for_xml(scan.data[:])
+  } else {
+    scan.data
+  }
+  self.current_node().append_child(comment(data))
 }
 
 ///|
@@ -1890,10 +1902,15 @@ fn Parser::parse_bogus_comment(self : Parser) -> Unit {
     ignore(self.advance_char())
   }
   match self.input.get_view(start=data_start, end=self.pos) {
-    Some(view) =>
-      self
-      .current_node()
-      .append_child(comment(normalize_bogus_comment_data(view)))
+    Some(view) => {
+      let data = normalize_bogus_comment_data(view)
+      let data = if self.xml_coercion {
+        coerce_comment_for_xml(data[:])
+      } else {
+        data
+      }
+      self.current_node().append_child(comment(data))
+    }
     None => ()
   }
   if self.current() == Some('>') {
@@ -1931,7 +1948,12 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
         self.remove_null_characters(view, start)
       }
       if !cleaned.is_empty() {
-        self.current_node().append_child(text(cleaned))
+        let data = if self.xml_coercion {
+          coerce_text_for_xml(cleaned[:])
+        } else {
+          cleaned
+        }
+        self.current_node().append_child(text(data))
       }
     }
     None => ()
@@ -3631,10 +3653,15 @@ fn Parser::decoded_special_text(
     (raw, 0)
   }
   let raw = self.replace_null_characters(raw, start + offset)
-  if special_text_decodes_entities(name) {
+  let data = if special_text_decodes_entities(name) {
     decode_entities(raw, in_attribute=false)
   } else {
     normalize_newlines(raw)
+  }
+  if self.xml_coercion {
+    coerce_text_for_xml(data[:])
+  } else {
+    data
   }
 }
 
@@ -4268,7 +4295,12 @@ fn Parser::consume_special_element_content(
       self.error_at(error.code, error.offset)
     }
     if !scan.data.is_empty() {
-      parent.append_child(text(scan.data))
+      let data = if self.xml_coercion {
+        coerce_text_for_xml(scan.data[:])
+      } else {
+        scan.data
+      }
+      parent.append_child(text(data))
     }
     match scan.end_start {
       Some(end_start) => {
@@ -4342,7 +4374,9 @@ fn Parser::append_fragment_context_text(
     return
   }
   let raw = self.replace_null_characters(raw, start)
-  self.root.append_child(text(normalize_newlines(raw)))
+  let data = normalize_newlines(raw)
+  let data = if self.xml_coercion { coerce_text_for_xml(data[:]) } else { data }
+  self.root.append_child(text(data))
 }
 
 ///|
@@ -4847,10 +4881,11 @@ pub fn parse(
   collect_errors? : Bool = false,
   strict? : Bool = false,
   scripting_enabled? : Bool = true,
+  xml_coercion? : Bool = false,
 ) -> ParsedHtml raise HtmlError {
   ignore(sanitize)
   let root = document()
-  let parser = Parser::new(html, root, scripting_enabled~)
+  let parser = Parser::new(html, root, scripting_enabled~, xml_coercion~)
   let deferred_initial_doctype_error = parser.report_initial_doctype_error()
   parser.parse_all()
   match deferred_initial_doctype_error {
@@ -5282,10 +5317,11 @@ pub fn parse_fragment(
   collect_errors? : Bool = false,
   strict? : Bool = false,
   scripting_enabled? : Bool = true,
+  xml_coercion? : Bool = false,
 ) -> ParsedHtml raise HtmlError {
   ignore(sanitize)
   let root = fragment()
-  let parser = Parser::new(html, root, scripting_enabled~)
+  let parser = Parser::new(html, root, scripting_enabled~, xml_coercion~)
   match context {
     Some(fragment_context) =>
       if !parser.parse_fragment_context(fragment_context) {
@@ -5958,6 +5994,7 @@ pub fn parse_bytes(
   collect_errors? : Bool = false,
   strict? : Bool = false,
   scripting_enabled? : Bool = true,
+  xml_coercion? : Bool = false,
 ) -> ParsedHtml raise HtmlError {
   let (decoded, detected_encoding) = decode_html_bytes(input, encoding)
   let parsed = parse(
@@ -5966,6 +6003,7 @@ pub fn parse_bytes(
     collect_errors~,
     strict~,
     scripting_enabled~,
+    xml_coercion~,
   )
   ParsedHtml::{
     root: parsed.root,

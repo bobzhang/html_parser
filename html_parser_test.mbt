@@ -3101,6 +3101,36 @@ test "parser treats cdata sections as foreign text" {
 }
 
 ///|
+test "parser and tokenizer optionally coerce XML-invalid text" {
+  let tokens = @html_parser.tokenize(
+    "\u{000C}\u{FDD0}<script>\u{FDD0}</script><!--a--b-->",
+    xml_coercion=true,
+  )
+  guard tokens.tokens[0] is @html_parser.HtmlToken::Characters(" �") else {
+    fail("expected form-feed and noncharacter coercion in text")
+  }
+  guard tokens.tokens[2] is @html_parser.HtmlToken::Characters("�") else {
+    fail("expected XML coercion in script text")
+  }
+  guard tokens.tokens[4] is @html_parser.HtmlToken::CommentToken("a- -b") else {
+    fail("expected XML comment double-hyphen coercion")
+  }
+  let default_tokens = @html_parser.tokenize("\u{000C}\u{FDD0}")
+  guard default_tokens.tokens[0]
+    is @html_parser.HtmlToken::Characters("\u{000C}\u{FDD0}") else {
+    fail("expected XML coercion to be opt-in")
+  }
+  let parsed = @html_parser.parse_fragment(
+    "<div>a\u{000C}\u{FDD0}</div><textarea>\u{000C}\u{FDD0}</textarea>",
+    xml_coercion=true,
+  )
+  assert_eq(
+    parsed.to_html(pretty=false),
+    "<div>a �</div><textarea> �</textarea>",
+  )
+}
+
+///|
 test "parser handles ruby annotation start exclusions" {
   let rtc_text = @html_parser.parse_fragment(
     "<ruby><rtc>a<rt>b</ruby>",

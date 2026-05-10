@@ -542,6 +542,10 @@ JustHTML from Python to MoonBit.
   character. `"`, `'`, `<`, `=`, and backtick produce
   `unexpected-character-in-unquoted-attribute-value` and remain in the decoded
   attribute value.
+- XML coercion is an opt-in tokenizer option in the Python reference. Keep it
+  out of default parsing, and when enabled apply it after entity decoding for
+  text-like tokens: form feed becomes a space, XML noncharacters become U+FFFD,
+  and comment data rewrites `--` to `- -`.
 - After a quoted attribute value, the first non-whitespace character before the
   next attribute is reconsumed. Report `missing-whitespace-between-attributes`
   at that character unless it is `>` or `/`, because `/` enters the self-closing

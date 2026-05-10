@@ -39,8 +39,9 @@ pub(all) struct TokenizedHtml {
 pub fn tokenize(
   html : StringView,
   collect_errors? : Bool = false,
+  xml_coercion? : Bool = false,
 ) -> TokenizedHtml {
-  let tokenizer = SourceTokenizer::new(html, collect_errors~)
+  let tokenizer = SourceTokenizer::new(html, collect_errors~, xml_coercion~)
   tokenizer.run()
   tokenizer.tokens.push(Eof)
   TokenizedHtml::{ tokens: tokenizer.tokens, errors: tokenizer.errors }
@@ -50,6 +51,7 @@ pub fn tokenize(
 priv struct SourceTokenizer {
   input : StringView
   collect_errors : Bool
+  xml_coercion : Bool
   mut pos : Int
   tokens : Array[HtmlToken]
   errors : Array[ParseError]
@@ -59,9 +61,17 @@ priv struct SourceTokenizer {
 fn SourceTokenizer::new(
   input : StringView,
   collect_errors~ : Bool,
+  xml_coercion~ : Bool,
 ) -> SourceTokenizer {
   let input = strip_leading_bom(input)
-  SourceTokenizer::{ input, collect_errors, pos: 0, tokens: [], errors: [] }
+  SourceTokenizer::{
+    input,
+    collect_errors,
+    xml_coercion,
+    pos: 0,
+    tokens: [],
+    errors: [],
+  }
 }
 
 ///|
@@ -159,8 +169,15 @@ fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
     ignore(self.advance_char())
   }
   match self.input.get_view(start~, end=self.pos) {
-    Some(view) if !view.is_empty() =>
-      self.tokens.push(Characters(decode_entities(view, in_attribute=false)))
+    Some(view) if !view.is_empty() => {
+      let data = decode_entities(view, in_attribute=false)
+      let data = if self.xml_coercion {
+        coerce_text_for_xml(data[:])
+      } else {
+        data
+      }
+      self.tokens.push(Characters(data))
+    }
     _ => ()
   }
 }
@@ -173,7 +190,12 @@ fn SourceTokenizer::parse_comment(self : SourceTokenizer) -> Unit {
     self.error_at(error.code, error.offset)
   }
   self.pos = scan.end
-  self.tokens.push(CommentToken(scan.data))
+  let data = if self.xml_coercion {
+    coerce_comment_for_xml(scan.data[:])
+  } else {
+    scan.data
+  }
+  self.tokens.push(CommentToken(data))
 }
 
 ///|
@@ -425,8 +447,15 @@ fn SourceTokenizer::parse_invalid_tag_open_as_text(
     ignore(self.advance_char())
   }
   match self.input.get_view(start~, end=self.pos) {
-    Some(view) if !view.is_empty() =>
-      self.tokens.push(Characters(decode_entities(view, in_attribute=false)))
+    Some(view) if !view.is_empty() => {
+      let data = decode_entities(view, in_attribute=false)
+      let data = if self.xml_coercion {
+        coerce_text_for_xml(data[:])
+      } else {
+        data
+      }
+      self.tokens.push(Characters(data))
+    }
     _ => ()
   }
 }
@@ -440,6 +469,11 @@ fn SourceTokenizer::parse_bogus_comment(self : SourceTokenizer) -> Unit {
   let data = match self.input.get_view(start=data_start, end=self.pos) {
     Some(view) => normalize_bogus_comment_data(view)
     None => ""
+  }
+  let data = if self.xml_coercion {
+    coerce_comment_for_xml(data[:])
+  } else {
+    data
   }
   if self.current() == Some('>') {
     ignore(self.advance_char())
@@ -574,10 +608,15 @@ fn SourceTokenizer::decoded_special_text(
   start : Int,
 ) -> String {
   let raw = self.replace_special_text_nulls(raw, start)
-  if special_text_decodes_entities(name) {
+  let data = if special_text_decodes_entities(name) {
     decode_entities(raw, in_attribute=false)
   } else {
     normalize_newlines(raw)
+  }
+  if self.xml_coercion {
+    coerce_text_for_xml(data[:])
+  } else {
+    data
   }
 }
 
@@ -629,7 +668,12 @@ fn SourceTokenizer::consume_special_text_tokens(
       self.error_at(error.code, error.offset)
     }
     if !scan.data.is_empty() {
-      self.tokens.push(Characters(scan.data))
+      let data = if self.xml_coercion {
+        coerce_text_for_xml(scan.data[:])
+      } else {
+        scan.data
+      }
+      self.tokens.push(Characters(data))
     }
     match scan.end_start {
       Some(end_start) => {

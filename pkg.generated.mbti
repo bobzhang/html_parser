@@ -18,11 +18,11 @@ pub fn fragment(children? : Array[Node]) -> Node
 
 pub fn matches(Node, StringView) -> Bool
 
-pub fn parse(StringView, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool) -> ParsedHtml raise HtmlError
+pub fn parse(StringView, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool) -> ParsedHtml raise HtmlError
 
-pub fn parse_bytes(BytesView, encoding? : String, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool) -> ParsedHtml raise HtmlError
+pub fn parse_bytes(BytesView, encoding? : String, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool) -> ParsedHtml raise HtmlError
 
-pub fn parse_fragment(StringView, context? : FragmentContext, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool) -> ParsedHtml raise HtmlError
+pub fn parse_fragment(StringView, context? : FragmentContext, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool) -> ParsedHtml raise HtmlError
 
 pub fn query(Node, StringView) -> Array[Node]
 
@@ -32,7 +32,7 @@ pub fn to_html(Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext,
 
 pub fn to_test_format(Node) -> String
 
-pub fn tokenize(StringView, collect_errors? : Bool) -> TokenizedHtml
+pub fn tokenize(StringView, collect_errors? : Bool, xml_coercion? : Bool) -> TokenizedHtml
 
 // Errors
 pub(all) suberror HtmlError {
