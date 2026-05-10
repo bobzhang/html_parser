@@ -4667,6 +4667,17 @@ test "parser closes repeated option and select optgroup starts" {
 
 ///|
 test "parser populates selectedcontent from selected option" {
+  let no_options = @html_parser.parse_fragment(
+    "<select><selectedcontent></selectedcontent></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    no_options.to_html(pretty=false),
+    "<select><selectedcontent></selectedcontent></select>",
+  )
+  assert_eq(no_options.errors.length(), 2)
+  assert_eq(no_options.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(no_options.errors[1].code, "unexpected-end-tag-in-select")
   let first = @html_parser.parse_fragment(
     "<select><option>one</option><option>two</option><selectedcontent></selectedcontent></select>",
     collect_errors=true,
@@ -5669,11 +5680,27 @@ test "parser ignores self closing slash on non void html elements" {
 
 ///|
 test "strict mode raises on first parse error" {
-  let result : Result[@html_parser.ParsedHtml, Error] = try? @html_parser.parse_fragment(
+  let fragment_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = try? @html_parser.parse_fragment(
     "<p>open</span>",
     strict=true,
   )
-  guard result is Err(_) else { fail("expected strict parse to raise") }
+  match fragment_result {
+    Err(StrictMode(error)) => assert_eq(error.code, "unexpected-end-tag")
+    _ => fail("expected strict fragment parse to raise StrictMode")
+  }
+  let document_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = try? @html_parser.parse(
+    "<p>x",
+    strict=true,
+  )
+  match document_result {
+    Err(StrictMode(error)) => {
+      assert_eq(error.code, "expected-doctype-but-got-start-tag")
+      guard error.column is Some(3) else {
+        fail("expected strict document error at initial start tag")
+      }
+    }
+    _ => fail("expected strict document parse to raise StrictMode")
+  }
 }
 
 ///|

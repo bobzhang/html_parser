@@ -394,7 +394,8 @@ JustHTML from Python to MoonBit.
   select-mode parse errors, then populated after tree construction by appending
   deep clones of the selected `<option>` children, or the first option when no
   option has a `selected` attribute. Existing selectedcontent children are not
-  cleared first.
+  cleared first. Guard the no-option case explicitly in MoonBit so this
+  finish-time pass remains a no-op instead of indexing an empty option array.
 - Document scaffolding also has to preserve explicit root-level `<head>` and
   `<body>` nodes, including attributes on `<body>`. Do not always synthesize
   fresh elements and then nest the parsed ones inside the body.
