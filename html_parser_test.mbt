@@ -37,6 +37,39 @@ test "builder serializes minimized and quoted attributes like reference" {
 }
 
 ///|
+test "serializer handles pretty output quote contexts and comment guards" {
+  let node = @html_parser.element("div", attrs={ "title": Some("a>b'c") }, children=[
+    @html_parser.text("x>y"),
+    @html_parser.element("br"),
+  ])
+  assert_eq(
+    node.to_html(pretty=false, quote='\''),
+    "<div title='a&gt;b&#39;c'>x&gt;y<br></div>",
+  )
+  assert_eq(
+    @html_parser.to_html(node, pretty=true, indent_size=4, quote='\''),
+    "<div title='a&gt;b&#39;c'>\n    x&gt;y\n    <br>\n</div>",
+  )
+  assert_eq(
+    node.to_html(pretty=false, context=HtmlAttrValue, quote='\''),
+    "&lt;div title=&#39;a&amp;gt;b&amp;#39;c&#39;&gt;x&amp;gt;y&lt;br&gt;&lt;/div&gt;",
+  )
+  assert_eq(
+    @html_parser.text("\"<>").to_html(pretty=false, context=JsString, quote='"'),
+    "\\\"&lt;&gt;",
+  )
+  let guarded = @html_parser.fragment(children=[
+    node,
+    @html_parser.comment(">x-"),
+    @html_parser.comment("->x<!-"),
+  ])
+  assert_eq(
+    guarded.to_html(pretty=true, indent_size=2, quote='\''),
+    "<div title='a&gt;b&#39;c'>\n  x&gt;y\n  <br>\n</div>\n<!-- >x- -->\n<!-- ->x<!- -->",
+  )
+}
+
+///|
 test "builder preserves adjusted foreign element names" {
   let gradient = @html_parser.element("linearGradient", ns="svg")
   assert_eq(gradient.name(), "linearGradient")

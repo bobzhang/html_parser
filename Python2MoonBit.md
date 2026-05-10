@@ -177,6 +177,10 @@ JustHTML from Python to MoonBit.
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids
   escaping an embedded double quote.
+- Serialization contexts re-escape the serialized HTML string. `HtmlAttrValue`
+  therefore escapes existing `&gt;`/`&#39;` sequences again, while `JsString`
+  applies JavaScript escapes after HTML serialization. Pretty output is a
+  separate path and should be tested alongside compact output.
 - DOM nodes are mutable object graphs, so port Python operations by preserving
   identity semantics instead of structural equality. Moving a node must detach
   it from its old parent, insert-before needs an identity scan with an append
