@@ -79,6 +79,26 @@ test "to_test_format matches reference line format" {
 }
 
 ///|
+test "builder serializes doctype identifiers" {
+  assert_eq(@html_parser.doctype().to_html(pretty=false), "<!DOCTYPE html>")
+  let svg = @html_parser.doctype(
+    name="svg",
+    public_id="-//W3C//DTD SVG 1.1//EN",
+    system_id="https://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd",
+  )
+  assert_eq(
+    svg.to_html(pretty=false),
+    "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"https://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">",
+  )
+  assert_eq(
+    @html_parser.doctype(name="", system_id="about:legacy-compat").to_html(
+      pretty=false,
+    ),
+    "<!DOCTYPE SYSTEM \"about:legacy-compat\">",
+  )
+}
+
+///|
 test "builder serializes minimized and quoted attributes like reference" {
   let disabled = @html_parser.element("input", attrs={
     "disabled": Some("DISABLED"),
