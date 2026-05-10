@@ -1069,23 +1069,41 @@ fn Parser::handle_caption_end_tag(
 ) -> Bool {
   let table_index = self.last_open_table_index()
   let caption_index = self.last_stack_index_of("caption")
-  if table_index < 0 || caption_index <= table_index {
+  if table_index < 0 {
+    let template_index = self.last_open_template_index()
+    if template_index < 0 || caption_index <= template_index {
+      return false
+    }
+    match name {
+      "caption" => {
+        ignore(self.close_open_element("caption"))
+        self.template_table_context_mode = true
+        true
+      }
+      "tbody" | "tfoot" | "thead" => {
+        self.error_at("unexpected-end-tag", start)
+        true
+      }
+      _ => false
+    }
+  } else if caption_index <= table_index {
     return false
-  }
-  match name {
-    "caption" => {
-      ignore(self.close_open_element("caption"))
-      true
+  } else {
+    match name {
+      "caption" => {
+        ignore(self.close_open_element("caption"))
+        true
+      }
+      "tbody" | "tfoot" | "thead" => {
+        self.error_at("unexpected-end-tag", start)
+        true
+      }
+      "table" => {
+        ignore(self.close_open_element("caption"))
+        false
+      }
+      _ => false
     }
-    "tbody" | "tfoot" | "thead" => {
-      self.error_at("unexpected-end-tag", start)
-      true
-    }
-    "table" => {
-      ignore(self.close_open_element("caption"))
-      false
-    }
-    _ => false
   }
 }
 

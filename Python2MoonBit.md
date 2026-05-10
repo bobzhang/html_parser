@@ -577,6 +577,9 @@ JustHTML from Python to MoonBit.
   After `<template><caption>...<tr>`, close the caption, report the implicit
   close, then process the row start as an in-table token, which may insert an
   implied `tbody` rather than a bare `tr`.
+- A plain `</caption>` inside template content can also leave hidden table-mode
+  state behind. The caption node is closed, but the following `</template>`
+  still reports table-voodoo recovery.
 
 ## Test Porting
 
