@@ -18,7 +18,7 @@ The current slice provides:
 - Default-policy DOM sanitization with tag/attribute allowlists, comment and
   doctype handling, unsafe attribute filtering, basic URL checks, and explicit
   parse-time sanitization via `sanitize=true`. Custom policies can unwrap,
-  drop, or escape disallowed tags.
+  drop, or escape disallowed tags and force hardened anchor `rel` tokens.
 - Initial Markdown conversion for text, paragraphs, headings, inline
   formatting, links, code, lists, blockquotes, and raw HTML passthrough.
 

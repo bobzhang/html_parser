@@ -136,7 +136,7 @@ pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_b
 pub struct SanitizationPolicy {
   // private fields
 } derive(@debug.Debug)
-pub fn SanitizationPolicy::new(Array[String], allowed_attributes? : Map[String, Array[String]], drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling) -> Self
+pub fn SanitizationPolicy::new(Array[String], allowed_attributes? : Map[String, Array[String]], drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling, force_link_rel? : Array[String]) -> Self
 
 pub(all) enum TagKind {
   StartTag

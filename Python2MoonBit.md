@@ -308,6 +308,11 @@ JustHTML from Python to MoonBit.
   reconstruct tag text from the normalized DOM. That keeps output safe and
   deterministic, but it cannot preserve source spelling details such as single
   quotes, self-closing slashes on non-void HTML elements, or missing end tags.
+- `force_link_rel` is both an attribute-allowlist rule and a rewrite rule in
+  the Python sanitizer. If it is non-empty, `rel` must be kept on `<a>` even
+  when `allowed_attributes["a"]` does not include it, then existing rel tokens
+  are split on HTML whitespace, lowercased, deduplicated in order, and merged
+  with the forced tokens.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone.

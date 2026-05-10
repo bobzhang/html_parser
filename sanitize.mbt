@@ -14,6 +14,7 @@ pub struct SanitizationPolicy {
   priv drop_foreign_namespaces : Bool
   priv drop_content_tags : Set[String]
   priv disallowed_tag_handling : DisallowedTagHandling
+  priv force_link_rel : Array[String]
 } derive(Debug)
 
 ///|
@@ -26,6 +27,32 @@ fn sanitized_string_set(values : Array[String]) -> Set[String] {
     }
   }
   set
+}
+
+///|
+fn string_array_contains(values : Array[String], needle : String) -> Bool {
+  for value in values {
+    if value == needle {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn push_unique_string(values : Array[String], value : String) -> Unit {
+  if value != "" && !string_array_contains(values, value) {
+    values.push(value)
+  }
+}
+
+///|
+fn sanitized_string_list(values : Array[String]) -> Array[String] {
+  let out : Array[String] = []
+  for value in values {
+    push_unique_string(out, lower_ascii(value[:].trim()))
+  }
+  out
 }
 
 ///|
@@ -51,6 +78,7 @@ pub fn SanitizationPolicy::new(
   drop_foreign_namespaces? : Bool = true,
   drop_content_tags? : Array[String] = ["script", "style"],
   disallowed_tag_handling? : DisallowedTagHandling = Unwrap,
+  force_link_rel? : Array[String] = [],
 ) -> SanitizationPolicy {
   {
     allowed_tags: sanitized_string_set(allowed_tags),
@@ -60,6 +88,7 @@ pub fn SanitizationPolicy::new(
     drop_foreign_namespaces,
     drop_content_tags: sanitized_string_set(drop_content_tags),
     disallowed_tag_handling,
+    force_link_rel: sanitized_string_list(force_link_rel),
   }
 }
 
@@ -228,6 +257,9 @@ fn policy_allows_attribute(
   if attr_name_is_dangerous(attr_name) {
     return false
   }
+  if tag_name == "a" && attr_name == "rel" && !policy.force_link_rel.is_empty() {
+    return true
+  }
   match policy.allowed_attributes.get(tag_name) {
     Some(attrs) if attrs.contains(attr_name) => true
     _ =>
@@ -337,6 +369,53 @@ fn sanitize_url_attribute_value(
 }
 
 ///|
+fn push_html_whitespace_tokens(
+  tokens : Array[String],
+  value : StringView,
+) -> Unit {
+  let mut token_start = 0
+  let mut pos = 0
+  while pos < value.length() {
+    match value.get_char(pos) {
+      Some(ch) if is_html_whitespace_char(ch) => {
+        if token_start < pos {
+          match value.get_view(start=token_start, end=pos) {
+            Some(token) => push_unique_string(tokens, lower_ascii(token.trim()))
+            None => ()
+          }
+        }
+        pos += ch.utf16_len()
+        token_start = pos
+      }
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  if token_start < value.length() {
+    match value.get_view(start=token_start, end=value.length()) {
+      Some(token) => push_unique_string(tokens, lower_ascii(token.trim()))
+      None => ()
+    }
+  }
+}
+
+///|
+fn merge_forced_link_rel(node : Node, policy : SanitizationPolicy) -> Unit {
+  if policy.force_link_rel.is_empty() {
+    return
+  }
+  let tokens : Array[String] = []
+  match node.attrs.get("rel") {
+    Some(Some(value)) => push_html_whitespace_tokens(tokens, value)
+    _ => ()
+  }
+  for token in policy.force_link_rel {
+    push_unique_string(tokens, token)
+  }
+  node.attrs["rel"] = Some(tokens.join(" "))
+}
+
+///|
 fn sanitize_element_attributes(
   node : Node,
   policy : SanitizationPolicy,
@@ -368,6 +447,9 @@ fn sanitize_element_attributes(
         None => ()
       }
     }
+  }
+  if tag_name == "a" {
+    merge_forced_link_rel(node, policy)
   }
 }
 
