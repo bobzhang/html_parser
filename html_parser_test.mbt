@@ -11447,6 +11447,21 @@ test "tokenize reports selected EOF and null fixture errors" {
     fail("expected replacement char in attr")
   }
   assert_eq(nul_attr.errors[0].code, "unexpected-null-character")
+  let nul_single_attr = @html_parser.tokenize(
+    "<div foo='a\u{0000}b'>",
+    collect_errors=true,
+  )
+  guard nul_single_attr.tokens[0] is Tag(single_tag) else {
+    fail("expected div tag with single-quoted null attr")
+  }
+  guard single_tag.attrs["foo"] is Some("a\u{FFFD}b") else {
+    fail("expected replacement char in single-quoted attr")
+  }
+  assert_eq(nul_single_attr.errors.length(), 1)
+  assert_eq(nul_single_attr.errors[0].code, "unexpected-null-character")
+  guard nul_single_attr.errors[0].column is Some(12) else {
+    fail("expected single-quoted null attr at column 12")
+  }
   let nul_unquoted_attr = @html_parser.tokenize(
     "<div foo=a\u{0000}b>",
     collect_errors=true,
