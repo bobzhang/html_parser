@@ -589,6 +589,49 @@ fn extract_url_scheme(value : StringView) -> String? {
 }
 
 ///|
+fn url_scheme_prefix_is_valid(value : StringView, end : Int) -> Bool {
+  let mut pos = 0
+  let mut saw_scheme_char = false
+  while pos < end {
+    match value.get_char(pos) {
+      Some(ch) if is_url_ignored_scheme_char(ch) => pos += ch.utf16_len()
+      Some(ch) => {
+        if !saw_scheme_char {
+          if !is_url_scheme_start(ch) {
+            return false
+          }
+          saw_scheme_char = true
+        } else if !is_url_scheme_char(ch) {
+          return false
+        }
+        pos += ch.utf16_len()
+      }
+      None => return false
+    }
+  }
+  saw_scheme_char
+}
+
+///|
+fn has_invalid_scheme_like_prefix(value : StringView) -> Bool {
+  let mut pos = 0
+  while pos < value.length() {
+    match value.get_char(pos) {
+      Some(':') =>
+        if pos == 0 {
+          return false
+        } else {
+          return !url_scheme_prefix_is_valid(value, pos)
+        }
+      Some(ch) if is_ascii_url_boundary(ch) => return false
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  false
+}
+
+///|
 fn url_authority_end(value : StringView, start : Int) -> Int {
   let mut pos = start
   while pos < value.length() {
@@ -852,6 +895,8 @@ fn sanitize_url_attribute_value_with_rule(
       } else {
         None
       }
+    } else if handling == UrlProxy && has_invalid_scheme_like_prefix(trimmed[:]) {
+      None
     } else if trimmed.has_prefix("//") {
       match rule.resolve_protocol_relative {
         Some(scheme) if rule.allowed_schemes.contains(scheme) => {
