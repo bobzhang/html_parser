@@ -448,6 +448,8 @@ JustHTML from Python to MoonBit.
 - Foreign-content integration points depend on attributes, not just tag names.
   MathML `annotation-xml` integrates HTML only for `encoding` values like
   `text/html`; missing or other values still break HTML starts out of MathML.
+  Valueless attributes arrive as `None` in MoonBit maps, so compare them as an
+  empty value rather than treating the attribute as absent.
 - Select insertion mode has element-specific recovery. Some starts, such as
   `aside`, are parse-error tokens that should be ignored while their following
   text still belongs to the open `select`.

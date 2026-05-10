@@ -3063,6 +3063,21 @@ test "parser assigns namespaces and adjusted names for foreign content" {
   )
   assert_eq(missing_encoding.errors[1].code, "unexpected-end-tag")
   assert_eq(missing_encoding.errors[2].code, "unexpected-end-tag")
+  let empty_encoding = @html_parser.parse_fragment(
+    "<math><annotation-xml encoding><div>x</div></annotation-xml></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    empty_encoding.to_html(pretty=false),
+    "<math><annotation-xml encoding></annotation-xml></math><div>x</div>",
+  )
+  assert_eq(empty_encoding.errors.length(), 3)
+  assert_eq(
+    empty_encoding.errors[0].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(empty_encoding.errors[1].code, "unexpected-end-tag")
+  assert_eq(empty_encoding.errors[2].code, "unexpected-end-tag")
 }
 
 ///|
