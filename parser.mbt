@@ -618,6 +618,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.close_open_heading_element(name, start)
     return
   }
+  if self.handle_select_end_tag(name, start) {
+    return
+  }
   if name != "" {
     self.pop_until(name, start)
   }
@@ -795,12 +798,19 @@ fn Parser::has_open_element(self : Parser, name : String) -> Bool {
 }
 
 ///|
-fn Parser::close_current_element_if_name(self : Parser, name : String) -> Unit {
+fn Parser::pop_current_element_if_name(self : Parser, name : String) -> Bool {
   match self.stack.last() {
-    Some(node) if node.kind == Element && node.name == name =>
+    Some(node) if node.kind == Element && node.name == name => {
       ignore(self.stack.pop())
-    _ => ()
+      true
+    }
+    _ => false
   }
+}
+
+///|
+fn Parser::close_current_element_if_name(self : Parser, name : String) -> Unit {
+  ignore(self.pop_current_element_if_name(name))
 }
 
 ///|
@@ -808,6 +818,43 @@ fn Parser::close_open_select_item(self : Parser, name : String) -> Unit {
   self.close_current_element_if_name("option")
   if name == "optgroup" && self.has_open_element("select") {
     self.close_current_element_if_name("optgroup")
+  }
+}
+
+///|
+fn Parser::handle_select_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  match name {
+    "optgroup" =>
+      if self.has_open_element("select") {
+        ignore(self.pop_current_element_if_name("option"))
+        if !self.pop_current_element_if_name("optgroup") {
+          self.error_at("unexpected-end-tag-in-select", start)
+        }
+        true
+      } else {
+        false
+      }
+    "option" =>
+      if self.has_open_element("select") {
+        if !self.pop_current_element_if_name("option") {
+          self.error_at("unexpected-end-tag-in-select", start)
+        }
+        true
+      } else {
+        false
+      }
+    "select" =>
+      if self.has_open_element("select") {
+        ignore(self.close_open_element("select"))
+        true
+      } else {
+        false
+      }
+    _ => false
   }
 }
 
@@ -967,6 +1014,11 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if start_tag_closes_p(name) {
         self.close_open_p_element()
+      }
+      if name == "select" && self.has_open_element("select") {
+        self.error_at("unexpected-select-in-select", start)
+        ignore(self.close_open_element("select"))
+        return
       }
       if name == "li" {
         self.close_open_list_item()

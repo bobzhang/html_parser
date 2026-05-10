@@ -54,6 +54,10 @@ JustHTML from Python to MoonBit.
   scope; a nested `<ul>` or `<ol>` terminates that search and must not close the
   parent list item. The same pattern applies to `<dt>`/`<dd>` in definition
   scope, where a nested `<dl>` terminates the search.
+- `<select>` parsing has its own insertion-mode errors. A nested `<select>`
+  closes the current select and reports `unexpected-select-in-select`; stray
+  `</option>`/`</optgroup>` inside a select use
+  `unexpected-end-tag-in-select`, not the generic unexpected-end-tag code.
 - Serializing `script`/`style` text nodes has a security edge case, especially
   for programmatically-created trees: neutralize matching `</script` or
   `</style` sequences only when the tag name is followed by EOF, HTML

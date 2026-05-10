@@ -1921,6 +1921,34 @@ test "parser closes repeated option and select optgroup starts" {
     groups.to_html(pretty=false),
     "<select><optgroup><option>one</option></optgroup><optgroup><option>two</option></optgroup></select>",
   )
+  let nested_select = @html_parser.parse_fragment(
+    "<select><select><option>x</select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_select.to_html(pretty=false),
+    "<select></select><option>x</option>",
+  )
+  assert_eq(nested_select.errors.length(), 2)
+  assert_eq(nested_select.errors[0].code, "unexpected-select-in-select")
+  assert_eq(nested_select.errors[1].code, "unexpected-end-tag")
+  let stray_group = @html_parser.parse_fragment(
+    "<select><option>1</option></optgroup></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    stray_group.to_html(pretty=false),
+    "<select><option>1</option></select>",
+  )
+  assert_eq(stray_group.errors.length(), 1)
+  assert_eq(stray_group.errors[0].code, "unexpected-end-tag-in-select")
+  let stray_option = @html_parser.parse_fragment(
+    "<select></option></select>",
+    collect_errors=true,
+  )
+  assert_eq(stray_option.to_html(pretty=false), "<select></select>")
+  assert_eq(stray_option.errors.length(), 1)
+  assert_eq(stray_option.errors[0].code, "unexpected-end-tag-in-select")
 }
 
 ///|
