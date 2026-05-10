@@ -925,7 +925,7 @@ fn Parser::handle_template_table_context_start_tag(
     return true
   }
   if name == "caption" {
-    let node = element("caption", attrs~)
+    let node = self.node_with_origin(element("caption", attrs~), start)
     self.current_node().append_child(node)
     self.stack.push(node)
     self.template_table_context_mode = false
@@ -949,7 +949,7 @@ fn Parser::handle_template_table_context_start_tag(
     return true
   }
   if name == "tbody" || name == "tfoot" || name == "thead" {
-    let node = element(name, attrs~)
+    let node = self.node_with_origin(element(name, attrs~), start)
     self.current_node().append_child(node)
     self.stack.push(node)
     self.template_table_context_mode = false
@@ -962,11 +962,15 @@ fn Parser::handle_template_table_context_start_tag(
     if name == "td" || name == "th" {
       self.error_at("unexpected-cell-in-table-body", start)
     }
-    let row = element("tr")
+    let row = if name == "tr" {
+      self.node_with_origin(element("tr"), start)
+    } else {
+      element("tr")
+    }
     section.append_child(row)
     self.stack.push(row)
     if name == "td" || name == "th" {
-      let cell = element(name, attrs~)
+      let cell = self.node_with_origin(element(name, attrs~), start)
       row.append_child(cell)
       self.stack.push(cell)
     }
