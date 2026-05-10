@@ -1124,6 +1124,31 @@ test "document parser reports missing initial doctype" {
   guard start.errors[0].column is Some(5) else {
     fail("expected start tag doctype error at tag close")
   }
+  let stray_template = @html_parser.parse("</template>", collect_errors=true)
+  assert_eq(
+    stray_template.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  assert_eq(stray_template.errors.length(), 2)
+  assert_eq(stray_template.errors[0].code, "expected-doctype-but-got-end-tag")
+  assert_eq(stray_template.errors[1].code, "unexpected-end-tag-before-html")
+  guard stray_template.errors[1].column is Some(11) else {
+    fail("expected before-html end tag error at tag close")
+  }
+  let stray_html = @html_parser.parse("</html>", collect_errors=true)
+  assert_eq(stray_html.errors.length(), 1)
+  assert_eq(stray_html.errors[0].code, "expected-doctype-but-got-end-tag")
+  let stray_br = @html_parser.parse("</br>", collect_errors=true)
+  assert_eq(
+    stray_br.to_html(pretty=false),
+    "<html><head></head><body><br></body></html>",
+  )
+  assert_eq(stray_br.errors.length(), 2)
+  assert_eq(stray_br.errors[0].code, "expected-doctype-but-got-end-tag")
+  assert_eq(stray_br.errors[1].code, "unexpected-end-tag")
+  guard stray_br.errors[1].column is Some(5) else {
+    fail("expected before-html br error at tag close")
+  }
   let after_comment = @html_parser.parse("<!--c--><div>x", collect_errors=true)
   assert_eq(
     after_comment.to_html(pretty=false),

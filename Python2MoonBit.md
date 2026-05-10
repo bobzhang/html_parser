@@ -446,6 +446,10 @@ JustHTML from Python to MoonBit.
 - Select insertion mode has element-specific recovery. Some starts, such as
   `aside`, are parse-error tokens that should be ignored while their following
   text still belongs to the open `select`.
+- Before the html element exists, end tags use different error codes from
+  normal body-mode end tags. Ignore `</html>`, `</head>`, and `</body>` after
+  the initial doctype error; recover `</br>` as a `br`; report
+  `unexpected-end-tag-before-html` for other names.
 - A function receiving an already optional value, such as a stored `String?`,
   should usually take a normal `arg : String?` parameter. Do not use an
   optional labeled parameter when the caller needs to pass `None` or `Some(...)`

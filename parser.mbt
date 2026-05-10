@@ -9,6 +9,7 @@ priv struct Parser {
   stack : Array[Node]
   mut form_element : Node?
   mut frameset_ok : Bool
+  mut before_html_phase : Bool
   mut after_frameset : Bool
   mut after_frameset_ignored_depth : Int
   foster_parented_start_error_nodes : Array[Node]
@@ -44,6 +45,7 @@ fn Parser::new(
     stack: [root],
     form_element: None,
     frameset_ok: root.kind == Document,
+    before_html_phase: root.kind == Document,
     after_frameset: false,
     after_frameset_ignored_depth: 0,
     foster_parented_start_error_nodes: [],
@@ -122,6 +124,9 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   }
   if cleaned.is_empty() {
     return
+  }
+  if text_has_non_ascii_whitespace(cleaned) {
+    self.before_html_phase = false
   }
   if self.current_is_disabled_head_noscript() &&
     text_has_non_ascii_whitespace(cleaned) {
@@ -2141,6 +2146,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.error_at_eof("eof-in-tag")
     return
   }
+  if self.handle_before_html_end_tag(name, self.pos - 1) {
+    return
+  }
   if self.handle_foreign_content_end_tag(name, start) {
     return
   }
@@ -2247,6 +2255,42 @@ fn Parser::fragment_end_tag_is_ignored(
     "html" => true
     "body" => !self.has_open_element("select")
     _ => false
+  }
+}
+
+///|
+fn Parser::document_has_element_child(self : Parser) -> Bool {
+  for child in self.root.children {
+    if child.kind == Element {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn Parser::handle_before_html_end_tag(
+  self : Parser,
+  name : StringView,
+  error_pos : Int,
+) -> Bool {
+  if !self.before_html_phase ||
+    self.is_fragment_parser() ||
+    self.document_has_element_child() {
+    return false
+  }
+  self.before_html_phase = false
+  match name {
+    "html" | "head" | "body" => true
+    "br" => {
+      self.error_at("unexpected-end-tag", error_pos)
+      self.insert_body_mode_node(element("br"))
+      true
+    }
+    _ => {
+      self.error_at("unexpected-end-tag-before-html", error_pos)
+      true
+    }
   }
 }
 
@@ -3460,6 +3504,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at_eof("eof-in-tag")
         return
       }
+      self.before_html_phase = false
       if self.handle_foreign_content_start_tag(name, attrs, self_closing, start) {
         return
       }
