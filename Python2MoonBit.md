@@ -440,6 +440,8 @@ JustHTML from Python to MoonBit.
   not normal body parsing. Allow only head-safe start tags such as `link`,
   `meta`, and `style`; for most other starts or non-whitespace text, report the
   recovery error, pop `noscript`, and let the same token land in body mode.
+  Character runs need a split: leading ASCII whitespace stays in the head after
+  `noscript`, while the non-whitespace suffix is reprocessed into the body.
 - Repeated `<html>` start tags are not normal element insertion. Once the
   document html element exists, report `unexpected-start-tag`, merge only
   missing attributes onto the existing html node, and drop the token.

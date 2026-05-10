@@ -5898,6 +5898,32 @@ test "parser handles disabled scripting noscript in head" {
   assert_eq(paragraph.errors[0].code, "expected-doctype-but-got-start-tag")
   assert_eq(paragraph.errors[1].code, "unexpected-start-tag")
   assert_eq(paragraph.errors[2].code, "unexpected-end-tag")
+  let text = @html_parser.parse(
+    "<head><noscript>x</noscript>",
+    collect_errors=true,
+    scripting_enabled=false,
+  )
+  assert_eq(
+    text.to_html(pretty=false),
+    "<html><head><noscript></noscript></head><body>x</body></html>",
+  )
+  assert_eq(text.errors.length(), 3)
+  assert_eq(text.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(text.errors[1].code, "unexpected-start-tag")
+  assert_eq(text.errors[2].code, "unexpected-end-tag")
+  let leading_space = @html_parser.parse(
+    "<head><noscript> x</noscript>",
+    collect_errors=true,
+    scripting_enabled=false,
+  )
+  assert_eq(
+    leading_space.to_html(pretty=false),
+    "<html><head><noscript></noscript> </head><body>x</body></html>",
+  )
+  assert_eq(leading_space.errors.length(), 3)
+  assert_eq(leading_space.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(leading_space.errors[1].code, "unexpected-start-tag")
+  assert_eq(leading_space.errors[2].code, "unexpected-end-tag")
   let allowed = @html_parser.parse(
     "<head><noscript><link rel=x></noscript><p>y",
     collect_errors=true,

@@ -117,7 +117,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if raw.is_empty() {
     return
   }
-  let cleaned = if self.current_node_uses_foreign_content_for_text() {
+  let mut cleaned = if self.current_node_uses_foreign_content_for_text() {
     self.clean_foreign_content_text(raw, start)
   } else {
     self.remove_null_characters(raw, start)
@@ -130,8 +130,24 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   }
   if self.current_is_disabled_head_noscript() &&
     text_has_non_ascii_whitespace(cleaned) {
-    self.error_at("unexpected-start-tag", start)
-    self.pop_disabled_head_noscript_for_reprocess()
+    let whitespace = leading_ascii_whitespace(cleaned)
+    self.error_at("unexpected-start-tag", start + whitespace.length())
+    ignore(self.stack.pop())
+    if !whitespace.is_empty() {
+      let data = if self.xml_coercion {
+        coerce_text_for_xml(whitespace[:])
+      } else {
+        whitespace
+      }
+      self.current_node().append_child(text(data))
+    }
+    if self.current_is_document_head() {
+      ignore(self.stack.pop())
+    }
+    match cleaned[:].get_view(start=whitespace.length(), end=cleaned.length()) {
+      Some(rest) => cleaned = rest.to_owned()
+      None => return
+    }
   }
   if self.current_is_document_head() && text_has_non_ascii_whitespace(cleaned) {
     ignore(self.stack.pop())
