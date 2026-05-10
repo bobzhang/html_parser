@@ -132,6 +132,10 @@ JustHTML from Python to MoonBit.
   must survive normalization. HTML integration points such as SVG
   `foreignObject`/`desc`/`title` and MathML `annotation-xml` with HTML
   encodings switch descendants back into the HTML namespace.
+- Foreign-content breakout errors are reported at the offending start tag's
+  close bracket in the Python reference, not at the `<`. Keep the scanner's
+  `tag_close_pos` available when dispatching foreign start tags so
+  `unexpected-html-element-in-foreign-content` lines up with fixtures.
 - Keep fixtures for the long-tail SVG adjustment table. Names such as
   `altGlyphDef`, `animateMotion`, `animateTransform`, `feMorphology`,
   `fePointLight`, `feSpecularLighting`, `glyphRef`, and `textPath` are easy to

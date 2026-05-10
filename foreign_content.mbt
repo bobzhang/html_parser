@@ -420,13 +420,13 @@ fn Parser::handle_foreign_content_start_tag(
   name : String,
   attrs : Map[String, String?],
   self_closing : Bool,
-  start : Int,
+  tag_close_pos : Int,
 ) -> Bool {
   if !self.current_node_uses_foreign_content_for_start(name) {
     return false
   }
   if foreign_start_breaks_out(name, attrs) {
-    self.error_at("unexpected-html-element-in-foreign-content", start)
+    self.error_at("unexpected-html-element-in-foreign-content", tag_close_pos)
     self.pop_until_html_or_integration_point()
     return false
   }

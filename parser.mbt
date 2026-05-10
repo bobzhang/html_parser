@@ -4078,7 +4078,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       let tag_close_pos = self.pos - 1
       self.flush_deferred_initial_doctype_error()
       self.before_html_phase = false
-      if self.handle_foreign_content_start_tag(name, attrs, self_closing, start) {
+      if self.handle_foreign_content_start_tag(
+          name, attrs, self_closing, tag_close_pos,
+        ) {
         return
       }
       if self.handle_fragment_shell_start_tag(name, attrs, start) {
