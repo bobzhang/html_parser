@@ -8,6 +8,8 @@ import {
 // Values
 pub fn comment(StringView) -> Node
 
+pub fn css_preset_text() -> Array[String]
+
 pub fn default_document_sanitization_policy() -> SanitizationPolicy
 
 pub fn default_sanitization_policy() -> SanitizationPolicy

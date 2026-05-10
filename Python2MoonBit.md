@@ -343,6 +343,10 @@ JustHTML from Python to MoonBit.
   with `category="security"`, and make `Raise` use a typed `HtmlError` variant
   so callers can handle sanitizer failures with `try?` instead of string
   matching.
+- Python constants such as `CSS_PRESET_TEXT` often contain immutable
+  collections. MoonBit `Array` values are mutable, and public uppercase values
+  are not idiomatic, so expose presets as lowercase functions returning fresh
+  arrays. That keeps callers from mutating shared sanitizer defaults.
 - Python's parser defaults to sanitizing; this staged MoonBit port keeps parser
   defaults unsanitized while raw tree-builder parity tests are still being
   migrated. Because MoonBit optional arguments do not distinguish omitted

@@ -183,6 +183,15 @@ pub fn default_document_sanitization_policy() -> SanitizationPolicy {
 }
 
 ///|
+pub fn css_preset_text() -> Array[String] {
+  [
+    "background-color", "color", "font-size", "font-style", "font-weight", "letter-spacing",
+    "line-height", "text-align", "text-decoration", "text-transform", "white-space",
+    "word-break", "word-spacing", "word-wrap",
+  ]
+}
+
+///|
 fn node_is_sanitize_container(node : Node) -> Bool {
   match node.kind {
     Document | Fragment => true
