@@ -1053,11 +1053,13 @@ fn start_tag_closes_p(name : StringView) -> Bool {
     | "nav"
     | "ol"
     | "p"
+    | "plaintext"
     | "pre"
     | "search"
     | "section"
     | "table"
-    | "ul" => true
+    | "ul"
+    | "xmp" => true
     _ => false
   }
 }

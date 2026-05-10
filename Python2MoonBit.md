@@ -49,6 +49,8 @@ JustHTML from Python to MoonBit.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.
+  Body-mode start handling is still tag-specific: `<xmp>` and `<plaintext>`
+  close an open `<p>` first, but `<title>` and `<textarea>` do not.
 - Scope-sensitive implied end tags need the same terminators as Python's tree
   builder. For example, a new `<li>` closes an earlier `<li>` only in list-item
   scope; a nested `<ul>` or `<ol>` terminates that search and must not close the
