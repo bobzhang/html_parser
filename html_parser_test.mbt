@@ -5925,6 +5925,32 @@ test "tokenize handles selected bogus comment fixture cases" {
   guard invalid_open.errors[0].column is Some(2) else {
     fail("expected invalid tag-open error at second character")
   }
+  let invalid_entity = @html_parser.tokenize("<&notit", collect_errors=true)
+  guard invalid_entity.tokens[0] is @html_parser.HtmlToken::Characters("<¬it") else {
+    fail("expected invalid tag-open entity recovery")
+  }
+  assert_eq(invalid_entity.errors.length(), 2)
+  assert_eq(
+    invalid_entity.errors[0].code,
+    "invalid-first-character-of-tag-name",
+  )
+  assert_eq(
+    invalid_entity.errors[1].code,
+    "missing-semicolon-after-character-reference",
+  )
+  let xml_question = @html_parser.tokenize(
+    "<?a--b>",
+    collect_errors=true,
+    xml_coercion=true,
+  )
+  guard xml_question.tokens[0] is @html_parser.HtmlToken::CommentToken("?a- -b") else {
+    fail("expected XML-coerced bogus comment")
+  }
+  assert_eq(xml_question.errors.length(), 1)
+  assert_eq(
+    xml_question.errors[0].code,
+    "unexpected-question-mark-instead-of-tag-name",
+  )
 }
 
 ///|
