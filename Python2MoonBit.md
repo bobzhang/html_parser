@@ -82,7 +82,9 @@ JustHTML from Python to MoonBit.
   mode. When table-internal tags are reprocessed outside an actual table, most
   starts are ignored while preserving text children; `<caption>` reports
   `unexpected-start-tag`, while `<td>`, `<tr>`, row groups, and `<colgroup>`
-  report `unexpected-start-tag-ignored`.
+  report `unexpected-start-tag-ignored`. `<col>` is context-sensitive:
+  document body mode ignores it outside tables, but fragment body mode keeps it
+  as a void element.
 - Other select-mode starts report but stay inside the select: `<hr>` first
   closes the current `option`/`optgroup`, void-like starts such as `<br>` and
   `<img>` are inserted without pushing, and common containers such as `<div>`

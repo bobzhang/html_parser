@@ -1253,6 +1253,14 @@ fn table_start_tag_is_ignored_outside_table(name : StringView) -> Bool {
 }
 
 ///|
+fn Parser::col_start_tag_is_ignored_outside_table(
+  self : Parser,
+  name : StringView,
+) -> Bool {
+  name == "col" && !self.is_fragment_parser() && !self.has_open_element("table")
+}
+
+///|
 fn Parser::close_open_table_cell(self : Parser) -> Unit {
   if self.has_open_element("td") {
     ignore(self.close_open_element("td"))
@@ -1453,6 +1461,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if !self.has_open_element("table") &&
         table_start_tag_is_ignored_outside_table(name) {
+        self.error_at("unexpected-start-tag-ignored", start)
+        return
+      }
+      if self.col_start_tag_is_ignored_outside_table(name) {
         self.error_at("unexpected-start-tag-ignored", start)
         return
       }
