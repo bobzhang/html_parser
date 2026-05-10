@@ -603,6 +603,79 @@ test "sanitize_dom can collect and raise unsafe findings" {
 }
 
 ///|
+test "sanitize_dom raise mode reports dangerous attributes and urls" {
+  let attr_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": ["onclick"] },
+    unsafe_handling=Raise,
+  )
+  let attr_fragment = @html_parser.parse_fragment(
+    "<p onclick='alert(1)'>x</p>",
+    sanitize=false,
+  )
+  let attr_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    attr_fragment.root,
+    policy=attr_policy,
+  )
+  match attr_result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(
+        message, "Unsafe attribute 'onclick' on <p> was dropped because it is not allowed",
+      )
+    _ => fail("expected dangerous attribute to raise UnsafeHtml")
+  }
+
+  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
+    @html_parser.UrlPolicyRule::new(
+      "a",
+      "href",
+      @html_parser.UrlRule::new(allowed_schemes=["https"]),
+    ),
+  ])
+  let link_policy = @html_parser.SanitizationPolicy::new(
+    ["a"],
+    allowed_attributes={ "a": ["href"] },
+    unsafe_handling=Raise,
+    url_policy~,
+  )
+  let link_fragment = @html_parser.parse_fragment(
+    "<a href='javascript:alert(1)'>x</a>",
+    sanitize=false,
+  )
+  let link_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    link_fragment.root,
+    policy=link_policy,
+  )
+  match link_result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(message, "Unsafe attribute 'href' on <a> was dropped")
+    _ => fail("expected unsafe URL to raise UnsafeHtml")
+  }
+
+  let meta_policy = @html_parser.SanitizationPolicy::new(
+    ["meta"],
+    allowed_attributes={ "meta": ["http-equiv", "content"] },
+    drop_content_tags=[],
+    unsafe_handling=Raise,
+  )
+  let meta_fragment = @html_parser.parse_fragment(
+    "<meta http-equiv='refresh' content='0;url=javascript:alert(1)'>",
+    sanitize=false,
+  )
+  let meta_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    meta_fragment.root,
+    policy=meta_policy,
+  )
+  match meta_result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(
+        message, "Unsafe URL in attribute 'content' on <meta> refresh was dropped",
+      )
+    _ => fail("expected meta refresh content to raise UnsafeHtml")
+  }
+}
+
+///|
 test "sanitize_dom raises for disallowed standalone root" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["p"],
