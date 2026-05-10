@@ -3476,12 +3476,17 @@ test "query treats malformed selector pieces as no match" {
   assert_eq(doc.query("> p").length(), 0)
   assert_eq(doc.query("section > > p").length(), 0)
   assert_eq(doc.query("section,, p").length(), 2)
+  assert_eq(doc.query("p, p[").length(), 0)
+  assert_eq(doc.query("p, :hover").length(), 0)
+  assert_eq(doc.query("p, > a").length(), 0)
+  assert_eq(doc.query("p, .").length(), 0)
   guard doc.query_one("p") is Some(paragraph) else {
     fail("expected paragraph")
   }
   assert_eq(@html_parser.matches(paragraph, "p["), false)
   assert_eq(@html_parser.matches(paragraph, "p."), false)
   assert_eq(@html_parser.matches(paragraph, "> p"), false)
+  assert_eq(@html_parser.matches(paragraph, "p, p["), false)
 }
 
 ///|

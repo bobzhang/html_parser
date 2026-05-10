@@ -328,7 +328,10 @@ JustHTML from Python to MoonBit.
   attribute brackets and quoted attribute values. Python's parser ignores empty
   selector-list entries after a valid first selector (`p,`, `p,,a`), but a
   leading comma is still an empty selector and should no-match in MoonBit's
-  non-throwing API.
+  non-throwing API. Malformed non-empty entries such as `p, p[` or `p, > a`
+  should invalidate the whole selector list; otherwise the non-throwing port
+  would accidentally return the earlier valid selector's matches instead of
+  preserving Python's parse-before-match behavior.
 - Descendant selector matching is easiest to implement right-to-left: first
   match the target node, then walk parent links to satisfy each ancestor
   selector. Split descendant whitespace only outside attribute brackets and
