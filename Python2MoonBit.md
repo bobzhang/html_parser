@@ -62,6 +62,10 @@ JustHTML from Python to MoonBit.
   of separate queries. That preserves document order and prevents duplicate
   nodes for repeated entries such as `p, p`; split commas only outside
   attribute brackets and quoted attribute values.
+- Descendant selector matching is easiest to implement right-to-left: first
+  match the target node, then walk parent links to satisfy each ancestor
+  selector. Split descendant whitespace only outside attribute brackets and
+  quoted attribute values.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

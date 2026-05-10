@@ -878,6 +878,81 @@ fn selector_list_part(
 }
 
 ///|
+fn split_descendant_selector(selector : StringView) -> Array[StringView]? {
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return None
+  }
+  let parts : Array[StringView] = []
+  let mut start = 0
+  let mut pos = 0
+  let mut bracket_depth = 0
+  let mut quote : Char? = None
+  while pos < selector.length() {
+    match selector.get_char(pos) {
+      Some(ch) => {
+        match quote {
+          Some(q) => if ch == q { quote = None }
+          None =>
+            if bracket_depth > 0 && (ch == '"' || ch == '\'') {
+              quote = Some(ch)
+            } else if ch == '[' {
+              bracket_depth += 1
+            } else if ch == ']' && bracket_depth > 0 {
+              bracket_depth -= 1
+            } else if bracket_depth == 0 && is_html_whitespace_char(ch) {
+              match selector_list_part(selector, start, pos) {
+                Some(part) => parts.push(part)
+                None => ()
+              }
+              start = pos + ch.utf16_len()
+            }
+        }
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  match selector_list_part(selector, start, selector.length()) {
+    Some(part) => parts.push(part)
+    None => ()
+  }
+  if parts.is_empty() {
+    None
+  } else {
+    Some(parts)
+  }
+}
+
+///|
+fn matches_complex_selector(node : Node, selector : StringView) -> Bool {
+  guard split_descendant_selector(selector) is Some(parts) else { return false }
+  let last_index = parts.length() - 1
+  if !matches_simple_selector(node, parts[last_index]) {
+    return false
+  }
+  let mut needed = last_index - 1
+  let mut cursor = node.parent
+  while needed >= 0 {
+    let wanted = parts[needed]
+    let mut found = false
+    while !found {
+      match cursor {
+        Some(ancestor) => {
+          cursor = ancestor.parent
+          if matches_simple_selector(ancestor, wanted) {
+            found = true
+          }
+        }
+        None => return false
+      }
+    }
+    needed -= 1
+  }
+  true
+}
+
+///|
 fn matches_selector_list(node : Node, selector : StringView) -> Bool {
   let selector = selector.trim()
   if selector.is_empty() {
@@ -904,7 +979,7 @@ fn matches_selector_list(node : Node, selector : StringView) -> Bool {
               guard selector_list_part(selector, start, pos) is Some(part) else {
                 return false
               }
-              if matches_simple_selector(node, part) {
+              if matches_complex_selector(node, part) {
                 matched = true
               }
               start = pos + ch.utf16_len()
@@ -918,7 +993,7 @@ fn matches_selector_list(node : Node, selector : StringView) -> Bool {
   guard selector_list_part(selector, start, selector.length()) is Some(part) else {
     return false
   }
-  matched || matches_simple_selector(node, part)
+  matched || matches_complex_selector(node, part)
 }
 
 ///|
