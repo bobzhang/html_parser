@@ -344,6 +344,20 @@ test "pretty serializer keeps comment child runs compact" {
 }
 
 ///|
+test "pretty serializer filters whitespace-only fragments" {
+  let whitespace = @html_parser.fragment(children=[@html_parser.text("   ")])
+  assert_eq(whitespace.to_html(pretty=true), "")
+  let visible = @html_parser.fragment(children=[@html_parser.text("  hi  ")])
+  assert_eq(visible.to_html(pretty=true), "hi")
+  let inner_empty_lines = @html_parser.element("div", children=[
+    @html_parser.fragment(children=[@html_parser.text("  ")]),
+    @html_parser.text(" "),
+    @html_parser.fragment(children=[@html_parser.text("\n")]),
+  ])
+  assert_eq(inner_empty_lines.to_html(pretty=true), "<div> </div>")
+}
+
+///|
 test "builder preserves adjusted foreign element names" {
   let gradient = @html_parser.element("linearGradient", ns="svg")
   assert_eq(gradient.name(), "linearGradient")

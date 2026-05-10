@@ -386,7 +386,10 @@ JustHTML from Python to MoonBit.
   Do not compact when an inline wrapper contains a layout/block descendant. In
   the multiline fallback, trim rendered text-node lines and skip
   whitespace-only text nodes so indentation does not preserve source formatting
-  gaps as visible text.
+  gaps as visible text. Pretty `DocumentFragment` children need the same
+  filtering: a whitespace-only fragment renders empty, and an element whose
+  child lines all render empty falls back to compact children rather than
+  emitting an empty multiline wrapper.
 - The html5lib tree-test serializer is line-oriented and does not emit wrapper
   lines for `#document` or `#document-fragment`. Build it as an array of lines
   joined by `\n` so it has no trailing newline, and sort attribute lines by

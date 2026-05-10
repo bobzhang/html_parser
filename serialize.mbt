@@ -574,7 +574,23 @@ fn element_has_comment_child(node : Node) -> Bool {
 }
 
 ///|
-fn node_to_html_pretty_compact_children(node : Node, quote : Char) -> String {
+fn node_to_html_pretty_compact_part(
+  node : Node,
+  quote : Char,
+  indent_size : Int,
+) -> String {
+  match node.kind {
+    Document | Fragment => node_to_html_pretty(node, 0, indent_size, quote)
+    _ => node_to_html_compact(node, quote)
+  }
+}
+
+///|
+fn node_to_html_pretty_compact_children(
+  node : Node,
+  quote : Char,
+  indent_size : Int,
+) -> String {
   let out = StringBuilder::new()
   out.write_string(serialize_start_tag(node, quote))
   let child_count = node.children.length()
@@ -593,7 +609,10 @@ fn node_to_html_pretty_compact_children(node : Node, quote : Char) -> String {
           out.write_string(escape_text(normalized))
         }
       }
-      _ => out.write_string(node_to_html_compact(child, quote))
+      _ =>
+        out.write_string(
+          node_to_html_pretty_compact_part(child, quote, indent_size),
+        )
     }
   }
   out.write_string("</")
@@ -619,6 +638,14 @@ fn node_to_html_pretty_child_line(
         Some(" ".repeat(indent) + escape_text(trimmed))
       }
     }
+    Document | Fragment => {
+      let rendered = node_to_html_pretty(node, indent, indent_size, quote)
+      if rendered.is_empty() {
+        None
+      } else {
+        Some(rendered)
+      }
+    }
     _ => Some(node_to_html_pretty(node, indent, indent_size, quote))
   }
 }
@@ -634,12 +661,24 @@ fn node_to_html_pretty(
     Document | Fragment => {
       let parts : Array[String] = []
       for child in node.children {
-        parts.push(node_to_html_pretty(child, indent, indent_size, quote))
+        match
+          node_to_html_pretty_child_line(child, indent, indent_size, quote) {
+          Some(line) => parts.push(line)
+          None => ()
+        }
       }
       parts.join("\n")
     }
-    Text | Comment | Doctype =>
-      " ".repeat(indent) + node_to_html_compact(node, quote)
+    Text => {
+      let normalized = normalize_formatting_whitespace(node.data[:])
+      let trimmed = normalized[:].trim()
+      if trimmed.is_empty() {
+        ""
+      } else {
+        " ".repeat(indent) + escape_text(trimmed)
+      }
+    }
+    Comment | Doctype => " ".repeat(indent) + node_to_html_compact(node, quote)
     Element =>
       if node.children.is_empty() || is_void_element(node.name) {
         " ".repeat(indent) + node_to_html_compact(node, quote)
@@ -655,32 +694,41 @@ fn node_to_html_pretty(
         out.write_char('>')
         out.to_string()
       } else if element_has_compact_inline_children(node) {
-        " ".repeat(indent) + node_to_html_pretty_compact_children(node, quote)
+        " ".repeat(indent) +
+        node_to_html_pretty_compact_children(node, quote, indent_size)
       } else if element_has_comment_child(node) {
-        " ".repeat(indent) + node_to_html_pretty_compact_children(node, quote)
+        " ".repeat(indent) +
+        node_to_html_pretty_compact_children(node, quote, indent_size)
       } else {
         let out = StringBuilder::new()
         out.write_string(" ".repeat(indent))
         out.write_string(serialize_start_tag(node, quote))
         let child_indent = indent + indent_size
+        let mut wrote_child = false
         for child in node.children {
           match
             node_to_html_pretty_child_line(
               child, child_indent, indent_size, quote,
             ) {
             Some(line) => {
+              wrote_child = true
               out.write_char('\n')
               out.write_string(line)
             }
             None => ()
           }
         }
-        out.write_char('\n')
-        out.write_string(" ".repeat(indent))
-        out.write_string("</")
-        out.write_string(node.name)
-        out.write_char('>')
-        out.to_string()
+        if wrote_child {
+          out.write_char('\n')
+          out.write_string(" ".repeat(indent))
+          out.write_string("</")
+          out.write_string(node.name)
+          out.write_char('>')
+          out.to_string()
+        } else {
+          " ".repeat(indent) +
+          node_to_html_pretty_compact_children(node, quote, indent_size)
+        }
       }
   }
 }
