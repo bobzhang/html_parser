@@ -55,7 +55,9 @@ JustHTML from Python to MoonBit.
   combined MoonBit parser still needs to preserve their error ordering. Initial
   doctype recovery after bogus markup is one example: tokenizer errors for the
   bogus token come first, then the deferred initial doctype error must be
-  flushed before the real start/end tag is handled by the tree builder.
+  flushed before the real start/end tag is handled by the tree builder. The
+  same ordering applies to invalid `<...` openers at the start of a document:
+  report the invalid tag opener before the missing-doctype character error.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.

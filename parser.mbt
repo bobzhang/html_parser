@@ -1822,11 +1822,7 @@ fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
             let error = self.make_error_at(
               "expected-doctype-but-got-chars", pos,
             )
-            if defer_doctype {
-              return Some(error)
-            }
-            self.errors.push(error)
-            return None
+            return Some(error)
           }
         }
       Some(_) => {

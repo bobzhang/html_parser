@@ -1531,6 +1531,14 @@ test "document parser reports missing initial doctype" {
   guard empty_end.errors[1].column is Some(3) else {
     fail("expected doctype EOF after empty end tag")
   }
+  let invalid_open = @html_parser.parse("<*foo>", collect_errors=true)
+  assert_eq(
+    invalid_open.to_html(pretty=false),
+    "<html><head></head><body>&lt;*foo&gt;</body></html>",
+  )
+  assert_eq(invalid_open.errors.length(), 2)
+  assert_eq(invalid_open.errors[0].code, "invalid-first-character-of-tag-name")
+  assert_eq(invalid_open.errors[1].code, "expected-doctype-but-got-chars")
 }
 
 ///|
