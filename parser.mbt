@@ -3935,6 +3935,7 @@ fn Parser::decoded_special_text(
   name : StringView,
   raw : StringView,
   start : Int,
+  error_pos : Int,
 ) -> String {
   let (raw, offset) = if name == "textarea" {
     strip_one_initial_lf_with_offset(raw)
@@ -3943,7 +3944,11 @@ fn Parser::decoded_special_text(
   }
   let raw = self.replace_null_characters(raw, start + offset)
   let data = if special_text_decodes_entities(name) {
-    decode_entities(raw, in_attribute=false)
+    let decoded = decode_entities_with_errors(raw, in_attribute=false)
+    for error in decoded.errors {
+      self.error_at(error.code, error_pos)
+    }
+    decoded.data
   } else {
     normalize_newlines(raw)
   }
@@ -4545,6 +4550,19 @@ fn find_matching_end_tag(
 }
 
 ///|
+fn matching_end_tag_error_pos(input : StringView, start : Int) -> Int {
+  let mut pos = start
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some('>') => return pos
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  eof_error_pos(input)
+}
+
+///|
 fn Parser::skip_matching_end_tag(self : Parser) -> Unit {
   self.pos += 2
   while !self.is_eof() {
@@ -4570,7 +4588,14 @@ fn Parser::consume_special_element_content(
     match self.input.get_view(start=content_start, end=self.input.length()) {
       Some(view) =>
         parent.append_child(
-          text(self.decoded_special_text(name, view, content_start)),
+          text(
+            self.decoded_special_text(
+              name,
+              view,
+              content_start,
+              eof_error_pos(self.input),
+            ),
+          ),
         )
       None => ()
     }
@@ -4605,10 +4630,13 @@ fn Parser::consume_special_element_content(
   }
   match find_matching_end_tag(self.input, self.pos, name) {
     Some(end_start) => {
+      let error_pos = matching_end_tag_error_pos(self.input, end_start)
       match self.input.get_view(start=content_start, end=end_start) {
         Some(view) =>
           parent.append_child(
-            text(self.decoded_special_text(name, view, content_start)),
+            text(
+              self.decoded_special_text(name, view, content_start, error_pos),
+            ),
           )
         None => ()
       }
@@ -4616,10 +4644,13 @@ fn Parser::consume_special_element_content(
       self.skip_matching_end_tag()
     }
     None => {
+      let error_pos = eof_error_pos(self.input)
       match self.input.get_view(start=content_start, end=self.input.length()) {
         Some(view) =>
           parent.append_child(
-            text(self.decoded_special_text(name, view, content_start)),
+            text(
+              self.decoded_special_text(name, view, content_start, error_pos),
+            ),
           )
         None => ()
       }

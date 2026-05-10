@@ -642,10 +642,15 @@ fn SourceTokenizer::decoded_special_text(
   name : StringView,
   raw : StringView,
   start : Int,
+  error_pos : Int,
 ) -> String {
   let raw = self.replace_special_text_nulls(raw, start)
   let data = if special_text_decodes_entities(name) {
-    decode_entities(raw, in_attribute=false)
+    let decoded = decode_entities_with_errors(raw, in_attribute=false)
+    for error in decoded.errors {
+      self.error_at(error.code, error_pos)
+    }
+    decoded.data
   } else {
     normalize_newlines(raw)
   }
@@ -691,7 +696,14 @@ fn SourceTokenizer::consume_special_text_tokens(
     match self.input.get_view(start=content_start, end=self.input.length()) {
       Some(view) if !view.is_empty() =>
         self.tokens.push(
-          Characters(self.decoded_special_text(name, view, content_start)),
+          Characters(
+            self.decoded_special_text(
+              name,
+              view,
+              content_start,
+              eof_error_pos(self.input),
+            ),
+          ),
         )
       _ => ()
     }
@@ -722,10 +734,13 @@ fn SourceTokenizer::consume_special_text_tokens(
   }
   match find_matching_end_tag(self.input, self.pos, name) {
     Some(end_start) => {
+      let error_pos = matching_end_tag_error_pos(self.input, end_start)
       match self.input.get_view(start=content_start, end=end_start) {
         Some(view) if !view.is_empty() =>
           self.tokens.push(
-            Characters(self.decoded_special_text(name, view, content_start)),
+            Characters(
+              self.decoded_special_text(name, view, content_start, error_pos),
+            ),
           )
         _ => ()
       }
@@ -733,10 +748,13 @@ fn SourceTokenizer::consume_special_text_tokens(
       self.parse_end_tag()
     }
     None => {
+      let error_pos = eof_error_pos(self.input)
       match self.input.get_view(start=content_start, end=self.input.length()) {
         Some(view) if !view.is_empty() =>
           self.tokens.push(
-            Characters(self.decoded_special_text(name, view, content_start)),
+            Characters(
+              self.decoded_special_text(name, view, content_start, error_pos),
+            ),
           )
         _ => ()
       }
