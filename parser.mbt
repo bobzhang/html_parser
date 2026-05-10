@@ -134,6 +134,14 @@ fn is_table_start_foster_target(name : StringView) -> Bool {
 }
 
 ///|
+fn is_table_or_section_context(name : StringView) -> Bool {
+  match name {
+    "table" | "tbody" | "tfoot" | "thead" => true
+    _ => false
+  }
+}
+
+///|
 fn is_table_internal_start_name(name : StringView) -> Bool {
   match name {
     "caption"
@@ -228,6 +236,62 @@ fn Parser::foster_parent_table_text(
     None => self.root.append_child(fostered)
   }
   true
+}
+
+///|
+fn Parser::current_is_table_or_section_context(self : Parser) -> Bool {
+  let table_index = self.table_context_without_cell_or_caption()
+  if table_index < 0 {
+    return false
+  }
+  let current = self.current_node()
+  current.kind == Element && is_table_or_section_context(current.name)
+}
+
+///|
+fn input_attrs_type_is_hidden(attrs : Map[String, String?]) -> Bool {
+  match attrs.get("type") {
+    Some(Some(value)) => value[:].compare_ignore_ascii_case("hidden") == 0
+    _ => false
+  }
+}
+
+///|
+fn Parser::handle_table_context_hidden_input_or_form_start(
+  self : Parser,
+  name : String,
+  attrs : Map[String, String?],
+  start : Int,
+) -> Bool {
+  if !self.current_is_table_or_section_context() {
+    return false
+  }
+  if name == "input" && input_attrs_type_is_hidden(attrs) {
+    self.error_at("unexpected-hidden-input-in-table", start)
+    self.current_node().append_child(element(name, attrs~))
+    return true
+  }
+  if name == "form" {
+    self.error_at("unexpected-form-in-table", start)
+    if self.form_element is None {
+      let node = element(name, attrs~)
+      self.form_element = Some(node)
+      self.current_node().append_child(node)
+    }
+    return true
+  }
+  false
+}
+
+///|
+fn Parser::report_form_end_tag_table_voodoo(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Unit {
+  if name == "form" && self.current_is_table_or_section_context() {
+    self.error_at("unexpected-end-tag-implies-table-voodoo", start)
+  }
 }
 
 ///|
@@ -916,6 +980,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   if name == "form" {
+    self.report_form_end_tag_table_voodoo(name, start)
     self.handle_form_end_tag(start)
     return
   }
@@ -1866,6 +1931,11 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if self.col_start_tag_is_ignored_outside_table(name) {
         self.error_at("unexpected-start-tag-ignored", start)
+        return
+      }
+      if self.handle_table_context_hidden_input_or_form_start(
+          name, attrs, start,
+        ) {
         return
       }
       if name == "form" && self.form_element is Some(_) {

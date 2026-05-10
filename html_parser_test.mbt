@@ -2680,6 +2680,69 @@ test "parser foster parents table-context start tags" {
 }
 
 ///|
+test "parser handles hidden input and form starts in table context" {
+  let hidden = @html_parser.parse_fragment(
+    "<table><input type=hidden name=x value=y></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    hidden.to_html(pretty=false),
+    "<table><input type=\"hidden\" name=\"x\" value=\"y\"></table>",
+  )
+  assert_eq(hidden.errors.length(), 1)
+  assert_eq(hidden.errors[0].code, "unexpected-hidden-input-in-table")
+  let uppercase_hidden = @html_parser.parse_fragment(
+    "<table><input TYPE=HIDDEN></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    uppercase_hidden.to_html(pretty=false),
+    "<table><input type=\"HIDDEN\"></table>",
+  )
+  assert_eq(uppercase_hidden.errors.length(), 1)
+  assert_eq(uppercase_hidden.errors[0].code, "unexpected-hidden-input-in-table")
+  let ordinary_input = @html_parser.parse_fragment(
+    "<table><input name=x></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    ordinary_input.to_html(pretty=false),
+    "<input name=\"x\"><table></table>",
+  )
+  assert_eq(ordinary_input.errors.length(), 1)
+  assert_eq(ordinary_input.errors[0].code, "foster-parenting-start-tag")
+  let form = @html_parser.parse_fragment(
+    "<table><form id=f></form></table>",
+    collect_errors=true,
+  )
+  assert_eq(form.to_html(pretty=false), "<table><form id=\"f\"></form></table>")
+  assert_eq(form.errors.length(), 3)
+  assert_eq(form.errors[0].code, "unexpected-form-in-table")
+  assert_eq(form.errors[1].code, "unexpected-end-tag-implies-table-voodoo")
+  assert_eq(form.errors[2].code, "unexpected-end-tag")
+  let row_form = @html_parser.parse_fragment(
+    "<table><tr><form id=f></form></tr></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    row_form.to_html(pretty=false),
+    "<form id=\"f\"></form><table><tbody><tr></tr></tbody></table>",
+  )
+  assert_eq(row_form.errors.length(), 0)
+  let stray_form_end = @html_parser.parse_fragment(
+    "<table></form></table>",
+    collect_errors=true,
+  )
+  assert_eq(stray_form_end.to_html(pretty=false), "<table></table>")
+  assert_eq(stray_form_end.errors.length(), 2)
+  assert_eq(
+    stray_form_end.errors[0].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  assert_eq(stray_form_end.errors[1].code, "unexpected-end-tag")
+}
+
+///|
 test "parser ignores table structure starts outside table" {
   let cell = @html_parser.parse_fragment("<td>x</td>", collect_errors=true)
   assert_eq(cell.to_html(pretty=false), "x")
