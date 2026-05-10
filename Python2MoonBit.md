@@ -179,6 +179,12 @@ JustHTML from Python to MoonBit.
 - `ping` and `attributionsrc` are whitespace-separated URL lists. Reuse the
   exact tag/attribute rule for each token, normalize surviving tokens with a
   single space separator, and drop the whole attribute if any token is unsafe.
+- URL proxying is a post-validation handling mode, not a way to bypass URL
+  checks. First validate fragments, protocol-relative rewrites, schemes,
+  hosts, and relative URL permission; only then rewrite the resulting URL
+  through the policy-level or per-rule proxy. Encode the proxied parameter as
+  UTF-8 with query-component safety only (`A-Z`, `a-z`, `0-9`, `-`, `.`, `_`,
+  `~` stay unescaped), so `/`, `:`, `?`, `=`, and `#` are percent-encoded.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside

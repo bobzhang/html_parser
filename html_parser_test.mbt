@@ -523,6 +523,53 @@ test "sanitize_dom applies css url function policy rules" {
 }
 
 ///|
+test "sanitize_dom proxies validated URL values" {
+  let url_policy = @html_parser.UrlPolicy::new(
+    default_handling=UrlProxy,
+    proxy=@html_parser.UrlProxy::new("/proxy"),
+    allow_rules=[
+      @html_parser.UrlPolicyRule::new(
+        "a",
+        "href",
+        @html_parser.UrlRule::new(allowed_schemes=["https"]),
+      ),
+      @html_parser.UrlPolicyRule::new(
+        "img",
+        "srcset",
+        @html_parser.UrlRule::new(allowed_schemes=["https"]),
+      ),
+      @html_parser.UrlPolicyRule::new(
+        "p",
+        "style:background-image",
+        @html_parser.UrlRule::new(
+          allowed_schemes=["https"],
+          proxy=@html_parser.UrlProxy::new("/asset-proxy", param="src"),
+        ),
+      ),
+    ],
+  )
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a", "img", "p"],
+    allowed_attributes={
+      "*": [],
+      "a": ["href"],
+      "img": ["srcset"],
+      "p": ["style"],
+    },
+    allowed_css_properties=["background-image"],
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a href='https://example.com/x?y=1#z'>x</a><a href='http://example.com/x'>bad</a><a href='//example.com/rel'>rel</a><a href='#frag'>frag</a><img srcset='https://example.com/a 1x, /b 2x'><p style=\"background-image: url('https://example.com/c.png')\">p</p>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a href=\"/proxy?url=https%3A%2F%2Fexample.com%2Fx%3Fy%3D1%23z\">x</a><a>bad</a><a href=\"/proxy?url=https%3A%2F%2Fexample.com%2Frel\">rel</a><a href=\"/proxy?url=%23frag\">frag</a><img srcset=\"/proxy?url=https%3A%2F%2Fexample.com%2Fa 1x, /proxy?url=%2Fb 2x\"><p style=\"background-image: url('/asset-proxy?src=https%3A%2F%2Fexample.com%2Fc.png')\">p</p>",
+  )
+}
+
+///|
 test "css_preset_text allows conservative inline text styling" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["div"],

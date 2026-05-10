@@ -169,22 +169,28 @@ pub(all) enum UnsafeHandling {
 pub(all) enum UrlHandling {
   UrlAllow
   UrlStrip
+  UrlProxy
 } derive(Eq, @debug.Debug)
 
 pub struct UrlPolicy {
   // private fields
 } derive(@debug.Debug)
-pub fn UrlPolicy::new(default_handling? : UrlHandling, default_allow_relative? : Bool, allow_rules? : Array[UrlPolicyRule]) -> Self
+pub fn UrlPolicy::new(default_handling? : UrlHandling, default_allow_relative? : Bool, allow_rules? : Array[UrlPolicyRule], proxy? : UrlProxy) -> Self
 
 pub struct UrlPolicyRule {
   // private fields
 } derive(@debug.Debug)
 pub fn UrlPolicyRule::new(StringView, StringView, UrlRule) -> Self
 
+pub struct UrlProxy {
+  // private fields
+} derive(@debug.Debug)
+pub fn UrlProxy::new(StringView, param? : String) -> Self
+
 pub struct UrlRule {
   // private fields
 } derive(@debug.Debug)
-pub fn UrlRule::new(allowed_schemes? : Array[String], allowed_hosts? : Array[String], allow_fragment? : Bool, resolve_protocol_relative? : String?, handling? : UrlHandling, allow_relative? : Bool) -> Self
+pub fn UrlRule::new(allowed_schemes? : Array[String], allowed_hosts? : Array[String], allow_fragment? : Bool, resolve_protocol_relative? : String?, handling? : UrlHandling, allow_relative? : Bool, proxy? : UrlProxy) -> Self
 
 // Type aliases
 

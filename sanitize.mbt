@@ -16,7 +16,14 @@ pub(all) enum UnsafeHandling {
 pub(all) enum UrlHandling {
   UrlAllow
   UrlStrip
+  UrlProxy
 } derive(Debug, Eq)
+
+///|
+pub struct UrlProxy {
+  priv url : String
+  priv param : String
+} derive(Debug)
 
 ///|
 pub struct UrlRule {
@@ -26,6 +33,7 @@ pub struct UrlRule {
   priv allowed_hosts : Set[String]
   priv handling : UrlHandling?
   priv allow_relative : Bool?
+  priv proxy : UrlProxy?
 } derive(Debug)
 
 ///|
@@ -40,6 +48,7 @@ pub struct UrlPolicy {
   priv default_handling : UrlHandling
   priv default_allow_relative : Bool
   priv allow_rules : Map[String, UrlRule]
+  priv proxy : UrlProxy?
 } derive(Debug)
 
 ///|
@@ -112,6 +121,11 @@ fn sanitize_allowed_attributes(
 }
 
 ///|
+pub fn UrlProxy::new(url : StringView, param? : String = "url") -> UrlProxy {
+  { url: url.to_owned(), param }
+}
+
+///|
 pub fn UrlRule::new(
   allowed_schemes? : Array[String] = [],
   allowed_hosts? : Array[String] = [],
@@ -119,6 +133,7 @@ pub fn UrlRule::new(
   resolve_protocol_relative? : String? = Some("https"),
   handling? : UrlHandling,
   allow_relative? : Bool,
+  proxy? : UrlProxy,
 ) -> UrlRule {
   {
     allow_fragment,
@@ -129,6 +144,7 @@ pub fn UrlRule::new(
     allowed_hosts: sanitized_string_set(allowed_hosts),
     handling,
     allow_relative,
+    proxy,
   }
 }
 
@@ -164,11 +180,13 @@ pub fn UrlPolicy::new(
   default_handling? : UrlHandling = UrlAllow,
   default_allow_relative? : Bool = true,
   allow_rules? : Array[UrlPolicyRule] = [],
+  proxy? : UrlProxy,
 ) -> UrlPolicy {
   {
     default_handling,
     default_allow_relative,
     allow_rules: sanitize_url_policy_rules(allow_rules),
+    proxy,
   }
 }
 
@@ -691,6 +709,75 @@ fn url_rule_allows_host(rule : UrlRule, value : String) -> Bool {
 }
 
 ///|
+fn url_proxy_query_byte_is_safe(byte : Byte) -> Bool {
+  let value = byte.to_int()
+  (value >= 0x41 && value <= 0x5A) ||
+  (value >= 0x61 && value <= 0x7A) ||
+  (value >= 0x30 && value <= 0x39) ||
+  value == 0x2D ||
+  value == 0x2E ||
+  value == 0x5F ||
+  value == 0x7E
+}
+
+///|
+fn percent_encode_url_proxy_param(value : StringView) -> String {
+  let bytes = @utf8.encode(value)
+  let out = StringBuilder::new(size_hint=bytes.length())
+  for index in 0..<bytes.length() {
+    let byte = bytes[index]
+    if url_proxy_query_byte_is_safe(byte) {
+      out.write_char(byte.to_char())
+    } else {
+      write_percent_encoded_byte(out, byte)
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn UrlPolicy::effective_proxy(self : UrlPolicy, rule : UrlRule) -> UrlProxy? {
+  match rule.proxy {
+    Some(proxy) => Some(proxy)
+    None => self.proxy
+  }
+}
+
+///|
+fn proxy_url_value(proxy : UrlProxy, value : String) -> String? {
+  if proxy.url == "" {
+    None
+  } else {
+    let sep = if string_view_contains(proxy.url[:], "?") { "&" } else { "?" }
+    Some(
+      proxy.url +
+      sep +
+      proxy.param +
+      "=" +
+      percent_encode_url_proxy_param(value[:]),
+    )
+  }
+}
+
+///|
+fn apply_url_handling(
+  policy : UrlPolicy,
+  rule : UrlRule,
+  handling : UrlHandling,
+  value : String,
+) -> String? {
+  match handling {
+    UrlAllow => Some(value)
+    UrlStrip => None
+    UrlProxy =>
+      match policy.effective_proxy(rule) {
+        Some(proxy) => proxy_url_value(proxy, value)
+        None => None
+      }
+  }
+}
+
+///|
 fn UrlPolicy::lookup_rule(
   self : UrlPolicy,
   tag_name : String,
@@ -716,39 +803,35 @@ fn sanitize_url_attribute_value_with_rule(
       policy.default_allow_relative,
     )
     if trimmed.has_prefix("#") {
-      if rule.allow_fragment && handling == UrlAllow {
-        Some(trimmed)
+      if rule.allow_fragment {
+        apply_url_handling(policy, rule, handling, trimmed)
       } else {
         None
       }
     } else if trimmed.has_prefix("//") {
       match rule.resolve_protocol_relative {
-        Some(scheme) if rule.allowed_schemes.contains(scheme) =>
-          if handling == UrlAllow {
-            let resolved = scheme + ":" + trimmed
-            if url_rule_allows_host(rule, resolved) {
-              Some(resolved)
-            } else {
-              None
-            }
+        Some(scheme) if rule.allowed_schemes.contains(scheme) => {
+          let resolved = scheme + ":" + trimmed
+          if url_rule_allows_host(rule, resolved) {
+            apply_url_handling(policy, rule, handling, resolved)
           } else {
             None
           }
+        }
         _ => None
       }
     } else {
       match extract_url_scheme(trimmed) {
         Some(scheme) =>
           if rule.allowed_schemes.contains(scheme) &&
-            handling == UrlAllow &&
             url_rule_allows_host(rule, trimmed) {
-            Some(trimmed)
+            apply_url_handling(policy, rule, handling, trimmed)
           } else {
             None
           }
         None =>
-          if allow_relative && handling == UrlAllow {
-            Some(trimmed)
+          if allow_relative {
+            apply_url_handling(policy, rule, handling, trimmed)
           } else {
             None
           }
