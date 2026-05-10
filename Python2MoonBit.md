@@ -13,6 +13,9 @@ JustHTML from Python to MoonBit.
   come from arbitrary code-unit arithmetic, use `get_view(...)` and handle
   `None` instead of assuming the slice is valid.
 - When a parser consumes a `Char`, advance by `ch.utf16_len()`, not by `1`.
+- `StringBuilder::write_string` takes a `String`, not a `StringView`. Keep test
+  fixture builders and hot parser helpers explicit about whether they are
+  appending owned strings or views.
 - When translating JSON fixture strings to MoonBit literals, decode the JSON
   escape first and then encode the MoonBit literal. A JSON input such as
   `"<title id\\\">"` contains both a backslash and a quote in the attribute

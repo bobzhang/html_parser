@@ -19,6 +19,15 @@ fn test_attr_id(node : @html_parser.Node) -> String {
 }
 
 ///|
+fn repeat_for_test(value : String, count : Int) -> String {
+  let out = StringBuilder::new(size_hint=value.length() * count)
+  for _ in 0..<count {
+    out.write_string(value)
+  }
+  out.to_string()
+}
+
+///|
 test "to_test_format matches reference line format" {
   let node = @html_parser.element(
     "div",
@@ -2787,6 +2796,19 @@ test "clone_node deep handles deep trees iteratively" {
     }
   }
   assert_eq(depth, 1201)
+}
+
+///|
+test "tree builder finishes deeply nested parsed HTML without recursion" {
+  let html = repeat_for_test("<div>", 1200) +
+    "x" +
+    repeat_for_test("</div>", 1200)
+  let doc = @html_parser.parse(html)
+  assert_eq(doc.to_text(separator="", strip=false), "x")
+  guard doc.query_one("div") is Some(first_div) else {
+    fail("expected parsed deep div")
+  }
+  assert_eq(first_div.to_text(separator="", strip=false), "x")
 }
 
 ///|
@@ -8883,6 +8905,29 @@ test "parser populates selectedcontent from selected option" {
     "<select><option selected>a</option><selectedcontent>a</selectedcontent></select><select><option>b</option><selectedcontent>b</selectedcontent></select>",
   )
   assert_eq(two_selects.errors.length(), 4)
+}
+
+///|
+test "selectedcontent population handles deeply nested selected option" {
+  let html = "<select><option selected>" +
+    repeat_for_test("<div>", 1200) +
+    "x" +
+    repeat_for_test("</div>", 1200) +
+    "</option><selectedcontent></selectedcontent></select>"
+  let doc = @html_parser.parse_fragment(html, collect_errors=true)
+  guard doc.query_one("selectedcontent") is Some(selectedcontent) else {
+    fail("expected selectedcontent element")
+  }
+  assert_eq(selectedcontent.children().length(), 1)
+  let cloned = selectedcontent.children()[0]
+  assert_eq(cloned.name(), "div")
+  assert_eq(cloned.to_text(separator="", strip=false), "x")
+  assert_eq(doc.errors.length(), 2402)
+  assert_eq(doc.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(
+    doc.errors[doc.errors.length() - 1].code,
+    "unexpected-end-tag-in-select",
+  )
 }
 
 ///|
