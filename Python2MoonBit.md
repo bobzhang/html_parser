@@ -184,7 +184,8 @@ JustHTML from Python to MoonBit.
 - Attribute values use `String?` in the MoonBit DOM. Preserve `None` for
   allowlisted non-URL boolean attributes such as `disabled`, but drop valueless
   URL-bearing attributes (`href`, `src`, `style`, `srcset`, and similar) because
-  Python treats them as unsafe.
+  Python treats them as unsafe; they should also go through the configured
+  unsafe handling path so `Collect` and `Raise` see the drop.
 - `poster`, `action`, `formaction`, `data`, `cite`, and `background` are
   single URL values. Route them through the same exact-rule path as `href` and
   `src`; do not confuse object `data` with safe custom `data-*` attributes.
