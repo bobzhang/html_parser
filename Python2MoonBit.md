@@ -725,11 +725,12 @@ JustHTML from Python to MoonBit.
   helpers, template table helpers, hidden input/form table helpers, foreign
   table recovery helpers, end-tag recovery elements, frameset helper insertions,
   html-fragment body markers, basic active-formatting reconstruction, and
-  foster-parented table text when
+  adoption-agency replacement nodes, and foster-parented table text when
   `track_node_locations=true`. The remaining risky paths are recovery-generated
-  or relocated nodes: broader table/fragment insertion-mode helpers and adoption
-  agency replacement nodes. Duplicated or reconstructed nodes should copy the
-  original formatting node's origin rather than inventing a new one.
+  or relocated nodes: broader table/fragment insertion-mode helpers and less
+  common active-formatting marker or duplicate-entry edge cases. Duplicated or
+  reconstructed nodes should copy the original formatting node's origin rather
+  than inventing a new one.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
