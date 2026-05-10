@@ -382,7 +382,9 @@ fn sanitize_url_attribute_value(
   if trimmed == "" {
     return None
   }
-  if tag_name == "a" && attr_name == "href" {
+  if tag_name == "base" && attr_name == "href" {
+    None
+  } else if tag_name == "a" && attr_name == "href" {
     if trimmed.has_prefix("#") {
       return Some(trimmed)
     }

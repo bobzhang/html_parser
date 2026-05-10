@@ -160,6 +160,9 @@ JustHTML from Python to MoonBit.
   `http-equiv` is `refresh`, drop the `content` attribute even when both names
   are policy-allowlisted; do not apply that rule to ordinary `content-type`
   metadata.
+- `<base href>` is not an ordinary link URL. Drop it even when allowlisted,
+  because preserving it can alter how later relative URLs resolve after
+  sanitization.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside
