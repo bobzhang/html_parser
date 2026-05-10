@@ -215,6 +215,21 @@ test "to_markdown escapes text and line starting markdown markers" {
 }
 
 ///|
+test "to_markdown handles direct nodes comments doctypes and empty inline nodes" {
+  assert_eq(@html_parser.text("a*b").to_markdown(), "a\\*b")
+  assert_eq(@html_parser.text("a < b & c").to_markdown(), "a &lt; b &amp; c")
+  assert_eq(@html_parser.text("").to_markdown(), "")
+  let root = @html_parser.element("div", children=[
+    @html_parser.comment("nope"),
+    @html_parser.doctype(),
+    @html_parser.element("i"),
+    @html_parser.element("b"),
+    @html_parser.text("ok"),
+  ])
+  assert_eq(root.to_markdown(), "ok")
+}
+
+///|
 test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
   let links = @html_parser.parse_fragment(
     "<p><a href='https://e.com/a(b)c'>x</a> <a href='https://e.com/a b'>y</a></p>",
@@ -242,6 +257,15 @@ test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
   assert_eq(
     inline_script.to_markdown(html_passthrough=true),
     "A\n\n<script>alert(1);</script>\n\nB",
+  )
+  let textarea = @html_parser.element(
+    "textarea",
+    attrs={ "data-x": Some("1&2") },
+    children=[@html_parser.text("</textarea><img src=x onerror=alert(1)>")],
+  )
+  assert_eq(
+    textarea.to_markdown(html_passthrough=true),
+    "<textarea data-x=\"1&amp;2\">&lt;/textarea&gt;&lt;img src=x onerror=alert(1)&gt;</textarea>",
   )
 }
 

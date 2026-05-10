@@ -68,6 +68,9 @@ JustHTML from Python to MoonBit.
   while raw Markdown syntax such as `**`, link brackets, and code fences must be
   appended without escaping. A `to_text()` fallback misses both formatting and
   security-relevant escaping.
+- Test Markdown through both parsed documents and direct DOM builders. The
+  public `Node::to_markdown` path must ignore comments/doctypes, drop empty
+  inline formatting, and escape direct text nodes exactly like parsed text.
 - Fenced Markdown code blocks need delimiter selection from the raw code
   content, not a fixed triple-backtick string. Strip trailing newlines and the
   spaces/tabs that would sit immediately before the closing fence, and choose a
