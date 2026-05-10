@@ -22,6 +22,10 @@ JustHTML from Python to MoonBit.
   Match Python's EOF conventions deliberately: EOF after a trailing newline is
   reported at the next line, column 0, while EOF after trailing non-newline text
   uses the last character offset.
+- For many tree-builder start-tag parse errors, Python reports the close
+  bracket, not the initial `<`. Keep both `start` and `tag_close_pos` in scope
+  when dispatching state-specific handlers such as select mode, table mode, and
+  foreign-content breakout.
 - For numeric HTML entities, use `Int::to_char()` and handle `None` for
   invalid Unicode scalar values. Do not use unchecked conversion unless the
   value has already been validated. Match the Python reference error order:
