@@ -1275,6 +1275,9 @@ JustHTML from Python to MoonBit.
 - Python tests often compare rich object identity and class names. MoonBit tests
   should compare stable public behavior: serialized HTML, text output, fixture
   token lists, and parse error codes/locations.
+- Mirror Python's lazy error collection explicitly: parse errors are tracked
+  internally so strict mode can raise, but public `errors` stays empty unless
+  `collect_errors=true` or a strict parse succeeds and returns its result.
 - Snapshot-style `inspect` tests are useful for complex tree output, but stable
   assertion tests are better for focused behavior.
 - When porting recursive output helpers, match the reference traversal state,
