@@ -1231,6 +1231,13 @@ JustHTML from Python to MoonBit.
   template-specific column-group error. If an unrelated end tag exits that
   state, keep enough synthetic table-mode state to report the reprocessed
   table-voodoo diagnostics on following end tags.
+- Hidden template insertion modes are scoped to a particular template element,
+  not to the whole parser. A nested `<template>` suspends the outer hidden
+  column-group or table-context state; when the nested template closes, the
+  outer state resumes. Store the state by node identity or an equivalent stack,
+  not as a single global boolean. There is still a detached table-context case
+  after a template is popped for reprocessing, so model that explicitly instead
+  of overloading the open-template state.
 - The same hidden template table-mode state matters after explicit structural
   closes. `</tr>` and `</colgroup>` inside `<template>` close their element but
   defer the table-voodoo error to `</template>`, while `</tbody>`, `</thead>`,

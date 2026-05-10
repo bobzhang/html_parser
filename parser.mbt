@@ -28,8 +28,9 @@ priv struct Parser {
   mut fragment_context_html_root : Node?
   mut fragment_context_html_after_body : Bool
   mut fragment_context_foreign : Node?
-  mut template_column_group_mode : Bool
-  mut template_table_context_mode : Bool
+  template_column_group_templates : Array[Node]
+  template_table_context_templates : Array[Node]
+  mut template_table_context_detached_mode : Bool
   mut template_detached_column_group_mode : Bool
   mut deferred_initial_doctype_error : ParseError?
   mut duplicate_head_element : Node?
@@ -87,8 +88,9 @@ fn Parser::new(
     fragment_context_html_root: None,
     fragment_context_html_after_body: false,
     fragment_context_foreign: None,
-    template_column_group_mode: false,
-    template_table_context_mode: false,
+    template_column_group_templates: [],
+    template_table_context_templates: [],
+    template_table_context_detached_mode: false,
     template_detached_column_group_mode: false,
     deferred_initial_doctype_error: None,
     duplicate_head_element: None,
@@ -242,7 +244,8 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if self.foster_parent_template_table_text(cleaned, start) {
     return
   }
-  if self.template_table_context_mode && text_has_non_ascii_whitespace(cleaned) {
+  if self.template_table_context_mode_active() &&
+    text_has_non_ascii_whitespace(cleaned) {
     ignore(self.report_foster_parenting_character_errors(cleaned, start))
   }
   self.report_foster_parented_table_context_text(cleaned, start)
@@ -921,7 +924,7 @@ fn Parser::handle_column_group_text(
       let non_whitespace = cleaned[whitespace.length():]
       let non_whitespace_start = start + whitespace.length()
       if in_template_table_context {
-        self.template_table_context_mode = true
+        self.enable_template_table_context_mode()
         ignore(
           self.report_foster_parenting_character_errors(
             non_whitespace, non_whitespace_start,
@@ -938,7 +941,7 @@ fn Parser::handle_column_group_text(
       current.append_child(text(decode_entities_for_tree_text(cleaned)))
       ignore(self.pop_current_element_if_name("colgroup"))
       if in_template_table_context {
-        self.template_table_context_mode = true
+        self.enable_template_table_context_mode()
       }
     }
     return true
@@ -992,11 +995,11 @@ fn Parser::handle_template_column_group_text(
   cleaned : StringView,
   start : Int,
 ) -> Bool {
-  if !self.template_column_group_mode {
+  if !self.template_column_group_mode_active() {
     return false
   }
   if !self.in_template_content_without_inner_table() {
-    self.template_column_group_mode = false
+    self.disable_current_template_column_group_mode()
     return false
   }
   let whitespace = leading_ascii_whitespace(cleaned)
@@ -1016,11 +1019,11 @@ fn Parser::handle_template_column_group_start_tag(
   attrs : Map[String, String?],
   start : Int,
 ) -> Bool {
-  if !self.template_column_group_mode {
+  if !self.template_column_group_mode_active() {
     return false
   }
   if !self.in_template_content_without_inner_table() {
-    self.template_column_group_mode = false
+    self.disable_current_template_column_group_mode()
     return false
   }
   if name == "html" || name == "template" {
@@ -1047,7 +1050,7 @@ fn Parser::handle_template_table_context_start_tag(
   attrs : Map[String, String?],
   start : Int,
 ) -> Bool {
-  if !self.template_table_context_mode {
+  if !self.template_table_context_mode_active() {
     return false
   }
   if name == "table" {
@@ -1060,7 +1063,7 @@ fn Parser::handle_template_table_context_start_tag(
     self.current_node().append_child(node)
     self.stack.push(node)
     self.push_active_formatting_marker()
-    self.template_table_context_mode = false
+    self.disable_current_template_table_context_mode()
     return true
   }
   if name == "col" {
@@ -1068,7 +1071,7 @@ fn Parser::handle_template_table_context_start_tag(
     self.current_node().append_child(colgroup)
     colgroup.append_child(self.node_with_origin(element("col", attrs~), start))
     self.stack.push(colgroup)
-    self.template_table_context_mode = false
+    self.disable_current_template_table_context_mode()
     self.template_detached_column_group_mode = !self.in_template_content_without_inner_table()
     return true
   }
@@ -1076,7 +1079,7 @@ fn Parser::handle_template_table_context_start_tag(
     let node = self.node_with_origin(element("colgroup", attrs~), start)
     self.current_node().append_child(node)
     self.stack.push(node)
-    self.template_table_context_mode = false
+    self.disable_current_template_table_context_mode()
     self.template_detached_column_group_mode = !self.in_template_content_without_inner_table()
     return true
   }
@@ -1084,7 +1087,7 @@ fn Parser::handle_template_table_context_start_tag(
     let node = self.node_with_origin(element(name, attrs~), start)
     self.current_node().append_child(node)
     self.stack.push(node)
-    self.template_table_context_mode = false
+    self.disable_current_template_table_context_mode()
     return true
   }
   if name == "tr" || name == "td" || name == "th" {
@@ -1106,7 +1109,7 @@ fn Parser::handle_template_table_context_start_tag(
       row.append_child(cell)
       self.stack.push(cell)
     }
-    self.template_table_context_mode = false
+    self.disable_current_template_table_context_mode()
     return true
   }
   false
@@ -1118,7 +1121,7 @@ fn Parser::report_template_table_context_fostered_start(
   name : StringView,
   start : Int,
 ) -> Unit {
-  if !self.template_table_context_mode {
+  if !self.template_table_context_mode_active() {
     return
   }
   match name {
@@ -1133,29 +1136,29 @@ fn Parser::handle_template_column_group_end_tag(
   name : String,
   start : Int,
 ) -> Bool {
-  if !self.template_column_group_mode {
+  if !self.template_column_group_mode_active() {
     return false
   }
   if !self.in_template_content_without_inner_table() {
-    self.template_column_group_mode = false
+    self.disable_current_template_column_group_mode()
     return false
   }
   if name == "template" {
-    self.template_column_group_mode = false
+    self.disable_current_template_column_group_mode()
     return false
   }
   if name == "col" || name == "colgroup" {
     self.error_at("unexpected-end-tag", start)
     return true
   }
-  self.template_column_group_mode = false
-  self.template_table_context_mode = true
+  self.disable_current_template_column_group_mode()
   let template_index = self.last_open_template_index()
   if template_index >= 0 {
     while self.stack.length() > template_index {
       ignore(self.stack.pop())
     }
   }
+  self.enable_template_table_context_mode()
   false
 }
 
@@ -1299,7 +1302,7 @@ fn Parser::close_current_caption_for_start(
     }
     self.error_at("unexpected-start-tag-implies-end-tag", tag_close_pos)
     self.close_open_caption_element()
-    self.template_table_context_mode = true
+    self.enable_template_table_context_mode()
     return true
   }
   if caption_index <= table_index {
@@ -1326,7 +1329,7 @@ fn Parser::handle_caption_end_tag(
     match name {
       "caption" => {
         self.close_open_caption_element()
-        self.template_table_context_mode = true
+        self.enable_template_table_context_mode()
         true
       }
       "tbody" | "tfoot" | "thead" => {
@@ -1446,7 +1449,7 @@ fn Parser::report_table_context_end_tag_voodoo(
   name : String,
   start : Int,
 ) -> Unit {
-  if self.template_table_context_mode &&
+  if self.template_table_context_mode_active() &&
     table_context_end_tag_uses_table_voodoo(name) {
     self.error_at("unexpected-end-tag-implies-table-voodoo", start)
     return
@@ -1718,13 +1721,13 @@ fn Parser::handle_template_table_context_end_tag(
   }
   if template_table_context_end_tag_defers_voodoo(name) &&
     self.close_open_element(name) {
-    self.template_table_context_mode = true
+    self.enable_template_table_context_mode()
     return true
   }
   if template_table_context_section_end_tag_reports_unexpected(name) &&
     self.close_open_element(name) {
     self.error_at("unexpected-end-tag", start)
-    self.template_table_context_mode = true
+    self.enable_template_table_context_mode()
     return true
   }
   false
@@ -1744,8 +1747,9 @@ fn Parser::handle_template_end_tag(
     self.error_at("unexpected-end-tag", error_pos)
     return true
   }
-  self.template_column_group_mode = false
-  self.template_table_context_mode = false
+  let template = self.stack[template_index]
+  self.disable_template_column_group_mode_for_node(template)
+  self.disable_template_table_context_mode_for_node(template)
   self.template_detached_column_group_mode = false
   while self.stack.length() > template_index {
     ignore(self.stack.pop())
@@ -4119,6 +4123,146 @@ fn Parser::in_template_content_without_inner_table(self : Parser) -> Bool {
 }
 
 ///|
+fn Parser::current_template_node(self : Parser) -> Node? {
+  let template_index = self.last_open_template_index()
+  if template_index >= 0 {
+    Some(self.stack[template_index])
+  } else {
+    None
+  }
+}
+
+///|
+fn node_array_contains_identity(nodes : Array[Node], target : Node) -> Bool {
+  for node in nodes {
+    if physical_equal(node, target) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn remove_parser_node_identity(nodes : Array[Node], target : Node) -> Unit {
+  let mut index = 0
+  while index < nodes.length() {
+    if physical_equal(nodes[index], target) {
+      ignore(nodes.remove(index))
+    } else {
+      index += 1
+    }
+  }
+}
+
+///|
+fn Parser::template_column_group_mode_active(self : Parser) -> Bool {
+  match self.current_template_node() {
+    Some(template) =>
+      node_array_contains_identity(
+        self.template_column_group_templates,
+        template,
+      )
+    None => false
+  }
+}
+
+///|
+fn Parser::enable_template_column_group_mode(self : Parser) -> Unit {
+  match self.current_template_node() {
+    Some(template) =>
+      if !node_array_contains_identity(
+          self.template_column_group_templates,
+          template,
+        ) {
+        self.template_column_group_templates.push(template)
+      }
+    None => ()
+  }
+}
+
+///|
+fn Parser::disable_current_template_column_group_mode(self : Parser) -> Unit {
+  match self.current_template_node() {
+    Some(template) =>
+      remove_parser_node_identity(
+        self.template_column_group_templates,
+        template,
+      )
+    None => ()
+  }
+}
+
+///|
+fn Parser::disable_template_column_group_mode_for_node(
+  self : Parser,
+  template : Node,
+) -> Unit {
+  remove_parser_node_identity(self.template_column_group_templates, template)
+}
+
+///|
+fn Parser::template_table_context_mode_active(self : Parser) -> Bool {
+  if self.template_table_context_detached_mode &&
+    self.last_open_template_index() < 0 {
+    return true
+  }
+  match self.current_template_node() {
+    Some(template) =>
+      node_array_contains_identity(
+        self.template_table_context_templates,
+        template,
+      )
+    None => false
+  }
+}
+
+///|
+fn Parser::enable_template_table_context_mode(self : Parser) -> Unit {
+  match self.current_template_node() {
+    Some(template) =>
+      if !node_array_contains_identity(
+          self.template_table_context_templates,
+          template,
+        ) {
+        self.template_table_context_templates.push(template)
+      }
+    None => self.template_table_context_detached_mode = true
+  }
+}
+
+///|
+fn Parser::disable_current_template_table_context_mode(self : Parser) -> Unit {
+  match self.current_template_node() {
+    Some(template) =>
+      remove_parser_node_identity(
+        self.template_table_context_templates,
+        template,
+      )
+    None => self.template_table_context_detached_mode = false
+  }
+}
+
+///|
+fn Parser::disable_template_table_context_mode_for_node(
+  self : Parser,
+  template : Node,
+) -> Unit {
+  remove_parser_node_identity(self.template_table_context_templates, template)
+}
+
+///|
+fn Parser::clear_detached_template_table_context_for_template_start(
+  self : Parser,
+  name : StringView,
+) -> Unit {
+  if name == "template" &&
+    self.template_table_context_detached_mode &&
+    self.last_open_template_index() < 0 {
+    self.template_table_context_detached_mode = false
+  }
+}
+
+///|
 fn Parser::last_stack_index_of_node(self : Parser, target : Node) -> Int {
   let mut index = self.stack.length()
   while index > 0 {
@@ -4824,11 +4968,12 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         return
       }
       self.report_template_table_context_fostered_start(name, start)
+      self.clear_detached_template_table_context_for_template_start(name)
       let in_template_table_context = self.in_template_content_without_inner_table()
       if name == "col" && in_template_table_context {
         let current = self.current_node()
         if current.kind == Element && current.name == "template" {
-          self.template_column_group_mode = true
+          self.enable_template_column_group_mode()
         }
       }
       if self.handle_template_column_group_start_tag(name, attrs, start) {

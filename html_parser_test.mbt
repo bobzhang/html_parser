@@ -6150,6 +6150,78 @@ test "template column group keeps columns and drops text" {
 }
 
 ///|
+test "nested templates suspend hidden template table modes" {
+  let nested_column_group = @html_parser.parse_fragment(
+    "<template><col><template><p>x</p></template><col></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_column_group.to_html(pretty=false),
+    "<template><col><template><p>x</p></template><col></template>",
+  )
+  assert_eq(nested_column_group.errors.length(), 0)
+  let nested_own_column_group = @html_parser.parse_fragment(
+    "<template><col><template><col>x</template><col></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_own_column_group.to_html(pretty=false),
+    "<template><col><template><col></template><col></template>",
+  )
+  assert_eq(nested_own_column_group.errors.length(), 1)
+  assert_eq(
+    nested_own_column_group.errors[0].code,
+    "unexpected-characters-in-template-column-group",
+  )
+  let nested_table_context = @html_parser.parse_fragment(
+    "<template><tr></tr><template>x</template></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_table_context.to_html(pretty=false),
+    "<template><tr></tr><template>x</template></template>",
+  )
+  assert_eq(nested_table_context.errors.length(), 1)
+  assert_eq(
+    nested_table_context.errors[0].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  let whitespace_colgroup = @html_parser.parse_fragment(
+    "<template><colgroup> </colgroup><template>x</template></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    whitespace_colgroup.to_html(pretty=false),
+    "<template><colgroup> </colgroup><template>x</template></template>",
+  )
+  assert_eq(whitespace_colgroup.errors.length(), 3)
+  assert_eq(
+    whitespace_colgroup.errors[0].code,
+    "unexpected-characters-in-column-group",
+  )
+  assert_eq(whitespace_colgroup.errors[1].code, "unexpected-end-tag")
+  assert_eq(
+    whitespace_colgroup.errors[2].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  let detached_then_nested = @html_parser.parse_fragment(
+    "<template><col></p><template>x</template></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    detached_then_nested.to_html(pretty=false),
+    "<template><col></template><p></p><template>x</template>",
+  )
+  assert_eq(detached_then_nested.errors.length(), 3)
+  assert_eq(
+    detached_then_nested.errors[0].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  assert_eq(detached_then_nested.errors[1].code, "unexpected-end-tag")
+  assert_eq(detached_then_nested.errors[2].code, "unexpected-end-tag")
+}
+
+///|
 test "parser tracks origins for template column group starts" {
   let parsed = @html_parser.parse_fragment(
     "<template><col>x<col></template>",
