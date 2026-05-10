@@ -83,6 +83,10 @@ JustHTML from Python to MoonBit.
   starts are ignored while preserving text children; `<caption>` reports
   `unexpected-start-tag`, while `<td>`, `<tr>`, row groups, and `<colgroup>`
   report `unexpected-start-tag-ignored`.
+- Other select-mode starts report but stay inside the select: `<hr>` first
+  closes the current `option`/`optgroup`, void-like starts such as `<br>` and
+  `<img>` are inserted without pushing, and common containers such as `<div>`
+  or `<button>` get matching `unexpected-end-tag-in-select` errors when closed.
 - Serializing `script`/`style` text nodes has a security edge case, especially
   for programmatically-created trees: neutralize matching `</script` or
   `</style` sequences only when the tag name is followed by EOF, HTML

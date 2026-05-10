@@ -1106,8 +1106,115 @@ fn Parser::handle_select_end_tag(
       } else {
         false
       }
+    _ if select_common_element_start_reports_in_select(name) &&
+      self.has_open_element("select") => {
+      self.error_at("unexpected-end-tag-in-select", start)
+      self.close_open_select_common_element(name)
+      true
+    }
+    "menuitem" =>
+      if self.has_open_element("select") {
+        self.error_at("unexpected-end-tag", start)
+        true
+      } else {
+        false
+      }
     _ => false
   }
+}
+
+///|
+fn select_common_element_start_reports_in_select(name : StringView) -> Bool {
+  match name {
+    "button" | "datalist" | "div" | "p" | "selectedcontent" | "span" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::last_stack_index_of(self : Parser, name : String) -> Int {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element && node.name == name {
+      return index
+    }
+  }
+  -1
+}
+
+///|
+fn Parser::close_open_select_common_element(
+  self : Parser,
+  name : String,
+) -> Unit {
+  let select_index = self.last_stack_index_of("select")
+  let target_index = self.last_stack_index_of(name)
+  if target_index > select_index {
+    while self.stack.length() > target_index {
+      ignore(self.stack.pop())
+    }
+  }
+}
+
+///|
+fn Parser::insert_element_without_push(
+  self : Parser,
+  name : StringView,
+  attrs : Map[String, String?],
+) -> Unit {
+  self.current_node().append_child(element(name, attrs~))
+}
+
+///|
+fn Parser::insert_element_maybe_push(
+  self : Parser,
+  name : StringView,
+  attrs : Map[String, String?],
+  push : Bool,
+) -> Unit {
+  let node = element(name, attrs~)
+  self.current_node().append_child(node)
+  if push {
+    self.stack.push(node)
+  }
+}
+
+///|
+fn Parser::handle_select_special_start_tag(
+  self : Parser,
+  name : String,
+  attrs : Map[String, String?],
+  self_closing : Bool,
+  start : Int,
+) -> Bool {
+  if !self.has_open_element("select") {
+    return false
+  }
+  if name == "hr" {
+    self.error_at("unexpected-start-tag-in-select", start)
+    ignore(self.pop_current_element_if_name("option"))
+    ignore(self.pop_current_element_if_name("optgroup"))
+    self.insert_element_without_push("hr", attrs)
+    return true
+  }
+  if name == "br" || name == "img" {
+    self.error_at("unexpected-start-tag-in-select", start)
+    self.insert_element_without_push(name, attrs)
+    return true
+  }
+  if name == "menuitem" {
+    self.error_at("unexpected-start-tag-in-select", start)
+    self.insert_element_maybe_push(name, attrs, !self_closing)
+    return true
+  }
+  if select_common_element_start_reports_in_select(name) {
+    self.error_at("unexpected-start-tag-in-select", start)
+    self.insert_element_maybe_push(name, attrs, !self_closing)
+    return true
+  }
+  false
 }
 
 ///|
@@ -1318,6 +1425,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if self.has_open_element("select") && name == "frame" {
         self.error_at("unexpected-start-tag-in-select", start)
+        return
+      }
+      if self.handle_select_special_start_tag(name, attrs, self_closing, start) {
         return
       }
       if !self.is_fragment_parser() && name == "frame" {
