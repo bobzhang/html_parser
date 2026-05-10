@@ -2730,6 +2730,46 @@ test "parser closes rows before table structure starts" {
 }
 
 ///|
+test "parser closes cells before table structure starts" {
+  let next_row = @html_parser.parse_fragment(
+    "<table><tr><td>x<tr><td>y</td></tr></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    next_row.to_html(pretty=false),
+    "<table><tbody><tr><td>x</td></tr><tr><td>y</td></tr></tbody></table>",
+  )
+  assert_eq(next_row.errors.length(), 0)
+  let row_group = @html_parser.parse_fragment(
+    "<table><tbody><tr><td>x<tbody><tr><td>y</td></tr></tbody></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    row_group.to_html(pretty=false),
+    "<table><tbody><tr><td>x</td></tr></tbody><tbody><tr><td>y</td></tr></tbody></table>",
+  )
+  assert_eq(row_group.errors.length(), 0)
+  let caption = @html_parser.parse_fragment(
+    "<table><tr><td>x<caption>c</caption></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    caption.to_html(pretty=false),
+    "<table><tbody><tr><td>x</td></tr></tbody><caption>c</caption></table>",
+  )
+  assert_eq(caption.errors.length(), 0)
+  let next_cell = @html_parser.parse_fragment(
+    "<table><tr><td>x<th>y</th></tr></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    next_cell.to_html(pretty=false),
+    "<table><tbody><tr><td>x</td><th>y</th></tr></tbody></table>",
+  )
+  assert_eq(next_cell.errors.length(), 0)
+}
+
+///|
 test "parser closes current table before nested table starts" {
   let direct = @html_parser.parse_fragment(
     "<table><table><tr><td>x</td></tr></table>",

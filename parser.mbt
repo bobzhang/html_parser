@@ -318,6 +318,40 @@ fn Parser::report_unexpected_table_body_cell_start(
 }
 
 ///|
+fn table_cell_start_closes_current_cell(name : StringView) -> Bool {
+  match name {
+    "caption"
+    | "col"
+    | "colgroup"
+    | "tbody"
+    | "td"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::close_current_table_cell_for_start(
+  self : Parser,
+  name : String,
+) -> Bool {
+  if !table_cell_start_closes_current_cell(name) {
+    return false
+  }
+  match self.stack.last() {
+    Some(node) if node.kind == Element &&
+      (node.name == "td" || node.name == "th") => {
+      ignore(self.stack.pop())
+      true
+    }
+    _ => false
+  }
+}
+
+///|
 fn table_row_start_closes_current_row(name : StringView) -> Bool {
   match name {
     "caption"
@@ -2151,10 +2185,13 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         ) {
         return
       }
+      let closed_table_cell = self.close_current_table_cell_for_start(name)
       self.close_current_table_row_for_start(name)
       self.close_current_table_section_for_start(name)
       ignore(self.handle_nested_table_start_tag(name, start))
-      self.report_unexpected_table_body_cell_start(name, start)
+      if !closed_table_cell {
+        self.report_unexpected_table_body_cell_start(name, start)
+      }
       if name == "form" && self.form_element is Some(_) {
         self.error_at("unexpected-start-tag", start)
         return

@@ -328,7 +328,9 @@ JustHTML from Python to MoonBit.
   an implied `colgroup`; an explicit `colgroup` breaks that contiguous run. Row
   mode has the same reprocessing shape for structural starts: close the current
   `tr` first, then let row-group/table handling place the next `tr`, row group,
-  caption, colgroup, col, or table at the right level.
+  caption, colgroup, col, or table at the right level. Cell mode adds one more
+  layer: starts for another cell or a table structural element first close the
+  current `td`/`th`, then the same row/row-group reprocessing rules apply.
 
 ## Optional Values and Defaults
 
