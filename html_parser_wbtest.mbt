@@ -79,6 +79,31 @@ test "script text scanner covers escaped and double escaped edge states" {
     "<!--<script><x",
     Some(14),
   )
+  assert_script_scan(
+    "<!--<script x</script>tail</script>",
+    "<!--<script x</script>tail",
+    Some(26),
+  )
+  assert_script_scan(
+    "<!--<script\tx</script>tail</script>",
+    "<!--<script\tx</script>tail",
+    Some(26),
+  )
+  assert_script_scan(
+    "<!--<script\u{000C}>x</script>tail</script>",
+    "<!--<script\u{000C}>x</script>tail",
+    Some(27),
+  )
+  assert_script_scan(
+    "<!--<script/>x</script>tail</script>",
+    "<!--<script/>x</script>tail",
+    Some(27),
+  )
+  assert_script_scan(
+    "<!--<scriptx>x</script>tail</script>",
+    "<!--<scriptx>x",
+    Some(14),
+  )
   assert_script_scan("<!--<script><", "<!--<script><", None)
 }
 

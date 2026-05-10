@@ -65,6 +65,8 @@ JustHTML from Python to MoonBit.
   Port it with direct scanner-level tests in addition to tokenizer tests: public
   token streams often hide whether `<!--`, `--`, `<script`, non-`script`
   words, and inner `</script>` boundaries took the intended branch.
+  Double-escape start/end boundaries include ASCII whitespace, `>`, and `/`;
+  similarly spelled names such as `<scriptx>` must stay in escaped mode.
 - Scope-sensitive implied end tags need the same terminators as Python's tree
   builder. For example, a new `<li>` closes an earlier `<li>` only in list-item
   scope; a nested `<ul>` or `<ol>` terminates that search and must not close the
