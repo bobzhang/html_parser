@@ -2919,6 +2919,53 @@ test "parser assigns namespaces and adjusted names for foreign content" {
 }
 
 ///|
+test "parser handles foreign content end tag recovery" {
+  let ancestor_end = @html_parser.parse_fragment(
+    "<svg><lineargradient></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    ancestor_end.to_html(pretty=false),
+    "<svg><linearGradient></linearGradient></svg>",
+  )
+  assert_eq(ancestor_end.errors.length(), 1)
+  assert_eq(ancestor_end.errors[0].code, "unexpected-end-tag")
+  let missing_foreign = @html_parser.parse_fragment(
+    "<svg><g></path></svg>",
+    collect_errors=true,
+  )
+  assert_eq(missing_foreign.to_html(pretty=false), "<svg><g></g></svg>")
+  assert_eq(missing_foreign.errors.length(), 3)
+  assert_eq(missing_foreign.errors[0].code, "unexpected-end-tag")
+  assert_eq(missing_foreign.errors[1].code, "unexpected-end-tag")
+  assert_eq(missing_foreign.errors[2].code, "unexpected-end-tag")
+  let paragraph_breakout = @html_parser.parse_fragment(
+    "<svg></p>",
+    collect_errors=true,
+  )
+  assert_eq(paragraph_breakout.to_html(pretty=false), "<svg></svg><p></p>")
+  assert_eq(paragraph_breakout.errors.length(), 2)
+  assert_eq(
+    paragraph_breakout.errors[0].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(paragraph_breakout.errors[1].code, "unexpected-end-tag")
+  let math_text_integration = @html_parser.parse_fragment(
+    "<math><mi><b>x</b></mi></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    math_text_integration.to_html(pretty=false),
+    "<math><mi><b>x</b></mi></math>",
+  )
+  assert_eq(math_text_integration.errors.length(), 0)
+  guard math_text_integration.query_one("b") is Some(bold) else {
+    fail("expected html b")
+  }
+  assert_true(bold.namespace_uri() is Some("html"))
+}
+
+///|
 test "parser handles ruby annotation start exclusions" {
   let rtc_text = @html_parser.parse_fragment(
     "<ruby><rtc>a<rt>b</ruby>",

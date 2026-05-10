@@ -2076,6 +2076,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.error_at_eof("eof-in-tag")
     return
   }
+  if self.handle_foreign_content_end_tag(name, start) {
+    return
+  }
   if self.handle_document_frameset_end_tag(name, start) {
     return
   }

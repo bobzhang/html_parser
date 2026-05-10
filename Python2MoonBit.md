@@ -594,6 +594,11 @@ JustHTML from Python to MoonBit.
   special cases for non-breakout starts, honor self-closing syntax for all
   foreign elements, and pop back to HTML mode before reprocessing breakout tags
   such as `<div>` or `<font color>`.
+- End tags in foreign content walk the stack case-insensitively against
+  adjusted SVG names. If the current foreign element is not the match, report
+  `unexpected-end-tag` before popping an ancestor match; if the walk reaches an
+  HTML node, reprocess the token in the normal HTML path so missing foreign end
+  tags can produce both foreign-mode and HTML-mode diagnostics.
 
 ## Test Porting
 

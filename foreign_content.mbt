@@ -351,6 +351,11 @@ fn Parser::pop_until_html_or_integration_point(self : Parser) -> Unit {
 }
 
 ///|
+fn node_is_html_namespace(node : Node) -> Bool {
+  !(node.ns is Some(ns) && is_foreign_namespace(ns))
+}
+
+///|
 fn Parser::handle_foreign_content_start_tag(
   self : Parser,
   name : String,
@@ -377,6 +382,47 @@ fn Parser::handle_foreign_content_start_tag(
   self.current_node().append_child(node)
   if !self_closing {
     self.stack.push(node)
+  }
+  true
+}
+
+///|
+fn Parser::handle_foreign_content_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  let current = self.current_node()
+  match current.ns {
+    Some(ns) if is_foreign_namespace(ns) => ()
+    _ => return false
+  }
+  if name == "br" || name == "p" {
+    self.error_at("unexpected-html-element-in-foreign-content", start)
+    self.pop_until_html_or_integration_point()
+    return false
+  }
+  let mut index = self.stack.length()
+  let mut first = true
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element && names_match_end_tag(node, name) {
+      if node_is_html_namespace(node) {
+        return false
+      }
+      while self.stack.length() > index {
+        ignore(self.stack.pop())
+      }
+      return true
+    }
+    if first {
+      self.error_at("unexpected-end-tag", start)
+      first = false
+    }
+    if node_is_html_namespace(node) {
+      return false
+    }
   }
   true
 }
