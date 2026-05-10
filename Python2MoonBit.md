@@ -649,6 +649,10 @@ JustHTML from Python to MoonBit.
   public/system identifier ending at `>` reports `abrupt-doctype-*-identifier`
   at the close bracket; the same input without `>` reports
   `eof-in-doctype-*-identifier` at the final character.
+- Quoted doctype public/system identifiers still receive input-stream newline
+  normalization: CR and CRLF become LF in the stored identifier. A trailing CR
+  between a public identifier and `>` is just whitespace before the close
+  bracket, not a missing system identifier.
 - Null-character handling is state-specific inside doctypes too. Names and
   quoted public/system identifiers report `unexpected-null-character` and store
   U+FFFD, so a helper that only lowercases or normalizes newlines will silently
