@@ -410,7 +410,7 @@ fn escape_child_at(
   policy : SanitizationPolicy,
 ) -> Int raise HtmlError {
   let child = parent.children[index]
-  let start_tag = serialize_start_tag(child, '"')
+  let start_tag = serialize_start_tag_unchecked(child, '"')
   let end_tag = escaped_end_tag_for(child)
   sanitize_container_children(child, policy)
   ignore(parent.children.remove(index))

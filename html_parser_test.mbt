@@ -125,6 +125,59 @@ test "builder serializes minimized and quoted attributes like reference" {
 }
 
 ///|
+test "serializer rejects unsafe programmatic names and invalid context quotes" {
+  let bad_attr = @html_parser.element("div", attrs={
+    "title> <img src=x": Some("y"),
+  })
+  let attr_result : Result[String, @html_parser.HtmlError] = try? bad_attr.to_html(
+    pretty=false,
+  )
+  match attr_result {
+    Err(InvalidSerialization(message)) =>
+      assert_true(message.contains("Unsafe attribute name"))
+    _ => fail("expected unsafe attribute name to raise InvalidSerialization")
+  }
+  let bad_element = @html_parser.element("div><img")
+  let element_result : Result[String, @html_parser.HtmlError] = try? bad_element.to_html(
+    pretty=false,
+  )
+  match element_result {
+    Err(InvalidSerialization(message)) =>
+      assert_true(message.contains("Unsafe element name"))
+    _ => fail("expected unsafe element name to raise InvalidSerialization")
+  }
+  let bad_doctype = @html_parser.doctype(name="html><img")
+  let doctype_result : Result[String, @html_parser.HtmlError] = try? bad_doctype.to_html(
+    pretty=false,
+  )
+  match doctype_result {
+    Err(InvalidSerialization(message)) =>
+      assert_true(message.contains("Unsafe element name"))
+    _ => fail("expected unsafe doctype name to raise InvalidSerialization")
+  }
+  let attr_quote : Result[String, @html_parser.HtmlError] = try? @html_parser.text(
+    "x",
+  ).to_html(pretty=false, context=HtmlAttrValue, quote='x')
+  match attr_quote {
+    Err(InvalidSerialization(message)) =>
+      assert_eq(message, "quote must be ' or \"")
+    _ => fail("expected invalid attribute quote to raise InvalidSerialization")
+  }
+  let js_quote : Result[String, @html_parser.HtmlError] = try? @html_parser.text(
+    "x",
+  ).to_html(pretty=false, context=JsString, quote='x')
+  match js_quote {
+    Err(InvalidSerialization(message)) =>
+      assert_eq(message, "quote must be ' or \"")
+    _ => fail("expected invalid JavaScript quote to raise InvalidSerialization")
+  }
+  assert_eq(
+    @html_parser.text("x").to_html(pretty=false, context=Html, quote='x'),
+    "x",
+  )
+}
+
+///|
 test "serializer handles pretty output quote contexts and comment guards" {
   let node = @html_parser.element("div", attrs={ "title": Some("a>b'c") }, children=[
     @html_parser.text("x>y"),

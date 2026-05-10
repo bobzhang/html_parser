@@ -139,6 +139,82 @@ fn hex_digit_upper(value : Int) -> Char {
 }
 
 ///|
+fn serializable_ascii_alpha(ch : Char) -> Bool {
+  (ch >= 'A' && ch <= 'Z') || (ch >= 'a' && ch <= 'z')
+}
+
+///|
+fn serializable_ascii_digit(ch : Char) -> Bool {
+  ch >= '0' && ch <= '9'
+}
+
+///|
+fn serializable_tag_name_char(ch : Char) -> Bool {
+  serializable_ascii_alpha(ch) ||
+  serializable_ascii_digit(ch) ||
+  ch == ':' ||
+  ch == '_' ||
+  ch == '-'
+}
+
+///|
+fn serializable_attr_name_start(ch : Char) -> Bool {
+  serializable_ascii_alpha(ch) || ch == '_' || ch == ':'
+}
+
+///|
+fn serializable_attr_name_char(ch : Char) -> Bool {
+  serializable_attr_name_start(ch) ||
+  serializable_ascii_digit(ch) ||
+  ch == '-' ||
+  ch == '.'
+}
+
+///|
+fn validate_serializable_tag_name(name : StringView) -> Unit raise HtmlError {
+  match name.get_char(0) {
+    Some(ch) if serializable_ascii_alpha(ch) => {
+      let mut pos = ch.utf16_len()
+      while pos < name.length() {
+        match name.get_char(pos) {
+          Some(ch) if serializable_tag_name_char(ch) => pos += ch.utf16_len()
+          _ =>
+            raise InvalidSerialization(
+              "Unsafe element name for serialization: " + name.to_owned(),
+            )
+        }
+      }
+    }
+    _ =>
+      raise InvalidSerialization(
+        "Unsafe element name for serialization: " + name.to_owned(),
+      )
+  }
+}
+
+///|
+fn validate_serializable_attr_name(name : StringView) -> Unit raise HtmlError {
+  match name.get_char(0) {
+    Some(ch) if serializable_attr_name_start(ch) => {
+      let mut pos = ch.utf16_len()
+      while pos < name.length() {
+        match name.get_char(pos) {
+          Some(ch) if serializable_attr_name_char(ch) => pos += ch.utf16_len()
+          _ =>
+            raise InvalidSerialization(
+              "Unsafe attribute name for serialization: " + name.to_owned(),
+            )
+        }
+      }
+    }
+    _ =>
+      raise InvalidSerialization(
+        "Unsafe attribute name for serialization: " + name.to_owned(),
+      )
+  }
+}
+
+///|
 fn serialize_comment_data(value : StringView) -> String {
   let mut out = value.replace_all(old="--", new="- -").to_owned()
   if out.has_prefix(">") || out.has_prefix("->") {
@@ -215,6 +291,14 @@ fn choose_attr_quote(value : StringView, preferred : Char) -> Char {
 }
 
 ///|
+fn validate_serialization_quote(quote : Char) -> Char raise HtmlError {
+  match quote {
+    '"' | '\'' => quote
+    _ => raise InvalidSerialization("quote must be ' or \"")
+  }
+}
+
+///|
 fn string_contains_char(value : StringView, needle : Char) -> Bool {
   for ch in value {
     if ch == needle {
@@ -225,7 +309,7 @@ fn string_contains_char(value : StringView, needle : Char) -> Bool {
 }
 
 ///|
-fn serialize_start_tag(node : Node, quote : Char) -> String {
+fn serialize_start_tag_unchecked(node : Node, quote : Char) -> String {
   let out = StringBuilder::new()
   out.write_char('<')
   out.write_string(node.name)
@@ -249,7 +333,16 @@ fn serialize_start_tag(node : Node, quote : Char) -> String {
 }
 
 ///|
-fn node_to_html_compact(node : Node, quote : Char) -> String {
+fn serialize_start_tag(node : Node, quote : Char) -> String raise HtmlError {
+  validate_serializable_tag_name(node.name)
+  for name, _ in node.attrs {
+    validate_serializable_attr_name(name)
+  }
+  serialize_start_tag_unchecked(node, quote)
+}
+
+///|
+fn node_to_html_compact(node : Node, quote : Char) -> String raise HtmlError {
   match node.kind {
     Document | Fragment => {
       let out = StringBuilder::new()
@@ -269,6 +362,7 @@ fn node_to_html_compact(node : Node, quote : Char) -> String {
       let out = StringBuilder::new()
       out.write_string("<!DOCTYPE")
       if node.data != "" {
+        validate_serializable_tag_name(node.data)
         out.write_char(' ')
         out.write_string(node.data)
       }
@@ -355,7 +449,10 @@ fn pretty_text_preserves_whitespace(name : StringView) -> Bool {
 }
 
 ///|
-fn compact_pretty_text_children(node : Node, quote : Char) -> String {
+fn compact_pretty_text_children(
+  node : Node,
+  quote : Char,
+) -> String raise HtmlError {
   let out = StringBuilder::new()
   if pretty_text_preserves_whitespace(node.name) {
     for child in node.children {
@@ -596,7 +693,10 @@ fn node_is_pretty_formatting_separator(node : Node) -> Bool {
 }
 
 ///|
-fn pretty_inline_run_to_html(run : Array[Node], quote : Char) -> String {
+fn pretty_inline_run_to_html(
+  run : Array[Node],
+  quote : Char,
+) -> String raise HtmlError {
   let out = StringBuilder::new()
   for child in run {
     match child.kind {
@@ -620,7 +720,7 @@ fn node_to_html_pretty_inline_runs(
   indent : Int,
   indent_size : Int,
   quote : Char,
-) -> String? {
+) -> String? raise HtmlError {
   if !layout_block_element_name(node.name) ||
     !element_has_compact_inline_children(node) {
     return None
@@ -676,7 +776,7 @@ fn node_to_html_pretty_compact_part(
   node : Node,
   quote : Char,
   indent_size : Int,
-) -> String {
+) -> String raise HtmlError {
   match node.kind {
     Document | Fragment => node_to_html_pretty(node, 0, indent_size, quote)
     _ => node_to_html_compact(node, quote)
@@ -688,7 +788,7 @@ fn node_to_html_pretty_compact_children(
   node : Node,
   quote : Char,
   indent_size : Int,
-) -> String {
+) -> String raise HtmlError {
   let out = StringBuilder::new()
   out.write_string(serialize_start_tag(node, quote))
   let child_count = node.children.length()
@@ -725,7 +825,7 @@ fn node_to_html_pretty_child_line(
   indent : Int,
   indent_size : Int,
   quote : Char,
-) -> String? {
+) -> String? raise HtmlError {
   match node.kind {
     Text => {
       let normalized = normalize_formatting_whitespace(node.data[:])
@@ -754,7 +854,7 @@ fn node_to_html_pretty(
   indent : Int,
   indent_size : Int,
   quote : Char,
-) -> String {
+) -> String raise HtmlError {
   match node.kind {
     Document | Fragment => {
       let parts : Array[String] = []
@@ -843,11 +943,14 @@ pub fn Node::to_html(
   indent_size? : Int = 2,
   context? : HtmlContext = Html,
   quote? : Char = '"',
-) -> String {
+) -> String raise HtmlError {
   match context {
     Url => percent_encode_url(self.to_text().trim())
     _ => {
-      let quote_char = if quote == '\'' { '\'' } else { '"' }
+      let quote_char = match context {
+        JsString | HtmlAttrValue => validate_serialization_quote(quote)
+        _ => if quote == '\'' { '\'' } else { '"' }
+      }
       let html = if pretty {
         node_to_html_pretty(self, 0, indent_size, quote_char)
       } else {
@@ -870,7 +973,7 @@ pub fn to_html(
   indent_size? : Int = 2,
   context? : HtmlContext = Html,
   quote? : Char = '"',
-) -> String {
+) -> String raise HtmlError {
   node.to_html(pretty~, indent_size~, context~, quote~)
 }
 

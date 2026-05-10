@@ -329,7 +329,7 @@ fn markdown_render_children(
   builder : MarkdownBuilder,
   html_passthrough : Bool,
   list_depth : Int,
-) -> Unit {
+) -> Unit raise HtmlError {
   for child in node.children {
     markdown_walk(child, builder, html_passthrough, list_depth)
   }
@@ -340,7 +340,7 @@ fn markdown_render_children_to_string(
   node : Node,
   html_passthrough : Bool,
   list_depth : Int,
-) -> String {
+) -> String raise HtmlError {
   let builder = MarkdownBuilder::new()
   markdown_render_children(node, builder, html_passthrough, list_depth)
   builder.finish()
@@ -381,7 +381,7 @@ fn markdown_wrapped_inline(
   marker : String,
   html_passthrough : Bool,
   list_depth : Int,
-) -> Unit {
+) -> Unit raise HtmlError {
   let inner = markdown_render_children_to_string(
     node, html_passthrough, list_depth,
   )
@@ -470,7 +470,7 @@ fn markdown_walk_link(
   node : Node,
   builder : MarkdownBuilder,
   html_passthrough : Bool,
-) -> Unit {
+) -> Unit raise HtmlError {
   let inner = markdown_render_link_children_to_string(node, html_passthrough)
   builder.raw("[")
   builder.raw(inner)
@@ -492,7 +492,7 @@ fn markdown_walk_link(
 fn markdown_render_link_children_to_string(
   node : Node,
   html_passthrough : Bool,
-) -> String {
+) -> String raise HtmlError {
   let builder = MarkdownBuilder::new()
   for child in node.children {
     markdown_walk_link_text(child, builder, html_passthrough)
@@ -506,7 +506,7 @@ fn markdown_link_text_marker(
   builder : MarkdownBuilder,
   marker : String,
   html_passthrough : Bool,
-) -> Unit {
+) -> Unit raise HtmlError {
   let inner = MarkdownBuilder::new()
   for child in node.children {
     markdown_walk_link_text(child, inner, html_passthrough)
@@ -524,7 +524,7 @@ fn markdown_walk_link_list(
   node : Node,
   builder : MarkdownBuilder,
   html_passthrough : Bool,
-) -> Unit {
+) -> Unit raise HtmlError {
   for child in node.children {
     if child.kind == Element && child.name == "li" {
       builder.raw(" ")
@@ -540,7 +540,7 @@ fn markdown_walk_link_text(
   node : Node,
   builder : MarkdownBuilder,
   html_passthrough : Bool,
-) -> Unit {
+) -> Unit raise HtmlError {
   match node.kind {
     Text => builder.text(markdown_escape_text(node.data))
     Comment | Doctype => ()
@@ -622,7 +622,7 @@ fn markdown_walk_list(
   ordered : Bool,
   html_passthrough : Bool,
   list_depth : Int,
-) -> Unit {
+) -> Unit raise HtmlError {
   if !builder.parts.is_empty() {
     builder.ensure_newlines(2)
   }
@@ -654,7 +654,7 @@ fn markdown_walk_blockquote(
   builder : MarkdownBuilder,
   html_passthrough : Bool,
   list_depth : Int,
-) -> Unit {
+) -> Unit raise HtmlError {
   let inner = markdown_render_children_to_string(
     node, html_passthrough, list_depth,
   )
@@ -684,7 +684,7 @@ fn markdown_walk(
   builder : MarkdownBuilder,
   html_passthrough : Bool,
   list_depth : Int,
-) -> Unit {
+) -> Unit raise HtmlError {
   match node.kind {
     Text => builder.text(markdown_escape_text(node.data))
     Comment | Doctype => ()
@@ -778,7 +778,7 @@ fn markdown_walk(
 pub fn Node::to_markdown(
   self : Node,
   html_passthrough? : Bool = false,
-) -> String {
+) -> String raise HtmlError {
   let builder = MarkdownBuilder::new()
   markdown_walk(self, builder, html_passthrough, 0)
   builder.finish()
@@ -788,6 +788,6 @@ pub fn Node::to_markdown(
 pub fn ParsedHtml::to_markdown(
   self : ParsedHtml,
   html_passthrough? : Bool = false,
-) -> String {
+) -> String raise HtmlError {
   self.root.to_markdown(html_passthrough~)
 }

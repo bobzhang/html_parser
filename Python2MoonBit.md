@@ -365,6 +365,13 @@ JustHTML from Python to MoonBit.
   therefore escapes existing `&gt;`/`&#39;` sequences again, while `JsString`
   applies JavaScript escapes after HTML serialization. Pretty output is a
   separate path and should be tested alongside compact output.
+- Python rejects unsafe programmatic names during serialization, not at DOM
+  builder time. In MoonBit this maps to `HtmlError::InvalidSerialization` from
+  `to_html()`/`to_markdown()` paths that emit canonical HTML. Keep the tag name
+  check ASCII-only (`[A-Za-z][A-Za-z0-9:_-]*`) and the attribute check
+  `[A-Za-z_:][A-Za-z0-9:._-]*`. Invalid quote characters should raise for
+  `JsString` and `HtmlAttrValue` contexts; plain HTML output may still normalize
+  to the default double quote for compatibility with the earlier API.
 - Pretty serialization of ordinary text-only elements collapses HTML whitespace
   and trims the result, but vertical tab is not HTML whitespace and must remain
   a normal character. Raw/preformatted text-only elements such as `script`,

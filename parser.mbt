@@ -7005,7 +7005,7 @@ pub fn ParsedHtml::to_html(
   indent_size? : Int = 2,
   context? : HtmlContext = Html,
   quote? : Char = '"',
-) -> String {
+) -> String raise HtmlError {
   self.root.to_html(pretty~, indent_size~, context~, quote~)
 }
 
