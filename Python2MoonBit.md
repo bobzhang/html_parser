@@ -334,6 +334,9 @@ JustHTML from Python to MoonBit.
   Column-group text is another special case: report
   `unexpected-characters-in-column-group`; non-whitespace is then reprocessed as
   table text and foster-parented, while whitespace stays in the colgroup.
+  Non-`col` starts inside an open `colgroup` close it before reprocessing in
+  table mode; a nested `<colgroup>` additionally reports
+  `unexpected-start-tag-implies-end-tag`.
 
 ## Optional Values and Defaults
 

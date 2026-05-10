@@ -589,6 +589,26 @@ fn Parser::handle_column_group_text(
 }
 
 ///|
+fn Parser::close_current_column_group_for_start(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Unit {
+  if name == "col" {
+    return
+  }
+  match self.stack.last() {
+    Some(node) if node.kind == Element && node.name == "colgroup" => {
+      if name == "colgroup" {
+        self.error_at("unexpected-start-tag-implies-end-tag", start)
+      }
+      ignore(self.stack.pop())
+    }
+    _ => ()
+  }
+}
+
+///|
 fn table_context_end_tag_uses_table_voodoo(name : StringView) -> Bool {
   match name {
     "body"
@@ -2230,6 +2250,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at("unexpected-start-tag-ignored", start)
         return
       }
+      self.close_current_column_group_for_start(name, start)
       if self.handle_table_context_hidden_input_or_form_start(
           name, attrs, start,
         ) {

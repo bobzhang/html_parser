@@ -2750,6 +2750,62 @@ test "parser handles text in column group context" {
 }
 
 ///|
+test "parser closes column groups before non-col starts" {
+  let row = @html_parser.parse_fragment(
+    "<table><colgroup><tr><td>x</td></tr></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    row.to_html(pretty=false),
+    "<table><colgroup></colgroup><tbody><tr><td>x</td></tr></tbody></table>",
+  )
+  assert_eq(row.errors.length(), 0)
+  let caption = @html_parser.parse_fragment(
+    "<table><colgroup><caption>x</caption></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    caption.to_html(pretty=false),
+    "<table><colgroup></colgroup><caption>x</caption></table>",
+  )
+  assert_eq(caption.errors.length(), 0)
+  let nested = @html_parser.parse_fragment(
+    "<table><colgroup><colgroup><col></colgroup></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested.to_html(pretty=false),
+    "<table><colgroup></colgroup><colgroup><col></colgroup></table>",
+  )
+  assert_eq(nested.errors.length(), 1)
+  assert_eq(nested.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  let div = @html_parser.parse_fragment(
+    "<table><colgroup><div>x</div></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    div.to_html(pretty=false),
+    "<div>x</div><table><colgroup></colgroup></table>",
+  )
+  assert_eq(div.errors.length(), 3)
+  assert_eq(div.errors[0].code, "foster-parenting-start-tag")
+  assert_eq(div.errors[1].code, "foster-parenting-character")
+  assert_eq(div.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
+  let form = @html_parser.parse_fragment(
+    "<table><colgroup><form id=f></form></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    form.to_html(pretty=false),
+    "<table><colgroup></colgroup><form id=\"f\"></form></table>",
+  )
+  assert_eq(form.errors.length(), 3)
+  assert_eq(form.errors[0].code, "unexpected-form-in-table")
+  assert_eq(form.errors[1].code, "unexpected-end-tag-implies-table-voodoo")
+  assert_eq(form.errors[2].code, "unexpected-end-tag")
+}
+
+///|
 test "parser closes rows before table structure starts" {
   let next_row = @html_parser.parse_fragment(
     "<table><tr><tr><td>x</td></tr></table>",
