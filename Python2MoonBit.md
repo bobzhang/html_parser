@@ -438,7 +438,9 @@ JustHTML from Python to MoonBit.
   function tokens.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
-  mutable state between the caller and the clone.
+  mutable state between the caller and the clone. Deep clones should use an
+  explicit stack rather than recursive calls so programmatically-created deep
+  trees do not depend on backend stack limits.
 - Class selector matching must split class attributes on HTML whitespace
   (`space`, `tab`, `LF`, `FF`, `CR`), not just literal spaces. This matters for
   both parsed attributes and programmatically-created DOM nodes.
