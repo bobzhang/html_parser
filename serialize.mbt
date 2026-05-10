@@ -881,6 +881,7 @@ fn selector_list_part(
 priv enum SelectorCombinator {
   DescendantCombinator
   ChildCombinator
+  AdjacentSiblingCombinator
 } derive(Eq)
 
 ///|
@@ -932,16 +933,20 @@ fn split_complex_selector(
                 None => ()
               }
               start = pos + ch.utf16_len()
-            } else if bracket_depth == 0 && ch == '>' {
+            } else if bracket_depth == 0 && (ch == '>' || ch == '+') {
               match selector_list_part(selector, start, pos) {
                 Some(part) =>
                   push_complex_selector_part(parts, combinators, part, pending)
                 None =>
-                  if parts.is_empty() || pending == ChildCombinator {
+                  if parts.is_empty() || pending != DescendantCombinator {
                     return None
                   }
               }
-              pending = ChildCombinator
+              pending = if ch == '>' {
+                ChildCombinator
+              } else {
+                AdjacentSiblingCombinator
+              }
               start = pos + ch.utf16_len()
             }
         }
@@ -962,6 +967,25 @@ fn split_complex_selector(
 }
 
 ///|
+fn previous_element_sibling(node : Node) -> Node? {
+  match node.parent {
+    Some(parent) => {
+      let mut previous : Node? = None
+      for child in parent.children {
+        if physical_equal(child, node) {
+          return previous
+        }
+        if child.kind == Element {
+          previous = Some(child)
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
 fn matches_complex_selector(node : Node, selector : StringView) -> Bool {
   guard split_complex_selector(selector) is Some((parts, combinators)) else {
     return false
@@ -971,17 +995,19 @@ fn matches_complex_selector(node : Node, selector : StringView) -> Bool {
     return false
   }
   let mut needed = last_index - 1
-  let mut cursor = node.parent
+  let mut current = node
   while needed >= 0 {
     let wanted = parts[needed]
     match combinators[needed] {
       DescendantCombinator => {
+        let mut cursor = current.parent
         let mut found = false
         while !found {
           match cursor {
             Some(ancestor) => {
               cursor = ancestor.parent
               if matches_simple_selector(ancestor, wanted) {
+                current = ancestor
                 found = true
               }
             }
@@ -990,12 +1016,22 @@ fn matches_complex_selector(node : Node, selector : StringView) -> Bool {
         }
       }
       ChildCombinator =>
-        match cursor {
+        match current.parent {
           Some(ancestor) => {
             if !matches_simple_selector(ancestor, wanted) {
               return false
             }
-            cursor = ancestor.parent
+            current = ancestor
+          }
+          None => return false
+        }
+      AdjacentSiblingCombinator =>
+        match previous_element_sibling(current) {
+          Some(sibling) => {
+            if !matches_simple_selector(sibling, wanted) {
+              return false
+            }
+            current = sibling
           }
           None => return false
         }

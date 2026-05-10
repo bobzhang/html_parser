@@ -70,6 +70,10 @@ JustHTML from Python to MoonBit.
   the left must match the immediate parent. Whitespace around `>` is syntax,
   not a descendant combinator, and `>` inside quoted attribute values must be
   ignored by the splitter.
+- Adjacent sibling matching needs object identity, not structural equality.
+  MoonBit can use `physical_equal` while scanning `parent.children`; remember
+  CSS sibling combinators use previous element siblings, skipping text and
+  comments.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
