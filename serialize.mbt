@@ -859,8 +859,71 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
 }
 
 ///|
+fn selector_list_part(
+  selector : StringView,
+  start : Int,
+  end : Int,
+) -> StringView? {
+  match selector.get_view(start~, end~) {
+    Some(part) => {
+      let part = part.trim()
+      if part.is_empty() {
+        None
+      } else {
+        Some(part)
+      }
+    }
+    None => None
+  }
+}
+
+///|
+fn matches_selector_list(node : Node, selector : StringView) -> Bool {
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return false
+  }
+  let mut matched = false
+  let mut start = 0
+  let mut pos = 0
+  let mut bracket_depth = 0
+  let mut quote : Char? = None
+  while pos < selector.length() {
+    match selector.get_char(pos) {
+      Some(ch) => {
+        match quote {
+          Some(q) => if ch == q { quote = None }
+          None =>
+            if bracket_depth > 0 && (ch == '"' || ch == '\'') {
+              quote = Some(ch)
+            } else if ch == '[' {
+              bracket_depth += 1
+            } else if ch == ']' && bracket_depth > 0 {
+              bracket_depth -= 1
+            } else if ch == ',' && bracket_depth == 0 {
+              guard selector_list_part(selector, start, pos) is Some(part) else {
+                return false
+              }
+              if matches_simple_selector(node, part) {
+                matched = true
+              }
+              start = pos + ch.utf16_len()
+            }
+        }
+        pos += ch.utf16_len()
+      }
+      None => break
+    }
+  }
+  guard selector_list_part(selector, start, selector.length()) is Some(part) else {
+    return false
+  }
+  matched || matches_simple_selector(node, part)
+}
+
+///|
 fn walk_query(node : Node, selector : StringView, out : Array[Node]) -> Unit {
-  if matches_simple_selector(node, selector) {
+  if matches_selector_list(node, selector) {
     out.push(node)
   }
   for child in node.children {
@@ -883,7 +946,7 @@ pub fn Node::query_one(self : Node, selector : StringView) -> Node? {
 
 ///|
 pub fn matches(node : Node, selector : StringView) -> Bool {
-  matches_simple_selector(node, selector)
+  matches_selector_list(node, selector)
 }
 
 ///|

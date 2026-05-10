@@ -58,6 +58,10 @@ JustHTML from Python to MoonBit.
   matcher: `^=`, `$=`, and `*=` do not match an empty expected value, while
   `~=` uses HTML-whitespace token matching and `|=` matches exact or
   hyphen-prefixed values.
+- Selector lists should be evaluated per node, not by concatenating the results
+  of separate queries. That preserves document order and prevents duplicate
+  nodes for repeated entries such as `p, p`; split commas only outside
+  attribute brackets and quoted attribute values.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

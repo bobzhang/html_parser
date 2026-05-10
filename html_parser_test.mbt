@@ -1088,6 +1088,27 @@ test "query supports attribute operator selectors" {
 }
 
 ///|
+test "query supports comma selector lists" {
+  let doc = @html_parser.parse_fragment(
+    "<section><h1>Title</h1><p class='intro'>One</p><p>Two</p><a href='a,b'>Link</a></section>",
+  )
+  assert_eq(doc.query("h1, a").length(), 2)
+  assert_eq(doc.query("h1, p, a").length(), 4)
+  assert_eq(doc.query(".intro, [href]").length(), 2)
+  assert_eq(doc.query("p, p").length(), 2)
+  assert_eq(doc.query("[href='a,b'], p").length(), 3)
+  assert_eq(doc.query("p,").length(), 0)
+  let ordered = doc.query("a, h1")
+  assert_eq(ordered.length(), 2)
+  assert_eq(ordered[0].name(), "h1")
+  assert_eq(ordered[1].name(), "a")
+  guard doc.query_one("a, h1") is Some(first) else {
+    fail("expected selector list query_one")
+  }
+  assert_eq(first.name(), "h1")
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)
