@@ -146,6 +146,9 @@ JustHTML from Python to MoonBit.
   `mi`/`mn`/`mo`/`ms`/`mtext` should keep text only, with MathML `mglyph` and
   `malignmark` as the exceptions. Do this before unwrapping allowed or
   disallowed HTML descendants, or an active child can turn into surviving text.
+  Keep mXSS regression tests that reparse sanitized foreign-content output;
+  the serialized form must remain inert after a second parse, not merely after
+  the first sanitizer pass.
 - Active foreign-content tags remain unsafe even when a custom policy
   allowlists them. Drop SVG/MathML mutation or integration tags such as
   `animate`, `set`, `foreignObject`, and `annotation-xml` when the node is
