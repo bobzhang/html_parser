@@ -1731,6 +1731,7 @@ fn matches_selector_list(node : Node, selector : StringView) -> Bool {
   let mut paren_depth = 0
   let mut quote : Char? = None
   let mut escaped = false
+  let mut seen_part = false
   while pos < selector.length() {
     match selector.get_char(pos) {
       Some(ch) => {
@@ -1756,11 +1757,14 @@ fn matches_selector_list(node : Node, selector : StringView) -> Bool {
             } else if bracket_depth == 0 && ch == ')' && paren_depth > 0 {
               paren_depth -= 1
             } else if ch == ',' && bracket_depth == 0 && paren_depth == 0 {
-              guard selector_list_part(selector, start, pos) is Some(part) else {
-                return false
-              }
-              if matches_complex_selector(node, part) {
-                matched = true
+              match selector_list_part(selector, start, pos) {
+                Some(part) => {
+                  seen_part = true
+                  if matches_complex_selector(node, part) {
+                    matched = true
+                  }
+                }
+                None => if !seen_part { return false }
               }
               start = pos + ch.utf16_len()
             }
@@ -1770,10 +1774,10 @@ fn matches_selector_list(node : Node, selector : StringView) -> Bool {
       None => break
     }
   }
-  guard selector_list_part(selector, start, selector.length()) is Some(part) else {
-    return false
+  match selector_list_part(selector, start, selector.length()) {
+    Some(part) => matched || matches_complex_selector(node, part)
+    None => seen_part && matched
   }
-  matched || matches_complex_selector(node, part)
 }
 
 ///|

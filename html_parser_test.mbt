@@ -3449,7 +3449,9 @@ test "query supports comma selector lists" {
   assert_eq(doc.query(".intro, [href]").length(), 2)
   assert_eq(doc.query("p, p").length(), 2)
   assert_eq(doc.query("[href='a,b'], p").length(), 3)
-  assert_eq(doc.query("p,").length(), 0)
+  assert_eq(doc.query("p,").length(), 2)
+  assert_eq(doc.query("p,, a").length(), 3)
+  assert_eq(doc.query(", p").length(), 0)
   let ordered = doc.query("a, h1")
   assert_eq(ordered.length(), 2)
   assert_eq(ordered[0].name(), "h1")
@@ -3473,7 +3475,7 @@ test "query treats malformed selector pieces as no match" {
   assert_eq(doc.query("p >").length(), 0)
   assert_eq(doc.query("> p").length(), 0)
   assert_eq(doc.query("section > > p").length(), 0)
-  assert_eq(doc.query("section,, p").length(), 0)
+  assert_eq(doc.query("section,, p").length(), 2)
   guard doc.query_one("p") is Some(paragraph) else {
     fail("expected paragraph")
   }

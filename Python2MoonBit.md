@@ -309,8 +309,7 @@ JustHTML from Python to MoonBit.
   match instead of becoming attribute lookups. Apply the same no-match rule to
   other malformed pieces such as
   unclosed attribute selectors, dangling `.`/`#` markers, unclosed functional
-  pseudos, empty selector-list entries, and leading, repeated, or trailing
-  combinators.
+  pseudos, and leading, repeated, or trailing combinators.
 - Attribute selector operators have distinct empty-value rules in the Python
   matcher: `^=`, `$=`, and `*=` do not match an empty expected value, while
   `~=` uses HTML-whitespace token matching and `|=` matches exact or
@@ -326,7 +325,10 @@ JustHTML from Python to MoonBit.
 - Selector lists should be evaluated per node, not by concatenating the results
   of separate queries. That preserves document order and prevents duplicate
   nodes for repeated entries such as `p, p`; split commas only outside
-  attribute brackets and quoted attribute values.
+  attribute brackets and quoted attribute values. Python's parser ignores empty
+  selector-list entries after a valid first selector (`p,`, `p,,a`), but a
+  leading comma is still an empty selector and should no-match in MoonBit's
+  non-throwing API.
 - Descendant selector matching is easiest to implement right-to-left: first
   match the target node, then walk parent links to satisfy each ancestor
   selector. Split descendant whitespace only outside attribute brackets and
