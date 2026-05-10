@@ -1555,14 +1555,14 @@ fn Parser::handle_template_table_context_end_tag(
 fn Parser::handle_template_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  error_pos : Int,
 ) -> Bool {
   if name != "template" {
     return false
   }
   let template_index = self.last_open_template_index()
   if template_index < 0 {
-    self.error_at("unexpected-end-tag", start)
+    self.error_at("unexpected-end-tag", error_pos)
     return true
   }
   self.template_column_group_mode = false
@@ -2312,7 +2312,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.handle_form_end_tag(start)
     return
   }
-  if self.handle_template_end_tag(name, start) {
+  if self.handle_template_end_tag(name, tag_close_pos) {
     return
   }
   if self.fragment_end_tag_is_ignored(name) {

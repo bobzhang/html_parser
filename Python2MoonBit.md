@@ -779,6 +779,10 @@ JustHTML from Python to MoonBit.
   normal child traversal; there is no separate `template_content` clone step.
   Port Python template markdown/text tests as ordinary direct-child traversal
   tests for now.
+- A stray `</template>` before any document shell exists is a before-html end
+  tag, but after an explicit `<head></head>` it is an ordinary after-head end
+  tag. Preserve the different error codes so following text still creates the
+  implicit body and lands there.
 - Template table recovery stays active after a template caption/column group is
   closed. Structural starts such as `tbody` and direct `td`/`th` are reprocessed
   into table context, while `script`, `style`, and nested `template` starts are
