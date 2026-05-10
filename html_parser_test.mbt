@@ -1369,6 +1369,30 @@ test "sanitize_dom applies custom url policy rules" {
 }
 
 ///|
+test "sanitize_dom drops empty url values" {
+  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
+    @html_parser.UrlPolicyRule::new(
+      "a",
+      "href",
+      @html_parser.UrlRule::new(allowed_schemes=["https"], allow_relative=false),
+    ),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a"],
+    allowed_attributes={ "a": ["href"] },
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a href=' \t\n'></a>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a></a>",
+  )
+}
+
+///|
 test "sanitize_dom applies url policy host allowlists" {
   let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
     @html_parser.UrlPolicyRule::new(

@@ -178,7 +178,9 @@ JustHTML from Python to MoonBit.
   the name, and `UrlPolicy.allow_rules` must contain an exact tag/attribute
   rule. Missing URL rules drop even otherwise-allowlisted `href` and `src`
   values. This is stricter than ordinary attributes and prevents a custom
-  allowlist from accidentally preserving navigations or network loads.
+  allowlist from accidentally preserving navigations or network loads. Trim URL
+  values before validation and drop empty results; an empty string is not a
+  safe relative URL in the Python sanitizer.
 - Attribute values use `String?` in the MoonBit DOM. Preserve `None` for
   allowlisted non-URL boolean attributes such as `disabled`, but drop valueless
   URL-bearing attributes (`href`, `src`, `style`, `srcset`, and similar) because
