@@ -583,10 +583,20 @@ fn is_html_whitespace_char(ch : Char) -> Bool {
 ///|
 fn next_simple_selector_marker(selector : StringView, start : Int) -> Int {
   let mut pos = start
+  let mut paren_depth = 0
   while pos < selector.length() {
     match selector.get_char(pos) {
-      Some(ch) if ch == '.' || ch == '#' || ch == '[' || ch == ':' => return pos
-      Some(ch) => pos += ch.utf16_len()
+      Some(ch) => {
+        if ch == '(' {
+          paren_depth += 1
+        } else if ch == ')' && paren_depth > 0 {
+          paren_depth -= 1
+        } else if paren_depth == 0 &&
+          (ch == '.' || ch == '#' || ch == '[' || ch == ':') {
+          return pos
+        }
+        pos += ch.utf16_len()
+      }
       None => break
     }
   }
@@ -888,6 +898,151 @@ fn is_only_of_type(node : Node) -> Bool {
 }
 
 ///|
+fn element_child_index(node : Node) -> Int? {
+  match node.parent {
+    Some(parent) => {
+      let mut index = 0
+      for child in parent.children {
+        if child.kind == Element {
+          index += 1
+          if physical_equal(child, node) {
+            return Some(index)
+          }
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn normalize_nth_expression(expr : StringView) -> String {
+  let out = StringBuilder::new(size_hint=expr.length())
+  for ch in expr {
+    if !ch.is_ascii_whitespace() {
+      if ch.is_ascii_uppercase() {
+        out.write_char(ch.to_ascii_lowercase())
+      } else {
+        out.write_char(ch)
+      }
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn parse_signed_int_view(expr : StringView) -> Int? {
+  if expr.is_empty() {
+    return None
+  }
+  let mut sign = 1
+  let mut pos = 0
+  match expr.get_char(pos) {
+    Some('+') => pos += 1
+    Some('-') => {
+      sign = -1
+      pos += 1
+    }
+    _ => ()
+  }
+  if pos >= expr.length() {
+    return None
+  }
+  let mut value = 0
+  while pos < expr.length() {
+    match expr.get_char(pos) {
+      Some(ch) if ch.is_digit(10) => {
+        value = value * 10 + ch.to_int() - ('0' : Int)
+        pos += ch.utf16_len()
+      }
+      _ => return None
+    }
+  }
+  Some(sign * value)
+}
+
+///|
+fn parse_nth_expression(expr : StringView) -> (Int, Int)? {
+  let normalized = normalize_nth_expression(expr)
+  let expr = normalized[:]
+  if expr.is_empty() {
+    return None
+  }
+  if expr == "odd" {
+    return Some((2, 1))
+  }
+  if expr == "even" {
+    return Some((2, 0))
+  }
+  match expr.split_once("n") {
+    Some((a_part, b_part)) => {
+      if string_view_contains(b_part, "n") {
+        return None
+      }
+      let a = if a_part.is_empty() || a_part == "+" {
+        Some(1)
+      } else if a_part == "-" {
+        Some(-1)
+      } else {
+        parse_signed_int_view(a_part)
+      }
+      guard a is Some(a) else { return None }
+      let b = if b_part.is_empty() {
+        Some(0)
+      } else {
+        parse_signed_int_view(b_part)
+      }
+      guard b is Some(b) else { return None }
+      Some((a, b))
+    }
+    None =>
+      match parse_signed_int_view(expr) {
+        Some(b) => Some((0, b))
+        None => None
+      }
+  }
+}
+
+///|
+fn nth_formula_matches(index : Int, a : Int, b : Int) -> Bool {
+  if a == 0 {
+    index == b
+  } else {
+    let diff = index - b
+    if a > 0 {
+      diff >= 0 && diff % a == 0
+    } else {
+      diff <= 0 && diff % a == 0
+    }
+  }
+}
+
+///|
+fn is_nth_child(node : Node, expr : StringView) -> Bool {
+  guard parse_nth_expression(expr) is Some((a, b)) else { return false }
+  match element_child_index(node) {
+    Some(index) => nth_formula_matches(index, a, b)
+    None => false
+  }
+}
+
+///|
+fn functional_pseudo_parts(name : StringView) -> (StringView, StringView)? {
+  match name.split_once("(") {
+    Some((pseudo_name, rest)) => {
+      if !rest.has_suffix(")") {
+        return None
+      }
+      let end = rest.length() - 1
+      guard rest.get_view(start=0, end~) is Some(arg) else { return None }
+      Some((pseudo_name, arg))
+    }
+    None => None
+  }
+}
+
+///|
 fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
   match name {
     "first-child" => is_first_element_child(node)
@@ -898,7 +1053,11 @@ fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
     "first-of-type" => is_first_of_type(node)
     "last-of-type" => is_last_of_type(node)
     "only-of-type" => is_only_of_type(node)
-    _ => false
+    _ =>
+      match functional_pseudo_parts(name) {
+        Some(("nth-child", arg)) => is_nth_child(node, arg)
+        _ => false
+      }
   }
 }
 
@@ -1034,6 +1193,7 @@ fn split_complex_selector(
   let mut start = 0
   let mut pos = 0
   let mut bracket_depth = 0
+  let mut paren_depth = 0
   let mut quote : Char? = None
   let mut pending = DescendantCombinator
   while pos < selector.length() {
@@ -1048,7 +1208,13 @@ fn split_complex_selector(
               bracket_depth += 1
             } else if ch == ']' && bracket_depth > 0 {
               bracket_depth -= 1
-            } else if bracket_depth == 0 && is_html_whitespace_char(ch) {
+            } else if bracket_depth == 0 && ch == '(' {
+              paren_depth += 1
+            } else if bracket_depth == 0 && ch == ')' && paren_depth > 0 {
+              paren_depth -= 1
+            } else if bracket_depth == 0 &&
+              paren_depth == 0 &&
+              is_html_whitespace_char(ch) {
               match selector_list_part(selector, start, pos) {
                 Some(part) => {
                   push_complex_selector_part(parts, combinators, part, pending)
@@ -1058,6 +1224,7 @@ fn split_complex_selector(
               }
               start = pos + ch.utf16_len()
             } else if bracket_depth == 0 &&
+              paren_depth == 0 &&
               (ch == '>' || ch == '+' || ch == '~') {
               match selector_list_part(selector, start, pos) {
                 Some(part) =>
@@ -1202,6 +1369,7 @@ fn matches_selector_list(node : Node, selector : StringView) -> Bool {
   let mut start = 0
   let mut pos = 0
   let mut bracket_depth = 0
+  let mut paren_depth = 0
   let mut quote : Char? = None
   while pos < selector.length() {
     match selector.get_char(pos) {
@@ -1215,7 +1383,11 @@ fn matches_selector_list(node : Node, selector : StringView) -> Bool {
               bracket_depth += 1
             } else if ch == ']' && bracket_depth > 0 {
               bracket_depth -= 1
-            } else if ch == ',' && bracket_depth == 0 {
+            } else if bracket_depth == 0 && ch == '(' {
+              paren_depth += 1
+            } else if bracket_depth == 0 && ch == ')' && paren_depth > 0 {
+              paren_depth -= 1
+            } else if ch == ',' && bracket_depth == 0 && paren_depth == 0 {
               guard selector_list_part(selector, start, pos) is Some(part) else {
                 return false
               }

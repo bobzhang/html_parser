@@ -93,6 +93,9 @@ JustHTML from Python to MoonBit.
   use the node's normalized element name and ignore non-element siblings.
 - `:only-of-type` should be implemented from the same type-filtered sibling
   semantics as first/last-of-type, not from the total element child count.
+- Functional pseudo-class arguments affect the selector tokenizer too:
+  combinators, commas, and whitespace inside parentheses such as
+  `:nth-child(2n + 1)` are argument text, not selector separators.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

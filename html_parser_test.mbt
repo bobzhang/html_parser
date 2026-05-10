@@ -1261,6 +1261,27 @@ test "query supports only of type pseudo selector" {
 }
 
 ///|
+test "query supports nth child pseudo selector" {
+  let doc = @html_parser.parse_fragment(
+    "<ul><li>1</li><li class='special'>2</li><li>3</li><li>4</li><li>5</li></ul>",
+  )
+  assert_eq(doc.query("li:nth-child(2)").length(), 1)
+  assert_eq(doc.query("li:nth-child(odd)").length(), 3)
+  assert_eq(doc.query("li:nth-child(even)").length(), 2)
+  assert_eq(doc.query("li:nth-child(2n+1)").length(), 3)
+  assert_eq(doc.query("li:nth-child(2n)").length(), 2)
+  assert_eq(doc.query("li:nth-child(n)").length(), 5)
+  assert_eq(doc.query("li:nth-child(-n+3)").length(), 3)
+  assert_eq(doc.query("li:nth-child( 2n + 1 )").length(), 3)
+  assert_eq(doc.query("li:nth-child(abc)").length(), 0)
+  guard doc.query_one(".special") is Some(special) else {
+    fail("expected special list item")
+  }
+  assert_true(@html_parser.matches(special, "li:nth-child(2)"))
+  assert_eq(@html_parser.matches(special, "li:nth-child(odd)"), false)
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)
