@@ -6171,6 +6171,18 @@ test "parse_bytes decodes iso8859-2 labels" {
   guard polish_czech_doc.encoding is Some("iso-8859-2") else {
     fail("expected explicit iso-8859-2 encoding for Central European bytes")
   }
+  let identity_high_bytes = b"<p>\xa4\xb4\xc9\xe9</p>"
+  let identity_high_doc = @html_parser.parse_bytes(
+    identity_high_bytes,
+    encoding="iso-8859-2",
+  )
+  assert_eq(
+    identity_high_doc.to_text(separator="", strip=false),
+    "\u{00A4}\u{00B4}\u{00C9}\u{00E9}",
+  )
+  guard identity_high_doc.encoding is Some("iso-8859-2") else {
+    fail("expected explicit iso-8859-2 encoding for identity high bytes")
+  }
   let meta = b"<meta charset=latin2><p>\xc6\xe6</p>"
   let meta_doc = @html_parser.parse_bytes(meta)
   assert_eq(meta_doc.to_text(separator="", strip=false), "\u{0106}\u{0107}")
@@ -6373,6 +6385,26 @@ test "parse_bytes prescans http equiv content charset" {
   assert_eq(missing_equals_doc.to_text(separator="", strip=false), "\u{20AC}")
   guard missing_equals_doc.encoding is Some("windows-1252") else {
     fail("expected malformed content charset to fall back")
+  }
+  let blank_content_charset = b"<meta http-equiv=\"Content-Type\" content=\"charset=   \"><p>\x80</p>"
+  let blank_content_charset_doc = @html_parser.parse_bytes(
+    blank_content_charset,
+  )
+  assert_eq(
+    blank_content_charset_doc.to_text(separator="", strip=false),
+    "\u{20AC}",
+  )
+  guard blank_content_charset_doc.encoding is Some("windows-1252") else {
+    fail("expected blank content charset value to fall back")
+  }
+  let quoted_empty_charset = b"<meta http-equiv=\"Content-Type\" content=\"charset=''\"><p>\x80</p>"
+  let quoted_empty_charset_doc = @html_parser.parse_bytes(quoted_empty_charset)
+  assert_eq(
+    quoted_empty_charset_doc.to_text(separator="", strip=false),
+    "\u{20AC}",
+  )
+  guard quoted_empty_charset_doc.encoding is Some("windows-1252") else {
+    fail("expected quoted empty content charset to fall back")
   }
   let valueless_http = b"<meta http-equiv content=\"text/html; charset=utf-8\"><p>\x80</p>"
   let valueless_http_doc = @html_parser.parse_bytes(valueless_http)

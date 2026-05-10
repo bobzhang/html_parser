@@ -47,7 +47,9 @@ JustHTML from Python to MoonBit.
   different fallback behavior. Raw quote bytes inside the `content` value are
   meaningful to the prescan, but valueless `http-equiv`/`content` attributes
   do not participate, and HTML entities such as `&quot;` are not decoded before
-  charset extraction.
+  charset extraction. Empty charset values after `charset=` still count as
+  malformed content values and should fall back through the normal Windows-1252
+  path instead of selecting UTF-8.
 - Legacy single-byte encodings are not UTF-8 variants. Port them as explicit
   byte-to-code-point tables, and test non-ASCII bytes so label normalization
   and decoding are both covered. Include both remapped bytes and high bytes
