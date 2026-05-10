@@ -2269,6 +2269,56 @@ test "template column group reprocesses other end tags through table mode" {
     "unexpected-end-tag-implies-table-voodoo",
   )
   assert_eq(recovered_col.errors[3].code, "unexpected-end-tag")
+  let detached_colgroup_end = @html_parser.parse_fragment(
+    "<template><col><div>x</div><col></colgroup></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    detached_colgroup_end.to_html(pretty=false),
+    "<template><col></template><colgroup><col></colgroup>",
+  )
+  assert_eq(detached_colgroup_end.errors.length(), 6)
+  assert_eq(
+    detached_colgroup_end.errors[0].code,
+    "unexpected-start-tag-in-template-column-group",
+  )
+  assert_eq(
+    detached_colgroup_end.errors[1].code,
+    "unexpected-characters-in-template-column-group",
+  )
+  assert_eq(
+    detached_colgroup_end.errors[2].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  assert_eq(detached_colgroup_end.errors[3].code, "unexpected-end-tag")
+  assert_eq(
+    detached_colgroup_end.errors[4].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  assert_eq(detached_colgroup_end.errors[5].code, "unexpected-end-tag")
+  let detached_col_end = @html_parser.parse_fragment(
+    "<template><col><div>x</div><col></col></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    detached_col_end.to_html(pretty=false),
+    "<template><col></template><colgroup><col></colgroup>",
+  )
+  assert_eq(detached_col_end.errors.length(), 5)
+  assert_eq(
+    detached_col_end.errors[0].code,
+    "unexpected-start-tag-in-template-column-group",
+  )
+  assert_eq(
+    detached_col_end.errors[1].code,
+    "unexpected-characters-in-template-column-group",
+  )
+  assert_eq(
+    detached_col_end.errors[2].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  assert_eq(detached_col_end.errors[3].code, "unexpected-end-tag")
+  assert_eq(detached_col_end.errors[4].code, "unexpected-end-tag")
 }
 
 ///|

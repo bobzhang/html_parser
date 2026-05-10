@@ -994,6 +994,7 @@ fn Parser::handle_template_detached_column_group_end_tag(
     return true
   }
   if name == "colgroup" {
+    self.error_at("unexpected-end-tag-implies-table-voodoo", start)
     ignore(self.pop_current_element_if_name("colgroup"))
     self.template_detached_column_group_mode = false
     return true
