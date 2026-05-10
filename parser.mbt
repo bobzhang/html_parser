@@ -3532,8 +3532,13 @@ fn Parser::insert_element_without_push(
   self : Parser,
   name : StringView,
   attrs : Map[String, String?],
+  start? : Int,
 ) -> Unit {
-  self.current_node().append_child(element(name, attrs~))
+  let node = match start {
+    Some(offset) => self.node_with_origin(element(name, attrs~), offset)
+    None => element(name, attrs~)
+  }
+  self.current_node().append_child(node)
 }
 
 ///|
@@ -3542,8 +3547,12 @@ fn Parser::insert_element_maybe_push(
   name : StringView,
   attrs : Map[String, String?],
   push : Bool,
+  start? : Int,
 ) -> Unit {
-  let node = element(name, attrs~)
+  let node = match start {
+    Some(offset) => self.node_with_origin(element(name, attrs~), offset)
+    None => element(name, attrs~)
+  }
   self.current_node().append_child(node)
   if push {
     self.stack.push(node)
@@ -3556,6 +3565,7 @@ fn Parser::handle_select_special_start_tag(
   name : String,
   attrs : Map[String, String?],
   self_closing : Bool,
+  start : Int,
   tag_close_pos : Int,
 ) -> Bool {
   if !self.in_select_insertion_mode() {
@@ -3563,7 +3573,7 @@ fn Parser::handle_select_special_start_tag(
   }
   if name == "plaintext" {
     self.error_at("unexpected-start-tag-in-select", tag_close_pos)
-    let node = element(name, attrs~)
+    let node = self.node_with_origin(element(name, attrs~), start)
     self.current_node().append_child(node)
     self.consume_special_element_content(node, name)
     ignore(self.close_open_element("select"))
@@ -3574,22 +3584,22 @@ fn Parser::handle_select_special_start_tag(
     self.error_at("unexpected-start-tag-in-select", tag_close_pos)
     ignore(self.pop_current_element_if_name("option"))
     ignore(self.pop_current_element_if_name("optgroup"))
-    self.insert_element_without_push("hr", attrs)
+    self.insert_element_without_push("hr", attrs, start~)
     return true
   }
   if name == "br" || name == "img" {
     self.error_at("unexpected-start-tag-in-select", tag_close_pos)
-    self.insert_element_without_push(name, attrs)
+    self.insert_element_without_push(name, attrs, start~)
     return true
   }
   if name == "menuitem" {
     self.error_at("unexpected-start-tag-in-select", tag_close_pos)
-    self.insert_element_maybe_push(name, attrs, !self_closing)
+    self.insert_element_maybe_push(name, attrs, !self_closing, start~)
     return true
   }
   if select_common_element_start_reports_in_select(name) {
     self.error_at("unexpected-start-tag-in-select", tag_close_pos)
-    self.insert_element_maybe_push(name, attrs, !self_closing)
+    self.insert_element_maybe_push(name, attrs, !self_closing, start~)
     return true
   }
   if select_ignored_start_reports_in_select(name) {
@@ -4180,7 +4190,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         return
       }
       if self.handle_select_special_start_tag(
-          name, attrs, self_closing, tag_close_pos,
+          name, attrs, self_closing, start, tag_close_pos,
         ) {
         return
       }
