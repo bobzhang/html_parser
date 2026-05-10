@@ -440,6 +440,9 @@ JustHTML from Python to MoonBit.
   not normal body parsing. Allow only head-safe start tags such as `link`,
   `meta`, and `style`; for most other starts or non-whitespace text, report the
   recovery error, pop `noscript`, and let the same token land in body mode.
+- Repeated `<html>` start tags are not normal element insertion. Once the
+  document html element exists, report `unexpected-start-tag`, merge only
+  missing attributes onto the existing html node, and drop the token.
 - A function receiving an already optional value, such as a stored `String?`,
   should usually take a normal `arg : String?` parameter. Do not use an
   optional labeled parameter when the caller needs to pass `None` or `Some(...)`

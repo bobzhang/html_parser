@@ -2434,6 +2434,51 @@ fn Parser::close_current_document_head_for_start(
 }
 
 ///|
+fn Parser::open_html_element(self : Parser) -> Node? {
+  for node in self.stack {
+    if node.kind == Element && node.name == "html" {
+      return Some(node)
+    }
+  }
+  document_html_element(self.root)
+}
+
+///|
+fn Parser::stack_contains_node(self : Parser, target : Node) -> Bool {
+  for node in self.stack {
+    if physical_equal(node, target) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn Parser::handle_repeated_document_html_start_tag(
+  self : Parser,
+  name : StringView,
+  attrs : Map[String, String?],
+  start : Int,
+) -> Bool {
+  if self.is_fragment_parser() ||
+    self.has_open_element("select") ||
+    name != "html" {
+    return false
+  }
+  match self.open_html_element() {
+    Some(html) => {
+      self.error_at("unexpected-start-tag", start)
+      merge_missing_attrs_from_map(html, attrs)
+      if !self.stack_contains_node(html) {
+        self.stack.push(html)
+      }
+      true
+    }
+    None => false
+  }
+}
+
+///|
 fn Parser::pop_disabled_head_noscript_for_reprocess(self : Parser) -> Unit {
   ignore(self.stack.pop())
   match self.stack.last() {
@@ -3413,6 +3458,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         return
       }
       if self.close_current_document_head_for_start(name, start) {
+        return
+      }
+      if self.handle_repeated_document_html_start_tag(name, attrs, start) {
         return
       }
       if self.has_open_element("select") && name == "frame" {
@@ -5185,7 +5233,15 @@ fn text_node_without_leading_ascii_whitespace(node : Node) -> Node? {
 
 ///|
 fn merge_missing_attrs(target : Node, source : Node) -> Unit {
-  for name, value in source.attrs {
+  merge_missing_attrs_from_map(target, source.attrs)
+}
+
+///|
+fn merge_missing_attrs_from_map(
+  target : Node,
+  attrs : Map[String, String?],
+) -> Unit {
+  for name, value in attrs {
     if !target.attrs.contains(name) {
       target.attrs[name] = value
     }
