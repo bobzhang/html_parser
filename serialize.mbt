@@ -1201,7 +1201,8 @@ fn functional_pseudo_parts(name : StringView) -> (StringView, StringView)? {
 
 ///|
 fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
-  match name {
+  let lower_name = lower_ascii(name)
+  match lower_name[:] {
     "first-child" => is_first_element_child(node)
     "last-child" => is_last_element_child(node)
     "only-child" => is_only_element_child(node)
@@ -1212,10 +1213,14 @@ fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
     "only-of-type" => is_only_of_type(node)
     _ =>
       match functional_pseudo_parts(name) {
-        Some(("nth-child", arg)) => is_nth_child(node, arg)
-        Some(("nth-of-type", arg)) => is_nth_of_type(node, arg)
-        Some(("not", arg)) => !matches_selector_list(node, arg)
-        Some(("contains", arg)) => contains_text(node, arg)
+        Some((pseudo_name, arg)) =>
+          match lower_ascii(pseudo_name)[:] {
+            "nth-child" => is_nth_child(node, arg)
+            "nth-of-type" => is_nth_of_type(node, arg)
+            "not" => !matches_selector_list(node, arg)
+            "contains" => contains_text(node, arg)
+            _ => false
+          }
         _ => false
       }
   }
@@ -1228,7 +1233,14 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
     return false
   }
   if node.kind != Element {
-    return node.kind == Comment && selector == ":comment"
+    return match selector.get_char(0) {
+      Some(':') => {
+        let start = ':'.utf16_len()
+        let name = selector[start:selector.length()]
+        node.kind == Comment && lower_ascii(name) == "comment"
+      }
+      _ => false
+    }
   }
   let mut pos = 0
   match selector.get_char(pos) {

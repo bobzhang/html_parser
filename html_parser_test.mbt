@@ -3732,6 +3732,26 @@ test "query supports comment pseudo selector" {
 }
 
 ///|
+test "query treats pseudo selector names case insensitively" {
+  let doc = @html_parser.parse_fragment(
+    "<ul><li>One</li><li class='special'>Two</li><li>Three</li></ul><button>Click</button><button>click</button><!-- note -->",
+  )
+  assert_eq(doc.query("li:FIRST-CHILD").length(), 1)
+  assert_eq(doc.query("li:LAST-CHILD").length(), 1)
+  assert_eq(doc.query("li:Nth-Child(2)").length(), 1)
+  assert_eq(doc.query("li:nth-OF-type(2)").length(), 1)
+  assert_eq(doc.query("li:NOT(.special)").length(), 2)
+  assert_eq(doc.query("li:HOVER(2)").length(), 0)
+  assert_eq(doc.query("button:CONTAINS(\"Click\")").length(), 1)
+  assert_eq(doc.query("button:CONTAINS(\"CLICK\")").length(), 0)
+  assert_eq(doc.query(":COMMENT").length(), 1)
+  guard doc.query_one(":COMMENT") is Some(comment) else {
+    fail("expected uppercase comment pseudo selector")
+  }
+  assert_true(@html_parser.matches(comment, ":COMMENT"))
+}
+
+///|
 test "query supports contains pseudo selector" {
   let doc = @html_parser.parse_fragment(
     "<div id='a'><button>click me</button></div><div id='b'><button>do not click</button></div><div id='c'><span>click</span> me</div>",
