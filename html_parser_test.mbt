@@ -4980,6 +4980,24 @@ test "tree builder matches reference nested table in caption fixture" {
 }
 
 ///|
+test "tree builder matches reference table null text fixture" {
+  let doc = @html_parser.parse("<table>\u{0000}</table>", collect_errors=true)
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <table>",
+  )
+  assert_eq(doc.errors.length(), 2)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(doc.errors[1].code, "unexpected-null-character")
+  guard doc.errors[0].column is Some(7) else {
+    fail("expected table doctype error at table start close")
+  }
+  guard doc.errors[1].column is Some(8) else {
+    fail("expected null text error at null character")
+  }
+}
+
+///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(
