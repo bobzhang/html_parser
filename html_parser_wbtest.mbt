@@ -38,6 +38,51 @@ test "dom insert_child_before moves appends and rejects cycles" {
 }
 
 ///|
+fn assert_script_scan(
+  value : StringView,
+  expected : String,
+  end_start : Int?,
+) -> Unit raise {
+  let scan = scan_script_text(value, 0)
+  assert_eq(scan.data, expected)
+  match end_start {
+    Some(expected_end) => {
+      guard scan.end_start is Some(actual_end) else {
+        fail("expected script end tag")
+      }
+      assert_eq(actual_end, expected_end)
+    }
+    None => assert_true(scan.end_start is None)
+  }
+  assert_eq(scan.errors.length(), 0)
+}
+
+///|
+test "script text scanner covers escaped and double escaped edge states" {
+  assert_script_scan("<!---x</script>", "<!---x", Some(6))
+  assert_script_scan("<!---<x</script>", "<!---<x", Some(7))
+  assert_script_scan("<!--</not</script>", "<!--</not", Some(9))
+  assert_script_scan("<!--<!</script>", "<!--<!", Some(6))
+  assert_script_scan(
+    "<!--<script>-x</script>z</script>",
+    "<!--<script>-x</script>z",
+    Some(24),
+  )
+  assert_script_scan("<!--<script>--></script>", "<!--<script>-->", Some(15))
+  assert_script_scan(
+    "<!--<script></not</script>z</script>",
+    "<!--<script></not</script>z",
+    Some(27),
+  )
+  assert_script_scan(
+    "<!--<script><x</script>z</script>",
+    "<!--<script><x",
+    Some(14),
+  )
+  assert_script_scan("<!--<script><", "<!--<script><", None)
+}
+
+///|
 fn assert_markdown_line_start_escape(
   value : StringView,
   replacement : String,

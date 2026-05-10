@@ -51,6 +51,10 @@ JustHTML from Python to MoonBit.
   contents are entity-decoded but still stop only at their matching end tag.
   Body-mode start handling is still tag-specific: `<xmp>` and `<plaintext>`
   close an open `<p>` first, but `<title>` and `<textarea>` do not.
+- `script` raw text has its own escaped and double-escaped state machine.
+  Port it with direct scanner-level tests in addition to tokenizer tests: public
+  token streams often hide whether `<!--`, `--`, `<script`, non-`script`
+  words, and inner `</script>` boundaries took the intended branch.
 - Scope-sensitive implied end tags need the same terminators as Python's tree
   builder. For example, a new `<li>` closes an earlier `<li>` only in list-item
   scope; a nested `<ul>` or `<ol>` terminates that search and must not close the
