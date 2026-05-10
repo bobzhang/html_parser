@@ -204,6 +204,16 @@ test "builder exposes DOM helper invariants" {
   let original_children = parent.children()
   assert_true(original_children[0].kind() is @html_parser.NodeKind::Text)
   assert_eq(original_children[0].data(), "a")
+  let attrs_copy = parent.attrs()
+  attrs_copy["id"] = Some("mutated")
+  assert_eq(
+    parent.to_html(pretty=false),
+    "<div id=\"root\">a<span>b</span></div>",
+  )
+  let override_attrs = { "id": Some("override") }
+  let override_clone = parent.clone_node(override_attrs~)
+  override_attrs["id"] = Some("mutated")
+  assert_eq(override_clone.to_html(pretty=false), "<div id=\"override\"></div>")
   let note = @html_parser.comment("note")
   assert_true(note.kind() is @html_parser.NodeKind::Comment)
   assert_eq(note.data(), "note")
@@ -2663,6 +2673,13 @@ test "to_markdown renders code spans blocks lists and blockquotes" {
     longer_fence.to_markdown(),
     "````\n```\n<img src=x onerror=alert(1)>\n````",
   )
+  let longest_fence = @html_parser.parse_fragment(
+    "<pre>&#96;&#96;&#96;&#96;\n&lt;img src=x onerror=alert(1)&gt;</pre>",
+  )
+  assert_eq(
+    longest_fence.to_markdown(),
+    "`````\n````\n<img src=x onerror=alert(1)>\n`````",
+  )
   let quote = @html_parser.parse_fragment(
     "<blockquote><p>Q<br>R</p></blockquote>",
   )
@@ -2955,6 +2972,10 @@ test "to_markdown keeps inline and raw variants inside links" {
     formatted.to_markdown(),
     "[**B** *I* <img src=\"x\" alt=\"y\"> S F](https://e.com)",
   )
+  let template = @html_parser.element("template", children=[
+    @html_parser.text("T"),
+  ])
+  assert_eq(template.to_markdown(), "T")
   let passthrough = @html_parser.element(
     "a",
     attrs={ "href": Some("https://e.com") },
@@ -2969,6 +2990,13 @@ test "to_markdown keeps inline and raw variants inside links" {
   assert_eq(
     passthrough.to_markdown(html_passthrough=true),
     "[<script>alert(1);</script>x<style>body{}</style><textarea>T</textarea>](https://e.com)",
+  )
+  let style = @html_parser.element("style", children=[
+    @html_parser.text("a {\n  b: c; }"),
+  ])
+  assert_eq(
+    style.to_markdown(html_passthrough=true),
+    "<style>a {\n  b: c; }</style>",
   )
   let fragment_child = @html_parser.element(
     "a",

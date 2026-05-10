@@ -473,7 +473,10 @@ JustHTML from Python to MoonBit.
   trees do not depend on backend stack limits. Python exposes both in-place
   `sanitize_dom` and clone-returning `sanitize`; in MoonBit, spell the clone
   path explicitly as `node.clone_node(deep=true)` followed by `sanitize_dom`,
-  and test that the source tree is unchanged after sanitizing the clone.
+  and test that the source tree is unchanged after sanitizing the clone. Also
+  mutate returned attribute maps in tests to prove callers cannot modify node
+  internals by editing an `attrs()` result or the original `override_attrs`
+  map.
 - Class selector matching must split class attributes on HTML whitespace
   (`space`, `tab`, `LF`, `FF`, `CR`), not just literal spaces. This matters for
   both parsed attributes and programmatically-created DOM nodes.
@@ -605,6 +608,13 @@ JustHTML from Python to MoonBit.
   unsupported containers. This MoonBit port generally exposes total builder
   helpers instead: `remove_child` ignores missing children, invalid append/insert
   operations are no-ops, and `replace_child` reports failure with `None`.
+- Python has a `track_node_locations` option with per-node `origin_offset`,
+  `origin_line`, and `origin_col` fields. The current MoonBit API only exposes
+  line/column metadata for parse errors, not source locations for every DOM
+  node. When adding per-node origins, thread token start offsets through normal
+  insertion, foster parenting, active formatting reconstruction, and adoption
+  agency replacement nodes; duplicated or reconstructed nodes should copy the
+  original formatting node's origin rather than inventing a new one.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
@@ -700,6 +710,8 @@ JustHTML from Python to MoonBit.
   disallowed template unwraps to its sanitized content instead of dropping it.
   With a direct-child representation, clone template descendants through the
   normal child traversal; there is no separate `template_content` clone step.
+  Port Python template markdown/text tests as ordinary direct-child traversal
+  tests for now.
 - Template table recovery stays active after a template caption/column group is
   closed. Structural starts such as `tbody` and direct `td`/`th` are reprocessed
   into table context, while `script`, `style`, and nested `template` starts are
