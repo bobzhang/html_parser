@@ -13,6 +13,7 @@ priv struct Parser {
   mut after_frameset : Bool
   mut after_frameset_ignored_depth : Int
   mut document_after_body : Bool
+  mut select_insertion_mode : Bool
   foster_parented_start_error_nodes : Array[Node]
   mut fragment_context_table : Node?
   mut fragment_context_table_section : Node?
@@ -55,6 +56,7 @@ fn Parser::new(
     after_frameset: false,
     after_frameset_ignored_depth: 0,
     document_after_body: false,
+    select_insertion_mode: false,
     foster_parented_start_error_nodes: [],
     fragment_context_table: None,
     fragment_context_table_section: None,
@@ -2370,7 +2372,7 @@ fn Parser::fragment_end_tag_is_ignored(
       }
       true
     }
-    "body" => !self.has_open_element("select")
+    "body" => !self.in_select_insertion_mode()
     _ => false
   }
 }
@@ -2689,7 +2691,7 @@ fn Parser::handle_repeated_document_html_start_tag(
   start : Int,
 ) -> Bool {
   if self.is_fragment_parser() ||
-    self.has_open_element("select") ||
+    self.in_select_insertion_mode() ||
     name != "html" {
     return false
   }
@@ -3093,7 +3095,7 @@ fn Parser::fragment_shell_start_error_code(
   self : Parser,
   name : StringView,
 ) -> String {
-  if self.has_open_element("select") && (name == "body" || name == "head") {
+  if self.in_select_insertion_mode() && (name == "body" || name == "head") {
     "unexpected-start-tag-in-select"
   } else {
     "unexpected-start-tag"
@@ -3238,6 +3240,42 @@ fn Parser::has_open_element(self : Parser, name : String) -> Bool {
 }
 
 ///|
+fn Parser::has_open_html_element(self : Parser, name : String) -> Bool {
+  for node in self.stack {
+    if node.kind == Element && node.name == name && node.ns is Some("html") {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn Parser::has_open_html_select(self : Parser) -> Bool {
+  self.has_open_html_element("select")
+}
+
+///|
+fn Parser::in_select_insertion_mode(self : Parser) -> Bool {
+  self.select_insertion_mode || self.has_open_html_select()
+}
+
+///|
+fn Parser::reset_select_insertion_mode(self : Parser) -> Unit {
+  self.select_insertion_mode = self.has_open_element("select")
+}
+
+///|
+fn Parser::pop_until_select_in_insertion_mode(self : Parser) -> Unit {
+  while self.stack.length() > 1 {
+    match self.stack.pop() {
+      Some(node) if node.kind == Element && node.name == "select" => break
+      Some(_) => ()
+      None => break
+    }
+  }
+}
+
+///|
 fn Parser::pop_current_element_if_name(self : Parser, name : String) -> Bool {
   match self.stack.last() {
     Some(node) if node.kind == Element && node.name == name => {
@@ -3256,7 +3294,7 @@ fn Parser::close_current_element_if_name(self : Parser, name : String) -> Unit {
 ///|
 fn Parser::close_open_select_item(self : Parser, name : String) -> Unit {
   self.close_current_element_if_name("option")
-  if name == "optgroup" && self.has_open_element("select") {
+  if name == "optgroup" && self.in_select_insertion_mode() {
     self.close_current_element_if_name("optgroup")
   }
 }
@@ -3269,7 +3307,7 @@ fn Parser::handle_select_end_tag(
 ) -> Bool {
   match name {
     "optgroup" =>
-      if self.has_open_element("select") {
+      if self.in_select_insertion_mode() {
         ignore(self.pop_current_element_if_name("option"))
         if !self.pop_current_element_if_name("optgroup") {
           self.error_at("unexpected-end-tag-in-select", start)
@@ -3279,7 +3317,7 @@ fn Parser::handle_select_end_tag(
         false
       }
     "option" =>
-      if self.has_open_element("select") {
+      if self.in_select_insertion_mode() {
         if !self.pop_current_element_if_name("option") {
           self.error_at("unexpected-end-tag-in-select", start)
         }
@@ -3288,20 +3326,21 @@ fn Parser::handle_select_end_tag(
         false
       }
     "select" =>
-      if self.has_open_element("select") {
-        ignore(self.close_open_element("select"))
+      if self.in_select_insertion_mode() {
+        self.pop_until_select_in_insertion_mode()
+        self.reset_select_insertion_mode()
         true
       } else {
         false
       }
     _ if select_common_element_start_reports_in_select(name) &&
-      self.has_open_element("select") => {
+      self.in_select_insertion_mode() => {
       self.error_at("unexpected-end-tag-in-select", start)
       self.close_open_select_common_element(name)
       true
     }
     "menuitem" =>
-      if self.has_open_element("select") {
+      if self.in_select_insertion_mode() {
         self.error_at("unexpected-end-tag", start)
         true
       } else {
@@ -3408,7 +3447,7 @@ fn Parser::handle_select_special_start_tag(
   self_closing : Bool,
   start : Int,
 ) -> Bool {
-  if !self.has_open_element("select") {
+  if !self.in_select_insertion_mode() {
     return false
   }
   if name == "plaintext" {
@@ -3417,6 +3456,7 @@ fn Parser::handle_select_special_start_tag(
     self.current_node().append_child(node)
     self.consume_special_element_content(node, name)
     ignore(self.close_open_element("select"))
+    self.reset_select_insertion_mode()
     return true
   }
   if name == "hr" {
@@ -3795,7 +3835,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         return
       }
       self.report_body_start_after_repeated_document_html(name, start)
-      if self.has_open_element("select") && name == "frame" {
+      if self.in_select_insertion_mode() && name == "frame" {
         self.error_at("unexpected-start-tag-in-select", start)
         return
       }
@@ -3828,10 +3868,11 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.handle_fragment_context_colgroup_start_tag(name, attrs, start) {
         return
       }
-      if self.has_open_element("select") &&
+      if self.in_select_insertion_mode() &&
         select_start_tag_reprocesses_in_body(name) {
         self.error_at("unexpected-start-tag-in-select", start)
         ignore(self.close_open_element("select"))
+        self.reset_select_insertion_mode()
         if self.handle_select_reprocessed_foreign_cell_start_tag(
             name, attrs, self_closing,
           ) {
@@ -3903,9 +3944,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at("unexpected-start-tag-implies-end-tag", start)
         ignore(self.close_open_element("button"))
       }
-      if name == "select" && self.has_open_element("select") {
+      if name == "select" && self.in_select_insertion_mode() {
         self.error_at("unexpected-select-in-select", start)
         ignore(self.close_open_element("select"))
+        self.reset_select_insertion_mode()
         return
       }
       if name == "li" {
@@ -3944,6 +3986,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.form_element = Some(node)
       }
       self.append_start_tag_node(node, adjusted_name, start)
+      if node_ns == "html" && adjusted_name == "select" {
+        self.select_insertion_mode = true
+      }
       let self_closes_tree = if node_ns == "html" {
         self_closing && is_void_element(adjusted_name)
       } else {

@@ -4795,6 +4795,25 @@ test "tree builder matches reference empty-stack foreign select edge" {
 }
 
 ///|
+test "tree builder matches reference empty-stack nested select edge" {
+  let doc = @html_parser.parse(
+    "<svg><slot><select/e><title/a><select><select></slot></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <svg svg>\n|       <svg slot>\n|         <svg select>\n|           e=\"\"\n|           <svg title>\n|             a=\"\"\n|             <select>",
+  )
+  assert_eq(doc.errors.length(), 6)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(doc.errors[1].code, "unexpected-character-after-solidus-in-tag")
+  assert_eq(doc.errors[2].code, "unexpected-character-after-solidus-in-tag")
+  assert_eq(doc.errors[3].code, "unexpected-select-in-select")
+  assert_eq(doc.errors[4].code, "unexpected-end-tag")
+  assert_eq(doc.errors[5].code, "unexpected-end-tag")
+}
+
+///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(

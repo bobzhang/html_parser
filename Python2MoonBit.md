@@ -260,6 +260,11 @@ JustHTML from Python to MoonBit.
   a child of the document `html` element after `body`. Model this as a narrow
   parser recovery path; do not make ordinary table-internal starts outside a
   table insert nodes.
+- Select insertion mode is parser state, not just a stack-name query. A foreign
+  SVG/MathML element named `select` must not make a later HTML start tag behave
+  as select-mode content. Once an HTML `<select>` has entered select mode,
+  though, Python's reset logic can keep that mode alive through remaining
+  foreign elements named `select`, even after the HTML select is closed.
 - Other select-mode starts report but stay inside the select: `<hr>` first
   closes the current `option`/`optgroup`, void-like starts such as `<br>` and
   `<img>` are inserted without pushing, and common containers such as `<div>`
