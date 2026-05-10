@@ -288,7 +288,9 @@ JustHTML from Python to MoonBit.
   case-sensitive. The MoonBit `query`/`matches` API is non-throwing, so
   malformed attribute selectors with empty names, such as `[]`, `[=x]`, or
   `[~=x]`, should short-circuit to no match instead of becoming attribute
-  lookups.
+  lookups. Apply the same no-match rule to other malformed pieces such as
+  unclosed attribute selectors, dangling `.`/`#` markers, unclosed functional
+  pseudos, and trailing combinators.
 - Attribute selector operators have distinct empty-value rules in the Python
   matcher: `^=`, `$=`, and `*=` do not match an empty expected value, while
   `~=` uses HTML-whitespace token matching and `|=` matches exact or
