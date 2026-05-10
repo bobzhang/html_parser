@@ -4971,6 +4971,15 @@ test "parser closes repeated option and select optgroup starts" {
   assert_eq(table_col.errors[0].code, "unexpected-start-tag-in-select")
   assert_eq(table_col.errors[1].code, "unexpected-end-tag")
   assert_eq(table_col.errors[2].code, "unexpected-end-tag")
+  let outside_select = @html_parser.parse_fragment(
+    "</optgroup></option></menuitem>",
+    collect_errors=true,
+  )
+  assert_eq(outside_select.to_html(pretty=false), "")
+  assert_eq(outside_select.errors.length(), 3)
+  for error in outside_select.errors {
+    assert_eq(error.code, "unexpected-end-tag")
+  }
 }
 
 ///|
@@ -6077,6 +6086,18 @@ test "parse_bytes decodes iso8859-2 labels" {
   )
   guard mixed_doc.encoding is Some("iso-8859-2") else {
     fail("expected latin-2 label to normalize to iso-8859-2")
+  }
+  let polish_czech = b"<p>\xa3\xb3\xc8\xe8</p>"
+  let polish_czech_doc = @html_parser.parse_bytes(
+    polish_czech,
+    encoding="iso-8859-2",
+  )
+  assert_eq(
+    polish_czech_doc.to_text(separator="", strip=false),
+    "\u{0141}\u{0142}\u{010C}\u{010D}",
+  )
+  guard polish_czech_doc.encoding is Some("iso-8859-2") else {
+    fail("expected explicit iso-8859-2 encoding for Central European bytes")
   }
   let meta = b"<meta charset=latin2><p>\xc6\xe6</p>"
   let meta_doc = @html_parser.parse_bytes(meta)

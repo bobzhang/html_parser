@@ -34,7 +34,9 @@ JustHTML from Python to MoonBit.
   order, while preserving `utf-16` as the reported label.
 - HTML's default byte fallback is Windows-1252, not UTF-8. Latin-1 labels such
   as `iso-8859-1` also normalize to Windows-1252, and UTF-7 labels should be
-  rejected by normalizing them to Windows-1252.
+  rejected by normalizing them to Windows-1252. ISO-8859-2 labels are a
+  separate supported single-byte encoding with Central European mappings; do
+  not route them through the Windows-1252 table.
 - Encoding prescan works on raw bytes, not decoded text. Skip comments and
   quoted attributes in non-`meta` tags before trusting a `<meta charset=...>`
   declaration, trim the raw charset value range before label normalization, and
@@ -145,6 +147,8 @@ JustHTML from Python to MoonBit.
   closes the current select and reports `unexpected-select-in-select`; stray
   `</option>`/`</optgroup>` inside a select use
   `unexpected-end-tag-in-select`, not the generic unexpected-end-tag code.
+  Outside a select, those same end tags are ordinary stray body end tags and
+  must fall through to generic `unexpected-end-tag` handling.
   Some start tags such as `<input>`, `<textarea>`, and `<table>` also close the
   select with `unexpected-start-tag-in-select` and then get reprocessed in body
   mode. When table-internal tags are reprocessed outside an actual table, most
