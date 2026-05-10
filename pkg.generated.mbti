@@ -8,6 +8,10 @@ import {
 // Values
 pub fn comment(StringView) -> Node
 
+pub fn default_document_sanitization_policy() -> SanitizationPolicy
+
+pub fn default_sanitization_policy() -> SanitizationPolicy
+
 pub fn doctype(name? : String, public_id? : String, system_id? : String, force_quirks? : Bool) -> Node
 
 pub fn document(children? : Array[Node]) -> Node
@@ -26,6 +30,8 @@ pub fn parse_fragment(StringView, context? : FragmentContext, sanitize? : Bool, 
 
 pub fn query(Node, StringView) -> Array[Node]
 
+pub fn sanitize_dom(Node, policy? : SanitizationPolicy) -> Node
+
 pub fn text(StringView) -> Node
 
 pub fn to_html(Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String
@@ -41,6 +47,11 @@ pub(all) suberror HtmlError {
 } derive(Eq, @debug.Debug)
 
 // Types and methods
+pub(all) enum DisallowedTagHandling {
+  Unwrap
+  Drop
+} derive(Eq, @debug.Debug)
+
 pub(all) struct DoctypeInfo {
   name : String
   public_id : String?
@@ -120,6 +131,11 @@ pub fn ParsedHtml::query_one(Self, StringView) -> Node?
 pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String
 pub fn ParsedHtml::to_markdown(Self, html_passthrough? : Bool) -> String
 pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
+
+pub struct SanitizationPolicy {
+  // private fields
+} derive(@debug.Debug)
+pub fn SanitizationPolicy::new(Array[String], allowed_attributes? : Map[String, Array[String]], drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling) -> Self
 
 pub(all) enum TagKind {
   StartTag

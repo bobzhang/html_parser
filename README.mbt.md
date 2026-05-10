@@ -15,6 +15,8 @@ The current slice provides:
   lists, and common pseudo selectors.
 - Byte input parsing with supported transport labels, BOM sniffing, and
   meta-charset prescan.
+- Default-policy DOM sanitization with tag/attribute allowlists, comment and
+  doctype handling, unsafe attribute filtering, and basic URL checks.
 - Initial Markdown conversion for text, paragraphs, headings, inline
   formatting, links, code, lists, blockquotes, and raw HTML passthrough.
 
@@ -44,6 +46,18 @@ test "readme parse bytes example" {
 }
 ```
 
-Full HTML5 tree construction, sanitization, transforms, linkify, streaming,
-full Markdown parity, and CLI compatibility are planned as separate passing
-slices.
+```mbt check
+///|
+test "readme sanitize dom example" {
+  let doc = parse(
+    "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",
+    sanitize=false,
+  )
+  let clean = sanitize_dom(doc.root, policy=default_sanitization_policy())
+  assert_eq(clean.to_html(pretty=false), "<p>ok</p>")
+}
+```
+
+Full HTML5 tree construction, full sanitizer transform parity, linkify,
+streaming, full Markdown parity, and CLI compatibility are planned as separate
+passing slices.

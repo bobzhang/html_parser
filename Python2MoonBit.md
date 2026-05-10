@@ -285,6 +285,18 @@ JustHTML from Python to MoonBit.
   being visited, Python caches that node's text as empty and skips its pending
   materialization, so text that appears elsewhere inside the cyclic subtree may
   still be ignored.
+- Sanitization is easiest to port as DOM graph rewriting, not as string
+  filtering. Match the reference by sanitizing children before unwrapping a
+  disallowed element, then move those sanitized children into the old parent
+  and update every parent pointer. Default-policy and document-policy behavior
+  differ: the document policy keeps the document shell and doctype, while the
+  regular default policy unwraps document scaffolding and drops doctype nodes.
+- Sanitizer policies contain mutable lookup tables in MoonBit (`Set`/`Map`), so
+  default policy helpers should return fresh policy values rather than sharing
+  one global object across tests. URL checks should inspect the normalized
+  scheme while ignoring ASCII controls/whitespace in the scheme area, but keep
+  the original value when it is allowed; protocol-relative links are rewritten
+  only when the rule says to resolve them.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone.

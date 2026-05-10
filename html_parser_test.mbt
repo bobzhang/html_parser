@@ -193,6 +193,128 @@ test "builder exposes DOM helper invariants" {
 }
 
 ///|
+test "sanitize_dom default policy drops unsafe document content" {
+  let doc = @html_parser.parse(
+    "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",
+    sanitize=false,
+  )
+  let sanitized = @html_parser.sanitize_dom(
+    doc.root,
+    policy=@html_parser.default_sanitization_policy(),
+  )
+  assert_eq(sanitized.to_html(pretty=false), "<p>ok</p>")
+}
+
+///|
+test "sanitize_dom document policy preserves shell and doctype" {
+  let doc = @html_parser.parse(
+    "<!DOCTYPE html><!--x--><html><head><title>T</title><script>bad</script></head><body><p onclick=x>ok</p></body></html>",
+    sanitize=false,
+  )
+  let sanitized = @html_parser.sanitize_dom(doc.root)
+  assert_eq(
+    sanitized.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><title>T</title></head><body><p>ok</p></body></html>",
+  )
+}
+
+///|
+test "sanitize_dom custom policy keeps comments and can drop subtrees" {
+  let keep_shell = @html_parser.parse(
+    "<!DOCTYPE html><!--x--><p>ok</p><span>kept text</span>",
+    sanitize=false,
+  )
+  let keep_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "*": [], "p": [] },
+    drop_comments=false,
+    drop_doctype=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(keep_shell.root, policy=keep_policy).to_html(
+      pretty=false,
+    ),
+    "<!DOCTYPE html><!--x--><p>ok</p>kept text",
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<div>keep<sarcasm><b>drop</b></sarcasm><p>ok</p></div>",
+    sanitize=false,
+  )
+  let drop_policy = @html_parser.SanitizationPolicy::new(
+    ["div", "p"],
+    allowed_attributes={ "*": [], "div": [], "p": [] },
+    disallowed_tag_handling=Drop,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy=drop_policy).to_html(
+      pretty=false,
+    ),
+    "<div>keep<p>ok</p></div>",
+  )
+}
+
+///|
+test "sanitize_dom filters attributes and dangerous URLs" {
+  let fragment = @html_parser.parse_fragment(
+    "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root).to_html(pretty=false),
+    "<div id=\"x\" title=\"t\" class=\"c\"><a title=\"t\">x</a><a href=\"https://example.com/path\">y</a><img alt=\"abs\"><img src=\"/safe.png\" alt=\"ok\"></div>",
+  )
+}
+
+///|
+test "sanitize_dom handles standalone nodes and url edge cases" {
+  let allowed = @html_parser.element(
+    "p",
+    attrs={ "onclick": Some("x"), "title": Some("t") },
+    children=[@html_parser.text("ok")],
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(allowed).to_html(pretty=false),
+    "<p title=\"t\">ok</p>",
+  )
+  let unwrapped = @html_parser.element("sarcasm", children=[
+    @html_parser.text("a"),
+    @html_parser.element("b", children=[@html_parser.text("b")]),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(unwrapped).to_html(pretty=false),
+    "a<b>b</b>",
+  )
+  let strict_attrs = @html_parser.fragment(children=[
+    @html_parser.element("div", attrs={ "id": Some("x") }),
+  ])
+  let strict_policy = @html_parser.SanitizationPolicy::new(["div"])
+  assert_eq(
+    @html_parser.sanitize_dom(strict_attrs, policy=strict_policy).to_html(
+      pretty=false,
+    ),
+    "<div></div>",
+  )
+  let foreign = @html_parser.fragment(children=[
+    @html_parser.element("svg", ns="svg", children=[
+      @html_parser.element("title", ns="svg", children=[@html_parser.text("x")]),
+    ]),
+    @html_parser.element("p", children=[@html_parser.text("ok")]),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(foreign).to_html(pretty=false),
+    "<p>ok</p>",
+  )
+  let urls = @html_parser.parse_fragment(
+    "<a href='#frag'>f</a><a href='HTTP://ok'>h</a><a href='/rel'>r</a><a href='java\t\nscript:evil'>bad</a><img src='//x'><img src>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(urls.root).to_html(pretty=false),
+    "<a href=\"#frag\">f</a><a href=\"HTTP://ok\">h</a><a href=\"/rel\">r</a><a>bad</a><img><img>",
+  )
+}
+
+///|
 test "builder insert and replace helpers preserve graph invariants" {
   let parent = @html_parser.element("div", attrs={ "id": Some("parent") })
   let first = @html_parser.element("span", attrs={ "id": Some("1") })
