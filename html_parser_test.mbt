@@ -1092,6 +1092,23 @@ test "sanitize_dom can return fragment after foreign stabilization" {
 }
 
 ///|
+test "sanitize_dom preserves allowed template content" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["template", "p"],
+    allowed_attributes={ "template": [], "p": [] },
+    drop_foreign_namespaces=false,
+    drop_content_tags=[],
+  )
+  let template = @html_parser.element("template", children=[
+    @html_parser.element("p", children=[@html_parser.text("x")]),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(template, policy~).to_html(pretty=false),
+    "<template><p>x</p></template>",
+  )
+}
+
+///|
 test "sanitize_dom drops foreign url function attributes without url policy" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["svg", "rect"],
