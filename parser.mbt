@@ -440,6 +440,97 @@ fn Parser::handle_foster_parented_end_tag(
 }
 
 ///|
+fn table_context_end_tag_uses_table_voodoo(name : StringView) -> Bool {
+  match name {
+    "body"
+    | "caption"
+    | "col"
+    | "colgroup"
+    | "form"
+    | "html"
+    | "table"
+    | "tbody"
+    | "td"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "tr" => false
+    _ => true
+  }
+}
+
+///|
+fn table_context_end_tag_is_ignored(name : StringView) -> Bool {
+  match name {
+    "body"
+    | "caption"
+    | "col"
+    | "colgroup"
+    | "html"
+    | "tbody"
+    | "td"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::in_table_body_mode_context(self : Parser) -> Bool {
+  let table_index = self.table_context_without_cell_or_caption()
+  if table_index < 0 {
+    return false
+  }
+  let current = self.current_node()
+  current.kind == Element && is_table_start_foster_target(current.name)
+}
+
+///|
+fn Parser::report_table_context_end_tag_voodoo(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Unit {
+  if self.in_table_body_mode_context() &&
+    table_context_end_tag_uses_table_voodoo(name) {
+    self.error_at("unexpected-end-tag-implies-table-voodoo", start)
+  }
+}
+
+///|
+fn Parser::handle_table_context_ignored_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if !self.in_table_body_mode_context() ||
+    !table_context_end_tag_is_ignored(name) {
+    return false
+  }
+  let table_index = self.table_context_without_cell_or_caption()
+  if self.last_stack_index_of(name) > table_index {
+    return false
+  }
+  self.error_at("unexpected-end-tag", start)
+  true
+}
+
+///|
+fn Parser::insert_body_mode_node(self : Parser, node : Node) -> Unit {
+  let table_index = self.table_context_without_cell_or_caption()
+  if table_index >= 0 {
+    let current = self.current_node()
+    if current.kind == Element && is_table_start_foster_target(current.name) {
+      self.insert_node_before_open_table(node, table_index)
+      return
+    }
+  }
+  self.current_node().append_child(node)
+}
+
+///|
 fn text_has_non_ascii_whitespace(value : StringView) -> Bool {
   for ch in value {
     if !ch.is_ascii_whitespace() {
@@ -987,16 +1078,20 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_foster_parented_end_tag(name, start) {
     return
   }
+  if self.handle_table_context_ignored_end_tag(name, start) {
+    return
+  }
+  self.report_table_context_end_tag_voodoo(name, start)
   if name == "br" {
     self.error_at("unexpected-end-tag", start)
     self.close_open_p_element()
-    self.current_node().append_child(element("br"))
+    self.insert_body_mode_node(element("br"))
     return
   }
   if name == "p" {
     if !self.close_open_element("p") {
       self.error_at("unexpected-end-tag", start)
-      self.current_node().append_child(element("p"))
+      self.insert_body_mode_node(element("p"))
     }
     return
   }

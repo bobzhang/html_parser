@@ -312,7 +312,11 @@ JustHTML from Python to MoonBit.
   and `<script>` also stay in the current table context without foster-parenting
   errors. A nested `<table>` start in `table`/row-group/`tr` context is not a
   child table: report `unexpected-start-tag-implies-end-tag`, close the current
-  table, and then insert the new table as the reprocessed start tag.
+  table, and then insert the new table as the reprocessed start tag. Stray
+  non-table-internal end tags in the same context first report
+  `unexpected-end-tag-implies-table-voodoo` and then follow body-mode handling,
+  so synthetic nodes such as the empty `<p>` from `</p>` are inserted before the
+  open table instead of inside it.
 
 ## Optional Values and Defaults
 
