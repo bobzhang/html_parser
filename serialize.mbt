@@ -1175,18 +1175,31 @@ fn unquote_pseudo_arg(arg : StringView) -> String? {
 }
 
 ///|
-fn selector_text_content(node : Node) -> String {
+fn selector_text_content_with_seen(
+  node : Node,
+  visiting : Array[Node],
+) -> String {
+  if node_identity_seen(visiting, node) {
+    return ""
+  }
   if node.kind == Text {
     return node.data[:].trim().to_owned()
   }
+  visiting.push(node)
   let parts : Array[String] = []
   for child in node.children {
-    let text = selector_text_content(child)
+    let text = selector_text_content_with_seen(child, visiting)
     if text != "" {
       parts.push(text)
     }
   }
+  ignore(visiting.pop())
   parts.join(" ")
+}
+
+///|
+fn selector_text_content(node : Node) -> String {
+  selector_text_content_with_seen(node, [])
 }
 
 ///|

@@ -56,6 +56,7 @@ test "query deduplicates shared nodes and ignores traversal cycles" {
   assert_eq(cyclic_root.query("*").length(), 1)
   assert_true(matches(child, "div span"))
   assert_eq(matches(child, "em span"), false)
+  assert_eq(matches(cyclic_root, "div:contains(needle)"), false)
   assert_eq(cyclic_root.query("div span").length(), 1)
   assert_eq(cyclic_root.query("em span").length(), 0)
 }
