@@ -1205,7 +1205,9 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
       guard selector.get_view(start=pos, end~) is Some(tag) else {
         return false
       }
-      if tag.is_empty() || !tag_selector_matches(node, tag) {
+      if tag.is_empty() ||
+        !selector_identifier_is_valid(tag) ||
+        !tag_selector_matches(node, tag) {
         return false
       }
       pos = end
@@ -1243,7 +1245,7 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
     let start = pos + marker.utf16_len()
     let end = next_simple_selector_marker(selector, start)
     guard selector.get_view(start~, end~) is Some(name) else { return false }
-    if name.is_empty() {
+    if name.is_empty() || !selector_identifier_is_valid(name) {
       return false
     }
     if marker == '.' {

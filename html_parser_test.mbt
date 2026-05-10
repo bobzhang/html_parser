@@ -3340,6 +3340,24 @@ test "query supports tag class id and tag class selectors" {
   assert_eq(compound.query("#main.container.featured").length(), 1)
   assert_eq(compound.query("div#main.missing").length(), 0)
   assert_eq(@html_parser.query(compound.root, "p").length(), 1)
+  let identifiers = @html_parser.fragment(children=[
+    @html_parser.element("1box", attrs={
+      "id": Some("1id"),
+      "class": Some("1lead ok _under -dash 日本語"),
+    }),
+    @html_parser.element("-box", attrs={ "id": Some("_id") }),
+    @html_parser.element("日本語"),
+  ])
+  assert_eq(identifiers.query("1box").length(), 0)
+  assert_eq(identifiers.query("#1id").length(), 0)
+  assert_eq(identifiers.query(".1lead").length(), 0)
+  assert_eq(identifiers.query(".ok").length(), 1)
+  assert_eq(identifiers.query("._under").length(), 1)
+  assert_eq(identifiers.query(".-dash").length(), 1)
+  assert_eq(identifiers.query(".日本語").length(), 1)
+  assert_eq(identifiers.query("-box").length(), 1)
+  assert_eq(identifiers.query("#_id").length(), 1)
+  assert_eq(identifiers.query("日本語").length(), 1)
 }
 
 ///|

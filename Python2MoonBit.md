@@ -281,7 +281,10 @@ JustHTML from Python to MoonBit.
   fragments in source order; tag matching is case-insensitive, while id and
   class matching are case-sensitive. A universal `*` may only be followed by
   another simple-selector marker such as `.`, `#`, `[`, or `:`; `*foo` is not a
-  tag selector and should fail to match.
+  tag selector and should fail to match. Tag, id, and class selector names
+  follow the same identifier rule as attribute selector names: malformed names
+  such as `1box`, `#1id`, or `.1lead` should not match even when a
+  programmatically-created DOM node has that literal name or value.
 - Attribute selector names are case-insensitive in HTML, even for
   programmatically-created nodes whose attribute map may contain uppercase
   keys. Normalize names for matching, but keep exact attribute values
