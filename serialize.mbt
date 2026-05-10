@@ -682,7 +682,7 @@ fn attribute_name_with_operator(
   let end = name.length() - 1
   guard name.get_view(start=0, end~) is Some(name) else { return None }
   let name = name.trim()
-  if name.is_empty() {
+  if !selector_identifier_is_valid(name) {
     None
   } else {
     Some((name, operator))
@@ -690,13 +690,39 @@ fn attribute_name_with_operator(
 }
 
 ///|
+fn selector_identifier_start(ch : Char) -> Bool {
+  ch == '_' || ch == '-' || ch.is_ascii_alphabetic() || ch.to_int() > 127
+}
+
+///|
+fn selector_identifier_char(ch : Char) -> Bool {
+  selector_identifier_start(ch) || ch.is_digit(10)
+}
+
+///|
+fn selector_identifier_is_valid(name : StringView) -> Bool {
+  if name.is_empty() {
+    return false
+  }
+  guard name.get_char(0) is Some(first) else { return false }
+  if !selector_identifier_start(first) {
+    return false
+  }
+  let mut pos = first.utf16_len()
+  while pos < name.length() {
+    match name.get_char(pos) {
+      Some(ch) if selector_identifier_char(ch) => pos += ch.utf16_len()
+      _ => return false
+    }
+  }
+  true
+}
+
+///|
 fn attribute_name_and_operator(
   name : StringView,
 ) -> (StringView, AttributeSelectorOperator)? {
   let name = name.trim()
-  if name.is_empty() {
-    return None
-  }
   if name.has_suffix("~") {
     attribute_name_with_operator(name, AttrWord)
   } else if name.has_suffix("|") {
@@ -707,8 +733,10 @@ fn attribute_name_and_operator(
     attribute_name_with_operator(name, AttrSuffix)
   } else if name.has_suffix("*") {
     attribute_name_with_operator(name, AttrContains)
-  } else {
+  } else if selector_identifier_is_valid(name) {
     Some((name, AttrExact))
+  } else {
+    None
   }
 }
 
@@ -795,7 +823,8 @@ fn attribute_selector_matches(node : Node, selector : StringView) -> Bool {
       }
     }
     None =>
-      !selector.is_empty() && attribute_value_by_name(node, selector) is Some(_)
+      selector_identifier_is_valid(selector) &&
+      attribute_value_by_name(node, selector) is Some(_)
   }
 }
 

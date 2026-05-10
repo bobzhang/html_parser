@@ -3388,6 +3388,7 @@ test "query supports attribute operator selectors" {
   assert_eq(doc.query("[href$='']").length(), 0)
   assert_eq(doc.query("[href*='']").length(), 0)
   assert_eq(doc.query("[~=container]").length(), 0)
+  assert_eq(doc.query("[href!=http://example.com]").length(), 0)
   assert_eq(doc.query("[lang|=e]").length(), 0)
   let exact_lang = @html_parser.parse_fragment(
     "<p lang='en'></p><p lang='en-US'></p><p lang='eng'></p>",
@@ -3397,6 +3398,20 @@ test "query supports attribute operator selectors" {
     "<p data-empty=''></p><p data-empty='x'></p>",
   )
   assert_eq(empty.query("[data-empty=]").length(), 1)
+  let punctuation = @html_parser.fragment(children=[
+    @html_parser.element("p", attrs={
+      "data-id": Some("x"),
+      "data-id!": Some("x"),
+      "1data": Some("x"),
+      "xlink:href": Some("url"),
+      "日本語": Some("yes"),
+    }),
+  ])
+  assert_eq(punctuation.query("[data-id=x]").length(), 1)
+  assert_eq(punctuation.query("[data-id!=x]").length(), 0)
+  assert_eq(punctuation.query("[1data=x]").length(), 0)
+  assert_eq(punctuation.query("[xlink:href]").length(), 0)
+  assert_eq(punctuation.query("[日本語=yes]").length(), 1)
 }
 
 ///|

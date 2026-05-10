@@ -285,10 +285,14 @@ JustHTML from Python to MoonBit.
 - Attribute selector names are case-insensitive in HTML, even for
   programmatically-created nodes whose attribute map may contain uppercase
   keys. Normalize names for matching, but keep exact attribute values
-  case-sensitive. The MoonBit `query`/`matches` API is non-throwing, so
-  malformed attribute selectors with empty names, such as `[]`, `[=x]`, or
-  `[~=x]`, should short-circuit to no match instead of becoming attribute
-  lookups. Apply the same no-match rule to other malformed pieces such as
+  case-sensitive. Selector attribute names still follow the reference tokenizer
+  identifier rules: letters, `_`, `-`, non-ASCII starts, then those plus
+  digits. Unsupported operators or namespace-like punctuation such as `!=` and
+  `:` should not become literal attribute-name matches. The MoonBit
+  `query`/`matches` API is non-throwing, so malformed attribute selectors with
+  empty names, such as `[]`, `[=x]`, or `[~=x]`, should short-circuit to no
+  match instead of becoming attribute lookups. Apply the same no-match rule to
+  other malformed pieces such as
   unclosed attribute selectors, dangling `.`/`#` markers, unclosed functional
   pseudos, empty selector-list entries, and leading, repeated, or trailing
   combinators.
