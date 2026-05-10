@@ -79,6 +79,10 @@ JustHTML from Python to MoonBit.
   `altGlyphDef`, `feMorphology`, `glyphRef`, and `textPath` are easy to miss,
   and SVG `<font>` only breaks out to HTML when `color`, `face`, or `size`
   attributes are present.
+- MathML text integration points are mostly HTML islands, but `mglyph` and
+  `malignmark` are explicit exceptions that stay in MathML. When checking
+  foreign-content recovery against Python, remember to enable `collect_errors`;
+  otherwise output may match while tree-builder error parity is untested.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open, and non-whitespace tokens
