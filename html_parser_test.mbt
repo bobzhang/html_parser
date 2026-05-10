@@ -6791,6 +6791,13 @@ test "parser handles null characters in text attributes and text modes" {
   assert_eq(attr.to_html(pretty=false), "<div title=\"a�b\">x</div>")
   assert_eq(attr.errors.length(), 1)
   assert_eq(attr.errors[0].code, "unexpected-null-character")
+  let unquoted_attr = @html_parser.parse_fragment(
+    "<div title=a\u{0000}b>x</div>",
+    collect_errors=true,
+  )
+  assert_eq(unquoted_attr.to_html(pretty=false), "<div title=\"a�b\">x</div>")
+  assert_eq(unquoted_attr.errors.length(), 1)
+  assert_eq(unquoted_attr.errors[0].code, "unexpected-null-character")
   let raw = @html_parser.parse_fragment(
     "<script>a\u{0000}b</script><title>a\u{0000}b</title>",
     collect_errors=true,
@@ -6877,6 +6884,29 @@ test "parser and tokenizer report noncharacters in input stream" {
     "invalid-first-character-of-tag-name",
   )
   assert_eq(invalid_fragment.errors[2].code, "noncharacter-in-input-stream")
+  let invalid_entity = @html_parser.parse_fragment(
+    "<&notit",
+    collect_errors=true,
+  )
+  assert_eq(invalid_entity.to_html(pretty=false), "&lt;¬it")
+  assert_eq(invalid_entity.errors.length(), 2)
+  assert_eq(
+    invalid_entity.errors[0].code,
+    "invalid-first-character-of-tag-name",
+  )
+  assert_eq(
+    invalid_entity.errors[1].code,
+    "missing-semicolon-after-character-reference",
+  )
+  let invalid_xml = @html_parser.parse_fragment(
+    "<\u{000C}\u{FDD0}&lt;",
+    collect_errors=true,
+    xml_coercion=true,
+  )
+  assert_eq(invalid_xml.to_html(pretty=false), "&lt; �&lt;")
+  assert_eq(invalid_xml.errors.length(), 2)
+  assert_eq(invalid_xml.errors[0].code, "invalid-first-character-of-tag-name")
+  assert_eq(invalid_xml.errors[1].code, "noncharacter-in-input-stream")
 }
 
 ///|
