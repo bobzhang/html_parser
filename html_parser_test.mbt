@@ -6078,6 +6078,21 @@ test "template column group keeps columns and drops text" {
 }
 
 ///|
+test "parser tracks origins for template column group starts" {
+  let parsed = @html_parser.parse_fragment(
+    "<template><col>x<col></template>",
+    track_node_locations=true,
+  )
+  guard parsed.query_one("template") is Some(template) else {
+    fail("expected template")
+  }
+  let children = template.children()
+  assert_eq(children.length(), 2)
+  assert_node_origin(children[0], 10, 1, 11)
+  assert_node_origin(children[1], 16, 1, 17)
+}
+
+///|
 test "template column group reprocesses other end tags through table mode" {
   let paragraph_end = @html_parser.parse_fragment(
     "<template><col></p></template>",
@@ -6559,6 +6574,19 @@ test "fragment context seeds column group insertion mode" {
     "unexpected-start-tag-implies-end-tag",
   )
   assert_eq(nested_colgroup.errors[1].code, "unexpected-end-tag")
+}
+
+///|
+test "parser tracks origins for fragment colgroup starts" {
+  let cols = @html_parser.parse_fragment(
+    "<col><col>",
+    context=@html_parser.FragmentContext::new("colgroup"),
+    track_node_locations=true,
+  )
+  let children = cols.root.children()
+  assert_eq(children.length(), 2)
+  assert_node_origin(children[0], 0, 1, 1)
+  assert_node_origin(children[1], 5, 1, 6)
 }
 
 ///|

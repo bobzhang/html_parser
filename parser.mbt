@@ -896,7 +896,9 @@ fn Parser::handle_template_column_group_start_tag(
     return false
   }
   if name == "col" {
-    self.current_node().append_child(element("col", attrs~))
+    self
+    .current_node()
+    .append_child(self.node_with_origin(element("col", attrs~), start))
     return true
   }
   if name == "colgroup" {
@@ -932,14 +934,14 @@ fn Parser::handle_template_table_context_start_tag(
   if name == "col" {
     let colgroup = element("colgroup")
     self.current_node().append_child(colgroup)
-    colgroup.append_child(element("col", attrs~))
+    colgroup.append_child(self.node_with_origin(element("col", attrs~), start))
     self.stack.push(colgroup)
     self.template_table_context_mode = false
     self.template_detached_column_group_mode = !self.in_template_content_without_inner_table()
     return true
   }
   if name == "colgroup" {
-    let node = element("colgroup", attrs~)
+    let node = self.node_with_origin(element("colgroup", attrs~), start)
     self.current_node().append_child(node)
     self.stack.push(node)
     self.template_table_context_mode = false
@@ -1059,7 +1061,9 @@ fn Parser::handle_fragment_context_colgroup_start_tag(
     return false
   }
   if name == "col" {
-    self.current_node().append_child(element("col", attrs~))
+    self
+    .current_node()
+    .append_child(self.node_with_origin(element("col", attrs~), start))
     return true
   }
   if name == "colgroup" {
