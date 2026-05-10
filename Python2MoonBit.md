@@ -108,6 +108,9 @@ JustHTML from Python to MoonBit.
 - Keep `query()` and `matches()` semantics separate. Python `node.query(...)`
   searches descendants only and does not include `node` itself; use
   `matches(node, ...)` when the receiver should be tested directly.
+- `:contains(...)` is a non-standard pseudo-class in the reference. It is
+  case-sensitive, uses descendant text content, accepts quoted or unquoted
+  arguments, and a quoted empty string matches every element.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

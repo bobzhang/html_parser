@@ -1334,6 +1334,21 @@ test "query supports comment pseudo selector" {
 }
 
 ///|
+test "query supports contains pseudo selector" {
+  let doc = @html_parser.parse_fragment(
+    "<div id='a'><button>click me</button></div><div id='b'><button>do not click</button></div><div id='c'><span>click</span> me</div>",
+  )
+  assert_eq(doc.query("button:contains(\"click me\")").length(), 1)
+  assert_eq(doc.query("button:contains(click)").length(), 2)
+  assert_eq(doc.query("div:contains(\"click me\")").length(), 2)
+  assert_eq(doc.query("button:contains(\"Click\")").length(), 0)
+  assert_eq(doc.query("button:contains(\"\")").length(), 2)
+  assert_eq(doc.query("button:contains()").length(), 0)
+  guard doc.query_one("#a") is Some(first) else { fail("expected first div") }
+  assert_true(@html_parser.matches(first, "div:contains(\"click me\")"))
+}
+
+///|
 test "node query searches descendants only" {
   let root = @html_parser.element("div", children=[
     @html_parser.element("p", children=[@html_parser.text("One")]),

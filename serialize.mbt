@@ -1056,6 +1056,64 @@ fn is_nth_of_type(node : Node, expr : StringView) -> Bool {
 }
 
 ///|
+fn unescape_quoted_pseudo_arg(value : StringView, quote : Char) -> String {
+  let out = StringBuilder::new(size_hint=value.length())
+  let mut escaped = false
+  for ch in value {
+    if escaped {
+      if ch == quote || ch == '\\' {
+        out.write_char(ch)
+      } else {
+        out.write_char('\\')
+        out.write_char(ch)
+      }
+      escaped = false
+    } else if ch == '\\' {
+      escaped = true
+    } else {
+      out.write_char(ch)
+    }
+  }
+  if escaped {
+    out.write_char('\\')
+  }
+  out.to_string()
+}
+
+///|
+fn unquote_pseudo_arg(arg : StringView) -> String? {
+  let arg = arg.trim()
+  if arg.is_empty() {
+    return None
+  }
+  if arg.length() >= 2 {
+    let end = arg.length() - 1
+    match (arg.get_char(0), arg.get_char(end)) {
+      (Some('"'), Some('"')) => {
+        guard arg.get_view(start=1, end~) is Some(inner) else { return None }
+        return Some(unescape_quoted_pseudo_arg(inner, '"'))
+      }
+      (Some('\''), Some('\'')) => {
+        guard arg.get_view(start=1, end~) is Some(inner) else { return None }
+        return Some(unescape_quoted_pseudo_arg(inner, '\''))
+      }
+      _ => ()
+    }
+  }
+  Some(arg.to_owned())
+}
+
+///|
+fn contains_text(node : Node, arg : StringView) -> Bool {
+  guard unquote_pseudo_arg(arg) is Some(needle) else { return false }
+  if needle == "" {
+    return true
+  }
+  let text = node.to_text(separator="", strip=false)
+  string_view_contains(text[:], needle[:])
+}
+
+///|
 fn functional_pseudo_parts(name : StringView) -> (StringView, StringView)? {
   match name.split_once("(") {
     Some((pseudo_name, rest)) => {
@@ -1086,6 +1144,7 @@ fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
         Some(("nth-child", arg)) => is_nth_child(node, arg)
         Some(("nth-of-type", arg)) => is_nth_of_type(node, arg)
         Some(("not", arg)) => !matches_selector_list(node, arg)
+        Some(("contains", arg)) => contains_text(node, arg)
         _ => false
       }
   }
