@@ -83,6 +83,7 @@ pub fn Node::name(Self) -> String
 pub fn Node::namespace_uri(Self) -> String?
 pub fn Node::query(Self, StringView) -> Array[Self]
 pub fn Node::query_one(Self, StringView) -> Self?
+pub fn Node::remove_child(Self, Self) -> Unit
 pub fn Node::text(Self) -> String
 pub fn Node::to_html(Self, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String
 pub fn Node::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String

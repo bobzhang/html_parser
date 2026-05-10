@@ -1381,6 +1381,31 @@ test "node query searches descendants only" {
 }
 
 ///|
+test "dom child mutation follows node ownership rules" {
+  let leaf = @html_parser.comment("comment")
+  let ignored = @html_parser.element("span")
+  leaf.append_child(ignored)
+  assert_eq(leaf.children().length(), 0)
+  assert_eq(leaf.query("span").length(), 0)
+  assert_eq(@html_parser.matches(ignored, "span"), true)
+  assert_eq(@html_parser.matches(ignored, ":root"), false)
+  let first = @html_parser.element("div")
+  let second = @html_parser.element("section")
+  let child = @html_parser.element("p")
+  first.append_child(child)
+  assert_eq(first.query("p").length(), 1)
+  assert_true(@html_parser.matches(child, "div > p"))
+  second.append_child(child)
+  assert_eq(first.query("p").length(), 0)
+  assert_eq(second.query("p").length(), 1)
+  assert_eq(@html_parser.matches(child, "div > p"), false)
+  assert_true(@html_parser.matches(child, "section > p"))
+  second.remove_child(child)
+  assert_eq(second.query("p").length(), 0)
+  assert_eq(@html_parser.matches(child, "section > p"), false)
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)

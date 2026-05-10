@@ -100,8 +100,61 @@ pub fn doctype(
 
 ///|
 pub fn Node::append_child(self : Node, child : Node) -> Unit {
+  if !node_accepts_children(self) || node_is_self_or_ancestor(child, self) {
+    return
+  }
+  detach_from_parent(child)
   child.parent = Some(self)
   self.children.push(child)
+}
+
+///|
+fn node_accepts_children(node : Node) -> Bool {
+  match node.kind {
+    Document | Fragment | Element => true
+    _ => false
+  }
+}
+
+///|
+fn node_is_self_or_ancestor(node : Node, descendant : Node) -> Bool {
+  let mut current = Some(descendant)
+  while current is Some(current_node) {
+    if physical_equal(node, current_node) {
+      return true
+    }
+    current = current_node.parent
+  }
+  false
+}
+
+///|
+fn detach_from_parent(node : Node) -> Unit {
+  match node.parent {
+    Some(parent) => {
+      parent.remove_child(node)
+      node.parent = None
+    }
+    None => ()
+  }
+}
+
+///|
+pub fn Node::remove_child(self : Node, child : Node) -> Unit {
+  if !node_accepts_children(self) {
+    return
+  }
+  let mut index = 0
+  while index < self.children.length() {
+    if physical_equal(self.children[index], child) {
+      ignore(self.children.remove(index))
+      if child.parent is Some(parent) && physical_equal(parent, self) {
+        child.parent = None
+      }
+      return
+    }
+    index += 1
+  }
 }
 
 ///|

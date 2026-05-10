@@ -111,6 +111,10 @@ JustHTML from Python to MoonBit.
 - `:contains(...)` is a non-standard pseudo-class in the reference. It is
   case-sensitive, uses descendant text content, accepts quoted or unquoted
   arguments, and a quoted empty string matches every element.
+- DOM mutation must keep parent links and child arrays in sync. Only document,
+  fragment, and element nodes accept children; adopting an existing child should
+  detach it from its old parent, and removing a child must clear the child's
+  parent link.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.
