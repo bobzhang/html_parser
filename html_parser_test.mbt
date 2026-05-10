@@ -953,6 +953,16 @@ test "parser and tokenizer handle malformed doctype names" {
   assert_eq(name_eof_info.force_quirks, true)
   assert_eq(name_eof_token.errors.length(), 1)
   assert_eq(name_eof_token.errors[0].code, "eof-in-doctype")
+  let name_eof = @html_parser.parse("<!doctype html", collect_errors=true)
+  assert_eq(
+    name_eof.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body></body></html>",
+  )
+  assert_eq(name_eof.errors.length(), 1)
+  assert_eq(name_eof.errors[0].code, "eof-in-doctype")
+  guard name_eof.errors[0].column is Some(14) else {
+    fail("expected named doctype EOF at final character")
+  }
 }
 
 ///|
@@ -3709,6 +3719,23 @@ test "parser and tokenizer optionally coerce XML-invalid text" {
     parsed.to_html(pretty=false),
     "<div>a �</div><textarea> �</textarea>",
   )
+  let comments = @html_parser.parse_fragment(
+    "<!--a--b--><?c--d>",
+    collect_errors=true,
+    xml_coercion=true,
+  )
+  assert_eq(comments.to_html(pretty=false), "<!--a- -b--><!--?c- -d-->")
+  assert_eq(comments.errors.length(), 2)
+  assert_eq(comments.errors[0].code, "incorrectly-closed-comment")
+  assert_eq(
+    comments.errors[1].code,
+    "unexpected-question-mark-instead-of-tag-name",
+  )
+  let foreign_cdata = @html_parser.parse_fragment(
+    "<svg><![CDATA[\u{000C}\u{FDD0}]]></svg>",
+    xml_coercion=true,
+  )
+  assert_eq(foreign_cdata.to_html(pretty=false), "<svg> �</svg>")
 }
 
 ///|
