@@ -6452,6 +6452,11 @@ test "parse_bytes defaults to windows1252 and normalizes compatible labels" {
   guard utf7.encoding is Some("windows-1252") else {
     fail("expected utf7 label to normalize to windows-1252")
   }
+  let c1_letters = @html_parser.parse_bytes(b"<p>\x83\x9f</p>")
+  assert_eq(c1_letters.to_text(separator="", strip=false), "\u{0192}\u{0178}")
+  guard c1_letters.encoding is Some("windows-1252") else {
+    fail("expected C1 default bytes to use windows-1252")
+  }
 }
 
 ///|
@@ -6482,6 +6487,18 @@ test "parse_bytes decodes iso8859-2 labels" {
   )
   guard polish_czech_doc.encoding is Some("iso-8859-2") else {
     fail("expected explicit iso-8859-2 encoding for Central European bytes")
+  }
+  let latin2_marks = b"<p>\xa5\xb5\xca\xea\xff</p>"
+  let latin2_marks_doc = @html_parser.parse_bytes(
+    latin2_marks,
+    encoding="iso-8859-2",
+  )
+  assert_eq(
+    latin2_marks_doc.to_text(separator="", strip=false),
+    "\u{013D}\u{013E}\u{0118}\u{0119}\u{02D9}",
+  )
+  guard latin2_marks_doc.encoding is Some("iso-8859-2") else {
+    fail("expected explicit iso-8859-2 encoding for remapped high bytes")
   }
   let identity_high_bytes = b"<p>\xa4\xb4\xc9\xe9</p>"
   let identity_high_doc = @html_parser.parse_bytes(
@@ -7139,6 +7156,20 @@ test "numeric entity decoding covers replacement and no digit edges" {
   assert_eq(c1.errors[0].code, "control-character-reference")
   guard c1.errors[0].column is Some(6) else {
     fail("expected C1 control reference at column 6")
+  }
+  let c1_printable = @html_parser.tokenize("&#x83; &#131;", collect_errors=true)
+  guard c1_printable.tokens[0] is Characters("\u{0192} \u{0192}") else {
+    fail("expected C1 printable numeric replacements")
+  }
+  assert_eq(c1_printable.errors.length(), 2)
+  for error in c1_printable.errors {
+    assert_eq(error.code, "control-character-reference")
+  }
+  guard c1_printable.errors[0].column is Some(6) else {
+    fail("expected hex C1 printable error at column 6")
+  }
+  guard c1_printable.errors[1].column is Some(13) else {
+    fail("expected decimal C1 printable error at column 13")
   }
   let lowercase_hex = @html_parser.tokenize("&#xa;", collect_errors=true)
   guard lowercase_hex.tokens[0] is @html_parser.HtmlToken::Characters("\n") else {
