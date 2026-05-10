@@ -4532,6 +4532,10 @@ test "parser handles ruby annotation start exclusions" {
   assert_eq(inline.errors.length(), 2)
   assert_eq(inline.errors[0].code, "end-tag-too-early")
   assert_eq(inline.errors[1].code, "unexpected-end-tag")
+  let stray = @html_parser.parse_fragment("x</ruby>y", collect_errors=true)
+  assert_eq(stray.to_html(pretty=false), "xy")
+  assert_eq(stray.errors.length(), 1)
+  assert_eq(stray.errors[0].code, "unexpected-end-tag")
 }
 
 ///|

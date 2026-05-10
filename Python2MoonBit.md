@@ -110,7 +110,8 @@ JustHTML from Python to MoonBit.
   generate implied end tags except for an open `<rtc>`, while `<rb>` and
   `<rtc>` only do so when the current node is already a ruby annotation. The
   later `</ruby>` follows the "any other end tag" path, so open annotations
-  make it report `end-tag-too-early`.
+  make it report `end-tag-too-early`; a stray `</ruby>` with no open ruby is
+  still just a generic `unexpected-end-tag`.
 - Not every empty tree-builder insertion is an HTML void element. `<keygen>`
   and fragment-mode `<frame>` are inserted empty but still serialize with end
   tags, while document body-mode `<frame>` is ignored with
