@@ -16,6 +16,7 @@ priv struct Parser {
   mut fragment_context_table_row : Node?
   mut fragment_context_table_cell : Node?
   mut fragment_context_caption : Bool
+  mut fragment_context_colgroup : Bool
 }
 
 ///|
@@ -42,6 +43,7 @@ fn Parser::new(
     fragment_context_table_row: None,
     fragment_context_table_cell: None,
     fragment_context_caption: false,
+    fragment_context_colgroup: false,
   }
 }
 
@@ -117,6 +119,9 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   }
   if !self.is_fragment_parser() && text_has_non_ascii_whitespace(cleaned) {
     self.frameset_ok = false
+  }
+  if self.handle_fragment_context_colgroup_text(cleaned, start) {
+    return
   }
   if self.handle_column_group_text(cleaned, start) {
     return
@@ -651,6 +656,79 @@ fn Parser::handle_column_group_text(
         return true
       }
     }
+  }
+  false
+}
+
+///|
+fn leading_ascii_whitespace(value : StringView) -> String {
+  let out = StringBuilder::new(size_hint=value.length())
+  for ch in value {
+    if ch.is_ascii_whitespace() {
+      out.write_char(ch)
+    } else {
+      break
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn Parser::handle_fragment_context_colgroup_text(
+  self : Parser,
+  cleaned : StringView,
+  start : Int,
+) -> Bool {
+  if !self.fragment_context_colgroup {
+    return false
+  }
+  self.error_at("unexpected-characters-in-column-group", start)
+  let whitespace = leading_ascii_whitespace(cleaned)
+  if !whitespace.is_empty() {
+    self
+    .current_node()
+    .append_child(text(decode_entities(whitespace[:], in_attribute=false)))
+  }
+  true
+}
+
+///|
+fn Parser::handle_fragment_context_colgroup_start_tag(
+  self : Parser,
+  name : String,
+  attrs : Map[String, String?],
+  start : Int,
+) -> Bool {
+  if !self.fragment_context_colgroup {
+    return false
+  }
+  if name == "col" {
+    self.current_node().append_child(element("col", attrs~))
+    return true
+  }
+  if name == "colgroup" {
+    self.error_at("unexpected-start-tag-implies-end-tag", start)
+  } else {
+    self.error_at("unexpected-start-tag-in-column-group", start)
+  }
+  true
+}
+
+///|
+fn Parser::handle_fragment_context_colgroup_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if !self.fragment_context_colgroup {
+    return false
+  }
+  if name == "col" || name == "colgroup" {
+    self.error_at("unexpected-end-tag", start)
+    return true
+  }
+  if table_context_end_tag_uses_table_voodoo(name) {
+    self.error_at("unexpected-end-tag-implies-table-voodoo", start)
   }
   false
 }
@@ -1636,6 +1714,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   if self.handle_document_frameset_end_tag(name, start) {
+    return
+  }
+  if self.handle_fragment_context_colgroup_end_tag(name, start) {
     return
   }
   if self.handle_fragment_context_table_wrapper_end_tag(name, start) {
@@ -2624,6 +2705,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if !self.is_fragment_parser() && name == "frame" {
         self.error_at("unexpected-start-tag-ignored", start)
+        return
+      }
+      if self.handle_fragment_context_colgroup_start_tag(name, attrs, start) {
         return
       }
       if self.has_open_element("select") &&
@@ -3834,6 +3918,12 @@ fn Parser::parse_fragment_context(
     self.fragment_context_caption = true
     self.parse_all()
     self.fragment_context_caption = false
+    return true
+  }
+  if name == "colgroup" {
+    self.fragment_context_colgroup = true
+    self.parse_all()
+    self.fragment_context_colgroup = false
     return true
   }
   false

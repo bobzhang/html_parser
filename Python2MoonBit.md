@@ -382,6 +382,12 @@ JustHTML from Python to MoonBit.
   close reports `unexpected-end-tag`. A `<table>` start is the exception: after
   those two errors it is reprocessed in body mode and future tokens no longer
   use caption insertion mode.
+- Column-group fragment context is also mode-only. `<col>` starts are inserted
+  as fragment children, but other starts are ignored with
+  `unexpected-start-tag-in-column-group` or the nested-colgroup
+  `unexpected-start-tag-implies-end-tag` error. Character tokens always report
+  `unexpected-characters-in-column-group`; leading ASCII whitespace is kept,
+  while the non-whitespace remainder is dropped.
 
 ## Optional Values and Defaults
 
