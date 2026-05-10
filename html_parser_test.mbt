@@ -6505,6 +6505,50 @@ test "parser matches end tags before self closing solidus" {
 }
 
 ///|
+test "tokenize matches rawtext and rcdata end tags before bad solidus" {
+  let title = @html_parser.tokenize(
+    "<title>a</title/foo><p>b",
+    collect_errors=true,
+  )
+  guard title.tokens[1] is @html_parser.HtmlToken::Characters("a") else {
+    fail("expected title text before slash end tag")
+  }
+  guard title.tokens[2] is @html_parser.HtmlToken::Tag(end_title) else {
+    fail("expected title end tag before slash attribute")
+  }
+  assert_true(end_title.kind is @html_parser.TagKind::EndTag)
+  assert_eq(end_title.name, "title")
+  guard end_title.attrs["foo"] is Some("") else {
+    fail("expected recovered foo attribute on title end tag")
+  }
+  assert_eq(title.errors.length(), 1)
+  assert_eq(title.errors[0].code, "unexpected-character-after-solidus-in-tag")
+  guard title.errors[0].column is Some(17) else {
+    fail("expected title solidus recovery at column 17")
+  }
+  let script = @html_parser.tokenize(
+    "<script>a</script/foo><p>b",
+    collect_errors=true,
+  )
+  guard script.tokens[1] is @html_parser.HtmlToken::Characters("a") else {
+    fail("expected script text before slash end tag")
+  }
+  guard script.tokens[2] is @html_parser.HtmlToken::Tag(end_script) else {
+    fail("expected script end tag before slash attribute")
+  }
+  assert_true(end_script.kind is @html_parser.TagKind::EndTag)
+  assert_eq(end_script.name, "script")
+  guard end_script.attrs["foo"] is Some("") else {
+    fail("expected recovered foo attribute on script end tag")
+  }
+  assert_eq(script.errors.length(), 1)
+  assert_eq(script.errors[0].code, "unexpected-character-after-solidus-in-tag")
+  guard script.errors[0].column is Some(19) else {
+    fail("expected script solidus recovery at column 19")
+  }
+}
+
+///|
 test "tokenize reports malformed end tag errors when requested" {
   let result = @html_parser.tokenize("</>", collect_errors=true)
   assert_eq(result.tokens.length(), 1)
@@ -7516,6 +7560,122 @@ test "parser reports special text EOF like tree builder" {
   assert_eq(xmp.errors[0].code, "expected-named-closing-tag-but-got-eof")
   let iframe = @html_parser.parse_fragment("<iframe>x", collect_errors=true)
   assert_eq(iframe.errors[0].code, "expected-closing-tag-but-got-eof")
+}
+
+///|
+test "parser matches malformed special text end tags after solidus" {
+  let title = @html_parser.parse(
+    "<title>a</title/foo><p>b",
+    collect_errors=true,
+  )
+  assert_eq(
+    title.to_html(pretty=false),
+    "<html><head><title>a</title></head><body><p>b</p></body></html>",
+  )
+  assert_eq(title.errors.length(), 2)
+  assert_eq(title.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(title.errors[1].code, "unexpected-character-after-solidus-in-tag")
+  guard title.errors[1].column is Some(17) else {
+    fail("expected title solidus recovery at column 17")
+  }
+  let title_attr = @html_parser.parse(
+    "<title>a</title foo><p>b",
+    collect_errors=true,
+  )
+  assert_eq(
+    title_attr.to_html(pretty=false),
+    "<html><head><title>a</title></head><body><p>b</p></body></html>",
+  )
+  assert_eq(title_attr.errors.length(), 1)
+  assert_eq(title_attr.errors[0].code, "expected-doctype-but-got-start-tag")
+  let title_self_closing = @html_parser.parse(
+    "<title>a</title/><p>b",
+    collect_errors=true,
+  )
+  assert_eq(
+    title_self_closing.to_html(pretty=false),
+    "<html><head><title>a</title></head><body><p>b</p></body></html>",
+  )
+  assert_eq(title_self_closing.errors.length(), 1)
+  assert_eq(
+    title_self_closing.errors[0].code,
+    "expected-doctype-but-got-start-tag",
+  )
+  let title_eof = @html_parser.parse("<title>a</title/foo", collect_errors=true)
+  assert_eq(
+    title_eof.to_html(pretty=false),
+    "<html><head><title>a</title></head><body></body></html>",
+  )
+  assert_eq(title_eof.errors.length(), 4)
+  assert_eq(title_eof.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(
+    title_eof.errors[1].code,
+    "unexpected-character-after-solidus-in-tag",
+  )
+  assert_eq(title_eof.errors[2].code, "eof-in-tag")
+  assert_eq(title_eof.errors[3].code, "expected-named-closing-tag-but-got-eof")
+  guard title_eof.errors[2].column is Some(19) else {
+    fail("expected title EOF-in-tag at column 19")
+  }
+  guard title_eof.errors[3].column is Some(19) else {
+    fail("expected title tree-builder EOF at column 19")
+  }
+  let textarea = @html_parser.parse(
+    "<textarea>a</textarea/foo><p>b",
+    collect_errors=true,
+  )
+  assert_eq(
+    textarea.to_html(pretty=false),
+    "<html><head></head><body><textarea>a</textarea><p>b</p></body></html>",
+  )
+  assert_eq(textarea.errors.length(), 2)
+  assert_eq(textarea.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(
+    textarea.errors[1].code,
+    "unexpected-character-after-solidus-in-tag",
+  )
+  guard textarea.errors[1].column is Some(23) else {
+    fail("expected textarea solidus recovery at column 23")
+  }
+  let style = @html_parser.parse(
+    "<style>a</style/foo><p>b",
+    collect_errors=true,
+  )
+  assert_eq(
+    style.to_html(pretty=false),
+    "<html><head><style>a</style></head><body><p>b</p></body></html>",
+  )
+  assert_eq(style.errors.length(), 2)
+  assert_eq(style.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(style.errors[1].code, "unexpected-character-after-solidus-in-tag")
+  guard style.errors[1].column is Some(17) else {
+    fail("expected style solidus recovery at column 17")
+  }
+  let xmp = @html_parser.parse("<xmp>a</xmp/foo><p>b", collect_errors=true)
+  assert_eq(
+    xmp.to_html(pretty=false),
+    "<html><head></head><body><xmp>a</xmp><p>b</p></body></html>",
+  )
+  assert_eq(xmp.errors.length(), 2)
+  assert_eq(xmp.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(xmp.errors[1].code, "unexpected-character-after-solidus-in-tag")
+  guard xmp.errors[1].column is Some(13) else {
+    fail("expected xmp solidus recovery at column 13")
+  }
+  let script = @html_parser.parse(
+    "<script>a</script/foo><p>b",
+    collect_errors=true,
+  )
+  assert_eq(
+    script.to_html(pretty=false),
+    "<html><head><script>a</script></head><body><p>b</p></body></html>",
+  )
+  assert_eq(script.errors.length(), 2)
+  assert_eq(script.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(script.errors[1].code, "unexpected-character-after-solidus-in-tag")
+  guard script.errors[1].column is Some(19) else {
+    fail("expected script solidus recovery at column 19")
+  }
 }
 
 ///|

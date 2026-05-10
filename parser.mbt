@@ -4634,6 +4634,47 @@ fn Parser::skip_matching_end_tag(self : Parser) -> Unit {
 }
 
 ///|
+fn Parser::consume_matching_special_end_tag(self : Parser) -> Bool {
+  self.pos += 2
+  while !self.is_eof() {
+    guard self.current() is Some(ch) else { break }
+    match ch {
+      '>' | '/' => break
+      ch if ch.is_ascii_whitespace() => break
+      _ => ignore(self.advance_char())
+    }
+  }
+  let attrs : Map[String, String?] = {}
+  let mut closed = false
+  while !self.is_eof() {
+    self.skip_ascii_whitespace()
+    guard self.current() is Some(ch) else { break }
+    match ch {
+      '>' => {
+        ignore(self.advance_char())
+        closed = true
+        break
+      }
+      '/' => {
+        ignore(self.advance_char())
+        if self.current() == Some('>') {
+          ignore(self.advance_char())
+          closed = true
+          break
+        } else {
+          self.error_at("unexpected-character-after-solidus-in-tag", self.pos)
+        }
+      }
+      _ => self.parse_attribute(attrs)
+    }
+  }
+  if !closed {
+    self.error_at_eof("eof-in-tag")
+  }
+  closed
+}
+
+///|
 fn Parser::consume_special_element_content(
   self : Parser,
   parent : Node,
@@ -4675,7 +4716,9 @@ fn Parser::consume_special_element_content(
     match scan.end_start {
       Some(end_start) => {
         self.pos = end_start
-        self.skip_matching_end_tag()
+        if !self.consume_matching_special_end_tag() {
+          self.error_at_special_text_eof(name)
+        }
       }
       None => {
         self.error_at_special_text_eof(name)
@@ -4697,7 +4740,9 @@ fn Parser::consume_special_element_content(
         None => ()
       }
       self.pos = end_start
-      self.skip_matching_end_tag()
+      if !self.consume_matching_special_end_tag() {
+        self.error_at_special_text_eof(name)
+      }
     }
     None => {
       let error_pos = eof_error_pos(self.input)

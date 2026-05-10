@@ -671,6 +671,11 @@ JustHTML from Python to MoonBit.
 - End tags still run through attribute and self-closing states in the tokenizer.
   Preserve attributes on end-tag tokens, and treat `/` after the end-tag name as
   a valid boundary for raw text matching.
+- Raw/RCDATA matching only proves that an end tag starts at that offset. Inputs
+  such as `</title/foo` should still close the special text element, then run the
+  end-tag parser so `unexpected-character-after-solidus-in-tag`, `eof-in-tag`,
+  and tree-builder EOF diagnostics are reported at the same cursor positions as
+  Python.
 - A bad slash in a start tag is not a separate MoonBit-only error. `<div /a>`
   reports `unexpected-character-after-solidus-in-tag`, then reconsumes `a` in
   the before-attribute-name state so it becomes a normal empty-valued attribute.
