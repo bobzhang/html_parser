@@ -357,7 +357,9 @@ JustHTML from Python to MoonBit.
   table element in Python's fragment stack, foster-parented text and starts are
   appended at the current table-context position rather than moved before a
   visible table wrapper, and `</table>` reports `unexpected-end-tag` instead of
-  closing the synthetic context.
+  closing the synthetic context. A nested `<table>` start in that mode also
+  reports the failed synthetic close as `unexpected-end-tag` after
+  `unexpected-start-tag-implies-end-tag`.
 - Row-group fragment contexts (`tbody`, `thead`, `tfoot`) need a synthetic
   table plus synthetic row group for insertion, then both wrappers are unwrapped
   from the returned fragment. Top-level table-structural starts other than rows

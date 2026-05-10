@@ -1372,6 +1372,17 @@ test "fragment context seeds table insertion mode" {
   )
   assert_eq(ignored_table_end.errors.length(), 1)
   assert_eq(ignored_table_end.errors[0].code, "unexpected-end-tag")
+  let nested_table = @html_parser.parse_fragment(
+    "<table>x</table>",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(nested_table.to_html(pretty=false), "x")
+  assert_eq(nested_table.errors.length(), 4)
+  assert_eq(nested_table.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(nested_table.errors[1].code, "unexpected-end-tag")
+  assert_eq(nested_table.errors[2].code, "foster-parenting-character")
+  assert_eq(nested_table.errors[3].code, "unexpected-end-tag")
 }
 
 ///|

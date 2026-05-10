@@ -962,6 +962,7 @@ fn Parser::handle_fragment_context_table_start_tag(
   let current = self.current_node()
   if current.kind == Element && is_table_start_foster_target(current.name) {
     self.error_at("unexpected-start-tag-implies-end-tag", start)
+    self.error_at("unexpected-end-tag", start)
     return true
   }
   false
