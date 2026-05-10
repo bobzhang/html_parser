@@ -178,6 +178,9 @@ JustHTML from Python to MoonBit.
   `[text](href)`, images remain compact HTML, generic block containers add a
   flattening space, and `script`/`style`/`textarea` only contribute when
   Markdown `html_passthrough` is enabled.
+- Programmatic DOMs can place `Document` or `Fragment` nodes inside an element
+  even when parsed HTML never would. Markdown link-text traversal still needs
+  to recurse through those container node kinds so direct builders match Python.
 - Markdown link destinations use Python `quote(..., safe=...)` semantics only
   after wrapping is required. Keep the safe-byte set explicit; printable bytes
   such as quotes and backslashes still need percent-encoding inside `<...>`.

@@ -291,6 +291,11 @@ test "to_markdown renders empty blocks headings and horizontal rules" {
   assert_eq(empty_blocks.to_markdown(), "---\n\n##\n\n```\n```")
   let deep_heading = @html_parser.parse_fragment("<h4>Deep</h4>")
   assert_eq(deep_heading.to_markdown(), "#### Deep")
+  let deeper_headings = @html_parser.fragment(children=[
+    @html_parser.element("h5", children=[@html_parser.text("Small")]),
+    @html_parser.element("h6", children=[@html_parser.text("Tiny")]),
+  ])
+  assert_eq(deeper_headings.to_markdown(), "##### Small\n\n###### Tiny")
   let head = @html_parser.fragment(children=[
     @html_parser.element("h3", children=[@html_parser.text("Sub")]),
     @html_parser.element("head", children=[@html_parser.text("X")]),
@@ -568,6 +573,23 @@ test "to_markdown keeps inline and raw variants inside links" {
     passthrough.to_markdown(html_passthrough=true),
     "[<script>alert(1);</script>x<style>body{}</style><textarea>T</textarea>](https://e.com)",
   )
+  let fragment_child = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.fragment(children=[
+        @html_parser.text("Hi"),
+        @html_parser.element("strong", children=[@html_parser.text("B")]),
+      ]),
+    ],
+  )
+  assert_eq(fragment_child.to_markdown(), "[Hi**B**](https://e.com)")
+  let document_child = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[@html_parser.document(children=[@html_parser.text("Doc")])],
+  )
+  assert_eq(document_child.to_markdown(), "[Doc](https://e.com)")
 }
 
 ///|
