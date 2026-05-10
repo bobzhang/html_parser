@@ -35,6 +35,15 @@ priv struct Parser {
   mut duplicate_head_element : Node?
   mut repeated_document_html_shell : Bool
   post_body_html_children : Array[Node]
+  active_formatting : Array[FormattingEntry]
+}
+
+///|
+priv struct FormattingEntry {
+  name : String
+  ns : String
+  attrs : Map[String, String?]
+  node : Node
 }
 
 ///|
@@ -82,6 +91,7 @@ fn Parser::new(
     duplicate_head_element: None,
     repeated_document_html_shell: false,
     post_body_html_children: [],
+    active_formatting: [],
   }
 }
 
@@ -241,6 +251,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   } else {
     decoded
   }
+  self.reconstruct_active_formatting_elements()
   self.current_node().append_child(self.text_at(data, start))
 }
 
@@ -2383,6 +2394,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   }
   if name != "" {
     self.pop_until(name, tag_close_pos)
+    if active_formatting_element_name(name) {
+      self.remove_last_active_formatting_by_name(name)
+    }
   }
 }
 
@@ -2711,6 +2725,89 @@ fn Parser::stack_contains_node(self : Parser, target : Node) -> Bool {
     }
   }
   false
+}
+
+///|
+fn active_formatting_element_name(name : StringView) -> Bool {
+  match name {
+    "a"
+    | "b"
+    | "big"
+    | "code"
+    | "em"
+    | "font"
+    | "i"
+    | "nobr"
+    | "s"
+    | "small"
+    | "strike"
+    | "strong"
+    | "tt"
+    | "u" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::append_active_formatting_entry(self : Parser, node : Node) -> Unit {
+  match node.ns {
+    Some(ns) =>
+      self.active_formatting.push({
+        name: node.name,
+        ns,
+        attrs: node.attrs.copy(),
+        node,
+      })
+    None => ()
+  }
+}
+
+///|
+fn Parser::remove_last_active_formatting_by_name(
+  self : Parser,
+  name : StringView,
+) -> Unit {
+  let target = name.to_owned()
+  let mut index = self.active_formatting.length()
+  while index > 0 {
+    index -= 1
+    if self.active_formatting[index].name == target {
+      ignore(self.active_formatting.remove(index))
+      return
+    }
+  }
+}
+
+///|
+fn Parser::reconstruct_active_formatting_elements(self : Parser) -> Unit {
+  if self.active_formatting.is_empty() {
+    return
+  }
+  let last_index = self.active_formatting.length() - 1
+  if self.stack_contains_node(self.active_formatting[last_index].node) {
+    return
+  }
+  let mut index = last_index
+  while index > 0 {
+    if self.stack_contains_node(self.active_formatting[index - 1].node) {
+      break
+    }
+    index -= 1
+  }
+  while index < self.active_formatting.length() {
+    let entry = self.active_formatting[index]
+    let node = element(entry.name, attrs=entry.attrs.copy(), ns=entry.ns)
+    node.copy_origin_from(entry.node)
+    self.current_node().append_child(node)
+    self.stack.push(node)
+    self.active_formatting[index] = {
+      name: entry.name,
+      ns: entry.ns,
+      attrs: entry.attrs,
+      node,
+    }
+    index += 1
+  }
 }
 
 ///|
@@ -4347,6 +4444,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if !self.document_start_tag_preserves_frameset_ok(name, attrs) {
         self.frameset_ok = false
       }
+      if !start_tag_closes_p(name) {
+        self.reconstruct_active_formatting_elements()
+      }
       let node_ns = self.start_tag_namespace(name)
       let adjusted_name = if node_ns == "html" {
         if name == "image" {
@@ -4390,6 +4490,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         !is_void_element(adjusted_name) &&
         !inserts_empty_nonvoid {
         self.stack.push(node)
+        if node_ns == "html" && active_formatting_element_name(adjusted_name) {
+          self.append_active_formatting_entry(node)
+        }
         if node_ns == "html" && start_tag_ignores_initial_lf(adjusted_name) {
           self.skip_one_initial_lf()
         }
