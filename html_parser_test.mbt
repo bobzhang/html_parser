@@ -3356,6 +3356,8 @@ test "query supports attribute presence and exact selectors" {
   assert_eq(doc.query("[id=main]").length(), 1)
   assert_eq(doc.query("[ id = 'main' ]").length(), 1)
   assert_eq(doc.query("[id=wrong]").length(), 0)
+  assert_eq(doc.query("[]").length(), 0)
+  assert_eq(doc.query("[=main]").length(), 0)
   assert_eq(doc.query("a[href][data-id='link']").length(), 1)
   assert_eq(doc.query("button[disabled='']").length(), 1)
   let upper = @html_parser.fragment(children=[
@@ -3385,6 +3387,7 @@ test "query supports attribute operator selectors" {
   assert_eq(doc.query("[href^='']").length(), 0)
   assert_eq(doc.query("[href$='']").length(), 0)
   assert_eq(doc.query("[href*='']").length(), 0)
+  assert_eq(doc.query("[~=container]").length(), 0)
   assert_eq(doc.query("[lang|=e]").length(), 0)
   let exact_lang = @html_parser.parse_fragment(
     "<p lang='en'></p><p lang='en-US'></p><p lang='eng'></p>",

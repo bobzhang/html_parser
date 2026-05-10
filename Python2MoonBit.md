@@ -285,7 +285,10 @@ JustHTML from Python to MoonBit.
 - Attribute selector names are case-insensitive in HTML, even for
   programmatically-created nodes whose attribute map may contain uppercase
   keys. Normalize names for matching, but keep exact attribute values
-  case-sensitive.
+  case-sensitive. The MoonBit `query`/`matches` API is non-throwing, so
+  malformed attribute selectors with empty names, such as `[]`, `[=x]`, or
+  `[~=x]`, should short-circuit to no match instead of becoming attribute
+  lookups.
 - Attribute selector operators have distinct empty-value rules in the Python
   matcher: `^=`, `$=`, and `*=` do not match an empty expected value, while
   `~=` uses HTML-whitespace token matching and `|=` matches exact or
