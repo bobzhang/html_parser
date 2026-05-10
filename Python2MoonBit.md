@@ -868,7 +868,11 @@ JustHTML from Python to MoonBit.
   separate tree-builder concern: when non-whitespace text is seen under a
   `table`/row-group/`tr` but not inside a `td`/`th`/`caption`, move the whole
   text run before the table while reporting `foster-parenting-character` once
-  per non-whitespace character. Non-table start tags in that context also use
+  per non-whitespace character. One active-formatting exception is observable:
+  if a misnested active `<a>` is no longer on the open-element stack, fostered
+  table text reconstructs that `<a>` around the fostered text and reports
+  `unexpected-implied-end-tag-in-table-view` when the table closes instead of
+  the immediate character error. Non-table start tags in that context also use
   the foster-parenting insertion location; starts under `table` or row groups
   report `foster-parenting-start-tag`, and the matching end reports
   `unexpected-end-tag-implies-table-voodoo`. Table mode has narrow exceptions:

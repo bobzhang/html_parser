@@ -34,6 +34,7 @@ priv struct Parser {
   mut deferred_initial_doctype_error : ParseError?
   mut duplicate_head_element : Node?
   mut repeated_document_html_shell : Bool
+  mut pending_table_view_implied_end_tag : Bool
   post_body_html_children : Array[Node]
   active_formatting : Array[FormattingEntry]
 }
@@ -91,6 +92,7 @@ fn Parser::new(
     deferred_initial_doctype_error: None,
     duplicate_head_element: None,
     repeated_document_html_shell: false,
+    pending_table_view_implied_end_tag: false,
     post_body_html_children: [],
     active_formatting: [],
   }
@@ -351,6 +353,31 @@ fn Parser::report_foster_parenting_character_errors(
 }
 
 ///|
+fn Parser::foster_parent_table_text_with_formatting(
+  self : Parser,
+  cleaned : StringView,
+  start : Int,
+  table_index : Int,
+  formatting_index : Int,
+) -> Bool {
+  let entry = self.active_formatting[formatting_index]
+  let node = element_from_formatting_entry(entry)
+  node.append_child(
+    self.text_at(decode_entities(cleaned, in_attribute=false), start),
+  )
+  if self.table_index_is_fragment_context_table(table_index) {
+    self.current_node().append_child(node)
+  } else {
+    self.insert_node_before_open_table(node, table_index)
+  }
+  self.active_formatting[formatting_index] = formatting_entry_with_node(
+    entry, node,
+  )
+  self.pending_table_view_implied_end_tag = true
+  true
+}
+
+///|
 fn Parser::foster_parent_table_text(
   self : Parser,
   cleaned : StringView,
@@ -366,6 +393,12 @@ fn Parser::foster_parent_table_text(
   let current = self.current_node()
   if current.kind != Element || !is_table_text_foster_target(current.name) {
     return false
+  }
+  let formatting_index = self.active_formatting_orphan_anchor_index()
+  if formatting_index >= 0 {
+    return self.foster_parent_table_text_with_formatting(
+      cleaned, start, table_index, formatting_index,
+    )
   }
   ignore(self.report_foster_parenting_character_errors(cleaned, start))
   let fostered = self.text_at(
@@ -639,6 +672,87 @@ fn Parser::table_context_without_cell_or_caption(self : Parser) -> Int {
   } else {
     table_index
   }
+}
+
+///|
+fn Parser::last_table_section_index_after(
+  self : Parser,
+  table_index : Int,
+) -> Int {
+  let mut index = self.stack.length()
+  while index > table_index + 1 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element && is_table_section_name(node.name) {
+      return index
+    }
+  }
+  -1
+}
+
+///|
+fn Parser::table_context_keep_index_for_start(
+  self : Parser,
+  name : StringView,
+  table_index : Int,
+) -> Int {
+  match name {
+    "col" => {
+      let colgroup_index = self.last_stack_index_of("colgroup")
+      if colgroup_index > table_index {
+        colgroup_index
+      } else {
+        table_index
+      }
+    }
+    "td" | "th" => {
+      let row_index = self.last_stack_index_of("tr")
+      if row_index > table_index {
+        return row_index
+      }
+      let section_index = self.last_table_section_index_after(table_index)
+      if section_index > table_index {
+        return section_index
+      }
+      table_index
+    }
+    "tr" => {
+      let section_index = self.last_table_section_index_after(table_index)
+      if section_index > table_index {
+        section_index
+      } else {
+        table_index
+      }
+    }
+    _ => table_index
+  }
+}
+
+///|
+fn Parser::clear_stack_to_table_context_for_start(
+  self : Parser,
+  name : StringView,
+) -> Unit {
+  if !is_table_internal_start_name(name) {
+    return
+  }
+  let table_index = self.table_context_without_cell_or_caption()
+  if table_index < 0 {
+    return
+  }
+  let keep_index = self.table_context_keep_index_for_start(name, table_index)
+  while self.stack.length() > keep_index + 1 {
+    ignore(self.stack.pop())
+  }
+}
+
+///|
+fn Parser::table_context_start_skips_active_reconstruction(
+  self : Parser,
+  name : StringView,
+) -> Bool {
+  is_table_internal_start_name(name) &&
+  self.table_context_without_cell_or_caption() >= 0
 }
 
 ///|
@@ -1541,8 +1655,19 @@ fn Parser::handle_fragment_context_table_wrapper_end_tag(
 }
 
 ///|
-fn Parser::handle_table_end_tag(self : Parser, name : String) -> Bool {
-  name == "table" && self.close_open_element("table")
+fn Parser::handle_table_end_tag(
+  self : Parser,
+  name : String,
+  tag_close_pos : Int,
+) -> Bool {
+  if name != "table" || !self.close_open_element("table") {
+    return false
+  }
+  if self.pending_table_view_implied_end_tag {
+    self.error_at("unexpected-implied-end-tag-in-table-view", tag_close_pos)
+    self.pending_table_view_implied_end_tag = false
+  }
+  true
 }
 
 ///|
@@ -2343,7 +2468,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_table_structural_end_tag(name) {
     return
   }
-  if self.handle_table_end_tag(name) {
+  if self.handle_table_end_tag(name, tag_close_pos) {
     return
   }
   if name == "br" && self.in_table_body_mode_context() {
@@ -2898,6 +3023,22 @@ fn Parser::active_formatting_index_by_node(self : Parser, target : Node) -> Int 
     index -= 1
     let entry = self.active_formatting[index]
     if !entry.marker && physical_equal(entry.node, target) {
+      return index
+    }
+  }
+  -1
+}
+
+///|
+fn Parser::active_formatting_orphan_anchor_index(self : Parser) -> Int {
+  let mut index = self.active_formatting.length()
+  while index > 0 {
+    index -= 1
+    let entry = self.active_formatting[index]
+    if entry.marker {
+      break
+    }
+    if entry.name == "a" && !self.stack_contains_node(entry.node) {
       return index
     }
   }
@@ -4757,6 +4898,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       let closed_table_cell = self.close_current_table_cell_for_start(name)
       self.close_current_table_row_for_start(name)
       self.close_current_table_section_for_start(name)
+      self.clear_stack_to_table_context_for_start(name)
       if self.handle_fragment_context_table_start_tag(name, start) {
         return
       }
@@ -4806,7 +4948,8 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if node_ns == "html" {
         self.prepare_active_formatting_start(name, start)
       }
-      if !start_tag_closes_p(name) {
+      if !start_tag_closes_p(name) &&
+        !self.table_context_start_skips_active_reconstruction(name) {
         self.reconstruct_active_formatting_elements()
       }
       let adjusted_name = if node_ns == "html" {
