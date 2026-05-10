@@ -5137,6 +5137,79 @@ test "entity decoding reports upstream fixture errors" {
 }
 
 ///|
+test "attribute entity decoding reports upstream fixture errors" {
+  let quoted = @html_parser.tokenize(
+    "<div a='&#x80 &notit;'>",
+    collect_errors=true,
+  )
+  guard quoted.tokens[0] is @html_parser.HtmlToken::Tag(quoted_tag) else {
+    fail("expected quoted attr tag")
+  }
+  guard quoted_tag.attrs["a"] is Some("\u{20AC} &notit;") else {
+    fail("expected stricter attribute entity decoding")
+  }
+  assert_eq(quoted.errors.length(), 2)
+  assert_eq(
+    quoted.errors[0].code,
+    "missing-semicolon-after-character-reference",
+  )
+  assert_eq(quoted.errors[1].code, "control-character-reference")
+  guard quoted.errors[0].column is Some(23) else {
+    fail("expected quoted attr errors at current tag cursor")
+  }
+  guard quoted.errors[1].column is Some(23) else {
+    fail("expected quoted attr control error at current tag cursor")
+  }
+  let unquoted_numeric = @html_parser.tokenize(
+    "<div a=&#65>",
+    collect_errors=true,
+  )
+  guard unquoted_numeric.tokens[0]
+    is @html_parser.HtmlToken::Tag(unquoted_numeric_tag) else {
+    fail("expected unquoted numeric attr tag")
+  }
+  guard unquoted_numeric_tag.attrs["a"] is Some("A") else {
+    fail("expected unquoted numeric attr")
+  }
+  assert_eq(unquoted_numeric.errors.length(), 1)
+  assert_eq(
+    unquoted_numeric.errors[0].code,
+    "missing-semicolon-after-character-reference",
+  )
+  guard unquoted_numeric.errors[0].column is Some(12) else {
+    fail("expected unquoted numeric attr error at tag close")
+  }
+  let unquoted_named = @html_parser.tokenize(
+    "<div a=&notit>",
+    collect_errors=true,
+  )
+  guard unquoted_named.tokens[0]
+    is @html_parser.HtmlToken::Tag(unquoted_named_tag) else {
+    fail("expected unquoted named attr tag")
+  }
+  guard unquoted_named_tag.attrs["a"] is Some("&notit") else {
+    fail("expected blocked legacy prefix in attribute")
+  }
+  assert_eq(unquoted_named.errors.length(), 0)
+  let parsed = @html_parser.parse_fragment(
+    "<div a='&#x80 &notit;'></div>",
+    collect_errors=true,
+  )
+  guard parsed.query_one("div") is Some(div) else {
+    fail("expected parsed div")
+  }
+  guard div.attrs()["a"] is Some("\u{20AC} &notit;") else {
+    fail("expected parsed attr value")
+  }
+  assert_eq(parsed.errors.length(), 2)
+  assert_eq(
+    parsed.errors[0].code,
+    "missing-semicolon-after-character-reference",
+  )
+  assert_eq(parsed.errors[1].code, "control-character-reference")
+}
+
+///|
 test "tokenize preserves raw end tags before tree recovery" {
   let result = @html_parser.tokenize("<p>open</span>")
   assert_eq(result.tokens.length(), 4)

@@ -3824,7 +3824,13 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
         }
       }
       match self.input.get_view(start~, end=self.pos) {
-        Some(view) => decode_attribute_value(view)
+        Some(view) => {
+          let decoded = decode_attribute_value_with_errors(view)
+          for error in decoded.errors {
+            self.error_at(error.code, self.pos)
+          }
+          decoded.data
+        }
         None => ""
       }
     }
@@ -3844,10 +3850,7 @@ fn Parser::parse_quoted_attribute_value(self : Parser, quote : Char) -> String {
     }
     ignore(self.advance_char())
   }
-  let raw = match self.input.get_view(start~, end=self.pos) {
-    Some(view) => decode_attribute_value(view)
-    None => ""
-  }
+  let raw = self.input.get_view(start~, end=self.pos)
   if self.current() == Some(quote) {
     ignore(self.advance_char())
     match self.current() {
@@ -3856,7 +3859,16 @@ fn Parser::parse_quoted_attribute_value(self : Parser, quote : Char) -> String {
       _ => ()
     }
   }
-  raw
+  match raw {
+    Some(view) => {
+      let decoded = decode_attribute_value_with_errors(view)
+      for error in decoded.errors {
+        self.error_at(error.code, self.pos)
+      }
+      decoded.data
+    }
+    None => ""
+  }
 }
 
 ///|
@@ -5068,14 +5080,13 @@ fn decode_entities_with_errors(
   input : StringView,
   in_attribute~ : Bool,
 ) -> EntityDecodeResult {
-  ignore(in_attribute)
   let out = StringBuilder::new(size_hint=input.length())
   let errors : Array[EntityDecodeError] = []
   let mut pos = 0
   while pos < input.length() {
     match input.get_char(pos) {
       Some('&') =>
-        match consume_entity_with_errors(input, pos) {
+        match consume_entity_with_errors(input, pos, in_attribute~) {
           Some(consumed) => {
             out.write_string(consumed.value)
             for error in consumed.errors {
@@ -5096,9 +5107,12 @@ fn decode_entities_with_errors(
 }
 
 ///|
-fn decode_attribute_value(input : StringView) -> String {
-  let decoded = decode_entities(input, in_attribute=true)
-  decoded.replace_all(old="\u{0000}", new="\u{FFFD}")
+fn decode_attribute_value_with_errors(input : StringView) -> EntityDecodeResult {
+  let decoded = decode_entities_with_errors(input, in_attribute=true)
+  EntityDecodeResult::{
+    data: decoded.data.replace_all(old="\u{0000}", new="\u{FFFD}"),
+    errors: decoded.errors,
+  }
 }
 
 ///|
@@ -5149,11 +5163,13 @@ fn named_entity_missing_semicolon_error_offset(
 fn consume_entity_with_errors(
   input : StringView,
   start : Int,
+  in_attribute~ : Bool,
 ) -> EntityConsumeResult? {
   let rest = input[start:]
   if rest.has_prefix("&amp;") {
     Some(EntityConsumeResult::{ value: "&", next: start + 5, errors: [] })
-  } else if rest.has_prefix("&amp") {
+  } else if rest.has_prefix("&amp") &&
+    !legacy_entity_blocked_in_attribute(input, start + 4, in_attribute~) {
     Some(EntityConsumeResult::{
       value: "&",
       next: start + 4,
@@ -5161,7 +5177,8 @@ fn consume_entity_with_errors(
     })
   } else if rest.has_prefix("&lt;") {
     Some(EntityConsumeResult::{ value: "<", next: start + 4, errors: [] })
-  } else if rest.has_prefix("&lt") {
+  } else if rest.has_prefix("&lt") &&
+    !legacy_entity_blocked_in_attribute(input, start + 3, in_attribute~) {
     Some(EntityConsumeResult::{
       value: "<",
       next: start + 3,
@@ -5169,7 +5186,8 @@ fn consume_entity_with_errors(
     })
   } else if rest.has_prefix("&gt;") {
     Some(EntityConsumeResult::{ value: ">", next: start + 4, errors: [] })
-  } else if rest.has_prefix("&gt") {
+  } else if rest.has_prefix("&gt") &&
+    !legacy_entity_blocked_in_attribute(input, start + 3, in_attribute~) {
     Some(EntityConsumeResult::{
       value: ">",
       next: start + 3,
@@ -5183,7 +5201,8 @@ fn consume_entity_with_errors(
     Some(EntityConsumeResult::{ value: " ", next: start + 6, errors: [] })
   } else if rest.has_prefix("&not;") {
     Some(EntityConsumeResult::{ value: "¬", next: start + 5, errors: [] })
-  } else if rest.has_prefix("&not") {
+  } else if rest.has_prefix("&not") &&
+    !legacy_entity_blocked_in_attribute(input, start + 4, in_attribute~) {
     Some(EntityConsumeResult::{
       value: "¬",
       next: start + 4,
@@ -5193,6 +5212,22 @@ fn consume_entity_with_errors(
     consume_numeric_entity(input, start)
   } else {
     None
+  }
+}
+
+///|
+fn legacy_entity_blocked_in_attribute(
+  input : StringView,
+  next : Int,
+  in_attribute~ : Bool,
+) -> Bool {
+  if !in_attribute {
+    return false
+  }
+  match input.get_char(next) {
+    Some(ch) if ch.is_ascii_alphabetic() || (ch >= '0' && ch <= '9') => true
+    Some('=') => true
+    _ => false
   }
 }
 

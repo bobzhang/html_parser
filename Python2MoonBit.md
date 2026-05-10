@@ -477,6 +477,10 @@ JustHTML from Python to MoonBit.
   tokenizer errors. In MoonBit, keep those together in a small result record so
   callers can add the local slice offset before turning them into `ParseError`
   line/column positions.
+- Attribute character-reference errors are reported when the attribute value is
+  finished, not necessarily at the character-reference offset. Attribute mode
+  also blocks legacy prefix matches such as `&notit`, while text mode decodes
+  the `&not` prefix and reports the missing-semicolon recovery.
 - Tree-builder EOF diagnostics are not one error per open stack entry. Match
   the reference by reporting the first still-open non-implied element, while
   allowing tags such as `p`, `li`, `option`, and table row/cell wrappers to

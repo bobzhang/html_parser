@@ -589,7 +589,13 @@ fn SourceTokenizer::parse_attribute_value(self : SourceTokenizer) -> String {
         }
       }
       match self.input.get_view(start~, end=self.pos) {
-        Some(view) => decode_attribute_value(view)
+        Some(view) => {
+          let decoded = decode_attribute_value_with_errors(view)
+          for error in decoded.errors {
+            self.error_at(error.code, self.pos)
+          }
+          decoded.data
+        }
         None => ""
       }
     }
@@ -609,10 +615,7 @@ fn SourceTokenizer::parse_quoted_attribute_value(
     }
     ignore(self.advance_char())
   }
-  let raw = match self.input.get_view(start~, end=self.pos) {
-    Some(view) => decode_attribute_value(view)
-    None => ""
-  }
+  let raw = self.input.get_view(start~, end=self.pos)
   if self.current() == Some(quote) {
     ignore(self.advance_char())
     match self.current() {
@@ -621,7 +624,16 @@ fn SourceTokenizer::parse_quoted_attribute_value(
       _ => ()
     }
   }
-  raw
+  match raw {
+    Some(view) => {
+      let decoded = decode_attribute_value_with_errors(view)
+      for error in decoded.errors {
+        self.error_at(error.code, self.pos)
+      }
+      decoded.data
+    }
+    None => ""
+  }
 }
 
 ///|
