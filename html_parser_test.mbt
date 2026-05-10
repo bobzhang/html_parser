@@ -42,6 +42,13 @@ test "builder preserves adjusted foreign element names" {
   assert_eq(gradient.name(), "linearGradient")
   assert_true(gradient.namespace_uri() is Some("svg"))
   assert_eq(gradient.to_html(pretty=false), "<linearGradient></linearGradient>")
+  let math = @html_parser.element("math", ns="mathml", children=[
+    @html_parser.element("mi", ns="mathml", children=[@html_parser.text("x")]),
+  ])
+  assert_true(math.namespace_uri() is Some("math"))
+  assert_eq(math.to_html(pretty=false), "<math><mi>x</mi></math>")
+  let rect = @html_parser.element("rect", ns="SVG")
+  assert_true(rect.namespace_uri() is Some("svg"))
   let div = @html_parser.element("DIV")
   assert_eq(div.name(), "div")
   assert_true(div.namespace_uri() is Some("html"))

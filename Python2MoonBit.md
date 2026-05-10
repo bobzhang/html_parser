@@ -589,6 +589,9 @@ JustHTML from Python to MoonBit.
   in `element(..., ns="svg" | "math")`, then apply SVG tag-name casing
   (`lineargradient` -> `linearGradient`) and SVG/MathML attribute casing before
   inserting the node.
+- Builder namespace inputs are user-facing aliases, not always the exact
+  internal namespace string. Normalize `mathml` to the internal `math`
+  namespace, and lowercase known namespace names before storing them on nodes.
 - Foreign content is a parser mode, not just a namespace on the node. While the
   adjusted current node is SVG/MathML, bypass ordinary HTML insertion-mode
   special cases for non-breakout starts, honor self-closing syntax for all

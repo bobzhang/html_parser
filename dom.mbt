@@ -49,12 +49,24 @@ pub fn fragment(children? : Array[Node] = []) -> Node {
 }
 
 ///|
+fn normalize_element_namespace(ns : StringView) -> String {
+  match ns.to_lower() {
+    "mathml" => "math"
+    "html" => "html"
+    "svg" => "svg"
+    "math" => "math"
+    _ => ns.to_owned()
+  }
+}
+
+///|
 pub fn element(
   name : StringView,
   attrs? : Map[String, String?] = {},
   children? : Array[Node] = [],
   ns? : String = "html",
 ) -> Node {
+  let ns = normalize_element_namespace(ns)
   let normalized_name = if ns == "html" {
     lower_ascii(name)
   } else {
