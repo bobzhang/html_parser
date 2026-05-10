@@ -1166,6 +1166,26 @@ test "sanitize_dom neutralizes rawtext end tag boundaries only" {
 }
 
 ///|
+test "sanitize_dom hardens rawtext inside template children" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["template", "style", "img"],
+    allowed_attributes={ "template": [], "img": ["src"] },
+    drop_content_tags=[],
+  )
+  let fragment = @html_parser.fragment(children=[
+    @html_parser.element("template", children=[
+      @html_parser.element("style", children=[
+        @html_parser.text("</style><img src=x>"),
+      ]),
+    ]),
+  ])
+  let out = @html_parser.sanitize_dom(fragment, policy~).to_html(pretty=false)
+  assert_eq(out, "<template><style>&lt;/style><img src=x></style></template>")
+  let reparsed = @html_parser.parse_fragment(out, sanitize=false)
+  assert_eq(reparsed.query("img").length(), 0)
+}
+
+///|
 test "sanitize_dom filters allowed style rawtext resource loads" {
   let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
   let fragment = @html_parser.parse_fragment(
