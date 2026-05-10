@@ -1561,6 +1561,52 @@ test "template table row contexts foster non-whitespace text" {
 }
 
 ///|
+test "template caption structural starts close caption and reprocess" {
+  let row = @html_parser.parse_fragment(
+    "<template><caption>x<tr><td>y</td></tr></caption></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    row.to_html(pretty=false),
+    "<template><caption>x</caption><tbody><tr><td>y</td></tr></tbody></template>",
+  )
+  assert_eq(row.errors.length(), 3)
+  assert_eq(row.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(row.errors[1].code, "unexpected-end-tag")
+  assert_eq(row.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
+  let nested_table = @html_parser.parse_fragment(
+    "<template><caption>x<table><tr><td>y</td></tr></table></caption></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_table.to_html(pretty=false),
+    "<template><caption>x</caption><tbody><tr><td>y</td></tr></tbody></template>",
+  )
+  assert_eq(nested_table.errors.length(), 6)
+  assert_eq(nested_table.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(nested_table.errors[1].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(nested_table.errors[2].code, "unexpected-end-tag")
+  assert_eq(nested_table.errors[3].code, "unexpected-end-tag")
+  assert_eq(nested_table.errors[4].code, "unexpected-end-tag")
+  assert_eq(
+    nested_table.errors[5].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  let colgroup = @html_parser.parse_fragment(
+    "<template><caption>x<colgroup><col></colgroup></caption></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    colgroup.to_html(pretty=false),
+    "<template><caption>x</caption><colgroup><col></colgroup></template>",
+  )
+  assert_eq(colgroup.errors.length(), 3)
+  assert_eq(colgroup.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(colgroup.errors[1].code, "unexpected-end-tag")
+  assert_eq(colgroup.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
+}
+
+///|
 test "template column group keeps columns and drops text" {
   let text = @html_parser.parse_fragment(
     "<template><col>x<col></template>",

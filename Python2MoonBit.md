@@ -573,6 +573,10 @@ JustHTML from Python to MoonBit.
   MoonBit stack. In Python's template table modes, text in direct template
   `<tr>` or row-group content is inserted into the template content after the
   current structural element, with `foster-parenting-character` diagnostics.
+- Caption recovery inside template content also reprocesses in table mode.
+  After `<template><caption>...<tr>`, close the caption, report the implicit
+  close, then process the row start as an in-table token, which may insert an
+  implied `tbody` rather than a bare `tr`.
 
 ## Test Porting
 

@@ -819,9 +819,22 @@ fn Parser::handle_template_table_context_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
+  start : Int,
 ) -> Bool {
   if !self.template_table_context_mode {
     return false
+  }
+  if name == "table" {
+    self.error_at("unexpected-start-tag-implies-end-tag", start)
+    self.error_at("unexpected-end-tag", start)
+    return true
+  }
+  if name == "caption" {
+    let node = element("caption", attrs~)
+    self.current_node().append_child(node)
+    self.stack.push(node)
+    self.template_table_context_mode = false
+    return true
   }
   if name == "col" {
     let colgroup = element("colgroup")
@@ -829,7 +842,7 @@ fn Parser::handle_template_table_context_start_tag(
     colgroup.append_child(element("col", attrs~))
     self.stack.push(colgroup)
     self.template_table_context_mode = false
-    self.template_detached_column_group_mode = true
+    self.template_detached_column_group_mode = !self.in_template_content_without_inner_table()
     return true
   }
   if name == "colgroup" {
@@ -837,7 +850,32 @@ fn Parser::handle_template_table_context_start_tag(
     self.current_node().append_child(node)
     self.stack.push(node)
     self.template_table_context_mode = false
-    self.template_detached_column_group_mode = true
+    self.template_detached_column_group_mode = !self.in_template_content_without_inner_table()
+    return true
+  }
+  if name == "tbody" || name == "tfoot" || name == "thead" {
+    let node = element(name, attrs~)
+    self.current_node().append_child(node)
+    self.stack.push(node)
+    self.template_table_context_mode = false
+    return true
+  }
+  if name == "tr" || name == "td" || name == "th" {
+    let section = element("tbody")
+    self.current_node().append_child(section)
+    self.stack.push(section)
+    if name == "td" || name == "th" {
+      self.error_at("unexpected-cell-in-table-body", start)
+    }
+    let row = element("tr")
+    section.append_child(row)
+    self.stack.push(row)
+    if name == "td" || name == "th" {
+      let cell = element(name, attrs~)
+      row.append_child(cell)
+      self.stack.push(cell)
+    }
+    self.template_table_context_mode = false
     return true
   }
   false
@@ -1005,7 +1043,17 @@ fn Parser::close_current_caption_for_start(
   }
   let table_index = self.last_open_table_index()
   let caption_index = self.last_stack_index_of("caption")
-  if table_index < 0 || caption_index <= table_index {
+  if table_index < 0 {
+    let template_index = self.last_open_template_index()
+    if template_index < 0 || caption_index <= template_index {
+      return false
+    }
+    self.error_at("unexpected-start-tag-implies-end-tag", start)
+    ignore(self.close_open_element("caption"))
+    self.template_table_context_mode = true
+    return true
+  }
+  if caption_index <= table_index {
     return false
   }
   self.error_at("unexpected-start-tag-implies-end-tag", start)
@@ -3151,7 +3199,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at("unexpected-start-tag-ignored", start)
         return
       }
-      if self.handle_template_table_context_start_tag(name, attrs) {
+      if self.handle_template_table_context_start_tag(name, attrs, start) {
         return
       }
       let in_template_table_context = self.in_template_content_without_inner_table()
@@ -3191,7 +3239,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at("unexpected-start-tag-ignored", start)
         return
       }
-      ignore(self.close_current_caption_for_start(name, start))
+      if self.close_current_caption_for_start(name, start) &&
+        self.handle_template_table_context_start_tag(name, attrs, start) {
+        return
+      }
       self.close_current_column_group_for_start(name, start)
       if self.handle_table_context_hidden_input_or_form_start(
           name, attrs, start,
