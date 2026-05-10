@@ -196,7 +196,9 @@ JustHTML from Python to MoonBit.
   and CSS `url(...)`, filter each URL value with the exact tag/attribute key
   (`style:<property>` for CSS). For `srcset`/`imagesrcset`,
   `ping`/`attributionsrc`, filter the whole attribute value once before
-  splitting it into candidates or tokens.
+  splitting it into candidates or tokens. If the filter returns `None`, an
+  empty string, or a whitespace-only list for those attributes, drop the whole
+  attribute.
 - Framesets are document state, not ordinary body children. Before body content
   appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside
