@@ -365,6 +365,11 @@ JustHTML from Python to MoonBit.
   therefore escapes existing `&gt;`/`&#39;` sequences again, while `JsString`
   applies JavaScript escapes after HTML serialization. Pretty output is a
   separate path and should be tested alongside compact output.
+- Pretty serialization of ordinary text-only elements collapses HTML whitespace
+  and trims the result, but vertical tab is not HTML whitespace and must remain
+  a normal character. Raw/preformatted text-only elements such as `script`,
+  `style`, `pre`, and `textarea` should stay compact while preserving their
+  text whitespace.
 - The html5lib tree-test serializer is line-oriented and does not emit wrapper
   lines for `#document` or `#document-fragment`. Build it as an array of lines
   joined by `\n` so it has no trailing newline, and sort attribute lines by

@@ -311,6 +311,67 @@ fn node_to_html_compact(node : Node, quote : Char) -> String {
 }
 
 ///|
+fn collapse_html_whitespace(value : StringView) -> String {
+  let out = StringBuilder::new(size_hint=value.length())
+  let mut pending_space = false
+  let mut wrote = false
+  for ch in value {
+    if is_html_whitespace_char(ch) {
+      if wrote {
+        pending_space = true
+      }
+    } else {
+      if pending_space {
+        out.write_char(' ')
+        pending_space = false
+      }
+      out.write_char(ch)
+      wrote = true
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn element_has_only_text_children(node : Node) -> Bool {
+  if node.children.is_empty() {
+    return false
+  }
+  for child in node.children {
+    if child.kind != Text {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn pretty_text_preserves_whitespace(name : StringView) -> Bool {
+  match name {
+    "script" | "style" | "pre" | "textarea" | "listing" | "xmp" | "plaintext" =>
+      true
+    _ => false
+  }
+}
+
+///|
+fn compact_pretty_text_children(node : Node, quote : Char) -> String {
+  let out = StringBuilder::new()
+  if pretty_text_preserves_whitespace(node.name) {
+    for child in node.children {
+      out.write_string(node_to_html_compact(child, quote))
+    }
+  } else {
+    let raw = StringBuilder::new()
+    for child in node.children {
+      raw.write_string(child.data)
+    }
+    out.write_string(escape_text(collapse_html_whitespace(raw.to_string()[:])))
+  }
+  out.to_string()
+}
+
+///|
 fn node_to_html_pretty(
   node : Node,
   indent : Int,
@@ -330,6 +391,15 @@ fn node_to_html_pretty(
     Element =>
       if node.children.is_empty() || is_void_element(node.name) {
         " ".repeat(indent) + node_to_html_compact(node, quote)
+      } else if element_has_only_text_children(node) {
+        let out = StringBuilder::new()
+        out.write_string(" ".repeat(indent))
+        out.write_string(serialize_start_tag(node, quote))
+        out.write_string(compact_pretty_text_children(node, quote))
+        out.write_string("</")
+        out.write_string(node.name)
+        out.write_char('>')
+        out.to_string()
       } else {
         let out = StringBuilder::new()
         out.write_string(" ".repeat(indent))

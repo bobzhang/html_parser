@@ -158,6 +158,59 @@ test "serializer handles pretty output quote contexts and comment guards" {
 }
 
 ///|
+test "pretty serializer collapses ordinary text-only elements" {
+  let heading = @html_parser.parse_fragment(
+    "<h3>\n\nSorry to interrupt, but we're short on time to hit our goal.\n</h3>",
+  )
+  guard heading.query_one("h3") is Some(h3) else { fail("expected h3") }
+  assert_eq(
+    h3.to_html(pretty=true),
+    "<h3>Sorry to interrupt, but we're short on time to hit our goal.</h3>",
+  )
+  let div = @html_parser.element(
+    "div",
+    attrs={ "class": Some("overlay-banner-main-footer-cta") },
+    children=[
+      @html_parser.text(
+        "\n\nWe ask you, sincerely: don't skip this, join the 2% of readers who give.\n",
+      ),
+    ],
+  )
+  assert_eq(
+    div.to_html(pretty=true),
+    "<div class=\"overlay-banner-main-footer-cta\">We ask you, sincerely: don't skip this, join the 2% of readers who give.</div>",
+  )
+  let vertical_tab = @html_parser.element("div", children=[
+    @html_parser.text("  a  \u{000B}  b  "),
+  ])
+  assert_eq(vertical_tab.to_html(pretty=true), "<div>a \u{000B} b</div>")
+  let empty = @html_parser.element("h3", children=[@html_parser.text("")])
+  assert_eq(empty.to_html(pretty=true), "<h3></h3>")
+}
+
+///|
+test "pretty serializer preserves raw and preformatted text-only elements" {
+  let script = @html_parser.parse_fragment(
+    "<script>\n  var x = 1;\n\n  var y = 2;\n</script>",
+  )
+  guard script.query_one("script") is Some(script_node) else {
+    fail("expected script")
+  }
+  assert_eq(
+    script_node.to_html(pretty=true),
+    "<script>\n  var x = 1;\n\n  var y = 2;\n</script>",
+  )
+  let pre = @html_parser.element("pre", children=[
+    @html_parser.text("\n  keep  spacing\n"),
+  ])
+  assert_eq(pre.to_html(pretty=true), "<pre>\n  keep  spacing\n</pre>")
+  let textarea = @html_parser.element("textarea", children=[
+    @html_parser.text("<x>\n"),
+  ])
+  assert_eq(textarea.to_html(pretty=true), "<textarea>&lt;x&gt;\n</textarea>")
+}
+
+///|
 test "builder preserves adjusted foreign element names" {
   let gradient = @html_parser.element("linearGradient", ns="svg")
   assert_eq(gradient.name(), "linearGradient")
