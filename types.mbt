@@ -112,6 +112,9 @@ pub struct Node {
   priv public_id : String?
   priv system_id : String?
   priv force_quirks : Bool
+  priv mut origin_offset : Int?
+  priv mut origin_line : Int?
+  priv mut origin_col : Int?
   priv mut parent : Node?
   priv children : Array[Node]
 } derive(Debug)

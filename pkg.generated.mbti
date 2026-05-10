@@ -97,6 +97,10 @@ pub fn Node::insert_before(Self, Self, Self?) -> Unit
 pub fn Node::kind(Self) -> NodeKind
 pub fn Node::name(Self) -> String
 pub fn Node::namespace_uri(Self) -> String?
+pub fn Node::origin_col(Self) -> Int?
+pub fn Node::origin_line(Self) -> Int?
+pub fn Node::origin_location(Self) -> (Int, Int)?
+pub fn Node::origin_offset(Self) -> Int?
 pub fn Node::parent(Self) -> Self?
 pub fn Node::query(Self, StringView) -> Array[Self]
 pub fn Node::query_one(Self, StringView) -> Self?

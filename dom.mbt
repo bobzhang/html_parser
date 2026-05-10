@@ -19,6 +19,9 @@ fn make_node(
     public_id,
     system_id,
     force_quirks,
+    origin_offset: None,
+    origin_line: None,
+    origin_col: None,
     parent: None,
     children: [],
   }
@@ -274,6 +277,36 @@ pub fn Node::children(self : Node) -> Array[Node] {
 }
 
 ///|
+pub fn Node::origin_offset(self : Node) -> Int? {
+  self.origin_offset
+}
+
+///|
+pub fn Node::origin_line(self : Node) -> Int? {
+  self.origin_line
+}
+
+///|
+pub fn Node::origin_col(self : Node) -> Int? {
+  self.origin_col
+}
+
+///|
+pub fn Node::origin_location(self : Node) -> (Int, Int)? {
+  match (self.origin_line, self.origin_col) {
+    (Some(line), Some(col)) => Some((line, col))
+    _ => None
+  }
+}
+
+///|
+fn Node::copy_origin_from(self : Node, source : Node) -> Unit {
+  self.origin_offset = source.origin_offset
+  self.origin_line = source.origin_line
+  self.origin_col = source.origin_col
+}
+
+///|
 pub fn Node::clone_node(
   self : Node,
   deep? : Bool = false,
@@ -294,6 +327,7 @@ pub fn Node::clone_node(
     self.force_quirks,
     [],
   )
+  cloned.copy_origin_from(self)
   if deep {
     let stack : Array[(Node, Node)] = [(self, cloned)]
     while !stack.is_empty() {
