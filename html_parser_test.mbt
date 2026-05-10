@@ -238,6 +238,21 @@ test "to_markdown handles direct nodes comments doctypes and empty inline nodes"
 }
 
 ///|
+test "to_markdown preserves table and image HTML and escapes title text" {
+  let doc = @html_parser.parse_fragment(
+    "<p>Hi<img src=x alt=y>there</p><table><tr><td>A</td></tr></table>",
+  )
+  assert_eq(
+    doc.to_markdown(),
+    "Hi<img src=\"x\" alt=\"y\">there\n\n<table><tbody><tr><td>A</td></tr></tbody></table>",
+  )
+  let title = @html_parser.parse_fragment(
+    "<title><script>alert(1)</script></title>",
+  )
+  assert_eq(title.to_markdown(), "&lt;script>alert(1)&lt;/script>")
+}
+
+///|
 test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
   let links = @html_parser.parse_fragment(
     "<p><a href='https://e.com/a(b)c'>x</a> <a href='https://e.com/a b'>y</a></p>",

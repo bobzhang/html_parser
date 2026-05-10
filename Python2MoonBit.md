@@ -85,6 +85,9 @@ JustHTML from Python to MoonBit.
 - `script`, `style`, and `textarea` are block-like in Markdown output even when
   their content is dropped by default. Preserve surrounding text separation, and
   only emit the raw HTML itself when `html_passthrough` is enabled.
+- Markdown intentionally preserves `<img>` and `<table>` subtrees as canonical
+  compact HTML. Pair these tests with parser normalization because table
+  serialization may include inserted row groups such as `<tbody>`.
 - Link text uses a distinct Markdown traversal. The reference flattens
   paragraphs, lists, blockquotes, and `<br>` inside `<a>` into spaces so the
   generated `[text](href)` does not contain block Markdown or blank lines.
