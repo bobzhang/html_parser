@@ -1437,7 +1437,8 @@ fn sanitize_css_url_functions(
     return None
   }
   let attr_name = "style:" + prop
-  if css_value_has_disallowed_resource_functions(value) {
+  if css_value_has_disallowed_resource_functions(value) ||
+    string_view_contains(value, "/*"[:]) {
     return None
   }
   let out = StringBuilder::new(size_hint=value.length())

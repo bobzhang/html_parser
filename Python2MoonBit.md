@@ -409,7 +409,10 @@ JustHTML from Python to MoonBit.
   such as `("*", "style:background-image")` in the Python API); sanitize the
   inner URL, then reserialize as `url('...')` only when the sanitized URL does
   not need CSS escaping. Keep rejecting `image-set(...)`, CSS escapes,
-  obfuscated CSS comments, and legacy loader functions conservatively.
+  obfuscated CSS comments, and legacy loader functions conservatively. The
+  dedicated CSS `url(...)` sanitizer should reject any `/*` comment in the
+  value, even a closed trailing comment, because it only supports plain URL
+  function tokens.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone.
