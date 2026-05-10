@@ -1300,6 +1300,23 @@ test "query supports nth of type pseudo selector" {
 }
 
 ///|
+test "query supports not pseudo selector" {
+  let doc = @html_parser.parse_fragment(
+    "<div id='main'><p class='intro'>One</p><p class='content'>Two</p></div><div id='sidebar'><p>Side</p></div>",
+  )
+  assert_eq(doc.query("div:not(#sidebar)").length(), 1)
+  assert_eq(doc.query("p:not(.intro)").length(), 2)
+  assert_eq(doc.query("div > p:not(.content)").length(), 2)
+  assert_eq(doc.query("p:not(.intro, .content)").length(), 1)
+  assert_eq(doc.query("p:not()").length(), 3)
+  guard doc.query_one(".intro") is Some(intro) else {
+    fail("expected intro paragraph")
+  }
+  assert_true(@html_parser.matches(intro, "p:not(.content)"))
+  assert_eq(@html_parser.matches(intro, "p:not(.intro)"), false)
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)

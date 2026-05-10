@@ -99,6 +99,9 @@ JustHTML from Python to MoonBit.
 - `:nth-of-type(...)` reuses the An+B formula parser from `:nth-child(...)`,
   but the 1-based index counts only element siblings with the same normalized
   tag name.
+- `:not(...)` can reuse the selector-list matcher recursively. Keep the outer
+  splitter parenthesis-aware so commas and markers inside `:not(.a, .b)` stay
+  inside the argument.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

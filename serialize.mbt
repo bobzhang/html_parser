@@ -1085,6 +1085,7 @@ fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
       match functional_pseudo_parts(name) {
         Some(("nth-child", arg)) => is_nth_child(node, arg)
         Some(("nth-of-type", arg)) => is_nth_of_type(node, arg)
+        Some(("not", arg)) => !matches_selector_list(node, arg)
         _ => false
       }
   }
