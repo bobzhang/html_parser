@@ -1317,6 +1317,23 @@ test "query supports not pseudo selector" {
 }
 
 ///|
+test "query supports comment pseudo selector" {
+  let doc = @html_parser.parse_fragment(
+    "<div>Before<!-- first --><span>Inside</span><!-- second --></div><!-- outside -->",
+  )
+  assert_eq(doc.query(":comment").length(), 3)
+  assert_eq(doc.query("div > :comment").length(), 2)
+  assert_eq(doc.query("div :comment").length(), 2)
+  assert_eq(doc.query("div, :comment").length(), 4)
+  guard doc.query_one(":comment") is Some(comment) else {
+    fail("expected comment")
+  }
+  assert_eq(comment.name(), "#comment")
+  assert_true(@html_parser.matches(comment, ":comment"))
+  assert_eq(@html_parser.matches(comment, "*"), false)
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)

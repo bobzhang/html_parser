@@ -102,6 +102,9 @@ JustHTML from Python to MoonBit.
 - `:not(...)` can reuse the selector-list matcher recursively. Keep the outer
   splitter parenthesis-aware so commas and markers inside `:not(.a, .b)` stay
   inside the argument.
+- `:comment` is an explicit non-element selector. Keep universal, tag, class,
+  id, and normal pseudo matching element-only, but allow comment nodes to match
+  exactly `:comment` so combinators such as `div > :comment` work.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

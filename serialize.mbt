@@ -1093,12 +1093,12 @@ fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
 
 ///|
 fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
-  if node.kind != Element {
-    return false
-  }
   let selector = selector.trim()
   if selector.is_empty() {
     return false
+  }
+  if node.kind != Element {
+    return node.kind == Comment && selector == ":comment"
   }
   let mut pos = 0
   match selector.get_char(pos) {
