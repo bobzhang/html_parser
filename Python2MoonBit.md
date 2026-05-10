@@ -271,7 +271,10 @@ JustHTML from Python to MoonBit.
   seeds its visited set with the query root, so descendants are deduplicated by
   object identity, shared child references are returned once, and
   programmatically-created cycles cannot make `query()` recurse back into the
-  root or loop forever.
+  root or loop forever. Descendant-combinator matching has its own ancestor
+  visited set, seeded with the candidate node, so `matches()` also terminates
+  on parent cycles while still allowing a real ancestor before the cycle to
+  match.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone.

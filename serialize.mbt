@@ -1598,15 +1598,21 @@ fn matches_complex_selector(node : Node, selector : StringView) -> Bool {
     let wanted = parts[needed]
     match combinators[needed] {
       DescendantCombinator => {
+        let visited : Array[Node] = [current]
         let mut cursor = current.parent
         let mut found = false
         while !found {
           match cursor {
             Some(ancestor) => {
-              cursor = ancestor.parent
+              if node_identity_seen(visited, ancestor) {
+                return false
+              }
+              visited.push(ancestor)
               if matches_simple_selector(ancestor, wanted) {
                 current = ancestor
                 found = true
+              } else {
+                cursor = ancestor.parent
               }
             }
             None => return false
