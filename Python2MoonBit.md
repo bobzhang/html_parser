@@ -46,6 +46,11 @@ JustHTML from Python to MoonBit.
 - Byte-level prescan edge cases are easy to accidentally "fix" by decoding
   first. Keep explicit tests for unfinished comments/tags and unterminated
   quotes so malformed sniff-only markup does not change the selected encoding.
+- When the Python reference separates tokenizer and tree-builder states, a
+  combined MoonBit parser still needs to preserve their error ordering. Initial
+  doctype recovery after bogus markup is one example: tokenizer errors for the
+  bogus token come first, then the deferred initial doctype error must be
+  flushed before the real start/end tag is handled by the tree builder.
 - Raw text and RCDATA elements need parser-state-specific text handling.
   `script`/`style` contents are not entity-decoded; `title`/`textarea`
   contents are entity-decoded but still stop only at their matching end tag.

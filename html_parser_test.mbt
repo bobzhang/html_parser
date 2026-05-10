@@ -1437,6 +1437,75 @@ test "document parser reports missing initial doctype" {
 }
 
 ///|
+test "document parser defers initial doctype errors after bogus markup" {
+  let start = @html_parser.parse("<!foo><div>x", collect_errors=true)
+  assert_eq(
+    start.to_html(pretty=false),
+    "<!--foo--><html><head></head><body><div>x</div></body></html>",
+  )
+  assert_eq(start.errors.length(), 3)
+  assert_eq(start.errors[0].code, "incorrectly-opened-comment")
+  assert_eq(start.errors[1].code, "expected-doctype-but-got-start-tag")
+  assert_eq(start.errors[2].code, "expected-closing-tag-but-got-eof")
+  guard start.errors[1].column is Some(11) else {
+    fail("expected deferred start-tag doctype error at div close")
+  }
+  let end_tag = @html_parser.parse("<!foo></div>", collect_errors=true)
+  assert_eq(
+    end_tag.to_html(pretty=false),
+    "<!--foo--><html><head></head><body></body></html>",
+  )
+  assert_eq(end_tag.errors.length(), 3)
+  assert_eq(end_tag.errors[0].code, "incorrectly-opened-comment")
+  assert_eq(end_tag.errors[1].code, "expected-doctype-but-got-end-tag")
+  assert_eq(end_tag.errors[2].code, "unexpected-end-tag-before-html")
+  guard end_tag.errors[1].column is Some(12) else {
+    fail("expected deferred end-tag doctype error at end tag close")
+  }
+  let bare_lt = @html_parser.parse("<!foo><", collect_errors=true)
+  assert_eq(
+    bare_lt.to_html(pretty=false),
+    "<!--foo--><html><head></head><body>&lt;</body></html>",
+  )
+  assert_eq(bare_lt.errors.length(), 3)
+  assert_eq(bare_lt.errors[0].code, "incorrectly-opened-comment")
+  assert_eq(bare_lt.errors[1].code, "eof-before-tag-name")
+  assert_eq(bare_lt.errors[2].code, "expected-doctype-but-got-chars")
+  guard bare_lt.errors[2].column is Some(7) else {
+    fail("expected deferred character doctype error at literal <")
+  }
+  let unfinished_declaration = @html_parser.parse(
+    "<!foo<!",
+    collect_errors=true,
+  )
+  assert_eq(
+    unfinished_declaration.to_html(pretty=false),
+    "<!--foo<!--><html><head></head><body></body></html>",
+  )
+  assert_eq(unfinished_declaration.errors.length(), 2)
+  assert_eq(unfinished_declaration.errors[0].code, "incorrectly-opened-comment")
+  assert_eq(
+    unfinished_declaration.errors[1].code,
+    "expected-doctype-but-got-eof",
+  )
+  guard unfinished_declaration.errors[1].column is Some(7) else {
+    fail("expected deferred doctype EOF after unfinished declaration")
+  }
+  let invalid_open = @html_parser.parse("<!foo><*x>", collect_errors=true)
+  assert_eq(
+    invalid_open.to_html(pretty=false),
+    "<!--foo--><html><head></head><body>&lt;*x&gt;</body></html>",
+  )
+  assert_eq(invalid_open.errors.length(), 3)
+  assert_eq(invalid_open.errors[0].code, "incorrectly-opened-comment")
+  assert_eq(invalid_open.errors[1].code, "invalid-first-character-of-tag-name")
+  assert_eq(invalid_open.errors[2].code, "expected-doctype-but-got-chars")
+  guard invalid_open.errors[2].column is Some(7) else {
+    fail("expected deferred character doctype error at invalid tag open")
+  }
+}
+
+///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(

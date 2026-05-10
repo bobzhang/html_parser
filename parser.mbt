@@ -25,6 +25,7 @@ priv struct Parser {
   mut template_column_group_mode : Bool
   mut template_table_context_mode : Bool
   mut template_detached_column_group_mode : Bool
+  mut deferred_initial_doctype_error : ParseError?
 }
 
 ///|
@@ -61,6 +62,7 @@ fn Parser::new(
     template_column_group_mode: false,
     template_table_context_mode: false,
     template_detached_column_group_mode: false,
+    deferred_initial_doctype_error: None,
   }
 }
 
@@ -1691,7 +1693,10 @@ fn Parser::parse_all(self : Parser) -> Unit {
           ignore(self.advance_char())
         }
         match self.input.get_view(start~, end=self.pos) {
-          Some(view) => self.append_text(view, start)
+          Some(view) => {
+            self.flush_deferred_initial_doctype_error()
+            self.append_text(view, start)
+          }
           None => ()
         }
       }
@@ -1840,6 +1845,17 @@ fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
   } else {
     self.errors.push(error)
     None
+  }
+}
+
+///|
+fn Parser::flush_deferred_initial_doctype_error(self : Parser) -> Unit {
+  match self.deferred_initial_doctype_error {
+    Some(error) => {
+      self.errors.push(error)
+      self.deferred_initial_doctype_error = None
+    }
+    None => ()
   }
 }
 
@@ -2184,6 +2200,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.error_at_eof("eof-in-tag")
     return
   }
+  self.flush_deferred_initial_doctype_error()
   if self.handle_before_html_end_tag(name, self.pos - 1) {
     return
   }
@@ -3542,6 +3559,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at_eof("eof-in-tag")
         return
       }
+      self.flush_deferred_initial_doctype_error()
       self.before_html_phase = false
       if self.handle_foreign_content_start_tag(name, attrs, self_closing, start) {
         return
@@ -3726,6 +3744,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
     _ =>
       if self.current() is None {
         self.error_at_eof("eof-before-tag-name")
+        self.flush_deferred_initial_doctype_error()
         self.current_node().append_child(text("<"))
       } else if self.current() == Some('?') {
         self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)
@@ -3745,7 +3764,10 @@ fn Parser::parse_invalid_tag_open_as_text(self : Parser, start : Int) -> Unit {
     ignore(self.advance_char())
   }
   match self.input.get_view(start~, end=self.pos) {
-    Some(view) => self.append_text(view, start)
+    Some(view) => {
+      self.flush_deferred_initial_doctype_error()
+      self.append_text(view, start)
+    }
     None => ()
   }
 }
@@ -5407,12 +5429,9 @@ pub fn parse(
   ignore(sanitize)
   let root = document()
   let parser = Parser::new(html, root, scripting_enabled~, xml_coercion~)
-  let deferred_initial_doctype_error = parser.report_initial_doctype_error()
+  parser.deferred_initial_doctype_error = parser.report_initial_doctype_error()
   parser.parse_all()
-  match deferred_initial_doctype_error {
-    Some(error) => parser.errors.push(error)
-    None => ()
-  }
+  parser.flush_deferred_initial_doctype_error()
   parser.report_eof_tree_errors()
   scaffold_document(root)
   normalize_tables(root)
