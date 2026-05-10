@@ -13,6 +13,11 @@ JustHTML from Python to MoonBit.
   come from arbitrary code-unit arithmetic, use `get_view(...)` and handle
   `None` instead of assuming the slice is valid.
 - When a parser consumes a `Char`, advance by `ch.utf16_len()`, not by `1`.
+- When translating JSON fixture strings to MoonBit literals, decode the JSON
+  escape first and then encode the MoonBit literal. A JSON input such as
+  `"<title id\\\">"` contains both a backslash and a quote in the attribute
+  name, so the MoonBit literal must preserve both as `"<title id\\\">"` and the
+  expected attribute key is `"id\\\""`.
 - Do not assume MoonBit's default `Array::sort()` ordering for `String` or
   tuple values matches Python's lexicographic ordering. When a fixture format
   requires stable code-point order, such as html5lib-style attribute output,
