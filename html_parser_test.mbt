@@ -166,6 +166,14 @@ test "to_markdown renders code spans blocks lists and blockquotes" {
     "<pre>code`here\n</pre><p>inline <code>a`b</code></p>",
   )
   assert_eq(code.to_markdown(), "```\ncode`here\n```\n\ninline ``a`b``")
+  let leading_tick = @html_parser.parse_fragment("<p><code>&#96;x</code></p>")
+  assert_eq(leading_tick.to_markdown(), "`` `x ``")
+  let trailing_tick = @html_parser.parse_fragment("<p><code>x&#96;</code></p>")
+  assert_eq(trailing_tick.to_markdown(), "`` x` ``")
+  let surrounded_ticks = @html_parser.parse_fragment(
+    "<p><code>a&#96;b&#96;</code></p>",
+  )
+  assert_eq(surrounded_ticks.to_markdown(), "`` a`b` ``")
   let empty_pre = @html_parser.parse_fragment("<pre></pre>")
   assert_eq(empty_pre.to_markdown(), "```\n```")
   let trailing_space = @html_parser.parse_fragment("<pre>X   \n</pre>")

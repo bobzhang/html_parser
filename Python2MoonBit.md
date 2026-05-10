@@ -75,6 +75,9 @@ JustHTML from Python to MoonBit.
   content, not a fixed triple-backtick string. Strip trailing newlines and the
   spaces/tabs that would sit immediately before the closing fence, and choose a
   fence longer than any backtick run inside the code.
+- Inline code spans use the same longest-backtick-run rule, but CommonMark also
+  needs a single padding space when the code content starts or ends with a
+  backtick. Keep separate tests for leading and trailing backticks.
 - Markdown block elements are not just tags with recursive children. Generic
   containers such as `div`, `section`, `article`, `footer`, and `aside` need
   block-boundary newlines around their rendered children, while inline/unknown
