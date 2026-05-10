@@ -4998,6 +4998,23 @@ test "tree builder matches reference table null text fixture" {
 }
 
 ///|
+test "tree builder matches Python reference table fostered text behavior" {
+  let doc = @html_parser.parse("<table>text</table>", collect_errors=true)
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     \"text\"\n|     <table>",
+  )
+  assert_eq(doc.errors.length(), 5)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+  for index in 1..<doc.errors.length() {
+    assert_eq(doc.errors[index].code, "foster-parenting-character")
+  }
+  guard doc.errors[0].column is Some(7) else {
+    fail("expected table doctype error at table start close")
+  }
+}
+
+///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(

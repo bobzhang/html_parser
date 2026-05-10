@@ -980,6 +980,11 @@ JustHTML from Python to MoonBit.
 - Thread both token start and close offsets through parser handlers. Several
   tree-builder diagnostics, especially end-tag recovery such as extra
   `</frameset>`, report at the closing `>` rather than at the opening `<`.
+- Treat the current Python source as the oracle when checked-in fixtures
+  disagree with it. For example, table foster-parented text now reports
+  `foster-parenting-character` per non-whitespace character even though an old
+  coverage fixture records a single `unexpected-character-implies-table-voodoo`
+  diagnostic.
 - Noncharacter input-stream errors are state-sensitive. Report
   `noncharacter-in-input-stream` while scanning data-state text and invalid
   tag-open recovery, but do not put it in a low-level `advance_char` helper or
