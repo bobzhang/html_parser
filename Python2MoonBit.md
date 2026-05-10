@@ -96,6 +96,9 @@ JustHTML from Python to MoonBit.
 - Functional pseudo-class arguments affect the selector tokenizer too:
   combinators, commas, and whitespace inside parentheses such as
   `:nth-child(2n + 1)` are argument text, not selector separators.
+- `:nth-of-type(...)` reuses the An+B formula parser from `:nth-child(...)`,
+  but the 1-based index counts only element siblings with the same normalized
+  tag name.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

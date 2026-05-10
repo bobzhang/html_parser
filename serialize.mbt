@@ -917,6 +917,25 @@ fn element_child_index(node : Node) -> Int? {
 }
 
 ///|
+fn element_type_index(node : Node) -> Int? {
+  match node.parent {
+    Some(parent) => {
+      let mut index = 0
+      for child in parent.children {
+        if child.kind == Element && child.name == node.name {
+          index += 1
+          if physical_equal(child, node) {
+            return Some(index)
+          }
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
 fn normalize_nth_expression(expr : StringView) -> String {
   let out = StringBuilder::new(size_hint=expr.length())
   for ch in expr {
@@ -1028,6 +1047,15 @@ fn is_nth_child(node : Node, expr : StringView) -> Bool {
 }
 
 ///|
+fn is_nth_of_type(node : Node, expr : StringView) -> Bool {
+  guard parse_nth_expression(expr) is Some((a, b)) else { return false }
+  match element_type_index(node) {
+    Some(index) => nth_formula_matches(index, a, b)
+    None => false
+  }
+}
+
+///|
 fn functional_pseudo_parts(name : StringView) -> (StringView, StringView)? {
   match name.split_once("(") {
     Some((pseudo_name, rest)) => {
@@ -1056,6 +1084,7 @@ fn pseudo_selector_matches(node : Node, name : StringView) -> Bool {
     _ =>
       match functional_pseudo_parts(name) {
         Some(("nth-child", arg)) => is_nth_child(node, arg)
+        Some(("nth-of-type", arg)) => is_nth_of_type(node, arg)
         _ => false
       }
   }
