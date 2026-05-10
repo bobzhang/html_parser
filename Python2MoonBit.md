@@ -66,7 +66,11 @@ JustHTML from Python to MoonBit.
   token streams often hide whether `<!--`, `--`, `<script`, non-`script`
   words, and inner `</script>` boundaries took the intended branch.
   Double-escape start/end boundaries include ASCII whitespace, `>`, and `/`;
-  similarly spelled names such as `<scriptx>` must stay in escaped mode.
+  similarly spelled names such as `<scriptx>` must stay in escaped mode. The
+  dash-dash states are especially easy to flatten incorrectly: a `<` after
+  `--` is emitted before the next escaped-less-than state reconsumes the
+  following character, so cases such as `<!----<x` intentionally serialize with
+  two `<` characters in the text.
 - Scope-sensitive implied end tags need the same terminators as Python's tree
   builder. For example, a new `<li>` closes an earlier `<li>` only in list-item
   scope; a nested `<ul>` or `<ol>` terminates that search and must not close the

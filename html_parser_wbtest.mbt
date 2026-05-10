@@ -61,18 +61,52 @@ fn assert_script_scan(
 test "script text scanner covers escaped and double escaped edge states" {
   assert_script_scan("<!---x</script>", "<!---x", Some(6))
   assert_script_scan("<!---<x</script>", "<!---<x", Some(7))
+  assert_script_scan("<!----x</script>", "<!----x", Some(7))
+  assert_script_scan("<!-----x</script>", "<!-----x", Some(8))
+  assert_script_scan("<!----<x</script>", "<!----<<x", Some(8))
   assert_script_scan("<!--</not</script>", "<!--</not", Some(9))
   assert_script_scan("<!--<!</script>", "<!--<!", Some(6))
+  assert_script_scan("abc</script x", "abc", Some(3))
   assert_script_scan(
     "<!--<script>-x</script>z</script>",
     "<!--<script>-x</script>z",
     Some(24),
   )
+  assert_script_scan(
+    "<!--<script>-<!x</script>tail</script>",
+    "<!--<script>-<!x</script>tail",
+    Some(29),
+  )
   assert_script_scan("<!--<script>--></script>", "<!--<script>-->", Some(15))
+  assert_script_scan(
+    "<!--<script>---x</script>tail</script>",
+    "<!--<script>---x</script>tail",
+    Some(29),
+  )
+  assert_script_scan(
+    "<!--<script>--<x</script>tail</script>",
+    "<!--<script>--<x",
+    Some(16),
+  )
+  assert_script_scan(
+    "<!--<script>--x</script>tail</script>",
+    "<!--<script>--x</script>tail",
+    Some(28),
+  )
+  assert_script_scan(
+    "<!--<script><!x</script>tail</script>",
+    "<!--<script><!x</script>tail",
+    Some(28),
+  )
   assert_script_scan(
     "<!--<script></not</script>z</script>",
     "<!--<script></not</script>z",
     Some(27),
+  )
+  assert_script_scan(
+    "<!--<script></style x</script>tail</script>",
+    "<!--<script></style x</script>tail",
+    Some(34),
   )
   assert_script_scan(
     "<!--<script><x</script>z</script>",

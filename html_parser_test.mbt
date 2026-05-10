@@ -7013,6 +7013,27 @@ test "parser treats script style title textarea content as text" {
     double_escaped.to_text(separator="|", strip=false),
     "<!--<script>x</script>y",
   )
+  let dash_dash_less_than = @html_parser.parse_fragment(
+    "<script><!----<x</script>",
+  )
+  assert_eq(
+    dash_dash_less_than.to_html(pretty=false),
+    "<script><!----<<x</script>",
+  )
+  let double_escaped_dash = @html_parser.parse_fragment(
+    "<script><!--<script>---x</script>tail</script>",
+  )
+  assert_eq(
+    double_escaped_dash.to_html(pretty=false),
+    "<script><!--<script>---x&lt;/script>tail</script>",
+  )
+  let non_script_double_escape_end = @html_parser.parse_fragment(
+    "<script><!--<script></style x</script>tail</script>",
+  )
+  assert_eq(
+    non_script_double_escape_end.to_html(pretty=false),
+    "<script><!--<script></style x&lt;/script>tail</script>",
+  )
 }
 
 ///|
