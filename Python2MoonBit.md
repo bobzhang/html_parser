@@ -681,7 +681,9 @@ JustHTML from Python to MoonBit.
   After a valid tag-name start, keep consuming until whitespace, `/`, or `>`;
   U+0000 in tag or attribute names reports `unexpected-null-character` and is
   stored as U+FFFD. Stopping at an ASCII-name predicate can turn part of the tag
-  name into a bogus attribute and change raw-text behavior.
+  name into a bogus attribute and change raw-text behavior. For parser tests
+  involving these unsafe recovered names, inspect `Node::name()`/`Node::attrs()`
+  directly instead of relying on serializer behavior.
 - EOF inside an ordinary start or end tag is not a best-effort partial tag. The
   tokenizer reports `eof-in-tag` at the final input character and emits no
   partial tag token; the tree builder likewise must not create or close a node
