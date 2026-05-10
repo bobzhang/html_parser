@@ -4950,6 +4950,36 @@ test "tree builder matches reference frameset trailing end fixture" {
 }
 
 ///|
+test "tree builder matches reference nested table in caption fixture" {
+  let doc = @html_parser.parse(
+    "<table><caption><table></table></caption></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <table>\n|       <caption>\n|     <table>",
+  )
+  assert_eq(doc.errors.length(), 5)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(doc.errors[1].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(doc.errors[2].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(doc.errors[3].code, "unexpected-end-tag")
+  assert_eq(doc.errors[4].code, "unexpected-end-tag")
+  guard doc.errors[1].column is Some(23) else {
+    fail("expected nested table first implied close at table start close")
+  }
+  guard doc.errors[2].column is Some(23) else {
+    fail("expected nested table second implied close at table start close")
+  }
+  guard doc.errors[3].column is Some(41) else {
+    fail("expected stray caption end at close bracket")
+  }
+  guard doc.errors[4].column is Some(49) else {
+    fail("expected stray outer table end at close bracket")
+  }
+}
+
+///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(

@@ -418,7 +418,7 @@ fn Parser::handle_table_context_hidden_input_or_form_start(
 fn Parser::handle_nested_table_start_tag(
   self : Parser,
   name : String,
-  start : Int,
+  tag_close_pos : Int,
 ) -> Bool {
   if name != "table" {
     return false
@@ -431,7 +431,7 @@ fn Parser::handle_nested_table_start_tag(
   if current.kind != Element || !is_table_start_foster_target(current.name) {
     return false
   }
-  self.error_at("unexpected-start-tag-implies-end-tag", start)
+  self.error_at("unexpected-start-tag-implies-end-tag", tag_close_pos)
   ignore(self.close_open_element("table"))
   true
 }
@@ -1117,7 +1117,7 @@ fn caption_start_closes_current_caption(name : StringView) -> Bool {
 fn Parser::close_current_caption_for_start(
   self : Parser,
   name : String,
-  start : Int,
+  tag_close_pos : Int,
 ) -> Bool {
   if !caption_start_closes_current_caption(name) {
     return false
@@ -1129,7 +1129,7 @@ fn Parser::close_current_caption_for_start(
     if template_index < 0 || caption_index <= template_index {
       return false
     }
-    self.error_at("unexpected-start-tag-implies-end-tag", start)
+    self.error_at("unexpected-start-tag-implies-end-tag", tag_close_pos)
     ignore(self.close_open_element("caption"))
     self.template_table_context_mode = true
     return true
@@ -1137,7 +1137,7 @@ fn Parser::close_current_caption_for_start(
   if caption_index <= table_index {
     return false
   }
-  self.error_at("unexpected-start-tag-implies-end-tag", start)
+  self.error_at("unexpected-start-tag-implies-end-tag", tag_close_pos)
   ignore(self.close_open_element("caption"))
   true
 }
@@ -3890,6 +3890,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at_eof("eof-in-tag")
         return
       }
+      let tag_close_pos = self.pos - 1
       self.flush_deferred_initial_doctype_error()
       self.before_html_phase = false
       if self.handle_foreign_content_start_tag(name, attrs, self_closing, start) {
@@ -3979,7 +3980,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at("unexpected-start-tag-ignored", start)
         return
       }
-      if self.close_current_caption_for_start(name, start) &&
+      if self.close_current_caption_for_start(name, tag_close_pos) &&
         self.handle_template_table_context_start_tag(name, attrs, start) {
         return
       }
@@ -4004,7 +4005,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.handle_fragment_context_table_start_tag(name, start) {
         return
       }
-      ignore(self.handle_nested_table_start_tag(name, start))
+      ignore(self.handle_nested_table_start_tag(name, tag_close_pos))
       if !closed_table_cell {
         self.report_unexpected_table_body_cell_start(name, start)
       }
