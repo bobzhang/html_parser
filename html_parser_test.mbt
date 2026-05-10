@@ -4867,6 +4867,16 @@ test "parser reports select common element starts and ends" {
   assert_eq(menuitem.errors.length(), 2)
   assert_eq(menuitem.errors[0].code, "unexpected-start-tag-in-select")
   assert_eq(menuitem.errors[1].code, "unexpected-end-tag")
+  let shell = @html_parser.parse_fragment(
+    "<select><body>x</body><head>y</head></select>",
+    collect_errors=true,
+  )
+  assert_eq(shell.to_html(pretty=false), "<select>xy</select>")
+  assert_eq(shell.errors.length(), 4)
+  assert_eq(shell.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(shell.errors[1].code, "unexpected-end-tag")
+  assert_eq(shell.errors[2].code, "unexpected-start-tag-in-select")
+  assert_eq(shell.errors[3].code, "unexpected-end-tag")
 }
 
 ///|
