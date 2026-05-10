@@ -396,7 +396,10 @@ JustHTML from Python to MoonBit.
   elements seen before body content belong in the synthetic head, a later
   `<head>` start is reported and ignored while its children continue in body
   mode, and a `<body>` start after body content only contributes missing body
-  attributes.
+  attributes. An early explicit `<html>` start is also shell-only and does not
+  create or serialize a nested `<html>` node; after body content starts, the
+  same `<html>` start is reported and ignored while its children remain in the
+  body.
 - Treat an explicit HTML namespace on `FragmentContext` the same as the default
   namespace. `FragmentContext("table", namespace="html")` still uses table
   fragment insertion mode; the namespace value should not make it fall back to

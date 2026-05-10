@@ -2226,6 +2226,16 @@ test "fragment context seeds html insertion mode" {
     "<head id=\"h\"><title>T</title></head><body id=\"b\">x</body>",
   )
   assert_eq(explicit.errors.length(), 0)
+  let explicit_html = @html_parser.parse_fragment(
+    "<html lang=en><title>T</title><p>x</p>",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    explicit_html.to_html(pretty=false),
+    "<head><title>T</title></head><body><p>x</p></body>",
+  )
+  assert_eq(explicit_html.errors.length(), 0)
   let table = @html_parser.parse_fragment(
     "<table><tr><td>x</td></tr></table>",
     context=@html_parser.FragmentContext::new("html"),
@@ -2279,6 +2289,17 @@ test "fragment context seeds html insertion mode" {
   )
   assert_eq(late_body.errors.length(), 1)
   assert_eq(late_body.errors[0].code, "unexpected-start-tag")
+  let late_html = @html_parser.parse_fragment(
+    "<p>x</p><html lang=en>y</html>",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    late_html.to_html(pretty=false),
+    "<head></head><body><p>x</p>y</body>",
+  )
+  assert_eq(late_html.errors.length(), 1)
+  assert_eq(late_html.errors[0].code, "unexpected-start-tag")
   let late_head_after_title = @html_parser.parse_fragment(
     "<title>T</title><head><meta name=y></head>x",
     context=@html_parser.FragmentContext::new("html"),
