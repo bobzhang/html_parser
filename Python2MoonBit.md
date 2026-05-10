@@ -316,7 +316,11 @@ JustHTML from Python to MoonBit.
   non-table-internal end tags in the same context first report
   `unexpected-end-tag-implies-table-voodoo` and then follow body-mode handling,
   so synthetic nodes such as the empty `<p>` from `</p>` are inserted before the
-  open table instead of inside it.
+  open table instead of inside it. A direct `<td>`/`<th>` start under `table` or
+  a row group still normalizes into an implied row, but it must report
+  `unexpected-cell-in-table-body` once for the missing `<tr>`. The later
+  `</table>` should close through any open cell/row/row-group/table frames
+  without adding the generic `end-tag-too-early` error.
 
 ## Optional Values and Defaults
 

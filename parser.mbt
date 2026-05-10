@@ -306,6 +306,18 @@ fn Parser::handle_nested_table_start_tag(
 }
 
 ///|
+fn Parser::report_unexpected_table_body_cell_start(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Unit {
+  if (name == "td" || name == "th") &&
+    self.current_is_table_or_section_context() {
+    self.error_at("unexpected-cell-in-table-body", start)
+  }
+}
+
+///|
 fn Parser::report_form_end_tag_table_voodoo(
   self : Parser,
   name : String,
@@ -515,6 +527,28 @@ fn Parser::handle_table_context_ignored_end_tag(
   }
   self.error_at("unexpected-end-tag", start)
   true
+}
+
+///|
+fn Parser::handle_table_end_tag(self : Parser, name : String) -> Bool {
+  name == "table" && self.close_open_element("table")
+}
+
+///|
+fn table_structural_end_tag_can_close(name : StringView) -> Bool {
+  match name {
+    "caption" | "colgroup" | "tbody" | "td" | "tfoot" | "th" | "thead" | "tr" =>
+      true
+    _ => false
+  }
+}
+
+///|
+fn Parser::handle_table_structural_end_tag(
+  self : Parser,
+  name : String,
+) -> Bool {
+  table_structural_end_tag_can_close(name) && self.close_open_element(name)
 }
 
 ///|
@@ -1079,6 +1113,12 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   if self.handle_table_context_ignored_end_tag(name, start) {
+    return
+  }
+  if self.handle_table_structural_end_tag(name) {
+    return
+  }
+  if self.handle_table_end_tag(name) {
     return
   }
   self.report_table_context_end_tag_voodoo(name, start)
@@ -2059,6 +2099,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         return
       }
       ignore(self.handle_nested_table_start_tag(name, start))
+      self.report_unexpected_table_body_cell_start(name, start)
       if name == "form" && self.form_element is Some(_) {
         self.error_at("unexpected-start-tag", start)
         return
