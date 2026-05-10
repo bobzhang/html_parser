@@ -884,8 +884,87 @@ fn sanitize_srcset_attribute_value(
 }
 
 ///|
+fn push_sanitized_url_list_token(
+  out : Array[String],
+  url_policy : UrlPolicy,
+  rule : UrlRule,
+  token : StringView,
+) -> Bool {
+  let token = token.trim()
+  if token.is_empty() {
+    return true
+  }
+  match
+    sanitize_url_attribute_value_with_rule(url_policy, rule, token.to_owned()) {
+    Some(cleaned) => {
+      out.push(cleaned)
+      true
+    }
+    None => false
+  }
+}
+
+///|
+fn sanitize_space_separated_url_list_attribute_value(
+  policy : SanitizationPolicy,
+  tag_name : String,
+  attr_name : String,
+  value : String,
+) -> String? {
+  guard policy.url_policy.lookup_rule(tag_name, attr_name) is Some(rule) else {
+    return None
+  }
+  let view = value[:].trim()
+  if view.is_empty() {
+    return None
+  }
+  let out : Array[String] = []
+  let mut start = 0
+  let mut pos = 0
+  while pos < view.length() {
+    match view.get_char(pos) {
+      Some(ch) if is_html_whitespace_char(ch) => {
+        match view.get_view(start~, end=pos) {
+          Some(token) =>
+            if !push_sanitized_url_list_token(
+                out,
+                policy.url_policy,
+                rule,
+                token,
+              ) {
+              return None
+            }
+          None => ()
+        }
+        pos += ch.utf16_len()
+        start = pos
+      }
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  match view.get_view(start~, end=view.length()) {
+    Some(token) =>
+      if !push_sanitized_url_list_token(out, policy.url_policy, rule, token) {
+        return None
+      }
+    None => ()
+  }
+  if out.is_empty() {
+    None
+  } else {
+    Some(out.join(" "))
+  }
+}
+
+///|
 fn is_srcset_like_attr(name : String) -> Bool {
   name == "srcset" || name == "imagesrcset"
+}
+
+///|
+fn is_space_separated_url_list_attr(name : String) -> Bool {
+  name == "ping" || name == "attributionsrc"
 }
 
 ///|
@@ -898,9 +977,7 @@ fn is_unsupported_url_like_attr(name : String) -> Bool {
     | "formaction"
     | "data"
     | "cite"
-    | "background"
-    | "ping"
-    | "attributionsrc" => true
+    | "background" => true
     _ => false
   }
 }
@@ -1143,6 +1220,10 @@ fn sanitize_attribute_value(
     None
   } else if is_srcset_like_attr(attr_name) {
     sanitize_srcset_attribute_value(policy, tag_name, attr_name, value)
+  } else if is_space_separated_url_list_attr(attr_name) {
+    sanitize_space_separated_url_list_attribute_value(
+      policy, tag_name, attr_name, value,
+    )
   } else if is_unsupported_url_like_attr(attr_name) {
     None
   } else if attr_name == "style" {
