@@ -5851,13 +5851,12 @@ fn digit_value(ch : Char) -> Int {
 ///|
 pub fn parse(
   html : StringView,
-  sanitize? : Bool = true,
+  sanitize? : Bool = false,
   collect_errors? : Bool = false,
   strict? : Bool = false,
   scripting_enabled? : Bool = true,
   xml_coercion? : Bool = false,
 ) -> ParsedHtml raise HtmlError {
-  ignore(sanitize)
   let root = document()
   let parser = Parser::new(html, root, scripting_enabled~, xml_coercion~)
   parser.deferred_initial_doctype_error = parser.report_initial_doctype_error()
@@ -5870,6 +5869,9 @@ pub fn parse(
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {
     raise HtmlError::StrictMode(parser.errors[0])
+  }
+  if sanitize {
+    ignore(sanitize_dom(root))
   }
   ParsedHtml::{ root, errors, encoding: None }
 }
@@ -6295,13 +6297,12 @@ fn scaffold_document(root : Node) -> Unit {
 pub fn parse_fragment(
   html : StringView,
   context? : FragmentContext,
-  sanitize? : Bool = true,
+  sanitize? : Bool = false,
   collect_errors? : Bool = false,
   strict? : Bool = false,
   scripting_enabled? : Bool = true,
   xml_coercion? : Bool = false,
 ) -> ParsedHtml raise HtmlError {
-  ignore(sanitize)
   let root = fragment()
   let parser = Parser::new(html, root, scripting_enabled~, xml_coercion~)
   match context {
@@ -6317,6 +6318,9 @@ pub fn parse_fragment(
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {
     raise HtmlError::StrictMode(parser.errors[0])
+  }
+  if sanitize {
+    ignore(sanitize_dom(root))
   }
   ParsedHtml::{ root, errors, encoding: None }
 }
@@ -6972,7 +6976,7 @@ fn decode_html_bytes(input : BytesView, encoding : String?) -> (String, String) 
 pub fn parse_bytes(
   input : BytesView,
   encoding? : String,
-  sanitize? : Bool = true,
+  sanitize? : Bool = false,
   collect_errors? : Bool = false,
   strict? : Bool = false,
   scripting_enabled? : Bool = true,

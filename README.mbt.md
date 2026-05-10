@@ -16,7 +16,8 @@ The current slice provides:
 - Byte input parsing with supported transport labels, BOM sniffing, and
   meta-charset prescan.
 - Default-policy DOM sanitization with tag/attribute allowlists, comment and
-  doctype handling, unsafe attribute filtering, and basic URL checks.
+  doctype handling, unsafe attribute filtering, basic URL checks, and explicit
+  parse-time sanitization via `sanitize=true`.
 - Initial Markdown conversion for text, paragraphs, headings, inline
   formatting, links, code, lists, blockquotes, and raw HTML passthrough.
 
@@ -55,6 +56,11 @@ test "readme sanitize dom example" {
   )
   let clean = sanitize_dom(doc.root, policy=default_sanitization_policy())
   assert_eq(clean.to_html(pretty=false), "<p>ok</p>")
+  let fragment = parse_fragment(
+    "<p onclick=alert(1)>ok</p><script>alert(1)</script>",
+    sanitize=true,
+  )
+  assert_eq(fragment.to_html(pretty=false), "<p>ok</p>")
 }
 ```
 

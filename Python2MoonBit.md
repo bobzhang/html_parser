@@ -297,6 +297,12 @@ JustHTML from Python to MoonBit.
   scheme while ignoring ASCII controls/whitespace in the scheme area, but keep
   the original value when it is allowed; protocol-relative links are rewritten
   only when the rule says to resolve them.
+- Python's parser defaults to sanitizing; this staged MoonBit port keeps parser
+  defaults unsanitized while raw tree-builder parity tests are still being
+  migrated. Because MoonBit optional arguments do not distinguish omitted
+  booleans from explicit defaults, implement and test `sanitize=true` first,
+  then flip the default only after raw parser tests consistently pass
+  `sanitize=false`.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone.
