@@ -279,7 +279,9 @@ JustHTML from Python to MoonBit.
 - The selector fast path still needs parser-like ordering rules. A limited
   compound selector can start with a tag or `*`, followed by `#id` and `.class`
   fragments in source order; tag matching is case-insensitive, while id and
-  class matching are case-sensitive.
+  class matching are case-sensitive. A universal `*` may only be followed by
+  another simple-selector marker such as `.`, `#`, `[`, or `:`; `*foo` is not a
+  tag selector and should fail to match.
 - Attribute selector names are case-insensitive in HTML, even for
   programmatically-created nodes whose attribute map may contain uppercase
   keys. Normalize names for matching, but keep exact attribute values

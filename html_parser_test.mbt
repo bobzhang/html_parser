@@ -3306,10 +3306,12 @@ test "query supports tag class id and tag class selectors" {
   assert_eq(doc.query("div.intro").length(), 0)
   assert_eq(doc.query("*").length(), 3)
   assert_eq(doc.query("*.intro").length(), 1)
+  assert_eq(doc.query("*foo").length(), 0)
   let first = doc.query_one("p.lead")
   guard first is Some(node) else { fail("expected p.lead") }
   assert_eq(node.to_text(separator="", strip=false), "One")
   assert_true(@html_parser.matches(node, "*"))
+  assert_eq(@html_parser.matches(node, "*foo"), false)
   assert_true(@html_parser.matches(node, "p#first.lead"))
   assert_eq(doc.query("p#first.lead").length(), 1)
   let spaced = @html_parser.fragment(children=[
