@@ -290,7 +290,8 @@ JustHTML from Python to MoonBit.
   `[~=x]`, should short-circuit to no match instead of becoming attribute
   lookups. Apply the same no-match rule to other malformed pieces such as
   unclosed attribute selectors, dangling `.`/`#` markers, unclosed functional
-  pseudos, and trailing combinators.
+  pseudos, empty selector-list entries, and leading, repeated, or trailing
+  combinators.
 - Attribute selector operators have distinct empty-value rules in the Python
   matcher: `^=`, `$=`, and `*=` do not match an empty expected value, while
   `~=` uses HTML-whitespace token matching and `|=` matches exact or
