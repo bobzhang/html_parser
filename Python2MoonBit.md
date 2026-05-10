@@ -646,7 +646,9 @@ JustHTML from Python to MoonBit.
 - Null-character handling is state-specific inside doctypes too. Names and
   quoted public/system identifiers report `unexpected-null-character` and store
   U+FFFD, so a helper that only lowercases or normalizes newlines will silently
-  diverge from the tokenizer.
+  diverge from the tokenizer. Python serialization may reject the resulting
+  unsafe doctype name, so assert the parsed tree/errors for these cases instead
+  of relying on `to_html()`.
 - Tag and attribute name scanning is broader than a typical identifier parser.
   After a valid tag-name start, keep consuming until whitespace, `/`, or `>`;
   U+0000 in tag or attribute names reports `unexpected-null-character` and is

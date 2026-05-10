@@ -1133,6 +1133,18 @@ test "parser and tokenizer replace null characters in doctypes" {
   }
   assert_eq(name_info.name, "h�tml")
   assert_eq(name_info.force_quirks, false)
+  let parsed_name_null = @html_parser.parse(
+    "<!doctype h\u{0000}tml><p>x",
+    collect_errors=true,
+  )
+  assert_eq(parsed_name_null.errors.length(), 2)
+  assert_eq(parsed_name_null.errors[0].code, "unexpected-null-character")
+  guard parsed_name_null.errors[0].column is Some(12) else {
+    fail("expected parser null error inside doctype name")
+  }
+  assert_eq(parsed_name_null.errors[1].code, "unknown-doctype")
+  let children = parsed_name_null.root.children()
+  assert_eq(@html_parser.to_test_format(children[0]), "| <!DOCTYPE h�tml>")
   let public_null = @html_parser.tokenize(
     "<!doctype html PUBLIC \"x\u{0000}y\">",
     collect_errors=true,
