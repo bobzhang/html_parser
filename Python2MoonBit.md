@@ -274,9 +274,11 @@ JustHTML from Python to MoonBit.
   root or loop forever. Descendant-combinator matching has its own ancestor
   visited set, seeded with the candidate node, so `matches()` also terminates
   on parent cycles while still allowing a real ancestor before the cycle to
-  match. Text collection for `:contains(...)` needs the same kind of
-  identity guard on child traversal; otherwise a programmatically-created
-  child cycle can recurse forever while materializing selector text.
+  match. Text collection for `:contains(...)` uses a stack, a visiting set,
+  and an identity-keyed text cache. When a child cycle reaches a node already
+  being visited, Python caches that node's text as empty and skips its pending
+  materialization, so text that appears elsewhere inside the cyclic subtree may
+  still be ignored.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone.

@@ -1175,31 +1175,86 @@ fn unquote_pseudo_arg(arg : StringView) -> String? {
 }
 
 ///|
-fn selector_text_content_with_seen(
+fn remove_node_identity(nodes : Array[Node], node : Node) -> Unit {
+  let mut index = 0
+  while index < nodes.length() {
+    if physical_equal(nodes[index], node) {
+      ignore(nodes.remove(index))
+      return
+    }
+    index += 1
+  }
+}
+
+///|
+fn node_text_cache_get(
+  nodes : Array[Node],
+  texts : Array[String],
   node : Node,
-  visiting : Array[Node],
-) -> String {
-  if node_identity_seen(visiting, node) {
-    return ""
-  }
-  if node.kind == Text {
-    return node.data[:].trim().to_owned()
-  }
-  visiting.push(node)
-  let parts : Array[String] = []
-  for child in node.children {
-    let text = selector_text_content_with_seen(child, visiting)
-    if text != "" {
-      parts.push(text)
+) -> String? {
+  for index in 0..<nodes.length() {
+    if physical_equal(nodes[index], node) {
+      return Some(texts[index])
     }
   }
-  ignore(visiting.pop())
-  parts.join(" ")
+  None
+}
+
+///|
+fn node_text_cache_set(
+  nodes : Array[Node],
+  texts : Array[String],
+  node : Node,
+  text : String,
+) -> Unit {
+  nodes.push(node)
+  texts.push(text)
 }
 
 ///|
 fn selector_text_content(node : Node) -> String {
-  selector_text_content_with_seen(node, [])
+  let cache_nodes : Array[Node] = []
+  let cache_texts : Array[String] = []
+  let visiting : Array[Node] = []
+  let stack : Array[(Node, Bool)] = [(node, false)]
+  while !stack.is_empty() {
+    let (current, visited) = stack[stack.length() - 1]
+    ignore(stack.pop())
+    if node_text_cache_get(cache_nodes, cache_texts, current) is Some(_) {
+      continue
+    }
+    if visited {
+      remove_node_identity(visiting, current)
+      if current.kind == Text {
+        node_text_cache_set(
+          cache_nodes,
+          cache_texts,
+          current,
+          current.data[:].trim().to_owned(),
+        )
+      } else {
+        let parts : Array[String] = []
+        for child in current.children {
+          match node_text_cache_get(cache_nodes, cache_texts, child) {
+            Some(text) if text != "" => parts.push(text)
+            _ => ()
+          }
+        }
+        node_text_cache_set(cache_nodes, cache_texts, current, parts.join(" "))
+      }
+    } else if node_identity_seen(visiting, current) {
+      node_text_cache_set(cache_nodes, cache_texts, current, "")
+    } else {
+      visiting.push(current)
+      stack.push((current, true))
+      let mut index = current.children.length()
+      while index > 0 {
+        index -= 1
+        stack.push((current.children[index], false))
+      }
+    }
+  }
+  node_text_cache_get(cache_nodes, cache_texts, node).unwrap_or("")
 }
 
 ///|

@@ -50,6 +50,7 @@ test "query deduplicates shared nodes and ignores traversal cycles" {
   let child = element("span", attrs={ "class": Some("cycle") })
   cyclic_root.append_child(child)
   child.children.push(cyclic_root)
+  child.children.push(text("needle"))
   cyclic_root.parent = Some(child)
   assert_eq(cyclic_root.query("span").length(), 1)
   assert_eq(cyclic_root.query(".cycle").length(), 1)
@@ -57,8 +58,10 @@ test "query deduplicates shared nodes and ignores traversal cycles" {
   assert_true(matches(child, "div span"))
   assert_eq(matches(child, "em span"), false)
   assert_eq(matches(cyclic_root, "div:contains(needle)"), false)
+  assert_eq(matches(child, "span:contains(needle)"), false)
   assert_eq(cyclic_root.query("div span").length(), 1)
   assert_eq(cyclic_root.query("em span").length(), 0)
+  assert_eq(cyclic_root.query("span:contains(needle)").length(), 0)
 }
 
 ///|
