@@ -679,6 +679,9 @@ JustHTML from Python to MoonBit.
   end-tag parser so `unexpected-character-after-solidus-in-tag`, `eof-in-tag`,
   and tree-builder EOF diagnostics are reported at the same cursor positions as
   Python.
+- The same scanner must reject prefix-only end tags: `</titlex>` and
+  `</stylex>` are text, not closes. Only `>`, `/`, or ASCII whitespace after the
+  matched name is a valid boundary.
 - Ordinary end tags use the same recovery states after the matched name.
   `</div/foo>` closes the open `div` but reports the bad solidus at the first
   recovered attribute character; `</d\u{0000}iv>` replaces the null before tree

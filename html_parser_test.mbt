@@ -7781,6 +7781,37 @@ test "parser matches malformed special text end tags after solidus" {
 }
 
 ///|
+test "parser treats similarly named special end tags as text" {
+  let title = @html_parser.parse(
+    "<title>a</titlex></title><p>b",
+    collect_errors=true,
+  )
+  assert_eq(
+    title.to_html(pretty=false),
+    "<html><head><title>a&lt;/titlex&gt;</title></head><body><p>b</p></body></html>",
+  )
+  assert_eq(title.errors.length(), 1)
+  assert_eq(title.errors[0].code, "expected-doctype-but-got-start-tag")
+  let textarea = @html_parser.parse(
+    "<textarea>a</textareax></textarea><p>b",
+    collect_errors=true,
+  )
+  assert_eq(
+    textarea.to_html(pretty=false),
+    "<html><head></head><body><textarea>a&lt;/textareax&gt;</textarea><p>b</p></body></html>",
+  )
+  assert_eq(textarea.errors.length(), 1)
+  assert_eq(textarea.errors[0].code, "expected-doctype-but-got-start-tag")
+  let xmp = @html_parser.parse("<xmp>a</xmpx></xmp><p>b", collect_errors=true)
+  assert_eq(
+    xmp.to_html(pretty=false),
+    "<html><head></head><body><xmp>a&lt;/xmpx&gt;</xmp><p>b</p></body></html>",
+  )
+  assert_eq(xmp.errors.length(), 1)
+  assert_eq(xmp.errors[0].code, "expected-doctype-but-got-start-tag")
+}
+
+///|
 test "parser treats legacy raw text elements as text" {
   let doc = @html_parser.parse_fragment(
     "<iframe><b>x</b></iframe><noembed><i>y</i></noembed><noscript><em>z</em></noscript>",
@@ -8056,6 +8087,28 @@ test "tokenize preserves rawtext and rcdata element contents" {
   guard xml_title.tokens[1] is @html_parser.HtmlToken::Characters(" �") else {
     fail("expected XML coercion in RCDATA text")
   }
+}
+
+///|
+test "tokenize keeps similarly named special end tags in text" {
+  let title = @html_parser.tokenize("<title>a</titlex></title>")
+  guard title.tokens[1] is @html_parser.HtmlToken::Characters("a</titlex>") else {
+    fail("expected title suffix end tag to stay in text")
+  }
+  guard title.tokens[2] is @html_parser.HtmlToken::Tag(end_title) else {
+    fail("expected final title end tag")
+  }
+  assert_true(end_title.kind is @html_parser.TagKind::EndTag)
+  assert_eq(end_title.name, "title")
+  let style = @html_parser.tokenize("<style>a</stylex></style>")
+  guard style.tokens[1] is @html_parser.HtmlToken::Characters("a</stylex>") else {
+    fail("expected style suffix end tag to stay in text")
+  }
+  guard style.tokens[2] is @html_parser.HtmlToken::Tag(end_style) else {
+    fail("expected final style end tag")
+  }
+  assert_true(end_style.kind is @html_parser.TagKind::EndTag)
+  assert_eq(end_style.name, "style")
 }
 
 ///|
