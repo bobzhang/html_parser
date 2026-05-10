@@ -2106,19 +2106,71 @@ test "document parser ignores frame starts in body mode" {
   assert_eq(root.errors.length(), 2)
   assert_eq(root.errors[0].code, "unexpected-start-tag-ignored")
   assert_eq(root.errors[1].code, "unexpected-end-tag")
-  let select_col = @html_parser.parse(
-    "<!doctype html><select><col>x</col></select>",
+}
+
+///|
+test "document parser scaffolds framesets outside body" {
+  let frameset = @html_parser.parse(
+    "<!doctype html><html><head></head><frameset></frameset>",
     collect_errors=true,
   )
   assert_eq(
-    select_col.to_html(pretty=false),
-    "<!DOCTYPE html><html><head></head><body><select></select>x</body></html>",
+    frameset.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset></frameset></html>",
   )
-  assert_eq(select_col.errors.length(), 4)
-  assert_eq(select_col.errors[0].code, "unexpected-start-tag-in-select")
-  assert_eq(select_col.errors[1].code, "unexpected-start-tag-ignored")
-  assert_eq(select_col.errors[2].code, "unexpected-end-tag")
-  assert_eq(select_col.errors[3].code, "unexpected-end-tag")
+  assert_eq(frameset.errors.length(), 0)
+  let nested = @html_parser.parse(
+    "<!doctype html><frameset><frame src=x><frameset></frameset></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset><frame src=\"x\"></frame><frameset></frameset></frameset></html>",
+  )
+  assert_eq(nested.errors.length(), 0)
+  let trailing_space = @html_parser.parse(
+    "<!doctype html><frameset></frameset>   ",
+    collect_errors=true,
+  )
+  assert_eq(
+    trailing_space.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset></frameset>   </html>",
+  )
+  assert_eq(trailing_space.errors.length(), 0)
+  let noframes = @html_parser.parse(
+    "<!doctype html><frameset><noframes><p>x</p></noframes></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    noframes.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset><noframes>&lt;p&gt;x&lt;/p&gt;</noframes></frameset></html>",
+  )
+  assert_eq(noframes.errors.length(), 0)
+}
+
+///|
+test "document parser ignores tokens after frameset" {
+  let text = @html_parser.parse(
+    "<!doctype html><html><head></head><frameset></frameset>abc",
+    collect_errors=true,
+  )
+  assert_eq(
+    text.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset></frameset></html>",
+  )
+  assert_eq(text.errors.length(), 1)
+  assert_eq(text.errors[0].code, "unexpected-token-after-frameset")
+  let body = @html_parser.parse(
+    "<!doctype html><body>x</body><frameset></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    body.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body>x</body></html>",
+  )
+  assert_eq(body.errors.length(), 2)
+  assert_eq(body.errors[0].code, "unexpected-start-tag-ignored")
+  assert_eq(body.errors[1].code, "unexpected-end-tag")
 }
 
 ///|
@@ -2144,6 +2196,19 @@ test "document parser ignores col starts outside tables" {
   assert_eq(root.errors.length(), 2)
   assert_eq(root.errors[0].code, "unexpected-start-tag-ignored")
   assert_eq(root.errors[1].code, "unexpected-end-tag")
+  let select_col = @html_parser.parse(
+    "<!doctype html><select><col>x</col></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    select_col.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body><select></select>x</body></html>",
+  )
+  assert_eq(select_col.errors.length(), 4)
+  assert_eq(select_col.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(select_col.errors[1].code, "unexpected-start-tag-ignored")
+  assert_eq(select_col.errors[2].code, "unexpected-end-tag")
+  assert_eq(select_col.errors[3].code, "unexpected-end-tag")
 }
 
 ///|

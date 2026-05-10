@@ -7,6 +7,8 @@ priv struct Parser {
   root : Node
   stack : Array[Node]
   mut form_element : Node?
+  mut frameset_ok : Bool
+  mut after_frameset : Bool
 }
 
 ///|
@@ -24,6 +26,8 @@ fn Parser::new(
     root,
     stack: [root],
     form_element: None,
+    frameset_ok: root.kind == Document,
+    after_frameset: false,
   }
 }
 
@@ -84,9 +88,44 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if cleaned.is_empty() {
     return
   }
+  if !self.is_fragment_parser() &&
+    (self.after_frameset || self.has_open_element("frameset")) {
+    let whitespace = ascii_whitespace_chars_only(cleaned)
+    if self.after_frameset && whitespace.length() != cleaned.length() {
+      self.error_at("unexpected-token-after-frameset", start)
+    }
+    if !whitespace.is_empty() {
+      self.current_node().append_child(text(whitespace))
+    }
+    return
+  }
+  if !self.is_fragment_parser() && text_has_non_ascii_whitespace(cleaned) {
+    self.frameset_ok = false
+  }
   self
   .current_node()
   .append_child(text(decode_entities(cleaned, in_attribute=false)))
+}
+
+///|
+fn text_has_non_ascii_whitespace(value : StringView) -> Bool {
+  for ch in value {
+    if !ch.is_ascii_whitespace() {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn ascii_whitespace_chars_only(value : StringView) -> String {
+  let out = StringBuilder::new(size_hint=value.length())
+  for ch in value {
+    if ch.is_ascii_whitespace() {
+      out.write_char(ch)
+    }
+  }
+  out.to_string()
 }
 
 ///|
@@ -631,6 +670,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.handle_form_end_tag(start)
     return
   }
+  if self.handle_document_frameset_end_tag(name, start) {
+    return
+  }
   if self.fragment_end_tag_is_ignored(name) {
     return
   }
@@ -664,6 +706,37 @@ fn Parser::fragment_end_tag_is_ignored(
     "body" => !self.has_open_element("select")
     _ => false
   }
+}
+
+///|
+fn Parser::handle_document_frameset_end_tag(
+  self : Parser,
+  name : String,
+  start : Int,
+) -> Bool {
+  if self.is_fragment_parser() {
+    return false
+  }
+  if self.after_frameset {
+    if name == "frameset" {
+      self.error_at("unexpected-token-after-frameset", start)
+    } else {
+      self.error_at("unexpected-token-in-frameset", start)
+    }
+    return true
+  }
+  if !self.has_open_element("frameset") {
+    return false
+  }
+  if name == "frameset" {
+    ignore(self.close_open_element("frameset"))
+    if !self.has_open_element("frameset") {
+      self.after_frameset = true
+    }
+  } else {
+    self.error_at("unexpected-token-in-frameset", start)
+  }
+  true
 }
 
 ///|
@@ -1261,6 +1334,70 @@ fn Parser::col_start_tag_is_ignored_outside_table(
 }
 
 ///|
+fn Parser::document_start_tag_preserves_frameset_ok(
+  self : Parser,
+  name : StringView,
+) -> Bool {
+  self.is_fragment_parser() ||
+  name == "html" ||
+  name == "head" ||
+  name == "frameset" ||
+  is_document_head_element_name(name)
+}
+
+///|
+fn Parser::insert_empty_frameset_child(
+  self : Parser,
+  name : StringView,
+  attrs : Map[String, String?],
+) -> Unit {
+  self.current_node().append_child(element(name, attrs~))
+}
+
+///|
+fn Parser::handle_document_frameset_start_tag(
+  self : Parser,
+  name : String,
+  attrs : Map[String, String?],
+  start : Int,
+) -> Bool {
+  if self.is_fragment_parser() {
+    return false
+  }
+  if self.after_frameset {
+    self.error_at("unexpected-token-after-frameset", start)
+    return true
+  }
+  if self.has_open_element("frameset") {
+    match name {
+      "frameset" => {
+        self.insert_element_maybe_push(name, attrs, true)
+        true
+      }
+      "frame" => {
+        self.insert_empty_frameset_child(name, attrs)
+        true
+      }
+      "noframes" => false
+      _ => {
+        self.error_at("unexpected-token-in-frameset", start)
+        true
+      }
+    }
+  } else if name == "frameset" {
+    if !self.frameset_ok {
+      self.error_at("unexpected-start-tag-ignored", start)
+      true
+    } else {
+      self.insert_element_maybe_push(name, attrs, true)
+      true
+    }
+  } else {
+    false
+  }
+}
+
+///|
 fn Parser::close_open_table_cell(self : Parser) -> Unit {
   if self.has_open_element("td") {
     ignore(self.close_open_element("td"))
@@ -1446,6 +1583,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.handle_select_special_start_tag(name, attrs, self_closing, start) {
         return
       }
+      if self.handle_document_frameset_start_tag(name, attrs, start) {
+        return
+      }
       if !self.is_fragment_parser() && name == "frame" {
         self.error_at("unexpected-start-tag-ignored", start)
         return
@@ -1501,6 +1641,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if is_heading_element_name(name) {
         self.close_current_heading_element()
+      }
+      if !self.document_start_tag_preserves_frameset_ok(name) {
+        self.frameset_ok = false
       }
       let adjusted_name = if name == "image" {
         self.error_at("image-start-tag", start)
@@ -2923,8 +3066,10 @@ fn scaffold_existing_html_element(html : Node) -> Unit {
   }
   let mut head : Node? = None
   let mut body : Node? = None
+  let mut frameset : Node? = None
   let head_children : Array[Node] = []
   let body_children : Array[Node] = []
+  let after_frameset_children : Array[Node] = []
   let mut body_started = false
   for child in original {
     if child.kind == Element &&
@@ -2943,6 +3088,15 @@ fn scaffold_existing_html_element(html : Node) -> Unit {
         None => body_children.push(child)
       }
       body_started = true
+    } else if child.kind == Element &&
+      child.name == "frameset" &&
+      body is None &&
+      frameset is None &&
+      !body_started {
+      frameset = Some(child)
+      body_started = true
+    } else if frameset is Some(_) && body is None {
+      after_frameset_children.push(child)
     } else if child.kind == Element && child.name == "head" {
       let existing = child.children.copy()
       for grandchild in existing {
@@ -2960,11 +3114,19 @@ fn scaffold_existing_html_element(html : Node) -> Unit {
     }
   }
   let head_node = head.unwrap_or(element("head"))
-  let body_node = body.unwrap_or(element("body"))
   html.append_child(head_node)
   append_children_to(head_node, head_children)
-  append_children_to(body_node, body_children)
-  html.append_child(body_node)
+  match frameset {
+    Some(frameset_node) if body is None && body_children.is_empty() => {
+      html.append_child(frameset_node)
+      append_children_to(html, after_frameset_children)
+    }
+    _ => {
+      let body_node = body.unwrap_or(element("body"))
+      append_children_to(body_node, body_children)
+      html.append_child(body_node)
+    }
+  }
 }
 
 ///|
@@ -2981,8 +3143,10 @@ fn scaffold_document(root : Node) -> Unit {
   root.children.clear()
   let mut head : Node? = None
   let mut body : Node? = None
+  let mut frameset : Node? = None
   let head_children : Array[Node] = []
   let body_children : Array[Node] = []
+  let after_frameset_children : Array[Node] = []
   let mut body_started = false
   for child in original {
     if child.kind == Doctype {
@@ -3003,6 +3167,15 @@ fn scaffold_document(root : Node) -> Unit {
         None => body_children.push(child)
       }
       body_started = true
+    } else if child.kind == Element &&
+      child.name == "frameset" &&
+      body is None &&
+      frameset is None &&
+      !body_started {
+      frameset = Some(child)
+      body_started = true
+    } else if frameset is Some(_) && body is None {
+      after_frameset_children.push(child)
     } else if child.kind == Comment && !body_started && head_children.is_empty() {
       root.append_child(child)
     } else if child.kind == Element && child.name == "head" {
@@ -3025,11 +3198,19 @@ fn scaffold_document(root : Node) -> Unit {
   }
   let html = element("html")
   let head_node = head.unwrap_or(element("head"))
-  let body_node = body.unwrap_or(element("body"))
   html.append_child(head_node)
   append_children_to(head_node, head_children)
-  append_children_to(body_node, body_children)
-  html.append_child(body_node)
+  match frameset {
+    Some(frameset_node) if body is None && body_children.is_empty() => {
+      html.append_child(frameset_node)
+      append_children_to(html, after_frameset_children)
+    }
+    _ => {
+      let body_node = body.unwrap_or(element("body"))
+      append_children_to(body_node, body_children)
+      html.append_child(body_node)
+    }
+  }
   root.append_child(html)
 }
 

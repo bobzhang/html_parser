@@ -65,6 +65,11 @@ JustHTML from Python to MoonBit.
   and fragment-mode `<frame>` are inserted empty but still serialize with end
   tags, while document body-mode `<frame>` is ignored with
   `unexpected-start-tag-ignored`.
+- Framesets are document state, not ordinary body children. Before body content
+  appears, `<frameset>` scaffolds beside `<head>` instead of under `<body>`.
+  `<frame>` is only kept while a frameset is open, and non-whitespace tokens
+  after the final `</frameset>` are ignored with
+  `unexpected-token-after-frameset`.
 - Some start tags have their own scope rules even when they look like ordinary
   elements. A repeated `<button>` searches default scope, reports
   `unexpected-start-tag-implies-end-tag`, closes the previous button, and then
