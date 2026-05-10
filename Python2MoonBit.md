@@ -58,6 +58,10 @@ JustHTML from Python to MoonBit.
   elements. A repeated `<button>` searches default scope, reports
   `unexpected-start-tag-implies-end-tag`, closes the previous button, and then
   inserts the new one instead of nesting buttons.
+- `<form>` is tracked as parser state, not just as whatever is on top of the
+  open-element stack. A second `<form>` start reports `unexpected-start-tag`
+  and is ignored without closing an open paragraph, while `</form>` clears the
+  stored form element even if another end tag already popped it from the stack.
 - `<select>` parsing has its own insertion-mode errors. A nested `<select>`
   closes the current select and reports `unexpected-select-in-select`; stray
   `</option>`/`</optgroup>` inside a select use

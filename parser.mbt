@@ -6,6 +6,7 @@ priv struct Parser {
   errors : Array[ParseError]
   root : Node
   stack : Array[Node]
+  mut form_element : Node?
 }
 
 ///|
@@ -15,7 +16,15 @@ fn Parser::new(
   scripting_enabled~ : Bool,
 ) -> Parser {
   let input = strip_leading_bom(input)
-  Parser::{ input, scripting_enabled, pos: 0, errors: [], root, stack: [root] }
+  Parser::{
+    input,
+    scripting_enabled,
+    pos: 0,
+    errors: [],
+    root,
+    stack: [root],
+    form_element: None,
+  }
 }
 
 ///|
@@ -618,6 +627,10 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.close_open_heading_element(name, start)
     return
   }
+  if name == "form" {
+    self.handle_form_end_tag(start)
+    return
+  }
   if self.handle_select_end_tag(name, start) {
     return
   }
@@ -695,6 +708,33 @@ fn Parser::close_open_element(self : Parser, name : String) -> Bool {
     }
   }
   true
+}
+
+///|
+fn Parser::remove_open_node(self : Parser, target : Node) -> Bool {
+  let mut index = 0
+  while index < self.stack.length() {
+    if physical_equal(self.stack[index], target) {
+      ignore(self.stack.remove(index))
+      return true
+    }
+    index += 1
+  }
+  false
+}
+
+///|
+fn Parser::handle_form_end_tag(self : Parser, start : Int) -> Unit {
+  match self.form_element {
+    Some(node) => {
+      let removed = self.remove_open_node(node)
+      self.form_element = None
+      if !removed {
+        self.error_at("unexpected-end-tag", start)
+      }
+    }
+    None => self.error_at("unexpected-end-tag", start)
+  }
 }
 
 ///|
@@ -1090,6 +1130,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at("unexpected-start-tag-ignored", start)
         return
       }
+      if name == "form" && self.form_element is Some(_) {
+        self.error_at("unexpected-start-tag", start)
+        return
+      }
       if start_tag_closes_p(name) {
         self.close_open_p_element()
       }
@@ -1121,6 +1165,9 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         name
       }
       let node = element(adjusted_name, attrs~)
+      if adjusted_name == "form" {
+        self.form_element = Some(node)
+      }
       self.current_node().append_child(node)
       let self_closes_tree = self_closing && is_void_element(adjusted_name)
       if !self_closes_tree && self.is_special_text_element(adjusted_name) {
