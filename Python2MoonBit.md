@@ -76,6 +76,9 @@ JustHTML from Python to MoonBit.
   containers such as `div`, `section`, `article`, `footer`, and `aside` need
   block-boundary newlines around their rendered children, while inline/unknown
   containers can still stream their children directly.
+- `script`, `style`, and `textarea` are block-like in Markdown output even when
+  their content is dropped by default. Preserve surrounding text separation, and
+  only emit the raw HTML itself when `html_passthrough` is enabled.
 - Link text uses a distinct Markdown traversal. The reference flattens
   paragraphs, lists, blockquotes, and `<br>` inside `<a>` into spaces so the
   generated `[text](href)` does not contain block Markdown or blank lines.

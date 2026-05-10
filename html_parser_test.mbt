@@ -233,6 +233,16 @@ test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
     script.to_markdown(html_passthrough=true),
     "<script data-x=\"1&amp;2\"></script>",
   )
+  let inline_script = @html_parser.element("span", children=[
+    @html_parser.text("A"),
+    @html_parser.element("script", children=[@html_parser.text("alert(1);")]),
+    @html_parser.text("B"),
+  ])
+  assert_eq(inline_script.to_markdown(), "A\n\nB")
+  assert_eq(
+    inline_script.to_markdown(html_passthrough=true),
+    "A\n\n<script>alert(1);</script>\n\nB",
+  )
 }
 
 ///|

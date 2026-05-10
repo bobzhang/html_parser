@@ -666,10 +666,13 @@ fn markdown_walk(
             builder.raw("---")
             builder.ensure_newlines(2)
           }
-          "script" | "style" | "textarea" =>
+          "script" | "style" | "textarea" => {
+            builder.ensure_newlines(2)
             if html_passthrough {
               builder.raw(node.to_html(pretty=false))
             }
+            builder.ensure_newlines(2)
+          }
           "img" => builder.raw(node.to_html(pretty=false))
           "table" => {
             builder.ensure_newlines(2)
