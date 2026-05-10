@@ -1437,6 +1437,23 @@ fn sanitize_css_url_functions(
     return None
   }
   let attr_name = "style:" + prop
+  sanitize_url_function_value(
+    policy.url_policy,
+    rule,
+    tag_name,
+    attr_name,
+    value,
+  )
+}
+
+///|
+fn sanitize_url_function_value(
+  url_policy : UrlPolicy,
+  rule : UrlRule,
+  tag_name : String,
+  attr_name : String,
+  value : StringView,
+) -> String? {
   if css_value_has_disallowed_resource_functions(value) ||
     string_view_contains(value, "/*"[:]) {
     return None
@@ -1496,7 +1513,7 @@ fn sanitize_css_url_functions(
         }
         match
           sanitize_url_attribute_value_with_rule(
-            policy.url_policy,
+            url_policy,
             rule,
             tag_name,
             attr_name,
@@ -1527,6 +1544,26 @@ fn sanitize_css_url_functions(
     Some(out.to_string())
   } else {
     None
+  }
+}
+
+///|
+fn sanitize_foreign_url_function_attribute_value(
+  policy : SanitizationPolicy,
+  tag_name : String,
+  attr_name : String,
+  value : String,
+) -> String? {
+  match policy.url_policy.lookup_rule(tag_name, attr_name) {
+    Some(rule) =>
+      sanitize_url_function_value(
+        policy.url_policy,
+        rule,
+        tag_name,
+        attr_name,
+        value[:],
+      )
+    None => None
   }
 }
 
@@ -1637,7 +1674,9 @@ fn sanitize_attribute_value(
   if effectively_foreign &&
     is_foreign_url_function_like_attr(attr_name) &&
     css_value_may_load_external_resource(value) {
-    None
+    sanitize_foreign_url_function_attribute_value(
+      policy, tag_name, attr_name, value,
+    )
   } else if is_srcset_like_attr(attr_name) {
     sanitize_srcset_attribute_value(policy, tag_name, attr_name, value)
   } else if is_space_separated_url_list_attr(attr_name) {

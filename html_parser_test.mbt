@@ -941,6 +941,43 @@ test "sanitize_dom drops foreign url function attributes without url policy" {
 }
 
 ///|
+test "sanitize_dom filters foreign url function attributes with exact rules" {
+  let url_filter = @html_parser.UrlFilter::new(fn(tag, attr, value) {
+    if tag == "rect" && attr == "fill" && value == "#grad" {
+      Some("#rewritten")
+    } else {
+      None
+    }
+  })
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["svg", "rect"],
+    allowed_attributes={ "rect": ["fill", "width", "height", "filter"] },
+    url_policy=@html_parser.UrlPolicy::new(url_filter~, allow_rules=[
+      @html_parser.UrlPolicyRule::new(
+        "rect",
+        "fill",
+        @html_parser.UrlRule::new(
+          allowed_schemes=[],
+          allow_relative=false,
+          allow_fragment=true,
+          resolve_protocol_relative=None,
+        ),
+      ),
+    ]),
+    drop_foreign_namespaces=false,
+    drop_content_tags=[],
+  )
+  let parsed = @html_parser.parse_fragment(
+    "<svg><rect width='10' height='10' fill='url(#grad) red'></rect><rect width='10' height='10' filter='url(#grad)'></rect></svg>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(parsed.root, policy~).to_html(pretty=false),
+    "<svg><rect width=\"10\" height=\"10\" fill=\"url('#rewritten') red\"></rect><rect width=\"10\" height=\"10\"></rect></svg>",
+  )
+}
+
+///|
 test "sanitize_dom drops meta refresh content attributes" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["meta", "p"],

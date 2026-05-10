@@ -155,7 +155,9 @@ JustHTML from Python to MoonBit.
 - Treat SVG paint/filter attributes as URL-capable even though they do not look
   like `href`/`src`. For effective foreign nodes, allowlisted attributes such as
   `fill`, `filter`, `mask`, and marker attributes still need conservative
-  `url(...)` filtering.
+  `url(...)` filtering. Use exact URL-policy rules keyed by the raw attribute
+  name, such as `("rect", "fill")`; URL filters for these attributes should see
+  `attr="fill"`, not a synthetic `style:<property>` key.
 - `meta` refresh is a URL-bearing construct split across attributes. If
   `http-equiv` is `refresh`, drop the `content` attribute even when both names
   are policy-allowlisted; do not apply that rule to ordinary `content-type`
