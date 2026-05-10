@@ -438,7 +438,9 @@ JustHTML from Python to MoonBit.
   function tokens. Treat malformed URL-function syntax as unsafe too:
   backslashes, control or DEL characters, empty URLs, missing delimiters, or
   unexpected non-separator text after `)` should drop that declaration rather
-  than trying to repair it.
+  than trying to repair it. URL filter output is still untrusted: run the
+  filtered value through the same URL validation and CSS quote-safety checks
+  before serializing it back into `url('...')`.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone. Deep clones should use an
