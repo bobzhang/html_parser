@@ -54,6 +54,10 @@ JustHTML from Python to MoonBit.
   scope; a nested `<ul>` or `<ol>` terminates that search and must not close the
   parent list item. The same pattern applies to `<dt>`/`<dd>` in definition
   scope, where a nested `<dl>` terminates the search.
+- Some start tags have their own scope rules even when they look like ordinary
+  elements. A repeated `<button>` searches default scope, reports
+  `unexpected-start-tag-implies-end-tag`, closes the previous button, and then
+  inserts the new one instead of nesting buttons.
 - `<select>` parsing has its own insertion-mode errors. A nested `<select>`
   closes the current select and reports `unexpected-select-in-select`; stray
   `</option>`/`</optgroup>` inside a select use

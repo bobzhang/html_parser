@@ -698,6 +698,43 @@ fn Parser::close_open_element(self : Parser, name : String) -> Bool {
 }
 
 ///|
+fn is_default_scope_terminator(name : StringView) -> Bool {
+  match name {
+    "applet"
+    | "caption"
+    | "html"
+    | "marquee"
+    | "object"
+    | "table"
+    | "td"
+    | "template"
+    | "th" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::has_open_element_in_default_scope(
+  self : Parser,
+  name : String,
+) -> Bool {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element {
+      if node.name == name {
+        return true
+      }
+      if is_default_scope_terminator(node.name) {
+        return false
+      }
+    }
+  }
+  false
+}
+
+///|
 fn is_list_item_scope_terminator(name : StringView) -> Bool {
   match name {
     "applet"
@@ -1055,6 +1092,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if start_tag_closes_p(name) {
         self.close_open_p_element()
+      }
+      if name == "button" && self.has_open_element_in_default_scope("button") {
+        self.error_at("unexpected-start-tag-implies-end-tag", start)
+        ignore(self.close_open_element("button"))
       }
       if name == "select" && self.has_open_element("select") {
         self.error_at("unexpected-select-in-select", start)
