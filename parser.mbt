@@ -609,6 +609,21 @@ fn Parser::close_current_column_group_for_start(
 }
 
 ///|
+fn Parser::close_current_column_group_for_end(
+  self : Parser,
+  name : String,
+) -> Unit {
+  if name == "col" || name == "colgroup" {
+    return
+  }
+  match self.stack.last() {
+    Some(node) if node.kind == Element && node.name == "colgroup" =>
+      ignore(self.stack.pop())
+    _ => ()
+  }
+}
+
+///|
 fn table_context_end_tag_uses_table_voodoo(name : StringView) -> Bool {
   match name {
     "body"
@@ -1269,6 +1284,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_foster_parented_end_tag(name, start) {
     return
   }
+  self.close_current_column_group_for_end(name)
   if self.handle_table_context_ignored_end_tag(name, start) {
     return
   }

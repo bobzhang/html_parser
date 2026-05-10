@@ -336,7 +336,8 @@ JustHTML from Python to MoonBit.
   table text and foster-parented, while whitespace stays in the colgroup.
   Non-`col` starts inside an open `colgroup` close it before reprocessing in
   table mode; a nested `<colgroup>` additionally reports
-  `unexpected-start-tag-implies-end-tag`.
+  `unexpected-start-tag-implies-end-tag`. End tags inside a `colgroup` follow
+  the same reprocessing rule except for `</col>` and `</colgroup>` themselves.
 
 ## Optional Values and Defaults
 
