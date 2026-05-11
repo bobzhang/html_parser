@@ -811,6 +811,10 @@ JustHTML from Python to MoonBit.
   or relocated nodes in broader table/fragment insertion-mode helpers.
   Duplicated or reconstructed nodes should copy the original formatting node's
   origin rather than inventing a new one.
+- Helper insertions that accept an optional source start must keep omission as
+  "no origin", not as offset `0`. Python often passes `None` for synthetic
+  recovery nodes; in MoonBit, omit the `start~` argument unless the caller has a
+  real UTF-16 source offset to thread through `node_with_origin`.
 - The active-formatting duplicate cap compares both tag names and attribute
   maps. Empty-map tests can miss bad ports; include attribute-bearing repeated
   formatting starts and a mixed-attribute case so equality and inequality both
