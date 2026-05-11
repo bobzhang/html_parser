@@ -1767,12 +1767,12 @@ test "sanitize_dom proxy rejects invalid scheme-like URL prefixes" {
     url_policy~,
   )
   let fragment = @html_parser.parse_fragment(
-    "<a href='1https:foo'>bad</a><a href='/ok'>ok</a><img srcset='1https:foo 1x'><p style=\"background-image: url('1https:foo')\">p</p>",
+    "<a href='1https:foo'>bad</a><a href=':rel'>colon</a><a href='h ttps:foo'>space</a><a href='/ok'>ok</a><img srcset='1https:foo 1x'><p style=\"background-image: url('1https:foo')\">p</p>",
     sanitize=false,
   )
   assert_eq(
     @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<a>bad</a><a href=\"/proxy?url=%2Fok\">ok</a><img><p>p</p>",
+    "<a>bad</a><a href=\"/proxy?url=%3Arel\">colon</a><a href=\"/proxy?url=h%20ttps%3Afoo\">space</a><a href=\"/proxy?url=%2Fok\">ok</a><img><p>p</p>",
   )
 }
 

@@ -552,6 +552,17 @@ fn string_contains_forbidden_url_char(value : StringView) -> Bool {
 }
 
 ///|
+fn normalize_url_for_checking(value : StringView) -> String {
+  let out = StringBuilder::new(size_hint=value.length())
+  for ch in value {
+    if !is_url_ignored_scheme_char(ch) {
+      out.write_char(ch)
+    }
+  }
+  out.to_string()
+}
+
+///|
 fn extract_url_scheme(value : StringView) -> String? {
   let out = StringBuilder::new()
   let mut pos = 0
@@ -885,22 +896,27 @@ fn sanitize_url_attribute_value_with_rule(
   } else if string_contains_forbidden_url_char(trimmed) {
     return None
   } else {
+    let normalized = normalize_url_for_checking(trimmed[:])
+    if normalized == "" {
+      return None
+    }
     let handling = rule.handling.unwrap_or(policy.default_handling)
     let allow_relative = rule.allow_relative.unwrap_or(
       policy.default_allow_relative,
     )
-    if trimmed.has_prefix("#") {
+    if normalized.has_prefix("#") {
       if rule.allow_fragment {
         apply_url_handling(policy, rule, handling, trimmed)
       } else {
         None
       }
-    } else if handling == UrlProxy && has_invalid_scheme_like_prefix(trimmed[:]) {
+    } else if handling == UrlProxy &&
+      has_invalid_scheme_like_prefix(normalized[:]) {
       None
-    } else if trimmed.has_prefix("//") {
+    } else if normalized.has_prefix("//") {
       match rule.resolve_protocol_relative {
         Some(scheme) if rule.allowed_schemes.contains(scheme) => {
-          let resolved = scheme + ":" + trimmed
+          let resolved = scheme + ":" + normalized
           if url_rule_allows_host(rule, resolved) {
             apply_url_handling(policy, rule, handling, resolved)
           } else {
@@ -910,10 +926,10 @@ fn sanitize_url_attribute_value_with_rule(
         _ => None
       }
     } else {
-      match extract_url_scheme(trimmed) {
+      match extract_url_scheme(normalized[:]) {
         Some(scheme) =>
           if rule.allowed_schemes.contains(scheme) &&
-            url_rule_allows_host(rule, trimmed) {
+            url_rule_allows_host(rule, normalized) {
             apply_url_handling(policy, rule, handling, trimmed)
           } else {
             None

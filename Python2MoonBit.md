@@ -529,10 +529,12 @@ JustHTML from Python to MoonBit.
   during sanitization and unwrap the result afterwards.
 - Sanitizer policies contain mutable lookup tables in MoonBit (`Set`/`Map`), so
   default policy helpers should return fresh policy values rather than sharing
-  one global object across tests. URL checks should inspect the normalized
-  scheme while ignoring ASCII controls/whitespace in the scheme area, but keep
-  the original value when it is allowed; protocol-relative links are rewritten
-  only when the rule says to resolve them.
+  one global object across tests. URL checks should reject decoded C0 controls
+  and DEL, then inspect a normalized copy that removes URL whitespace/control
+  characters for scheme and host validation. Keep the original stripped value
+  when it is allowed or proxied. Literal spaces can therefore affect validation
+  without being stripped from the serialized attribute; protocol-relative links
+  are rewritten only when the rule says to resolve them.
 - Python's `UrlPolicy.allow_rules` uses tuple keys. In MoonBit, expose a small
   `UrlPolicyRule::new(tag, attr, rule)` wrapper and normalize it into an
   internal string-keyed map; this avoids depending on tuple-key hashing in the
