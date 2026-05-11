@@ -157,6 +157,31 @@ test "pseudo matcher rejects unknown and blank contains pseudos" {
 }
 
 ///|
+test "nth selector helpers reject empty signed integer fragments" {
+  assert_true(parse_signed_int_view("") is None)
+  guard parse_signed_int_view("+12") is Some(positive) else {
+    fail("expected signed positive integer")
+  }
+  assert_eq(positive, 12)
+  guard parse_signed_int_view("-3") is Some(negative) else {
+    fail("expected signed negative integer")
+  }
+  assert_true(negative == -3)
+  assert_true(parse_nth_expression("") is None)
+  assert_true(parse_nth_expression("2n+") is None)
+  guard parse_nth_expression("n") is Some((plain_a, plain_b)) else {
+    fail("expected plain n formula")
+  }
+  assert_eq(plain_a, 1)
+  assert_eq(plain_b, 0)
+  guard parse_nth_expression("-n+3") is Some((a, b)) else {
+    fail("expected negative nth coefficient")
+  }
+  assert_true(a == -1)
+  assert_eq(b, 3)
+}
+
+///|
 test "selector helper fragments fail closed on malformed syntax" {
   let node = element("div", attrs={
     "class": Some("alpha beta"),

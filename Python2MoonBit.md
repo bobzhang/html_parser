@@ -754,7 +754,9 @@ JustHTML from Python to MoonBit.
 - `:nth-*` formulas should be normalized before parsing: remove whitespace and
   lowercase ASCII so `ODD`, `+n`, `-2n+5`, and spaced forms behave like the
   Python reference, while malformed signed pieces such as `+`, `2n+`, or
-  repeated `n` fragments simply fail to match.
+  repeated `n` fragments simply fail to match. Keep helper tests for empty
+  signed integer fragments too, because the public query path may only observe
+  the final no-match result.
 - `:not(...)` can reuse the selector-list matcher recursively. Keep the outer
   splitter parenthesis-aware so commas and markers inside `:not(.a, .b)` stay
   inside the argument.
