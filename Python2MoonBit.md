@@ -1060,6 +1060,9 @@ JustHTML from Python to MoonBit.
   normal body-mode end tags. Ignore `</html>`, `</head>`, and `</body>` after
   the initial doctype error; recover `</br>` as a `br`; report
   `unexpected-end-tag-before-html` for other names.
+- After an explicit `<html>` exists but before any `<body>` has been opened,
+  a stray `</body>` is also ignored without a parse error. The later body-mode
+  token should still synthesize the body and receive the following content.
 - A function receiving an already optional value, such as a stored `String?`,
   should usually take a normal `arg : String?` parameter. Do not use an
   optional labeled parameter when the caller needs to pass `None` or `Some(...)`

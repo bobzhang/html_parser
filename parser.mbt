@@ -2596,6 +2596,9 @@ fn Parser::handle_document_body_or_html_end_tag(
     return false
   }
   if !self.has_open_element(name) {
+    if name == "body" && self.has_open_element("html") {
+      return true
+    }
     return false
   }
   self.pop_until(name, pos)

@@ -3772,6 +3772,28 @@ test "document parser merges repeated body tags" {
 }
 
 ///|
+test "document parser ignores early body end after explicit html" {
+  let doc = @html_parser.parse(
+    "<!doctype html><html></body><p>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body><p>x</p></body></html>",
+  )
+  assert_eq(doc.errors.length(), 0)
+  let after_head = @html_parser.parse(
+    "<!doctype html><html><head></head></body><p>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    after_head.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body><p>x</p></body></html>",
+  )
+  assert_eq(after_head.errors.length(), 0)
+}
+
+///|
 test "tree builder matches Python reference body hidden input fixture" {
   let doc = @html_parser.parse(
     "<body><input type=\"hidden\">",
