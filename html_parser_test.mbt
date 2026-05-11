@@ -108,6 +108,15 @@ test "to_test_format matches reference line format" {
     @html_parser.to_test_format(svg),
     "| <svg svg>\n|   viewBox=\"0 0\"\n|   xlink href=\"u\"",
   )
+  let collision = @html_parser.element(
+    "svg",
+    attrs={ "xlink href": Some("va"), "xlink:href": Some("v") },
+    ns="svg",
+  )
+  assert_eq(
+    @html_parser.to_test_format(collision),
+    "| <svg svg>\n|   xlink href=\"v\"\n|   xlink href=\"va\"",
+  )
 }
 
 ///|
