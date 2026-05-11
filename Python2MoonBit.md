@@ -593,8 +593,10 @@ JustHTML from Python to MoonBit.
 - Inline `style` sanitization is a second allowlist after attribute
   allowlisting. A policy that allows the `style` attribute but leaves
   `allowed_css_properties` empty should still drop `style`; only declarations
-  with valid, explicitly allowed ASCII property names survive, and values that
-  may load resources need a second URL-policy decision. Plain `url(...)` can
+  with valid, explicitly allowed ASCII property names survive. Empty property
+  names such as `: red` are just invalid declarations; later valid declarations
+  in the same style attribute should still be considered. Values that may load
+  resources need a second URL-policy decision. Plain `url(...)` can
   be kept only with an exact `style:<property>` rule (or a wildcard tag rule
   such as `("*", "style:background-image")` in the Python API); sanitize the
   inner URL, then reserialize as `url('...')` only when the sanitized URL does

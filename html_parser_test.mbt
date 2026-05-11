@@ -1604,7 +1604,7 @@ test "sanitize_dom filters inline style declarations by property allowlist" {
     "<p>x</p>",
   )
   let styled = @html_parser.parse_fragment(
-    "<p style='; color; color: ; co_lor: red; margin: 0; COLOR: red; font-weight: 700; background-image: url(/x.png); width: expression(alert(1))'>ok</p><p style>empty</p><p STYLE='color: blue; text-align: center; background-image: u/**/rl(/x.png)'>case</p><p style='color: /*unterminated'>comment</p>",
+    "<p style='; color; color: ; co_lor: red; margin: 0; COLOR: red; font-weight: 700; background-image: url(/x.png); width: expression(alert(1))'>ok</p><p style>empty</p><p STYLE='color: blue; text-align: center; background-image: u/**/rl(/x.png)'>case</p><p style='color: /*unterminated'>comment</p><p style=': red; color: orange'>empty-prop</p>",
     sanitize=false,
   )
   let style_policy = @html_parser.SanitizationPolicy::new(
@@ -1618,7 +1618,7 @@ test "sanitize_dom filters inline style declarations by property allowlist" {
     @html_parser.sanitize_dom(styled.root, policy=style_policy).to_html(
       pretty=false,
     ),
-    "<p style=\"color: red; font-weight: 700\">ok</p><p>empty</p><p style=\"color: blue; text-align: center\">case</p><p>comment</p>",
+    "<p style=\"color: red; font-weight: 700\">ok</p><p>empty</p><p style=\"color: blue; text-align: center\">case</p><p>comment</p><p style=\"color: orange\">empty-prop</p>",
   )
 }
 
