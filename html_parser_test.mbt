@@ -491,6 +491,16 @@ test "pretty serializer splits formatted inline runs in block containers" {
     edge_spacing.to_html(pretty=true),
     "<div>\n  <span></span>\n  <a></a> Tail\n</div>",
   )
+  let empty_run = @html_parser.element("div", children=[
+    @html_parser.text(""),
+    @html_parser.text("\n"),
+    @html_parser.element("span"),
+    @html_parser.text("Tail"),
+  ])
+  assert_eq(
+    empty_run.to_html(pretty=true),
+    "<div>\n  <span></span>Tail\n</div>",
+  )
   let consecutive_separators = @html_parser.element("div", children=[
     @html_parser.element("span"),
     @html_parser.text("\n"),

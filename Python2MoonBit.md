@@ -507,7 +507,9 @@ JustHTML from Python to MoonBit.
   `listing`, `marquee`, `menu`, `noframes`, `noscript`, `plaintext`, `search`,
   and `summary`. In the multiline fallback, trim rendered text-node lines and skip
   whitespace-only text nodes so indentation does not preserve source formatting
-  gaps as visible text. Pretty `DocumentFragment` children need the same
+  gaps as visible text. The inline-run path should also drop empty runs caused
+  by empty text nodes adjacent to formatting separators. Pretty
+  `DocumentFragment` children need the same
   filtering: a whitespace-only fragment renders empty, and an element whose
   child lines all render empty falls back to compact children rather than
   emitting an empty multiline wrapper.
