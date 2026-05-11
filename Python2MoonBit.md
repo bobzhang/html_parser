@@ -253,11 +253,13 @@ JustHTML from Python to MoonBit.
   UTF-8 with query-component safety only (`A-Z`, `a-z`, `0-9`, `-`, `.`, `_`,
   `~` stay unescaped), so `/`, `:`, `?`, `=`, and `#` are percent-encoded.
   In proxy mode, reject invalid scheme-like prefixes such as `1https:foo`
-  before treating a value as relative; otherwise malformed navigations can be
-  hidden behind the proxy rewrite. Python rejects empty proxy URLs and proxy
-  mode without an effective proxy during object construction; the MoonBit
-  constructors stay non-throwing, so sanitizer use must fail closed by dropping
-  the URL when the effective proxy is missing or has an empty URL.
+  or `ht^tps:foo` before treating a value as relative; otherwise malformed
+  navigations can be hidden behind the proxy rewrite. Space/control characters
+  are ignored only for this scheme check, so `h ttps:foo` is still proxied as
+  a relative-looking original value after validation. Python rejects empty proxy
+  URLs and proxy mode without an effective proxy during object construction;
+  the MoonBit constructors stay non-throwing, so sanitizer use must fail closed
+  by dropping the URL when the effective proxy is missing or has an empty URL.
 - Python accepts a raw callable as `UrlPolicy.url_filter`; in MoonBit, wrap the
   callback with `UrlFilter::new` so `UrlPolicy` can still derive `Debug`.
   Apply the filter before validation and handling. For single URL attributes
