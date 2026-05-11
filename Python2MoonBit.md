@@ -752,6 +752,10 @@ JustHTML from Python to MoonBit.
   or relocated nodes in broader table/fragment insertion-mode helpers.
   Duplicated or reconstructed nodes should copy the original formatting node's
   origin rather than inventing a new one.
+- Applet-like end tags (`applet`, `marquee`, `object`) are their own recovery
+  path. If no matching element is open in default scope, report
+  `unexpected-end-tag` at the tag close and consume the token; do not fall
+  through to generic end-tag popping.
 - `script` text is not just generic raw text. After `<!--`, the tokenizer can
   enter script escaped states: `--<` emits an extra literal `<`, `--</script>`
   leaves a literal `<` before the end tag, and `-->` returns to normal raw text.

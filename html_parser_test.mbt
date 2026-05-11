@@ -7906,6 +7906,23 @@ test "parser handles active formatting duplicate starts" {
 
 ///|
 test "parser clears active formatting at applet-like markers" {
+  let stray = @html_parser.parse_fragment("</applet>", collect_errors=true)
+  assert_eq(stray.to_html(pretty=false), "")
+  assert_eq(stray.errors.length(), 1)
+  assert_eq(stray.errors[0].code, "unexpected-end-tag")
+  guard stray.errors[0].column is Some(9) else {
+    fail("expected stray applet end tag error at tag close")
+  }
+  let nested_stray = @html_parser.parse_fragment(
+    "<p>x</object>y",
+    collect_errors=true,
+  )
+  assert_eq(nested_stray.to_html(pretty=false), "<p>xy</p>")
+  assert_eq(nested_stray.errors.length(), 1)
+  assert_eq(nested_stray.errors[0].code, "unexpected-end-tag")
+  guard nested_stray.errors[0].column is Some(13) else {
+    fail("expected stray object end tag error at tag close")
+  }
   let object = @html_parser.parse_fragment(
     "<p><object><b>x</object>y",
     track_node_locations=true,
