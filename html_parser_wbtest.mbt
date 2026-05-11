@@ -499,6 +499,18 @@ test "active formatting helpers respect marker boundaries" {
     fail("expected reconstructed formatting node on stack")
   }
   assert_eq(last.name, "strong")
+
+  let current_only = Parser::new(
+    "",
+    fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  let current_b = element("b")
+  current_only.stack.push(current_b)
+  current_only.adoption_agency("b"[:], 4)
+  assert_eq(current_only.stack.length(), 1)
+  assert_eq(current_only.errors.length(), 0)
 }
 
 ///|

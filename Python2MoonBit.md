@@ -827,6 +827,10 @@ JustHTML from Python to MoonBit.
   removal, orphan-anchor detection, and reconstruction should stop at the latest
   marker instead of reaching older entries. Appending a helper entry for a node
   without a namespace is a no-op.
+- Adoption agency has a current-node fast path: if the current element name
+  matches the formatting end tag but it is no longer in active formatting, close
+  the stack node and do not report `adoption-agency-1.3`. This mirrors the
+  Python guard before the main adoption loop.
 - Applet-like end tags (`applet`, `marquee`, `object`) are their own recovery
   path. If no matching element is open in default scope, report
   `unexpected-end-tag` at the tag close and consume the token; do not fall
