@@ -1041,6 +1041,9 @@ JustHTML from Python to MoonBit.
   table mode; a nested `<colgroup>` additionally reports
   `unexpected-start-tag-implies-end-tag`. End tags inside a `colgroup` follow
   the same reprocessing rule except for `</col>` and `</colgroup>` themselves.
+  Template column-group mode is tied to the current template node identity; if
+  an inner table becomes open before the mode is consumed, drop the stale
+  template-column mode and let the normal table handlers process the token.
 - Fragment contexts for table elements are not ordinary body fragments. For a
   `table` context, seed a synthetic table insertion context but unwrap that
   synthetic wrapper before returning the fragment. Because there is no real

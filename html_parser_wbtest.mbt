@@ -370,6 +370,57 @@ test "table foster helpers handle detached helper state" {
 }
 
 ///|
+fn stale_template_column_group_parser() -> (Parser, Node) {
+  let parser = Parser::new(
+    "",
+    fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  let template = element("template")
+  let table = element("table")
+  parser.root.append_child(template)
+  template.append_child(table)
+  parser.stack.push(template)
+  parser.enable_template_column_group_mode()
+  parser.stack.push(table)
+  (parser, table)
+}
+
+///|
+test "template column group mode drops stale inner table state" {
+  let (text_parser, text_table) = stale_template_column_group_parser()
+  assert_true(text_parser.template_column_group_mode_active())
+  assert_eq(text_parser.handle_template_column_group_text("x"[:], 0), false)
+  assert_eq(text_parser.template_column_group_mode_active(), false)
+  assert_eq(text_parser.errors.length(), 0)
+  assert_eq(text_table.children.length(), 0)
+
+  let (start_parser, start_table) = stale_template_column_group_parser()
+  assert_eq(
+    start_parser.handle_template_column_group_start_tag("col", {}, 0),
+    false,
+  )
+  assert_eq(start_parser.template_column_group_mode_active(), false)
+  assert_eq(start_table.children.length(), 0)
+
+  let (end_parser, end_table) = stale_template_column_group_parser()
+  assert_eq(end_parser.handle_template_column_group_end_tag("tbody", 0), false)
+  assert_eq(end_parser.template_column_group_mode_active(), false)
+  assert_eq(end_table.children.length(), 0)
+
+  let detached = Parser::new(
+    "",
+    fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  detached.enable_template_column_group_mode()
+  detached.disable_current_template_column_group_mode()
+  assert_eq(detached.template_column_group_templates.length(), 0)
+}
+
+///|
 test "tokenizer eof helper reports empty input origin" {
   let tokenizer = SourceTokenizer::new(
     "",
