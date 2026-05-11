@@ -307,6 +307,11 @@ JustHTML from Python to MoonBit.
   outputs against the Python reference, and run the RFC 3492 Punycode loop over
   Unicode code points from `for ch in label`; do not feed UTF-16 code units from
   `s[i]` into the algorithm.
+- DOM transforms that replace one text node with several nodes need to work on
+  the package-private `children` array, because `Node::children()` returns a
+  copy for callers. Always reset the removed node's parent and assign the
+  replacement nodes' parent pointers before inserting them; serialization and
+  later DOM queries rely on those links staying coherent.
 - Python accepts a raw callable as `UrlPolicy.url_filter`; in MoonBit, wrap the
   callback with `UrlFilter::new` so `UrlPolicy` can still derive `Debug`.
   Its debug representation should stay opaque: assert the wrapper type label,

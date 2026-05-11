@@ -26,10 +26,10 @@ reference implementation in `.repos/justhtml`.
   - [x] Representative `linkify-it` fixture smoke tests
   - [x] Full `linkify-it` fixture coverage
   - [x] IDNA/punycode handling parity
-- [ ] Linkify DOM transform
-  - [ ] Wrap text-node matches in `<a href=...>`
-  - [ ] Skip existing anchors and preformatted text by default
-  - [ ] Preserve template content behavior
+- [x] Linkify DOM transform
+  - [x] Wrap text-node matches in `<a href=...>`
+  - [x] Skip existing anchors and preformatted text by default
+  - [x] Preserve template content behavior
 - [ ] General transform pipeline
   - [ ] Transform specs: `Drop`, `Unwrap`, `Escape`, `Empty`, `Edit`, `EditDocument`
   - [ ] Attribute transforms: `EditAttrs`, `DropAttrs`, `AllowlistAttrs`, `MergeAttrs`

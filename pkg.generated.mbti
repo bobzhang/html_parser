@@ -26,6 +26,8 @@ pub fn find_links_with_config(StringView, LinkifyConfig) -> Array[LinkMatch]
 
 pub fn fragment(children? : Array[Node]) -> Node
 
+pub fn linkify_dom(Node, config? : LinkifyConfig, skip_tags? : Array[String]) -> Node
+
 pub fn matches(Node, StringView) -> Bool
 
 pub fn parse(StringView, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> ParsedHtml raise HtmlError
