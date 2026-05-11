@@ -308,6 +308,10 @@ JustHTML from Python to MoonBit.
   reprocessed `<html>` still merge onto the existing root element. Port this
   branch as stack plus flag state; the open-element stack alone does not tell
   whether frameset starts should be inserted or ignored.
+- Recovery cleanup helpers should check node identity before mutating parent
+  links. A stale `parent` pointer or a stale foreign-table-row recovery flag
+  should be a no-op instead of detaching an unrelated node or reporting row
+  text errors after the current node has moved on.
 - Some start tags have their own scope rules even when they look like ordinary
   elements. A repeated `<button>` searches default scope, reports
   `unexpected-start-tag-implies-end-tag`, closes the previous button, and then
