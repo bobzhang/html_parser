@@ -13,6 +13,8 @@ JustHTML from Python to MoonBit.
   come from arbitrary code-unit arithmetic, use `get_view(...)` and handle
   `None` instead of assuming the slice is valid.
 - When a parser consumes a `Char`, advance by `ch.utf16_len()`, not by `1`.
+  Add low-level cursor tests with an astral character so EOF and position
+  assertions catch accidental code-unit/character-count regressions.
 - `StringBuilder::write_string` takes a `String`, not a `StringView`. Keep test
   fixture builders and hot parser helpers explicit about whether they are
   appending owned strings or views.

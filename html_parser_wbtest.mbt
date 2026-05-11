@@ -79,6 +79,28 @@ test "query deduplicates shared nodes and ignores traversal cycles" {
 }
 
 ///|
+test "parser cursor helpers use utf16 offsets and safe fallbacks" {
+  let parser = Parser::new(
+    "😀",
+    fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  guard parser.advance_char() is Some(first) else {
+    fail("expected first character")
+  }
+  assert_eq(first.to_string(), "😀")
+  assert_eq(parser.pos, 2)
+  assert_true(parser.advance_char() is None)
+  assert_eq(parser.pos, 2)
+  let root = parser.root
+  ignore(parser.stack.pop())
+  assert_true(physical_equal(parser.current_node(), root))
+  parser.append_text("", 0)
+  assert_eq(root.children.length(), 0)
+}
+
+///|
 test "pseudo matcher rejects unknown and blank contains pseudos" {
   let note = comment("note")
   assert_eq(pseudo_selector_matches(note, "hover"), false)
