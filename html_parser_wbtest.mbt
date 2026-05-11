@@ -101,6 +101,24 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
 }
 
 ///|
+test "tokenizer eof helper reports empty input origin" {
+  let tokenizer = SourceTokenizer::new(
+    "",
+    collect_errors=true,
+    xml_coercion=false,
+  )
+  tokenizer.error_at_eof("eof-before-tag-name")
+  assert_eq(tokenizer.errors.length(), 1)
+  assert_eq(tokenizer.errors[0].code, "eof-before-tag-name")
+  guard tokenizer.errors[0].line is Some(1) else {
+    fail("expected empty input EOF line")
+  }
+  guard tokenizer.errors[0].column is Some(0) else {
+    fail("expected empty input EOF column")
+  }
+}
+
+///|
 test "pseudo matcher rejects unknown and blank contains pseudos" {
   let note = comment("note")
   assert_eq(pseudo_selector_matches(note, "hover"), false)

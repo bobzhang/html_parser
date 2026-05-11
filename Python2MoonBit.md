@@ -31,7 +31,9 @@ JustHTML from Python to MoonBit.
 - Error positions are still UTF-16 offsets until converted to line/column.
   Match Python's EOF conventions deliberately: EOF after a trailing newline is
   reported at the next line, column 0, while EOF after trailing non-newline text
-  uses the last character offset.
+  uses the last character offset. Internal scanner helpers that explicitly
+  report EOF on an empty source should use line 1, column 0; normal empty input
+  can still produce no public parse or tokenize error.
 - For many tree-builder start-tag parse errors, Python reports the close
   bracket, not the initial `<`. Keep both `start` and `tag_close_pos` in scope
   when dispatching state-specific handlers such as select mode, table mode, and
