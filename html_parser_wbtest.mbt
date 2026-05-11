@@ -769,6 +769,10 @@ test "tokenizer eof helper reports empty input origin" {
     collect_errors=true,
     xml_coercion=false,
   )
+  assert_true(tokenizer.advance_char() is None)
+  assert_eq(tokenizer.pos, 0)
+  tokenizer.parse_characters()
+  assert_eq(tokenizer.tokens.length(), 0)
   tokenizer.error_at_eof("eof-before-tag-name")
   assert_eq(tokenizer.errors.length(), 1)
   assert_eq(tokenizer.errors[0].code, "eof-before-tag-name")

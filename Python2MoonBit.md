@@ -1217,7 +1217,10 @@ JustHTML from Python to MoonBit.
 - Noncharacter input-stream errors are state-sensitive. Report
   `noncharacter-in-input-stream` while scanning data-state text and invalid
   tag-open recovery, but do not put it in a low-level `advance_char` helper or
-  attributes and raw-text states will over-report compared with Python.
+  attributes and raw-text states will over-report compared with Python. Keep
+  those low-level cursor helpers total at EOF: returning `None` without
+  advancing is useful for direct helper tests and for recovery paths that
+  intentionally probe past the available input.
 - Character-reference decoding has two results: decoded text and recoverable
   tokenizer errors. In MoonBit, keep those together in a small result record so
   callers can add the local slice offset before turning them into `ParseError`
