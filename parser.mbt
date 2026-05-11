@@ -4461,6 +4461,30 @@ fn Parser::handle_select_reprocessed_foreign_cell_start_tag(
 }
 
 ///|
+fn Parser::handle_recovered_post_body_cell_start_tag(
+  self : Parser,
+  name : String,
+  attrs : Map[String, String?],
+  start : Int,
+  self_closing : Bool,
+) -> Bool {
+  if name != "td" && name != "th" {
+    return false
+  }
+  if self.has_open_element("table") ||
+    (!self.has_open_element("td") && !self.has_open_element("th")) {
+    return false
+  }
+  self.close_open_table_cell()
+  let node = self.node_with_origin(element(name, attrs~), start)
+  self.post_body_html_children.push(node)
+  if !self_closing {
+    self.stack.push(node)
+  }
+  true
+}
+
+///|
 fn Parser::handle_foreign_table_row_recovery_start_tag(
   self : Parser,
   name : String,
@@ -5046,6 +5070,11 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         }
       }
       if self.handle_foreign_table_row_recovery_start_tag(
+          name, attrs, start, self_closing,
+        ) {
+        return
+      }
+      if self.handle_recovered_post_body_cell_start_tag(
           name, attrs, start, self_closing,
         ) {
         return

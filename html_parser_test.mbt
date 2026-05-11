@@ -5134,6 +5134,30 @@ test "tree builder matches reference empty-stack foreign select edge" {
   guard doc.errors[0].column is Some(2) else {
     fail("expected malformed declaration at bang")
   }
+  let td_siblings = @html_parser.parse(
+    "<!><svg><th><title><n><select><td>x<td>y",
+    collect_errors=true,
+  )
+  assert_eq(
+    td_siblings.to_html(pretty=false),
+    "<!----><html><head></head><body><svg><th><title><n><select></select></n></title></th></svg></body><td>x</td><td>y</td></html>",
+  )
+  assert_eq(td_siblings.errors.length(), 3)
+  assert_eq(td_siblings.errors[0].code, "incorrectly-opened-comment")
+  assert_eq(td_siblings.errors[1].code, "expected-doctype-but-got-start-tag")
+  assert_eq(td_siblings.errors[2].code, "unexpected-start-tag-in-select")
+  let th_then_td = @html_parser.parse(
+    "<!><svg><th><title><n><select><th>x<td>y",
+    collect_errors=true,
+  )
+  assert_eq(
+    th_then_td.to_html(pretty=false),
+    "<!----><html><head></head><body><svg><th><title><n><select></select></n></title></th></svg></body><th>x</th><td>y</td></html>",
+  )
+  assert_eq(th_then_td.errors.length(), 3)
+  assert_eq(th_then_td.errors[0].code, "incorrectly-opened-comment")
+  assert_eq(th_then_td.errors[1].code, "expected-doctype-but-got-start-tag")
+  assert_eq(th_then_td.errors[2].code, "unexpected-start-tag-in-select")
 }
 
 ///|

@@ -318,7 +318,9 @@ JustHTML from Python to MoonBit.
   while trying to close the non-HTML cell, and reprocesses the new `td`/`th` as
   a child of the document `html` element after `body`. Model this as a narrow
   parser recovery path; do not make ordinary table-internal starts outside a
-  table insert nodes.
+  table insert nodes. If another recovered `td`/`th` follows, close the current
+  recovered cell first so the post-body cells remain siblings, matching Python's
+  stack-draining behavior.
 - Select insertion mode is parser state, not just a stack-name query. A foreign
   SVG/MathML element named `select` must not make a later HTML start tag behave
   as select-mode content. Once an HTML `<select>` has entered select mode,
