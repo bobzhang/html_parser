@@ -78,6 +78,8 @@ JustHTML from Python to MoonBit.
   byte-to-code-point tables, and test non-ASCII bytes so label normalization
   and decoding are both covered. Include both remapped bytes and high bytes
   that map to the same Unicode code point; legacy tables often mix the two.
+  Sparse entries such as Windows-1252 C1 punctuation and ISO-8859-2 diaeresis
+  letters are easy to miss if tests only sample contiguous-looking ranges.
 - Invalid transport encoding labels should not become the reported encoding.
   Treat them like a missing transport label and continue with BOM/meta/default
   sniffing.

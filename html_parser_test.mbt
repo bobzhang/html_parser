@@ -11206,6 +11206,14 @@ test "parse_bytes defaults to windows1252 and normalizes compatible labels" {
   guard c1_letters.encoding is Some("windows-1252") else {
     fail("expected C1 default bytes to use windows-1252")
   }
+  let c1_punctuation = @html_parser.parse_bytes(b"<p>\x84\x8c</p>")
+  assert_eq(
+    c1_punctuation.to_text(separator="", strip=false),
+    "\u{201E}\u{0152}",
+  )
+  guard c1_punctuation.encoding is Some("windows-1252") else {
+    fail("expected sparse C1 bytes to use windows-1252")
+  }
 }
 
 ///|
@@ -11260,6 +11268,17 @@ test "parse_bytes decodes iso8859-2 labels" {
   )
   guard identity_high_doc.encoding is Some("iso-8859-2") else {
     fail("expected explicit iso-8859-2 encoding for identity high bytes")
+  }
+  let identity_e_diaeresis = @html_parser.parse_bytes(
+    b"<p>\xcb\xeb</p>",
+    encoding="iso-8859-2",
+  )
+  assert_eq(
+    identity_e_diaeresis.to_text(separator="", strip=false),
+    "\u{00CB}\u{00EB}",
+  )
+  guard identity_e_diaeresis.encoding is Some("iso-8859-2") else {
+    fail("expected explicit iso-8859-2 encoding for sparse identity bytes")
   }
   let meta = b"<meta charset=latin2><p>\xc6\xe6</p>"
   let meta_doc = @html_parser.parse_bytes(meta)
