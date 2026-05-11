@@ -841,6 +841,10 @@ JustHTML from Python to MoonBit.
   with the same name is not enough. The outer adoption loop can continue after
   the rewrite, so assert the final DOM and active-formatting state rather than
   only the intermediate replacement insertion.
+- The adoption-agency inner-loop counter changes behavior after three passes:
+  a later node that is still in active formatting is pruned from active
+  formatting as well as from the open stack, and the bookmark must be adjusted if
+  that entry was before the current insertion point.
 - Applet-like end tags (`applet`, `marquee`, `object`) are their own recovery
   path. If no matching element is open in default scope, report
   `unexpected-end-tag` at the tag close and consume the token; do not fall

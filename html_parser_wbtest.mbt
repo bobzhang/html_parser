@@ -581,6 +581,64 @@ test "adoption agency removes non-formatting inner stack nodes" {
 }
 
 ///|
+test "adoption agency prunes late active inner nodes" {
+  let parser = Parser::new(
+    "",
+    fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  let original_b = element("b", attrs={ "data-origin": Some("start") })
+  let late_i = element("i", attrs={ "data-late": Some("drop") })
+  let loose_one = element("span")
+  let loose_two = element("span")
+  let top_em = element("em", attrs={ "data-top": Some("keep") })
+  let furthest_block = element("p")
+  parser.stack.push(original_b)
+  parser.stack.push(late_i)
+  parser.stack.push(loose_one)
+  parser.stack.push(loose_two)
+  parser.stack.push(top_em)
+  parser.stack.push(furthest_block)
+  parser.active_formatting.push({
+    marker: false,
+    name: "b",
+    ns: "html",
+    attrs: original_b.attrs.copy(),
+    node: original_b,
+  })
+  parser.active_formatting.push({
+    marker: false,
+    name: "i",
+    ns: "html",
+    attrs: late_i.attrs.copy(),
+    node: late_i,
+  })
+  parser.active_formatting.push({
+    marker: false,
+    name: "em",
+    ns: "html",
+    attrs: top_em.attrs.copy(),
+    node: top_em,
+  })
+  parser.adoption_agency("b"[:], 0)
+  assert_eq(parser.errors.length(), 1)
+  assert_eq(parser.errors[0].code, "adoption-agency-1.3")
+  assert_eq(parser.stack_index_by_node(late_i), -1)
+  assert_eq(parser.stack_index_by_node(loose_one), -1)
+  assert_eq(parser.stack_index_by_node(loose_two), -1)
+  assert_eq(parser.stack_index_by_node(original_b), -1)
+  assert_eq(
+    parser.root.to_html(pretty=false),
+    "<em data-top=\"keep\"><p><b data-origin=\"start\"></b></p></em>",
+  )
+  assert_eq(parser.active_formatting.length(), 1)
+  let remaining = parser.active_formatting[0]
+  assert_eq(remaining.name, "em")
+  assert_true(!physical_equal(remaining.node, top_em))
+}
+
+///|
 test "table foster helpers handle detached helper state" {
   let root = fragment()
   let parser = Parser::new("", root, scripting_enabled=true, xml_coercion=false)
