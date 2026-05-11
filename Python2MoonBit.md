@@ -752,6 +752,10 @@ JustHTML from Python to MoonBit.
   or relocated nodes in broader table/fragment insertion-mode helpers.
   Duplicated or reconstructed nodes should copy the original formatting node's
   origin rather than inventing a new one.
+- The active-formatting duplicate cap compares both tag names and attribute
+  maps. Empty-map tests can miss bad ports; include attribute-bearing repeated
+  formatting starts and a mixed-attribute case so equality and inequality both
+  exercise the cap.
 - Applet-like end tags (`applet`, `marquee`, `object`) are their own recovery
   path. If no matching element is open in default scope, report
   `unexpected-end-tag` at the tag close and consume the token; do not fall

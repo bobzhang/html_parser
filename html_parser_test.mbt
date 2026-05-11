@@ -7902,6 +7902,27 @@ test "parser handles active formatting duplicate starts" {
   assert_node_origin(repeated_bold[4], 6, 1, 7)
   assert_node_origin(repeated_bold[5], 9, 1, 10)
   assert_node_origin(repeated_bold[6], 12, 1, 13)
+  let repeated_attrs = @html_parser.parse_fragment(
+    "<p><b class=x><b class=x><b class=x><b class=x>z</p>tail",
+  )
+  assert_eq(
+    repeated_attrs.to_html(pretty=false),
+    "<p><b class=\"x\"><b class=\"x\"><b class=\"x\"><b class=\"x\">z</b></b></b></b></p><b class=\"x\"><b class=\"x\"><b class=\"x\">tail</b></b></b>",
+  )
+  let mixed_attrs = @html_parser.parse_fragment(
+    "<p><b class=x><b class=x id=y><b class=x id=y><b class=x id=y><b class=x id=y>z</p>tail",
+  )
+  assert_eq(
+    mixed_attrs.to_html(pretty=false),
+    "<p><b class=\"x\"><b class=\"x\" id=\"y\"><b class=\"x\" id=\"y\"><b class=\"x\" id=\"y\"><b class=\"x\" id=\"y\">z</b></b></b></b></b></p><b class=\"x\"><b class=\"x\" id=\"y\"><b class=\"x\" id=\"y\"><b class=\"x\" id=\"y\">tail</b></b></b></b>",
+  )
+  let mismatched_attrs = @html_parser.parse_fragment(
+    "<p><b class=x><b class=y><b class=x><b class=y><b class=x>z</p>tail",
+  )
+  assert_eq(
+    mismatched_attrs.to_html(pretty=false),
+    "<p><b class=\"x\"><b class=\"y\"><b class=\"x\"><b class=\"y\"><b class=\"x\">z</b></b></b></b></b></p><b class=\"x\"><b class=\"y\"><b class=\"x\"><b class=\"y\"><b class=\"x\">tail</b></b></b></b></b>",
+  )
 }
 
 ///|
