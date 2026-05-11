@@ -101,6 +101,47 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
 }
 
 ///|
+test "entity helpers preserve unresolved names and attribute boundaries" {
+  assert_true(
+    consume_named_entity_with_errors("&unknown;"[:], 0, in_attribute=false)
+    is None,
+  )
+  assert_true(
+    consume_named_entity_with_errors("&unknown"[:], 0, in_attribute=false)
+    is None,
+  )
+  guard consume_named_entity_with_errors("&copy."[:], 0, in_attribute=true)
+    is Some(decoded_attr) else {
+    fail("expected punctuation-delimited legacy attribute entity")
+  }
+  assert_eq(decoded_attr.value, "\u{00A9}")
+  assert_eq(decoded_attr.next, 5)
+  assert_eq(decoded_attr.errors.length(), 1)
+  assert_true(
+    legacy_entity_blocked_in_attribute("&copyx"[:], 5, in_attribute=true),
+  )
+  assert_true(
+    legacy_entity_blocked_in_attribute("&copy0"[:], 5, in_attribute=true),
+  )
+  assert_true(
+    legacy_entity_blocked_in_attribute("&copy="[:], 5, in_attribute=true),
+  )
+  assert_eq(
+    legacy_entity_blocked_in_attribute("&copyx"[:], 5, in_attribute=false),
+    false,
+  )
+  assert_eq(
+    legacy_entity_blocked_in_attribute("&copy."[:], 5, in_attribute=true),
+    false,
+  )
+  let unresolved = tokenize("&unknown; &unknown", collect_errors=true)
+  guard unresolved.tokens[0] is Characters("&unknown; &unknown") else {
+    fail("expected unresolved named references to stay literal")
+  }
+  assert_eq(unresolved.errors.length(), 0)
+}
+
+///|
 test "document scaffold text helpers preserve whitespace boundaries" {
   assert_true(text_node_without_leading_ascii_whitespace(text(" \t\n")) is None)
   guard text_node_without_leading_ascii_whitespace(text(" \tbody"))

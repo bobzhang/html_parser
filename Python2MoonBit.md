@@ -1192,7 +1192,10 @@ JustHTML from Python to MoonBit.
   the `&not` prefix and reports the missing-semicolon recovery. The same
   attribute-mode block applies when a semicolonless legacy name is followed by
   ASCII alphanumerics or `=`, so `&copycat`, `&copy0`, and `&copy=` stay
-  literal in attributes but decode by legacy-prefix recovery in text.
+  literal in attributes but decode by legacy-prefix recovery in text. The
+  Python code collects one alphanumeric run before testing the next character;
+  keep the MoonBit boundary predicate separate and whitebox it directly so
+  StringView slicing changes do not erase the attribute-only block.
 - Mirror those attribute character-reference fixtures through the parser, not
   only the public tokenizer. Unquoted attribute values take the same deferred
   error cursor path, so the parse error points at the consumed tag close rather
