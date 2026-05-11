@@ -174,6 +174,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if raw.is_empty() {
     return
   }
+  let mut text_start = start
   let mut cleaned = if self.current_node_uses_foreign_content_for_text() {
     self.clean_foreign_content_text(raw, start)
   } else {
@@ -203,12 +204,31 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
       ignore(self.stack.pop())
     }
     match cleaned[:].get_view(start=whitespace.length(), end=cleaned.length()) {
-      Some(rest) => cleaned = rest.to_owned()
+      Some(rest) => {
+        cleaned = rest.to_owned()
+        text_start += whitespace.length()
+      }
       None => return
     }
   }
   if self.current_is_document_head() && text_has_non_ascii_whitespace(cleaned) {
+    let whitespace = leading_ascii_whitespace(cleaned)
+    if !whitespace.is_empty() {
+      let data = if self.xml_coercion {
+        coerce_text_for_xml(whitespace[:])
+      } else {
+        whitespace
+      }
+      self.current_node().append_child(self.text_at(data, text_start))
+    }
     ignore(self.stack.pop())
+    match cleaned[:].get_view(start=whitespace.length(), end=cleaned.length()) {
+      Some(rest) => {
+        cleaned = rest.to_owned()
+        text_start += whitespace.length()
+      }
+      None => return
+    }
   }
   if self.uses_document_frameset_rules() &&
     !self.frameset_reprocesses_in_body_mode &&
@@ -222,7 +242,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
       self.error_at("unexpected-token-after-frameset", start + raw.length() - 1)
     }
     if !whitespace.is_empty() {
-      self.current_node().append_child(self.text_at(whitespace, start))
+      self.current_node().append_child(self.text_at(whitespace, text_start))
     }
     return
   }
@@ -230,30 +250,30 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     text_has_non_ascii_whitespace(cleaned) {
     self.frameset_ok = false
   }
-  if self.handle_template_column_group_text(cleaned, start) {
+  if self.handle_template_column_group_text(cleaned, text_start) {
     return
   }
-  if self.handle_fragment_context_colgroup_text(cleaned, start) {
+  if self.handle_fragment_context_colgroup_text(cleaned, text_start) {
     return
   }
-  if self.handle_column_group_text(cleaned, start) {
+  if self.handle_column_group_text(cleaned, text_start) {
     return
   }
-  self.report_foreign_table_row_recovery_text(cleaned, start)
-  if self.foster_parent_table_text(cleaned, start) {
+  self.report_foreign_table_row_recovery_text(cleaned, text_start)
+  if self.foster_parent_table_text(cleaned, text_start) {
     return
   }
-  if self.foster_parent_template_table_text(cleaned, start) {
+  if self.foster_parent_template_table_text(cleaned, text_start) {
     return
   }
   if self.template_table_context_mode_active() &&
     text_has_non_ascii_whitespace(cleaned) {
-    ignore(self.report_foster_parenting_character_errors(cleaned, start))
+    ignore(self.report_foster_parenting_character_errors(cleaned, text_start))
   }
-  self.report_foster_parented_table_context_text(cleaned, start)
+  self.report_foster_parented_table_context_text(cleaned, text_start)
   let decoded_result = decode_entities_with_errors(cleaned, in_attribute=false)
   for error in decoded_result.errors {
-    self.error_at(error.code, start + error.offset)
+    self.error_at(error.code, text_start + error.offset)
   }
   let decoded = normalize_tree_builder_text(decoded_result.data[:])
   let data = if self.xml_coercion {
@@ -262,7 +282,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     decoded
   }
   self.reconstruct_active_formatting_elements()
-  self.current_node().append_child(self.text_at(data, start))
+  self.current_node().append_child(self.text_at(data, text_start))
 }
 
 ///|
@@ -7306,6 +7326,33 @@ fn text_node_without_leading_ascii_whitespace(node : Node) -> Node? {
 }
 
 ///|
+fn split_text_node_leading_ascii_whitespace(node : Node) -> (Node?, Node?) {
+  let view = node.data[:]
+  let mut start = 0
+  while start < view.length() {
+    match view.get_char(start) {
+      Some(ch) if ch.is_ascii_whitespace() => start += ch.utf16_len()
+      _ => break
+    }
+  }
+  if start == 0 {
+    (None, Some(node))
+  } else if start >= view.length() {
+    (Some(node), None)
+  } else {
+    let leading = match view.get_view(start=0, end=start) {
+      Some(part) => Some(text(part))
+      None => None
+    }
+    let rest = match view.get_view(start~, end=view.length()) {
+      Some(part) => Some(text(part))
+      None => None
+    }
+    (leading, rest)
+  }
+}
+
+///|
 fn merge_missing_attrs(target : Node, source : Node) -> Unit {
   merge_missing_attrs_from_map(target, source.attrs)
 }
@@ -7494,12 +7541,34 @@ fn scaffold_existing_html_element(html : Node) -> Unit {
     } else if child.kind == Comment && !body_started {
       head_children.push(child)
     } else if is_whitespace_text_node(child) && !body_started {
-      ()
+      if head is Some(_) {
+        between_head_body_children.push(child)
+      } else if !head_children.is_empty() {
+        head_children.push(child)
+      }
     } else if child.kind == Text && !body_started {
-      body_started = true
-      match text_node_without_leading_ascii_whitespace(child) {
-        Some(stripped) => body_children.push(stripped)
-        None => ()
+      if head is None && !head_children.is_empty() {
+        let (leading, rest) = split_text_node_leading_ascii_whitespace(child)
+        match leading {
+          Some(node) => head_children.push(node)
+          None => ()
+        }
+        match rest {
+          Some(node) => {
+            body_started = true
+            body_children.push(node)
+          }
+          None => ()
+        }
+      } else if head is None {
+        body_started = true
+        match text_node_without_leading_ascii_whitespace(child) {
+          Some(stripped) => body_children.push(stripped)
+          None => ()
+        }
+      } else {
+        body_started = true
+        body_children.push(child)
       }
     } else {
       body_started = true
@@ -7539,6 +7608,7 @@ fn scaffold_document(root : Node) -> Unit {
   let mut head : Node? = None
   let mut body : Node? = None
   let mut frameset : Node? = None
+  let between_head_body_children : Array[Node] = []
   let head_children : Array[Node] = []
   let body_children : Array[Node] = []
   let after_frameset_children : Array[Node] = []
@@ -7571,6 +7641,8 @@ fn scaffold_document(root : Node) -> Unit {
       body_started = true
     } else if frameset is Some(_) && body is None {
       after_frameset_children.push(child)
+    } else if child.kind == Comment && !body_started && head is Some(_) {
+      between_head_body_children.push(child)
     } else if child.kind == Comment && !body_started && head_children.is_empty() {
       root.append_child(child)
     } else if child.kind == Element && child.name == "head" {
@@ -7586,7 +7658,35 @@ fn scaffold_document(root : Node) -> Unit {
     } else if child.kind == Comment && !body_started {
       head_children.push(child)
     } else if is_whitespace_text_node(child) && !body_started {
-      ()
+      if head is Some(_) {
+        between_head_body_children.push(child)
+      } else if !head_children.is_empty() {
+        head_children.push(child)
+      }
+    } else if child.kind == Text && !body_started {
+      if head is None && !head_children.is_empty() {
+        let (leading, rest) = split_text_node_leading_ascii_whitespace(child)
+        match leading {
+          Some(node) => head_children.push(node)
+          None => ()
+        }
+        match rest {
+          Some(node) => {
+            body_started = true
+            body_children.push(node)
+          }
+          None => ()
+        }
+      } else if head is None {
+        body_started = true
+        match text_node_without_leading_ascii_whitespace(child) {
+          Some(stripped) => body_children.push(stripped)
+          None => ()
+        }
+      } else {
+        body_started = true
+        body_children.push(child)
+      }
     } else {
       body_started = true
       body_children.push(child)
@@ -7596,6 +7696,7 @@ fn scaffold_document(root : Node) -> Unit {
   let head_node = head.unwrap_or(element("head"))
   html.append_child(head_node)
   append_children_to(head_node, head_children)
+  append_children_to(html, between_head_body_children)
   match frameset {
     Some(frameset_node) if body is None && body_children.is_empty() => {
       html.append_child(frameset_node)

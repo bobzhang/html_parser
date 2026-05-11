@@ -3786,6 +3786,43 @@ test "document parser places comments around implicit head like reference" {
 }
 
 ///|
+test "document parser preserves head-side whitespace like reference" {
+  let implicit = @html_parser.parse("<!doctype html><title>T</title>  text")
+  assert_eq(
+    implicit.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><title>T</title>  </head><body>text</body></html>",
+  )
+  let open_head = @html_parser.parse(
+    "<!doctype html><head><title>T</title>  text",
+  )
+  assert_eq(
+    open_head.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><title>T</title>  </head><body>text</body></html>",
+  )
+  let explicit = @html_parser.parse(
+    "<!doctype html><head></head><!--c-->  <meta name=x><p>y",
+  )
+  assert_eq(
+    explicit.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><meta name=\"x\"></head><!--c-->  <body><p>y</p></body></html>",
+  )
+  let explicit_html_implicit_head = @html_parser.parse(
+    "<html><title>T</title>  text</html>",
+  )
+  assert_eq(
+    explicit_html_implicit_head.to_html(pretty=false),
+    "<html><head><title>T</title>  </head><body>text</body></html>",
+  )
+  let explicit_html_closed_head = @html_parser.parse(
+    "<html><head></head>  <p>x</p></html>",
+  )
+  assert_eq(
+    explicit_html_closed_head.to_html(pretty=false),
+    "<html><head></head>  <body><p>x</p></body></html>",
+  )
+}
+
+///|
 test "document parser accepts doctype after leading comments and whitespace" {
   let comment = @html_parser.parse(
     "<!--c-->\n<!DOCTYPE html><p>x",
@@ -8926,6 +8963,39 @@ test "document parser scaffolds framesets outside body" {
     "<!DOCTYPE html><html><head></head><frameset><noframes>&lt;p&gt;x&lt;/p&gt;</noframes></frameset></html>",
   )
   assert_eq(noframes.errors.length(), 0)
+}
+
+///|
+test "document parser replaces implicit body before frameset" {
+  let discarded_body = @html_parser.parse(
+    "<!doctype html><meta name=x>  <p><b></b></p><!--drop--><frameset></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    discarded_body.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><meta name=\"x\">  </head><frameset></frameset></html>",
+  )
+  assert_eq(discarded_body.errors.length(), 0)
+  let preserved_head_comment = @html_parser.parse(
+    "<!doctype html><meta name=x>  <!--keep--><figure></figure><!--drop--><frameset></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    preserved_head_comment.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><meta name=\"x\">  <!--keep--></head><frameset></frameset></html>",
+  )
+  assert_eq(preserved_head_comment.errors.length(), 0)
+  let text_blocks_frameset = @html_parser.parse(
+    "<!doctype html><meta name=x>  <p>x</p><!--keep--><frameset></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    text_blocks_frameset.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><meta name=\"x\">  </head><body><p>x</p><!--keep--></body></html>",
+  )
+  assert_eq(text_blocks_frameset.errors.length(), 2)
+  assert_eq(text_blocks_frameset.errors[0].code, "unexpected-start-tag-ignored")
+  assert_eq(text_blocks_frameset.errors[1].code, "unexpected-end-tag")
 }
 
 ///|

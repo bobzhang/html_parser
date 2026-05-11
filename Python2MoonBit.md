@@ -260,7 +260,9 @@ JustHTML from Python to MoonBit.
   a later frameset ignored. If the MoonBit port defers creating the implicit
   `<body>` until scaffolding, the `<frameset>` handler must still remove those
   earlier implicit-body children and reset the stack before inserting the
-  frameset.
+  frameset. Whitespace and comments after valid head content still belong on
+  the head side of that replacement; comments after the first discardable
+  implicit-body child are removed with the rest of the replaced body.
   `<frame>` is only kept while a frameset is open; ordinary start tags inside
   the open frameset are ignored immediately and their matching end tags report
   `unexpected-token-in-frameset` too. Non-whitespace tokens after the final
@@ -865,8 +867,12 @@ JustHTML from Python to MoonBit.
   root-level repeated `<html>` elements before the head/body scaffolding pass.
 - Finish-time document scaffolding has a few insertion-mode-shaped details:
   strip the leading whitespace prefix from the first text node that starts an
-  implicit body under an explicit `<html>`, move children of a late `<head>` into
-  the body, and preserve whitespace/comments that trail a valid frameset.
+  implicit body before any head content, keep whitespace after implicit head
+  content or an open `<head>` inside `<head>`, keep standalone whitespace and
+  comments after an explicit closed `<head>` between head and body, move late
+  head-element starts back into `<head>`, move children of a duplicate late
+  `<head>` into the body, and preserve whitespace/comments that trail a valid
+  frameset.
 - Keep tokenizer flags separate from tree-builder effects. A `/>` slash should
   remain visible on the start-tag token, but in HTML tree construction only
   void elements actually self-close; non-void elements still receive later text
