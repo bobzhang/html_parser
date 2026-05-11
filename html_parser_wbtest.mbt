@@ -135,6 +135,43 @@ test "document scaffold text helpers preserve whitespace boundaries" {
 }
 
 ///|
+test "document scaffold merges repeated html helper trees" {
+  let primary = element("html", attrs={ "lang": Some("en") }, children=[
+    element("head", children=[element("title", children=[text("T")])]),
+    element("body", children=[text("A")]),
+  ])
+  let sibling = element(
+    "html",
+    attrs={ "dir": Some("ltr"), "lang": Some("fr") },
+    children=[
+      element("html", attrs={ "data-root": Some("sibling") }, children=[
+        element("body", attrs={ "id": Some("merged") }, children=[text("B")]),
+      ]),
+    ],
+  )
+  let root = document(children=[primary, sibling])
+  scaffold_document(root)
+  assert_eq(root.children.length(), 1)
+  let html = root.children[0]
+  assert_true(physical_equal(html, primary))
+  guard html.attrs["lang"] is Some("en") else {
+    fail("expected first html lang to win")
+  }
+  guard html.attrs["dir"] is Some("ltr") else {
+    fail("expected sibling html dir to merge")
+  }
+  guard html.attrs["data-root"] is Some("sibling") else {
+    fail("expected nested html attrs to merge")
+  }
+  assert_eq(html.children.length(), 2)
+  let body = html.children[1]
+  guard body.attrs["id"] is Some("merged") else {
+    fail("expected nested body attrs to merge")
+  }
+  assert_eq(body.to_html(pretty=false), "<body id=\"merged\">AB</body>")
+}
+
+///|
 test "tokenizer eof helper reports empty input origin" {
   let tokenizer = SourceTokenizer::new(
     "",

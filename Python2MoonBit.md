@@ -947,6 +947,8 @@ JustHTML from Python to MoonBit.
   missing root attributes, then process the nested html's children in order.
 - Repeated shell tags can appear as siblings too, not only nested nodes. Normalize
   root-level repeated `<html>` elements before the head/body scaffolding pass.
+  Public parse tests may hit token-time shell merging instead, so keep a direct
+  helper test for manually assembled sibling/nested html trees.
 - Finish-time document scaffolding has a few insertion-mode-shaped details:
   strip the leading whitespace prefix from the first text node that starts an
   implicit body before any head content, keep whitespace after implicit head
