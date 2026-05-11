@@ -895,7 +895,13 @@ JustHTML from Python to MoonBit.
   later `<body>` reports both `unexpected-token-after-body` and
   `unexpected-start-tag`. A later `<html>` shell can still be checked against
   the nested shell's before-body children: report `unexpected-start-tag`, then
-  keep scaffolding head/body children normally.
+  keep scaffolding head/body children normally. Make the before-body check
+  recursive for nested `<html>` shells, because manually assembled helper tests
+  can expose that path even when public parsing unwraps the shell earlier.
+- Finish-time helper passes should be total over intermediate document roots.
+  Pending `<html>` attributes must not be dropped just because the shell is not
+  present yet, and post-body children should fall back to the root when no
+  document `<html>` element exists.
 - Treat an explicit HTML namespace on `FragmentContext` the same as the default
   namespace. `FragmentContext("table", namespace="html")` still uses table
   fragment insertion mode; the namespace value should not make it fall back to

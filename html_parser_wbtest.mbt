@@ -172,6 +172,45 @@ test "document scaffold merges repeated html helper trees" {
 }
 
 ///|
+test "document and fragment helpers tolerate missing shells" {
+  let parser = Parser::new(
+    "",
+    document(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  parser.pending_document_html_attrs["lang"] = Some("en")
+  parser.apply_pending_document_html_attrs()
+  assert_eq(parser.root.children.length(), 0)
+  let html = element("html", attrs={ "dir": Some("ltr") })
+  parser.root.append_child(html)
+  parser.apply_pending_document_html_attrs()
+  guard html.attrs["lang"] is Some("en") else {
+    fail("expected pending html attrs to survive missing shell")
+  }
+  guard html.attrs["dir"] is Some("ltr") else {
+    fail("expected existing html attrs to survive pending merge")
+  }
+  let root = document(children=[comment("tail")])
+  let paragraph = element("p", children=[text("x")])
+  append_post_body_html_children(root, [paragraph])
+  assert_eq(root.to_html(pretty=false), "<!--tail--><p>x</p>")
+  guard paragraph.parent() is Some(parent) else {
+    fail("expected appended post-body child parent")
+  }
+  assert_true(physical_equal(parent, root))
+  let nested_before_body = element("html", children=[
+    comment("c"),
+    element("html", children=[element("meta", attrs={ "name": Some("x") })]),
+  ])
+  assert_true(html_fragment_child_is_before_body(nested_before_body))
+  let nested_after_body = element("html", children=[
+    element("html", children=[element("body")]),
+  ])
+  assert_eq(html_fragment_child_is_before_body(nested_after_body), false)
+}
+
+///|
 test "tokenizer eof helper reports empty input origin" {
   let tokenizer = SourceTokenizer::new(
     "",
