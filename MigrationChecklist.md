@@ -20,7 +20,7 @@ reference implementation in `.repos/justhtml`.
 
 ## Remaining Feature Work
 
-- [ ] Linkify core text scanner
+- [x] Linkify core text scanner
   - [x] Public `LinkMatch` and `LinkifyConfig` API
   - [x] Scheme, protocol-relative, `www.`, fuzzy domain, fuzzy IP, and email detection
   - [x] Representative `linkify-it` fixture smoke tests
