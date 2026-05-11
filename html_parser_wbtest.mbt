@@ -87,6 +87,23 @@ test "pseudo matcher rejects unknown and blank contains pseudos" {
 }
 
 ///|
+test "url scheme helpers ignore C0 characters in scheme prefixes" {
+  guard extract_url_scheme("\tHTTPS:") is Some(tabbed_scheme) else {
+    fail("expected tabbed URL scheme")
+  }
+  assert_eq(tabbed_scheme, "https")
+  guard extract_url_scheme("h ttps:") is Some(spaced_scheme) else {
+    fail("expected spaced URL scheme")
+  }
+  assert_eq(spaced_scheme, "https")
+  assert_true(extract_url_scheme(" \t:relative") is None)
+  assert_true(url_scheme_prefix_is_valid("h ttps:relative", 6))
+  assert_eq(url_scheme_prefix_is_valid(" \t:relative", 2), false)
+  assert_eq(has_invalid_scheme_like_prefix("h ttps:relative"), false)
+  assert_true(has_invalid_scheme_like_prefix("ht^tps:relative"))
+}
+
+///|
 test "sanitize_dom clears mixed-case style rawtext resource loads" {
   let policy = SanitizationPolicy::new(
     ["style"],
