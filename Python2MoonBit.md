@@ -223,7 +223,7 @@ JustHTML from Python to MoonBit.
 - The parser lowercases HTML attribute names, but manually built DOM nodes can
   still contain mixed-case keys. Lowercase names inside the sanitizer before
   allowlist and URL-policy lookup, and serialize the normalized name when the
-  attribute survives.
+  attribute survives, including allowlisted valueless non-URL attributes.
 - `poster`, `action`, `formaction`, `data`, `cite`, and `background` are
   single URL values. Route them through the same exact-rule path as `href` and
   `src`; do not confuse object `data` with safe custom `data-*` attributes.

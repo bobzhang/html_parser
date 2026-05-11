@@ -1556,6 +1556,23 @@ test "sanitize_dom force_link_rel permits and merges anchor rel tokens" {
 }
 
 ///|
+test "sanitize_dom normalizes mixed-case valueless attributes" {
+  let policy = @html_parser.SanitizationPolicy::new(["button"], allowed_attributes={
+    "*": [],
+    "button": ["disabled", "title"],
+  })
+  let button = @html_parser.element("button", attrs={
+    "DISABLED": None,
+    "TITLE": Some("ok"),
+    "DATA-X": Some("drop"),
+  })
+  assert_eq(
+    @html_parser.sanitize_dom(button, policy~).to_html(pretty=false),
+    "<button disabled title=\"ok\"></button>",
+  )
+}
+
+///|
 test "sanitize_dom filters inline style declarations by property allowlist" {
   let no_css = @html_parser.parse_fragment(
     "<p style='color: red'>x</p>",
