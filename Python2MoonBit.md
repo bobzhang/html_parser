@@ -12,6 +12,10 @@ JustHTML from Python to MoonBit.
 - `StringView` slices must respect UTF-16 character boundaries. If an index may
   come from arbitrary code-unit arithmetic, use `get_view(...)` and handle
   `None` instead of assuming the slice is valid.
+- Helpers that accept explicit offsets can be called with a position inside an
+  astral character's surrogate pair. Those paths should fail closed, stop
+  scanning, or return `None` without advancing from the invalid offset; do not
+  let the low surrogate become parsed text, a tag boundary, or a URL component.
 - When a parser consumes a `Char`, advance by `ch.utf16_len()`, not by `1`.
   Add low-level cursor tests with an astral character so EOF and position
   assertions catch accidental code-unit/character-count regressions.

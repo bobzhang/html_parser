@@ -1072,6 +1072,62 @@ test "script text scanner covers escaped and double escaped edge states" {
 }
 
 ///|
+test "scanner helpers fail closed on surrogate-split offsets" {
+  let value = "x😀>"
+  let mid_surrogate = 2
+  let comment_scan = scan_comment_data(value[:], mid_surrogate)
+  assert_eq(comment_scan.data, "")
+  assert_eq(comment_scan.end, value.length())
+  assert_true(comment_scan.eof)
+  assert_eq(comment_scan.errors.length(), 1)
+  assert_eq(comment_scan.errors[0].code, "eof-in-comment")
+
+  let normalized = StringBuilder::new()
+  assert_eq(
+    write_normalized_char(value[:], mid_surrogate, normalized),
+    mid_surrogate,
+  )
+  assert_eq(normalized.to_string(), "")
+
+  let script_out = StringBuilder::new()
+  let script_errors : Array[SpecialTextError] = []
+  assert_eq(
+    write_script_text_char(value[:], mid_surrogate, script_out, script_errors),
+    mid_surrogate,
+  )
+  assert_eq(script_out.to_string(), "")
+  assert_eq(script_errors.length(), 0)
+
+  assert_true(find_markup_close(value[:], mid_surrogate) is None)
+  assert_true(
+    find_matching_end_tag("x😀</script>"[:], mid_surrogate, "script") is None,
+  )
+  assert_eq(
+    matching_end_tag_error_pos("x😀</script>"[:], mid_surrogate),
+    eof_error_pos("x😀</script>"),
+  )
+
+  let doctype_errors : Array[DoctypeExternalError] = []
+  assert_eq(
+    normalize_doctype_value(
+      value[:],
+      mid_surrogate,
+      value.length(),
+      doctype_errors,
+    ),
+    "",
+  )
+  assert_eq(doctype_errors.length(), 0)
+  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+    value[:],
+    mid_surrogate,
+    value.length(),
+  )
+  assert_eq(name, "")
+  assert_eq(name_errors.length(), 0)
+}
+
+///|
 fn assert_svg_tag_adjustment(
   input : StringView,
   expected : String,
