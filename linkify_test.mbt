@@ -63,3 +63,47 @@ test "linkify handles unicode tlds as utf16 offsets" {
   assert_eq(matches[0].href, "http://пример.рф")
   assert_eq(matches[0].kind, "url")
 }
+
+///|
+test "linkify matches representative upstream linkify-it link fixtures" {
+  let cases : Array[(String, String)] = [
+    ("My http://example.com site", "http://example.com"),
+    ("My http://example.com/ site", "http://example.com/"),
+    ("http://user:pass@example.com:8080", "http://user:pass@example.com:8080"),
+    ("http://example.com/?foo=bar", "http://example.com/?foo=bar"),
+    ("http://example.invalid", "http://example.invalid"),
+    ("http://localhost:8000?", "http://localhost:8000"),
+    ("//localhost", "//localhost"),
+    ("//test.123", "//test.123"),
+    ("HTTP://GOOGLE.COM", "HTTP://GOOGLE.COM"),
+    (">>example.com", "example.com"),
+    (
+      "[https](https://www.ibm.com)[mailto](mailto:someone@ibm.com)", "https://www.ibm.com",
+    ),
+  ]
+  for pair in cases {
+    let (text, expected) = pair
+    let matches = @html_parser.find_links(text)
+    guard matches.length() > 0 else {
+      fail("expected link fixture match for " + text)
+    }
+    assert_eq(matches[0].text, expected)
+  }
+}
+
+///|
+test "linkify matches representative upstream linkify-it not-link fixtures" {
+  let cases : Array[String] = [
+    "example.invalid", "example.invalid/", "http://.example.com", "http://-example.com",
+    "hppt://example.com", "foo.123", "localhost", "///localhost", "///test.com",
+    "//test", "_http://example.com", "_//example.com", "_example.com", "http://example.com_",
+    "@example.com", "node.js and io.js", "http://", "http://.", "http://..", "google.com:500000 // invalid port",
+    "show image.jpg", "path:to:file.pm", "/path/to/file.pl", "1.2.3.4.5", "1.2.3",
+    "1.2.3.400", "1000.2.3.4", "a1.2.3.4", "1.2.3.4a", "foo@bar", "mailto:bar",
+  ]
+  for text in cases {
+    guard @html_parser.find_links(text).length() == 0 else {
+      fail("expected no link for " + text)
+    }
+  }
+}

@@ -68,7 +68,11 @@ pub fn find_links_with_config(
   while pos < text.length() {
     if linkify_left_boundary(text, pos) &&
       linkify_candidate_can_start(text, pos) {
-      let raw_end = linkify_candidate_end(text, pos)
+      let raw_end = if linkify_broad_candidate_start(text, pos) {
+        linkify_candidate_end(text, pos)
+      } else {
+        linkify_fuzzy_candidate_end(text, pos)
+      }
       match linkify_match_candidate(text, pos, raw_end, config) {
         Some(link) => {
           if link.start >= last_end {
@@ -78,7 +82,11 @@ pub fn find_links_with_config(
           pos = raw_end
           continue
         }
-        None => ()
+        None =>
+          if raw_end > pos {
+            pos = raw_end
+            continue
+          }
       }
     }
     match text.get_char(pos) {
@@ -102,16 +110,21 @@ fn linkify_left_boundary(text : StringView, pos : Int) -> Bool {
 
 ///|
 fn linkify_candidate_can_start(text : StringView, pos : Int) -> Bool {
+  linkify_broad_candidate_start(text, pos) ||
+  (match text.get_char(pos) {
+    Some(ch) => linkify_fuzzy_start_char(ch)
+    None => false
+  })
+}
+
+///|
+fn linkify_broad_candidate_start(text : StringView, pos : Int) -> Bool {
   starts_with_case_insensitive(text, pos, "http://") ||
   starts_with_case_insensitive(text, pos, "https://") ||
   starts_with_case_insensitive(text, pos, "ftp://") ||
   starts_with_case_insensitive(text, pos, "mailto:") ||
   starts_with_case_insensitive(text, pos, "www.") ||
-  (text.get_char(pos) is Some('/') && text.get_char(pos + 1) is Some('/')) ||
-  (match text.get_char(pos) {
-    Some(ch) => linkify_fuzzy_start_char(ch)
-    None => false
-  })
+  (text.get_char(pos) is Some('/') && text.get_char(pos + 1) is Some('/'))
 }
 
 ///|
@@ -120,6 +133,23 @@ fn linkify_candidate_end(text : StringView, start : Int) -> Int {
   while pos < text.length() {
     match text.get_char(pos) {
       Some(ch) if linkify_candidate_delimiter(ch) => return pos
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  text.length()
+}
+
+///|
+fn linkify_fuzzy_candidate_end(text : StringView, start : Int) -> Int {
+  let mut pos = start
+  while pos < text.length() {
+    match text.get_char(pos) {
+      Some(ch) if linkify_candidate_delimiter(ch) ||
+        ch == '(' ||
+        ch == ')' ||
+        ch == '[' ||
+        ch == ']' => return pos
       Some(ch) => pos += ch.utf16_len()
       None => break
     }
@@ -257,6 +287,12 @@ fn linkify_validate_candidate(
   let is_www = starts_with_case_insensitive(candidate, 0, "www.")
   let is_proto_rel = starts_with_case_insensitive(candidate, 0, "//")
   let has_at = string_view_contains(candidate, "@")
+  if starts_with_case_insensitive(candidate, 0, "mailto:") {
+    guard candidate.get_view(start=7, end=candidate.length()) is Some(address) else {
+      return false
+    }
+    return linkify_validate_email_address(address, config)
+  }
   if !is_scheme && !is_proto_rel && !is_www && !has_at {
     if linkify_broken_schema_context(source, start) {
       return false
@@ -298,24 +334,7 @@ fn linkify_validate_candidate(
     !is_scheme_url &&
     !is_proto_rel &&
     !starts_with_case_insensitive(candidate, 0, "mailto:") {
-    guard linkify_last_char_index(candidate, '@') is Some(at) else {
-      return false
-    }
-    if at == 0 || at + 1 >= candidate.length() {
-      return false
-    }
-    guard candidate.get_view(start=at + 1, end=candidate.length())
-      is Some(domain) else {
-      return false
-    }
-    guard linkify_host_view(domain) is Some(host) else { return false }
-    if string_view_contains(host, "_") {
-      return false
-    }
-    guard linkify_split_domain_for_tld(host) is Some((_base, tld)) else {
-      return false
-    }
-    if !linkify_valid_tld(tld, config.extra_tlds) {
+    if !linkify_validate_email_address(candidate, config) {
       return false
     }
   }
@@ -323,6 +342,28 @@ fn linkify_validate_candidate(
     return false
   }
   true
+}
+
+///|
+fn linkify_validate_email_address(
+  address : StringView,
+  config : LinkifyConfig,
+) -> Bool {
+  guard linkify_last_char_index(address, '@') is Some(at) else { return false }
+  if at == 0 || at + 1 >= address.length() {
+    return false
+  }
+  guard address.get_view(start=at + 1, end=address.length()) is Some(domain) else {
+    return false
+  }
+  guard linkify_host_view(domain) is Some(host) else { return false }
+  if string_view_contains(host, "_") {
+    return false
+  }
+  guard linkify_split_domain_for_tld(host) is Some((_base, tld)) else {
+    return false
+  }
+  linkify_valid_tld(tld, config.extra_tlds)
 }
 
 ///|
