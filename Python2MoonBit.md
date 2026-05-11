@@ -941,7 +941,8 @@ JustHTML from Python to MoonBit.
   fresh elements and then nest the parsed ones inside the body.
 - Repeated document shell elements need merge rules, not simple nesting. Later
   `<body>` tags contribute missing attributes and their children to the first
-  body element.
+  body element, including closed root-level body siblings that only meet during
+  finish-time scaffolding.
 - The same first-wins merge applies to nested repeated `<html>` tags: merge
   missing root attributes, then process the nested html's children in order.
 - Repeated shell tags can appear as siblings too, not only nested nodes. Normalize
