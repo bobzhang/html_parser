@@ -119,6 +119,25 @@ test "tokenizer eof helper reports empty input origin" {
 }
 
 ///|
+test "text chunk helpers initialize empty chunk arrays" {
+  let breaks : Array[Array[String]] = []
+  text_chunk_break(breaks)
+  assert_eq(breaks.length(), 1)
+  assert_eq(breaks[0].length(), 0)
+  text_chunk_break(breaks)
+  assert_eq(breaks.length(), 1)
+  let chunks : Array[Array[String]] = []
+  let current = current_text_chunk(chunks)
+  assert_eq(chunks.length(), 1)
+  current.push("A")
+  assert_eq(text_chunks_to_string(chunks, "|", true), "A")
+  text_chunk_break(chunks)
+  assert_eq(chunks.length(), 2)
+  current_text_chunk(chunks).push("B")
+  assert_eq(text_chunks_to_string(chunks, "|", true), "A|B")
+}
+
+///|
 test "pseudo matcher rejects unknown and blank contains pseudos" {
   let note = comment("note")
   assert_eq(pseudo_selector_matches(note, "hover"), false)

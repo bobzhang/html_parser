@@ -1425,4 +1425,6 @@ JustHTML from Python to MoonBit.
   assertion tests are better for focused behavior.
 - When porting recursive output helpers, match the reference traversal state,
   not just the final join call. For example, `to_text(separator_blocks_only)`
-  needs block-level chunks with a separate inline join separator.
+  needs block-level chunks with a separate inline join separator. Keep the
+  helper-level chunk operations tolerant of an empty scratch array even when
+  the public entry point seeds one.
