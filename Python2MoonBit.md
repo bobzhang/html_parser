@@ -956,7 +956,9 @@ JustHTML from Python to MoonBit.
   frameset. Keep the text-splitting helpers explicit: an all-whitespace node
   before implicit body content is discarded as body text, while a mixed node is
   split so the leading whitespace can stay with the synthetic head and the rest
-  starts the body.
+  starts the body. Cover both explicit `<html>...</html>` shells and implicit
+  document shells, because the same finish-time rules run through separate
+  helper paths.
 - Keep tokenizer flags separate from tree-builder effects. A `/>` slash should
   remain visible on the start-tag token, but in HTML tree construction only
   void elements actually self-close; non-void elements still receive later text
