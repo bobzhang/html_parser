@@ -25,7 +25,7 @@ reference implementation in `.repos/justhtml`.
   - [x] Scheme, protocol-relative, `www.`, fuzzy domain, fuzzy IP, and email detection
   - [x] Representative `linkify-it` fixture smoke tests
   - [x] Full `linkify-it` fixture coverage
-  - [ ] IDNA/punycode handling parity
+  - [x] IDNA/punycode handling parity
 - [ ] Linkify DOM transform
   - [ ] Wrap text-node matches in `<a href=...>`
   - [ ] Skip existing anchors and preformatted text by default

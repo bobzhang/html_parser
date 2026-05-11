@@ -944,9 +944,9 @@ fn linkify_href_for(candidate : StringView) -> (String, String) {
   }
   if linkify_is_scheme_url(candidate) ||
     starts_with_case_insensitive(candidate, 0, "//") {
-    return (text, "url")
+    return (linkify_punycode_href(text), "url")
   }
-  ("http://" + text, "url")
+  (linkify_punycode_href("http://" + text), "url")
 }
 
 ///|

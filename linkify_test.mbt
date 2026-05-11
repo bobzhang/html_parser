@@ -60,8 +60,50 @@ test "linkify handles unicode tlds as utf16 offsets" {
   let matches = @html_parser.find_links("См пример.рф!")
   assert_eq(matches.length(), 1)
   assert_eq(matches[0].text, "пример.рф")
-  assert_eq(matches[0].href, "http://пример.рф")
+  assert_eq(matches[0].href, "http://xn--e1afmkfd.xn--p1ai")
   assert_eq(matches[0].kind, "url")
+}
+
+///|
+test "linkify punycodes unicode URL hosts in hrefs" {
+  let german = @html_parser.find_links(
+    "Visit http://www.bürgerentscheid-krankenhäuser.de now",
+  )
+  assert_eq(german.length(), 1)
+  assert_eq(
+    german[0].href,
+    "http://www.xn--brgerentscheid-krankenhuser-xkc78d.de",
+  )
+  let path = @html_parser.find_links(
+    "http://bündnis-für-krankenhäuser.de/wp-content/uploads/2011/11/cropped-logohp.jpg",
+  )
+  assert_eq(path.length(), 1)
+  assert_eq(
+    path[0].href,
+    "http://xn--bndnis-fr-krankenhuser-i5b27cha.de/wp-content/uploads/2011/11/cropped-logohp.jpg",
+  )
+  let symbol = @html_parser.find_links("http://✪df.ws/123")
+  assert_eq(symbol.length(), 1)
+  assert_eq(symbol[0].href, "http://xn--df-oiy.ws/123")
+  let fuzzy = @html_parser.find_links("➡.ws/䨹")
+  assert_eq(fuzzy.length(), 1)
+  assert_eq(fuzzy[0].href, "http://xn--hgi.ws/䨹")
+  let userinfo = @html_parser.find_links(
+    "http://user:pass@пример.рф:8080/x",
+  )
+  assert_eq(userinfo.length(), 1)
+  assert_eq(userinfo[0].href, "http://user:pass@xn--e1afmkfd.xn--p1ai:8080/x")
+  let proto = @html_parser.find_links("//пример.рф/x")
+  assert_eq(proto.length(), 1)
+  assert_eq(proto[0].href, "//xn--e1afmkfd.xn--p1ai/x")
+  let arabic = @html_parser.find_links(
+    "http://ﻡﻮﻘﻋ.ﻭﺯﺍﺭﺓ-ﺍﻼﺘﺻﺍﻼﺗ.ﻢﺻﺭ/",
+  )
+  assert_eq(arabic.length(), 1)
+  assert_eq(
+    arabic[0].href,
+    "http://xn--4gbrim.xn----ymcbaaajlc6dj7bxne2c.xn--wgbh1c/",
+  )
 }
 
 ///|

@@ -300,6 +300,13 @@ JustHTML from Python to MoonBit.
   Port the whole table from the Python regex before claiming fixture parity;
   otherwise cases such as `.ws` fail, while false positives such as
   `path:to:file.pm` need separate fuzzy-host validation.
+- Python's `str.encode("idna")` is not just raw Punycode. It first applies
+  IDNA/nameprep-style mappings such as ASCII lowercasing in non-ASCII labels,
+  `ß` to `ss`, and Arabic presentation-form normalization. When porting this
+  without a standard IDNA library, keep the encoder private, test `href`
+  outputs against the Python reference, and run the RFC 3492 Punycode loop over
+  Unicode code points from `for ch in label`; do not feed UTF-16 code units from
+  `s[i]` into the algorithm.
 - Python accepts a raw callable as `UrlPolicy.url_filter`; in MoonBit, wrap the
   callback with `UrlFilter::new` so `UrlPolicy` can still derive `Debug`.
   Its debug representation should stay opaque: assert the wrapper type label,
