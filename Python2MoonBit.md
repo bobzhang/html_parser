@@ -360,6 +360,8 @@ JustHTML from Python to MoonBit.
   `</script`/`</style`, drop any non-text children that were created
   programmatically, and clear allowed `<style>` contents if the CSS contains
   resource-loading constructs such as `@import`, `url(`, or `image-set(`.
+  Still honor `strip_invisible_unicode=false` for raw-text children, and keep
+  allowed empty raw-text elements as empty shells instead of dropping them.
   Make sanitizer decisions on normalized tag names while leaving the node's
   stored spelling alone; the MoonBit builder should preserve a programmatic
   `StYlE` node's name, the sanitizer should still clear unsafe CSS, and the
