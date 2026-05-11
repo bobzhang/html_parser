@@ -572,7 +572,8 @@ JustHTML from Python to MoonBit.
   before applying the allowlist. If a non-empty host allowlist is configured,
   hostless schemes such as `mailto:` and absolute URLs with an empty authority
   such as `https://` should still be rejected even when their scheme is
-  otherwise allowed.
+  otherwise allowed. Keep the helper behavior explicit: an empty authority
+  range should return `None`, not an empty host string.
 - URL attribute checks must run after attribute entity decoding. A URL that
   matches the scheme and host allowlists is still unsafe when the decoded value
   contains C0 controls, DEL, or a backslash, so reject those values before

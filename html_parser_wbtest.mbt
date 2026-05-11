@@ -104,6 +104,13 @@ test "url scheme helpers ignore C0 characters in scheme prefixes" {
 }
 
 ///|
+test "url authority helpers reject empty hosts" {
+  assert_true(extract_authority_host("https://", 8, 8) is None)
+  assert_true(extract_named_authority_host("https://", 8, 8) is None)
+  assert_true(extract_absolute_url_host("https://") is None)
+}
+
+///|
 test "sanitize_dom clears mixed-case style rawtext resource loads" {
   let policy = SanitizationPolicy::new(
     ["style"],
