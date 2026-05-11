@@ -265,6 +265,76 @@ test "document frameset helpers preserve reprocess state" {
 }
 
 ///|
+test "active formatting helpers respect marker boundaries" {
+  let parser = Parser::new(
+    "",
+    fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  parser.append_active_formatting_entry(comment("ignored"))
+  assert_eq(parser.active_formatting.length(), 0)
+  let before_marker = element("a", attrs={ "href": Some("x") })
+  parser.append_active_formatting_entry(before_marker)
+  parser.push_active_formatting_marker()
+  let after_marker = element("b", attrs={ "class": Some("fresh") })
+  parser.append_active_formatting_entry(after_marker)
+  assert_eq(parser.active_formatting.length(), 3)
+  assert_eq(parser.active_formatting_index("a"), -1)
+  assert_eq(parser.active_formatting_index("b"), 2)
+  parser.remove_last_active_formatting_by_name("a")
+  assert_eq(parser.active_formatting.length(), 3)
+  parser.remove_last_active_formatting_by_name("b")
+  assert_eq(parser.active_formatting.length(), 2)
+  assert_eq(parser.active_formatting_orphan_anchor_index(), -1)
+  let orphan_anchor = element("a", attrs={ "href": Some("later") })
+  parser.active_formatting.push({
+    marker: false,
+    name: "a",
+    ns: "html",
+    attrs: orphan_anchor.attrs.copy(),
+    node: orphan_anchor,
+  })
+  assert_eq(parser.active_formatting_orphan_anchor_index(), 2)
+  parser.clear_active_formatting_to_marker()
+  assert_eq(parser.active_formatting.length(), 1)
+  assert_eq(parser.active_formatting_index("a"), 0)
+  let transient = element("span")
+  parser.stack.push(transient)
+  parser.remove_last_open_element_by_name("span")
+  assert_eq(parser.stack.length(), 1)
+  let parent = element("div")
+  parser.root.append_child(parent)
+  parser.stack.push(parent)
+  let orphan_strong = element("strong", attrs={ "id": Some("orphan") })
+  parser.active_formatting.clear()
+  parser.active_formatting.push({
+    marker: false,
+    name: "em",
+    ns: "html",
+    attrs: {},
+    node: parent,
+  })
+  parser.active_formatting.push({
+    marker: false,
+    name: "strong",
+    ns: "html",
+    attrs: orphan_strong.attrs.copy(),
+    node: orphan_strong,
+  })
+  parser.reconstruct_active_formatting_elements()
+  assert_eq(
+    parent.to_html(pretty=false),
+    "<div><strong id=\"orphan\"></strong></div>",
+  )
+  assert_eq(parser.stack.length(), 3)
+  guard parser.stack.last() is Some(last) else {
+    fail("expected reconstructed formatting node on stack")
+  }
+  assert_eq(last.name, "strong")
+}
+
+///|
 test "tokenizer eof helper reports empty input origin" {
   let tokenizer = SourceTokenizer::new(
     "",

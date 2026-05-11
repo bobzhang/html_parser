@@ -815,6 +815,10 @@ JustHTML from Python to MoonBit.
   maps. Empty-map tests can miss bad ports; include attribute-bearing repeated
   formatting starts and a mixed-attribute case so equality and inequality both
   exercise the cap.
+- Active-formatting markers bound helper searches. Index lookup, last-entry
+  removal, orphan-anchor detection, and reconstruction should stop at the latest
+  marker instead of reaching older entries. Appending a helper entry for a node
+  without a namespace is a no-op.
 - Applet-like end tags (`applet`, `marquee`, `object`) are their own recovery
   path. If no matching element is open in default scope, report
   `unexpected-end-tag` at the tag close and consume the token; do not fall
