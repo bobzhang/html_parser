@@ -446,9 +446,11 @@ JustHTML from Python to MoonBit.
   builder time. In MoonBit this maps to `HtmlError::InvalidSerialization` from
   `to_html()`/`to_markdown()` paths that emit canonical HTML. Keep the tag name
   check ASCII-only (`[A-Za-z][A-Za-z0-9:_-]*`) and the attribute check
-  `[A-Za-z_:][A-Za-z0-9:._-]*`. Invalid quote characters should raise for
-  `JsString` and `HtmlAttrValue` contexts; plain HTML output may still normalize
-  to the default double quote for compatibility with the earlier API.
+  `[A-Za-z_:][A-Za-z0-9:._-]*`; empty and digit-leading names must fail at the
+  first character, not merely after scanning a valid prefix. Invalid quote
+  characters should raise for `JsString` and `HtmlAttrValue` contexts; plain
+  HTML output may still normalize to the default double quote for compatibility
+  with the earlier API.
 - Pretty serialization of ordinary text-only elements collapses HTML whitespace
   and trims the result, but vertical tab is not HTML whitespace and must remain
   a normal character. Raw/preformatted text-only elements such as `script`,

@@ -169,6 +169,18 @@ test "serializer rejects unsafe programmatic names and invalid context quotes" {
       assert_true(message.contains("Unsafe attribute name"))
     _ => fail("expected unsafe attribute name to raise InvalidSerialization")
   }
+  let bad_attr_start = @html_parser.element("div", attrs={ "1title": Some("y") })
+  let attr_start_result : Result[String, @html_parser.HtmlError] = try? bad_attr_start.to_html(
+    pretty=false,
+  )
+  match attr_start_result {
+    Err(InvalidSerialization(message)) =>
+      assert_true(message.contains("Unsafe attribute name"))
+    _ =>
+      fail(
+        "expected leading digit attribute name to raise InvalidSerialization",
+      )
+  }
   let bad_element = @html_parser.element("div><img")
   let element_result : Result[String, @html_parser.HtmlError] = try? bad_element.to_html(
     pretty=false,
@@ -178,6 +190,16 @@ test "serializer rejects unsafe programmatic names and invalid context quotes" {
       assert_true(message.contains("Unsafe element name"))
     _ => fail("expected unsafe element name to raise InvalidSerialization")
   }
+  let bad_element_start = @html_parser.element("1div")
+  let element_start_result : Result[String, @html_parser.HtmlError] = try? bad_element_start.to_html(
+    pretty=false,
+  )
+  match element_start_result {
+    Err(InvalidSerialization(message)) =>
+      assert_true(message.contains("Unsafe element name"))
+    _ =>
+      fail("expected leading digit element name to raise InvalidSerialization")
+  }
   let bad_doctype = @html_parser.doctype(name="html><img")
   let doctype_result : Result[String, @html_parser.HtmlError] = try? bad_doctype.to_html(
     pretty=false,
@@ -186,6 +208,16 @@ test "serializer rejects unsafe programmatic names and invalid context quotes" {
     Err(InvalidSerialization(message)) =>
       assert_true(message.contains("Unsafe element name"))
     _ => fail("expected unsafe doctype name to raise InvalidSerialization")
+  }
+  let bad_doctype_start = @html_parser.doctype(name="1html")
+  let doctype_start_result : Result[String, @html_parser.HtmlError] = try? bad_doctype_start.to_html(
+    pretty=false,
+  )
+  match doctype_start_result {
+    Err(InvalidSerialization(message)) =>
+      assert_true(message.contains("Unsafe element name"))
+    _ =>
+      fail("expected leading digit doctype name to raise InvalidSerialization")
   }
   let attr_quote : Result[String, @html_parser.HtmlError] = try? @html_parser.text(
     "x",
