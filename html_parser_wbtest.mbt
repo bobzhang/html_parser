@@ -367,6 +367,26 @@ test "table foster helpers handle detached helper state" {
   blocked.stack.push(div)
   assert_eq(blocked.handle_nested_table_start_tag("table", 0), false)
   assert_eq(blocked.table_start_foster_mode("p"[:]), 0)
+
+  let open_section = Parser::new(
+    "",
+    fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  let section_table = element("table")
+  let section = element("tbody")
+  open_section.stack.push(section_table)
+  open_section.stack.push(section)
+  assert_eq(
+    open_section.handle_table_context_ignored_end_tag("tbody", 0),
+    false,
+  )
+  assert_true(open_section.handle_table_structural_end_tag("tbody"))
+  guard open_section.stack.last() is Some(last) else {
+    fail("expected table to remain open after row-group close")
+  }
+  assert_true(physical_equal(last, section_table))
 }
 
 ///|

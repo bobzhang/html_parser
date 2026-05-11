@@ -1010,6 +1010,9 @@ JustHTML from Python to MoonBit.
   `unexpected-cell-in-table-body` once for the missing `<tr>`. The later
   `</table>` should close through any open cell/row/row-group/table frames
   without adding the generic `end-tag-too-early` error. Row-group mode also
+  needs the same distinction for ignored structural end tags: only ignore a
+  structural end tag when its element is not open above the table; otherwise let
+  the structural close path handle it.
   reprocesses structural table starts: a nested `<tbody>`, `<thead>`,
   `<tfoot>`, `<caption>`, or `<colgroup>` first closes the current row group so
   the new element becomes a table child, not a row-group child. A `<col>` start
