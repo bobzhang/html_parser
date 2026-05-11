@@ -211,6 +211,60 @@ test "document and fragment helpers tolerate missing shells" {
 }
 
 ///|
+test "document frameset helpers preserve reprocess state" {
+  let explicit_html = element("html", children=[
+    element("head"),
+    element("body"),
+  ])
+  let explicit_root = document(children=[explicit_html])
+  let blocked = Parser::new(
+    "",
+    explicit_root,
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  assert_eq(blocked.prepare_document_frameset_replacement(), false)
+  assert_true(
+    blocked.handle_document_frameset_start_tag("frameset", {}, false, 0, 9),
+  )
+  assert_eq(blocked.errors.length(), 1)
+  assert_eq(blocked.errors[0].code, "unexpected-start-tag-ignored")
+  assert_eq(
+    explicit_root.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  let html = element("html")
+  let frameset = element("frameset")
+  html.append_child(frameset)
+  let root = document(children=[html])
+  let parser = Parser::new("", root, scripting_enabled=true, xml_coercion=false)
+  parser.stack.clear()
+  parser.stack.push(root)
+  parser.stack.push(html)
+  parser.stack.push(frameset)
+  parser.frameset_reprocesses_in_body_mode = true
+  assert_true(
+    parser.handle_document_frameset_start_tag(
+      "html",
+      { "lang": Some("en") },
+      false,
+      0,
+      5,
+    ),
+  )
+  assert_eq(parser.errors.length(), 1)
+  assert_eq(parser.errors[0].code, "unexpected-start-tag")
+  guard html.attrs["lang"] is Some("en") else {
+    fail("expected reprocessed html attrs to merge onto root html")
+  }
+  assert_eq(
+    parser.handle_document_frameset_start_tag("p", {}, false, 6, 8),
+    false,
+  )
+  assert_eq(parser.errors.length(), 1)
+}
+
+///|
 test "tokenizer eof helper reports empty input origin" {
   let tokenizer = SourceTokenizer::new(
     "",

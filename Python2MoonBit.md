@@ -305,7 +305,9 @@ JustHTML from Python to MoonBit.
   start rather than inserted as a nested frameset child. A following non-frameset
   end tag is also reprocessed in body mode, so `</p>` synthesizes an empty
   paragraph inside the still-open frameset. Missing attributes from that
-  reprocessed `<html>` still merge onto the existing root element.
+  reprocessed `<html>` still merge onto the existing root element. Port this
+  branch as stack plus flag state; the open-element stack alone does not tell
+  whether frameset starts should be inserted or ignored.
 - Some start tags have their own scope rules even when they look like ordinary
   elements. A repeated `<button>` searches default scope, reports
   `unexpected-start-tag-implies-end-tag`, closes the previous button, and then
