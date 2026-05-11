@@ -663,7 +663,7 @@ JustHTML from Python to MoonBit.
   `query`/`matches` API is non-throwing, so malformed attribute selectors with
   empty names, such as `[]`, `[=x]`, or `[~=x]`, should short-circuit to no
   match instead of becoming attribute lookups. Apply the same no-match rule to
-  other malformed pieces such as
+  empty or whitespace-only selector strings and other malformed pieces such as
   unclosed attribute selectors, dangling `.`/`#` markers, unclosed functional
   pseudos, and leading, repeated, or trailing combinators.
 - Attribute selector operators have distinct empty-value rules in the Python

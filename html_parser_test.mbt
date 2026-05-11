@@ -7264,6 +7264,14 @@ test "query supports tag class id and tag class selectors" {
   assert_eq(identifiers.query("-box").length(), 1)
   assert_eq(identifiers.query("#_id").length(), 1)
   assert_eq(identifiers.query("日本語").length(), 1)
+  let css_identifiers = @html_parser.parse_fragment(
+    "<my-element id='my-id' class='my-class class1 über'>Test</my-element>",
+  )
+  assert_eq(css_identifiers.query("my-element").length(), 1)
+  assert_eq(css_identifiers.query("#my-id").length(), 1)
+  assert_eq(css_identifiers.query(".my-class").length(), 1)
+  assert_eq(css_identifiers.query(".class1").length(), 1)
+  assert_eq(css_identifiers.query(".über").length(), 1)
 }
 
 ///|
@@ -7373,10 +7381,14 @@ test "query treats malformed selector pieces as no match" {
   let doc = @html_parser.parse_fragment(
     "<section><h1>Title</h1><p id='intro' class='lead'>One</p><a href='x'>Link</a></section>",
   )
+  assert_eq(doc.query("").length(), 0)
+  assert_eq(doc.query("   ").length(), 0)
+  assert_eq(doc.query("div@foo").length(), 0)
   assert_eq(doc.query("p[").length(), 0)
   assert_eq(doc.query("p.").length(), 0)
   assert_eq(doc.query("p#").length(), 0)
   assert_eq(doc.query("p[id]]").length(), 0)
+  assert_eq(doc.query("[attr=\"unclosed]").length(), 0)
   assert_eq(doc.query(":contains(foo").length(), 0)
   assert_eq(doc.query("p >").length(), 0)
   assert_eq(doc.query("> p").length(), 0)
@@ -7460,6 +7472,8 @@ test "query supports general sibling selectors" {
   assert_eq(doc.query("h1~p").length(), 3)
   assert_eq(doc.query("p ~ h1").length(), 0)
   assert_eq(doc.query("h1 ~ p span").length(), 1)
+  assert_eq(doc.query("h1 ~ p ~ span").length(), 1)
+  assert_eq(doc.query("div > h1 ~ p").length(), 3)
   guard doc.query_one(".third") is Some(third) else {
     fail("expected third paragraph")
   }
@@ -7564,7 +7578,11 @@ test "query supports nth child pseudo selector" {
   assert_eq(doc.query("li:nth-child(ODD)").length(), 3)
   assert_eq(doc.query("li:nth-child(+n)").length(), 5)
   assert_eq(doc.query("li:nth-child(-2n+5)").length(), 3)
+  assert_eq(doc.query("li:nth-child(-2n+4)").length(), 2)
   assert_eq(doc.query("li:nth-child( 2n + 1 )").length(), 3)
+  assert_eq(doc.query("li:nth-child(0)").length(), 0)
+  assert_eq(doc.query("li:nth-child(-1)").length(), 0)
+  assert_eq(doc.query("li:nth-child(100)").length(), 0)
   assert_eq(doc.query("li:nth-child(abc)").length(), 0)
   assert_eq(doc.query("li:nth-child(+)").length(), 0)
   assert_eq(doc.query("li:nth-child(xn+1)").length(), 0)
