@@ -1105,7 +1105,9 @@ JustHTML from Python to MoonBit.
   incorrectly inserted because the MoonBit synthetic row group is more concrete
   than Python's mode-only fragment context. A matching `</tbody>`/`</thead>`/
   `</tfoot>` also reports `unexpected-end-tag` and must not close that synthetic
-  wrapper.
+  wrapper. Keep wrapper unwrapping as a splice operation over a copy of the
+  parent children: remove only the synthetic wrapper, preserve any existing
+  sibling nodes, detach the wrapper, and append the wrapper's children in place.
 - Active formatting still participates in table-fragment foster parenting.
   In a `table` fragment context, `<a><tr>x</tr></a>` returns an empty fostered
   anchor plus a reconstructed anchor around the row text, and `</a>` still takes

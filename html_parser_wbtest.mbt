@@ -286,6 +286,24 @@ test "document scaffold merges repeated html helper trees" {
 }
 
 ///|
+test "fragment context unwrap helper preserves sibling nodes" {
+  let leading = comment("before")
+  let wrapper_child = element("tbody", children=[
+    element("tr", children=[element("td", children=[text("x")])]),
+  ])
+  let wrapper = element("table", children=[wrapper_child])
+  let trailing = text("after")
+  let root = fragment(children=[leading, wrapper, trailing])
+  unwrap_fragment_context_element(root, wrapper)
+  assert_eq(root.children.length(), 3)
+  assert_true(physical_equal(root.children[0], leading))
+  assert_true(physical_equal(root.children[1], wrapper_child))
+  assert_true(physical_equal(root.children[2], trailing))
+  assert_true(wrapper.parent is None)
+  assert_eq(wrapper.children.length(), 0)
+}
+
+///|
 test "document and fragment helpers tolerate missing shells" {
   let parser = Parser::new(
     "",
