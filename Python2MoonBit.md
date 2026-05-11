@@ -752,6 +752,10 @@ JustHTML from Python to MoonBit.
   `:comment(...)`, but `query(...)` should only consider non-elements when an
   outer compound selector contains `:comment`; otherwise queries such as
   `:empty` should not return text or comment nodes.
+- Because direct non-element `matches()` evaluates pseudo selectors without the
+  query-time element filter, keep unknown pseudos and blank unquoted
+  `:contains(...)` arguments as false rather than treating them as comment
+  matches.
 - Keep `query()` and `matches()` semantics separate. Python `node.query(...)`
   searches descendants only and does not include `node` itself; use
   `matches(node, ...)` when the receiver should be tested directly.

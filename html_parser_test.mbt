@@ -7694,6 +7694,9 @@ test "query supports comment pseudo selector" {
   assert_true(@html_parser.matches(comment, ":empty"))
   assert_true(@html_parser.matches(comment, ":not(span)"))
   assert_eq(@html_parser.matches(comment, ":not(:comment)"), false)
+  assert_eq(@html_parser.matches(comment, ":hover"), false)
+  assert_eq(@html_parser.matches(comment, ":hover(2)"), false)
+  assert_eq(@html_parser.matches(comment, ":contains(   )"), false)
   assert_true(@html_parser.matches(comment, "div > :empty"))
   assert_eq(@html_parser.matches(comment, "*"), false)
   let mixed = @html_parser.parse_fragment(

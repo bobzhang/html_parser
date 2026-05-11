@@ -79,6 +79,14 @@ test "query deduplicates shared nodes and ignores traversal cycles" {
 }
 
 ///|
+test "pseudo matcher rejects unknown and blank contains pseudos" {
+  let note = comment("note")
+  assert_eq(pseudo_selector_matches(note, "hover"), false)
+  assert_eq(pseudo_selector_matches(note, "hover(2)"), false)
+  assert_eq(pseudo_selector_matches(note, "contains(   )"), false)
+}
+
+///|
 test "sanitize_dom clears mixed-case style rawtext resource loads" {
   let policy = SanitizationPolicy::new(
     ["style"],
