@@ -1080,7 +1080,10 @@ JustHTML from Python to MoonBit.
 - Attribute character-reference errors are reported when the attribute value is
   finished, not necessarily at the character-reference offset. Attribute mode
   also blocks legacy prefix matches such as `&notit`, while text mode decodes
-  the `&not` prefix and reports the missing-semicolon recovery.
+  the `&not` prefix and reports the missing-semicolon recovery. The same
+  attribute-mode block applies when a semicolonless legacy name is followed by
+  ASCII alphanumerics or `=`, so `&copycat`, `&copy0`, and `&copy=` stay
+  literal in attributes but decode by legacy-prefix recovery in text.
 - Mirror those attribute character-reference fixtures through the parser, not
   only the public tokenizer. Unquoted attribute values take the same deferred
   error cursor path, so the parse error points at the consumed tag close rather
