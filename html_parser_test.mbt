@@ -1873,6 +1873,30 @@ test "sanitize_dom proxy rejects invalid scheme-like URL prefixes" {
 }
 
 ///|
+test "sanitize_dom rejects malformed URL schemes when relatives are disabled" {
+  let url_policy = @html_parser.UrlPolicy::new(default_allow_relative=false, allow_rules=[
+    @html_parser.UrlPolicyRule::new(
+      "a",
+      "href",
+      @html_parser.UrlRule::new(allowed_schemes=["https"], allow_relative=false),
+    ),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a"],
+    allowed_attributes={ "*": [], "a": ["href"] },
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a href='1https:foo'>leading</a><a href='ht^tps:foo'>punct</a><a href='https://example.com/x'>ok</a><a href='/rel'>rel</a>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a>leading</a><a>punct</a><a href=\"https://example.com/x\">ok</a><a>rel</a>",
+  )
+}
+
+///|
 test "sanitize_dom applies URL filter before validation" {
   let url_filter = @html_parser.UrlFilter::new(fn(_tag, attr, value) {
     match attr {
