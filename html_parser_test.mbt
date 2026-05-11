@@ -386,6 +386,16 @@ test "pretty serializer keeps block descendants multiline" {
     block_child.to_html(pretty=true),
     "<div>\n  Main menu  Navigation\n  <ul>\n    <li>Item</li>\n  </ul>\n</div>",
   )
+  let formatted_text_before_block = @html_parser.element("div", children=[
+    @html_parser.text("Main menu  \n Navigation  "),
+    @html_parser.element("ul", children=[
+      @html_parser.element("li", children=[@html_parser.text("Item")]),
+    ]),
+  ])
+  assert_eq(
+    formatted_text_before_block.to_html(pretty=true),
+    "<div>\n  Main menu Navigation\n  <ul>\n    <li>Item</li>\n  </ul>\n</div>",
+  )
   let only_inline_elements = @html_parser.element("div", children=[
     @html_parser.element("span"),
     @html_parser.element("em"),
@@ -514,10 +524,15 @@ test "pretty serializer keeps comment child runs compact" {
 
 ///|
 test "pretty serializer filters whitespace-only fragments" {
+  assert_eq(@html_parser.text("\n\t").to_html(pretty=true), "")
   let whitespace = @html_parser.fragment(children=[@html_parser.text("   ")])
   assert_eq(whitespace.to_html(pretty=true), "")
   let visible = @html_parser.fragment(children=[@html_parser.text("  hi  ")])
   assert_eq(visible.to_html(pretty=true), "hi")
+  let nested_visible = @html_parser.element("div", children=[
+    @html_parser.fragment(children=[@html_parser.text("  hi  ")]),
+  ])
+  assert_eq(nested_visible.to_html(pretty=true), "<div>\n  hi\n</div>")
   let inner_empty_lines = @html_parser.element("div", children=[
     @html_parser.fragment(children=[@html_parser.text("  ")]),
     @html_parser.text(" "),

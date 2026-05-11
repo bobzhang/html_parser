@@ -482,6 +482,9 @@ JustHTML from Python to MoonBit.
   `CR`, `tab`, `FF`, or whitespace-only runs longer than two spaces) splits the
   children into indented inline runs, consecutive separators collapse, edge
   separators disappear, and ordinary spaces inside each run stay compact.
+  The multiline path still normalizes formatting whitespace in direct text
+  child lines, so text such as `a \n b` renders with one separator, and nested
+  fragment/document children that render non-empty text stay as child lines.
   Direct comment children also force this compact fallback, even when adjacent
   elements are block-level, because inserting indentation around comments
   changes the Python reference output. Do not compact when an inline wrapper
