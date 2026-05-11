@@ -591,15 +591,15 @@ JustHTML from Python to MoonBit.
   such as `("*", "style:background-image")` in the Python API); sanitize the
   inner URL, then reserialize as `url('...')` only when the sanitized URL does
   not need CSS escaping. Keep rejecting `image-set(...)`, CSS escapes,
-  obfuscated CSS comments, and legacy loader functions conservatively. The
-  dedicated CSS `url(...)` sanitizer should reject any `/*` comment in the
-  value, even a closed trailing comment, because it only supports plain URL
-  function tokens. Treat malformed URL-function syntax as unsafe too:
-  backslashes, control or DEL characters, empty URLs, missing delimiters, or
-  unexpected non-separator text after `)` should drop that declaration rather
-  than trying to repair it. URL filter output is still untrusted: run the
-  filtered value through the same URL validation and CSS quote-safety checks
-  before serializing it back into `url('...')`.
+  unterminated or obfuscated CSS comments, and legacy loader functions
+  conservatively. The dedicated CSS `url(...)` sanitizer should reject any
+  `/*` comment in the value, even a closed trailing comment, because it only
+  supports plain URL function tokens. Treat malformed URL-function syntax as
+  unsafe too: backslashes, control or DEL characters, empty URLs, missing
+  delimiters, or unexpected non-separator text after `)` should drop that
+  declaration rather than trying to repair it. URL filter output is still
+  untrusted: run the filtered value through the same URL validation and CSS
+  quote-safety checks before serializing it back into `url('...')`.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
   `attrs()` and `clone_node()`, and `override_attrs` must not become shared
   mutable state between the caller and the clone. Deep clones should use an
@@ -820,7 +820,10 @@ JustHTML from Python to MoonBit.
 - If an early port uses a post-parse scaffolding pass, keep it stateful enough
   to mirror insertion modes. Document head elements belong in `<head>` only
   until body content or an explicit `<body>` has started; after that, the same
-  tags remain in `<body>`.
+  tags remain in `<body>`. All-whitespace text before body content is also
+  stateful: with no prior head content it is dropped, while after implicit head
+  content such as `<title>` it stays in `<head>` and does not synthesize body
+  text.
 - Fragment parsing does not reuse the document shell scaffolding rules. In body
   mode, `<html>`, `<body>`, and `<head>` starts are reported and ignored, their
   children stay in the current insertion location, and `</head>` is still an

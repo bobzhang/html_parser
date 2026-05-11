@@ -1589,7 +1589,7 @@ test "sanitize_dom filters inline style declarations by property allowlist" {
     "<p>x</p>",
   )
   let styled = @html_parser.parse_fragment(
-    "<p style='color; co_lor: red; margin: 0; COLOR: red; font-weight: 700; background-image: url(/x.png); width: expression(alert(1))'>ok</p><p style>empty</p><p STYLE='color: blue; text-align: center; background-image: u/**/rl(/x.png)'>case</p>",
+    "<p style='; color; color: ; co_lor: red; margin: 0; COLOR: red; font-weight: 700; background-image: url(/x.png); width: expression(alert(1))'>ok</p><p style>empty</p><p STYLE='color: blue; text-align: center; background-image: u/**/rl(/x.png)'>case</p><p style='color: /*unterminated'>comment</p>",
     sanitize=false,
   )
   let style_policy = @html_parser.SanitizationPolicy::new(
@@ -1603,7 +1603,7 @@ test "sanitize_dom filters inline style declarations by property allowlist" {
     @html_parser.sanitize_dom(styled.root, policy=style_policy).to_html(
       pretty=false,
     ),
-    "<p style=\"color: red; font-weight: 700\">ok</p><p>empty</p><p style=\"color: blue; text-align: center\">case</p>",
+    "<p style=\"color: red; font-weight: 700\">ok</p><p>empty</p><p style=\"color: blue; text-align: center\">case</p><p>comment</p>",
   )
 }
 
@@ -3890,6 +3890,15 @@ test "document parser preserves shell scaffolding edge ordering" {
   )
   assert_eq(leading_text.errors.length(), 1)
   assert_eq(leading_text.errors[0].code, "expected-doctype-but-got-start-tag")
+  let leading_space_only = @html_parser.parse(
+    "<!doctype html><html>   </html>",
+    collect_errors=true,
+  )
+  assert_eq(
+    leading_space_only.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body></body></html>",
+  )
+  assert_eq(leading_space_only.errors.length(), 0)
   let late_head = @html_parser.parse(
     "<html><body>x</body><head><title>T</title></head></html>",
     collect_errors=true,
@@ -3954,6 +3963,15 @@ test "document parser preserves head-side whitespace like reference" {
     implicit.to_html(pretty=false),
     "<!DOCTYPE html><html><head><title>T</title>  </head><body>text</body></html>",
   )
+  let implicit_trailing_space = @html_parser.parse(
+    "<!doctype html><title>T</title>  ",
+    collect_errors=true,
+  )
+  assert_eq(
+    implicit_trailing_space.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><title>T</title>  </head><body></body></html>",
+  )
+  assert_eq(implicit_trailing_space.errors.length(), 0)
   let open_head = @html_parser.parse(
     "<!doctype html><head><title>T</title>  text",
   )
