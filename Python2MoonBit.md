@@ -231,7 +231,9 @@ JustHTML from Python to MoonBit.
   them as a separate attribute path: apply the exact tag/attribute rule, split
   comma-separated candidates, sanitize the first whitespace-delimited URL token
   of each non-empty candidate, preserve the descriptor, and drop the whole
-  attribute if any candidate URL is unsafe.
+  attribute if any candidate URL is unsafe. Empty comma-separated candidates
+  are ignored, but a list with no surviving candidate still drops the whole
+  attribute.
 - `ping` and `attributionsrc` are whitespace-separated URL lists. Reuse the
   exact tag/attribute rule for each token, normalize surviving tokens with a
   single space separator, and drop the whole attribute if any token is unsafe.
