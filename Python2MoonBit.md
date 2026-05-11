@@ -80,7 +80,9 @@ JustHTML from Python to MoonBit.
   and decoding are both covered. Include both remapped bytes and high bytes
   that map to the same Unicode code point; legacy tables often mix the two.
   Sparse entries such as Windows-1252 C1 punctuation and ISO-8859-2 diaeresis
-  letters are easy to miss if tests only sample contiguous-looking ranges.
+  letters are easy to miss if tests only sample contiguous-looking ranges. For
+  hand-copied tables, add a table-wide fixture once the representative samples
+  pass.
 - Invalid transport encoding labels should not become the reported encoding.
   Treat them like a missing transport label and continue with BOM/meta/default
   sniffing.
