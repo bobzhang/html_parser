@@ -851,8 +851,10 @@ test "selector helper fragments fail closed on malformed syntax" {
   assert_eq(matches_simple_selector(node, "*div"), false)
   assert_eq(matches_simple_selector(node, "div["), false)
   assert_eq(matches_simple_selector(node, "div."), false)
+  assert_eq(matches_simple_selector(node, "div[href]*"), false)
   assert_eq(simple_selector_is_valid(""), false)
   assert_eq(simple_selector_is_valid("div["), false)
+  assert_eq(simple_selector_is_valid("div[href]*"), false)
   assert_true(split_complex_selector("") is None)
   assert_eq(matches_complex_selector(node, ""), false)
 }

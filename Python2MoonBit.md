@@ -689,9 +689,10 @@ JustHTML from Python to MoonBit.
   match instead of becoming attribute lookups. Apply the same no-match rule to
   empty or whitespace-only selector strings and other malformed pieces such as
   unclosed attribute selectors, dangling `.`/`#` markers, unclosed functional
-  pseudos, and leading, repeated, or trailing combinators. Keep helper-level
-  tests for these false paths too; public selector validation may reject the
-  string before the lower-level matcher sees the malformed fragment.
+  pseudos, unexpected trailing fragments after a valid attribute selector, and
+  leading, repeated, or trailing combinators. Keep helper-level tests for these
+  false paths too; public selector validation may reject the string before the
+  lower-level matcher sees the malformed fragment.
 - Attribute selector operators have distinct empty-value rules in the Python
   matcher: `^=`, `$=`, and `*=` do not match an empty expected value, while
   `~=` uses HTML-whitespace token matching and `|=` matches exact or
