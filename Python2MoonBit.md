@@ -179,8 +179,12 @@ JustHTML from Python to MoonBit.
 - Sanitizer handling for foreign text integration points is stricter than
   ordinary child sanitization. SVG `title`/`desc` and MathML
   `mi`/`mn`/`mo`/`ms`/`mtext` should keep text only, with MathML `mglyph` and
-  `malignmark` as the exceptions. Do this before unwrapping allowed or
-  disallowed HTML descendants, or an active child can turn into surviving text.
+  `malignmark` as the exceptions. The exception is namespace-sensitive:
+  programmatic HTML-namespace `mglyph`/`malignmark` children are still HTML
+  descendants, while other MathML children such as `mi` are not exceptions; both
+  should be dropped inside MathML text integration points. Do this before
+  unwrapping allowed or disallowed HTML descendants, or an active child can turn
+  into surviving text.
   Keep mXSS regression tests that reparse sanitized foreign-content output;
   the serialized form must remain inert after a second parse, not merely after
   the first sanitizer pass.

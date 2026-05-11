@@ -2197,6 +2197,20 @@ test "sanitize_dom preserves math marker exceptions in text integration points" 
     @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
     "<math><mtext>Hello<mglyph></mglyph><malignmark></malignmark></mtext></math>",
   )
+  let programmatic = @html_parser.element("math", ns="math", children=[
+    @html_parser.element("mtext", ns="math", children=[
+      @html_parser.text("Hello"),
+      @html_parser.element("mglyph", ns="math"),
+      @html_parser.element("mglyph", ns="html"),
+      @html_parser.element("malignmark", ns="math"),
+      @html_parser.element("malignmark", ns="html"),
+      @html_parser.element("mi", ns="math", children=[@html_parser.text("drop")]),
+    ]),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(programmatic, policy~).to_html(pretty=false),
+    "<math><mtext>Hello<mglyph></mglyph><malignmark></malignmark></mtext></math>",
+  )
 }
 
 ///|
