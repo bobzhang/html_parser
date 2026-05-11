@@ -142,6 +142,27 @@ test "entity helpers preserve unresolved names and attribute boundaries" {
 }
 
 ///|
+test "doctype helpers keep empty eof and unquoted identifiers distinct" {
+  assert_eq(eof_error_pos(""[:]), 0)
+  assert_eq(doctype_eof_error_offset(""[:]), 0)
+  let errors : Array[DoctypeExternalError] = []
+  let (value, next, closed) = parse_quoted_doctype_value_at(
+    "identifier"[:],
+    0,
+    errors,
+  )
+  assert_true(value is None)
+  assert_eq(next, 0)
+  assert_eq(closed, false)
+  assert_eq(errors.length(), 0)
+  let external = parse_doctype_external(""[:], true)
+  assert_true(external.public_id is None)
+  assert_true(external.system_id is None)
+  assert_eq(external.force_quirks, false)
+  assert_eq(external.errors.length(), 0)
+}
+
+///|
 test "document scaffold text helpers preserve whitespace boundaries" {
   assert_true(text_node_without_leading_ascii_whitespace(text(" \t\n")) is None)
   guard text_node_without_leading_ascii_whitespace(text(" \tbody"))

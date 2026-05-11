@@ -1275,6 +1275,11 @@ JustHTML from Python to MoonBit.
   normalization: CR and CRLF become LF in the stored identifier. A trailing CR
   between a public identifier and `>` is just whitespace before the close
   bracket, not a missing system identifier.
+- Keep doctype identifier helpers total even when a caller is already expected
+  to be positioned on a quote. The Python code often enforces this by parser
+  state before slicing; the MoonBit helper should return `(None, start, false)`
+  for a non-quote and keep empty-input EOF offsets at `0`, not a negative or
+  stale "last character" position.
 - Null-character handling is state-specific inside doctypes too. Names and
   quoted public/system identifiers report `unexpected-null-character` and store
   U+FFFD, so a helper that only lowercases or normalizes newlines will silently
