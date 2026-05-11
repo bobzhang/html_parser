@@ -157,6 +157,29 @@ test "pseudo matcher rejects unknown and blank contains pseudos" {
 }
 
 ///|
+test "selector helper fragments fail closed on malformed syntax" {
+  let node = element("div", attrs={
+    "class": Some("alpha beta"),
+    "href": Some("http://example.com"),
+    "id": Some("main"),
+  })
+  assert_eq(attribute_selector_matches(node, ""), false)
+  assert_eq(attribute_selector_matches(node, "href!=http://example.com"), false)
+  assert_eq(
+    attribute_selector_matches(node, "href=http://example.com bad"),
+    false,
+  )
+  assert_eq(matches_simple_selector(node, ""), false)
+  assert_eq(matches_simple_selector(node, "*div"), false)
+  assert_eq(matches_simple_selector(node, "div["), false)
+  assert_eq(matches_simple_selector(node, "div."), false)
+  assert_eq(simple_selector_is_valid(""), false)
+  assert_eq(simple_selector_is_valid("div["), false)
+  assert_true(split_complex_selector("") is None)
+  assert_eq(matches_complex_selector(node, ""), false)
+}
+
+///|
 test "url scheme helpers ignore C0 characters in scheme prefixes" {
   guard extract_url_scheme("\tHTTPS:") is Some(tabbed_scheme) else {
     fail("expected tabbed URL scheme")
