@@ -335,6 +335,41 @@ test "active formatting helpers respect marker boundaries" {
 }
 
 ///|
+test "table foster helpers handle detached helper state" {
+  let root = fragment()
+  let parser = Parser::new("", root, scripting_enabled=true, xml_coercion=false)
+  let table = element("table")
+  let tbody = element("tbody")
+  parser.stack.clear()
+  parser.stack.push(root)
+  parser.stack.push(table)
+  parser.stack.push(tbody)
+  assert_true(parser.foster_parent_table_text("x"[:], 0))
+  assert_eq(root.to_html(pretty=false), "x")
+  assert_eq(parser.errors.length(), 1)
+  assert_eq(parser.errors[0].code, "foster-parenting-character")
+  parser.report_foster_parented_table_context_text("z"[:], 1)
+  assert_eq(parser.errors.length(), 1)
+  parser.insert_node_before_open_table(text("y"), 1)
+  assert_eq(root.to_html(pretty=false), "xy")
+
+  let blocked = Parser::new(
+    "",
+    fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  let blocked_table = element("table")
+  let div = element("div")
+  blocked.stack.clear()
+  blocked.stack.push(blocked.root)
+  blocked.stack.push(blocked_table)
+  blocked.stack.push(div)
+  assert_eq(blocked.handle_nested_table_start_tag("table", 0), false)
+  assert_eq(blocked.table_start_foster_mode("p"[:]), 0)
+}
+
+///|
 test "tokenizer eof helper reports empty input origin" {
   let tokenizer = SourceTokenizer::new(
     "",
