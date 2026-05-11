@@ -265,6 +265,8 @@ JustHTML from Python to MoonBit.
   `utf16_len()` when the fixture can contain non-ASCII characters.
 - Python accepts a raw callable as `UrlPolicy.url_filter`; in MoonBit, wrap the
   callback with `UrlFilter::new` so `UrlPolicy` can still derive `Debug`.
+  Its debug representation should stay opaque: assert the wrapper type label,
+  not the closure internals.
   Apply the filter before validation and handling. For single URL attributes
   and CSS `url(...)`, filter each URL value with the exact tag/attribute key
   (`style:<property>` for CSS). For `srcset`/`imagesrcset`,
