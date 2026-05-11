@@ -831,6 +831,10 @@ JustHTML from Python to MoonBit.
   matches the formatting end tag but it is no longer in active formatting, close
   the stack node and do not report `adoption-agency-1.3`. This mirrors the
   Python guard before the main adoption loop.
+- Adoption-agency scope checks must respect default-scope terminators. A
+  formatting element below `table`, `td`, `th`, `caption`, `template`, or the
+  other default-scope boundaries is treated as not in scope even if the node is
+  still present in the stack and active-formatting list.
 - Applet-like end tags (`applet`, `marquee`, `object`) are their own recovery
   path. If no matching element is open in default scope, report
   `unexpected-end-tag` at the tag close and consume the token; do not fall

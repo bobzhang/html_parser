@@ -511,6 +511,28 @@ test "active formatting helpers respect marker boundaries" {
   current_only.adoption_agency("b"[:], 4)
   assert_eq(current_only.stack.length(), 1)
   assert_eq(current_only.errors.length(), 0)
+
+  let scoped = Parser::new(
+    "",
+    fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  let scoped_b = element("b")
+  scoped.stack.push(scoped_b)
+  scoped.stack.push(element("table"))
+  scoped.active_formatting.push({
+    marker: false,
+    name: "b",
+    ns: "html",
+    attrs: {},
+    node: scoped_b,
+  })
+  scoped.adoption_agency("b"[:], 7)
+  assert_eq(scoped.errors.length(), 1)
+  assert_eq(scoped.errors[0].code, "adoption-agency-1.3")
+  assert_eq(scoped.stack.length(), 3)
+  assert_eq(scoped.active_formatting.length(), 1)
 }
 
 ///|
