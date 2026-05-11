@@ -281,6 +281,25 @@ JustHTML from Python to MoonBit.
   accepts caller-provided offsets, test the defensive path where the offset
   lands inside a surrogate pair; those should fail closed instead of treating
   the low surrogate as a host or scheme character.
+- Linkify-style fixture files often use `%` for comments, but URLs can contain
+  percent-encoded bytes. When translating those fixtures into MoonBit tests,
+  strip full-line `%` comments and trailing `" %"` comments only; splitting on
+  every `%` silently weakens coverage for encoded query strings.
+- Python regex scanning can recover from an invalid fuzzy candidate and still
+  match an embedded explicit scheme such as `text:http://example.com/`. A
+  hand-written MoonBit scanner should not always advance past the whole failed
+  candidate; restart at an embedded `http://`, `https://`, `ftp://`, or
+  `mailto:` when one appears inside the rejected span. Keep the opposite guard
+  for broken schemes such as `hppt://example.com`, where the inner fuzzy
+  domain must stay rejected.
+- Linkify's explicit `mailto:` path is more permissive than fuzzy email
+  detection: `mailto:foo@bar` is valid, while bare `foo@bar` is not. Pass that
+  policy difference into a shared email validator instead of duplicating the
+  parser.
+- The two-letter ccTLD allowlist is behavioral, not just performance data.
+  Port the whole table from the Python regex before claiming fixture parity;
+  otherwise cases such as `.ws` fail, while false positives such as
+  `path:to:file.pm` need separate fuzzy-host validation.
 - Python accepts a raw callable as `UrlPolicy.url_filter`; in MoonBit, wrap the
   callback with `UrlFilter::new` so `UrlPolicy` can still derive `Debug`.
   Its debug representation should stay opaque: assert the wrapper type label,

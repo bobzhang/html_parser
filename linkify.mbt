@@ -83,9 +83,16 @@ pub fn find_links_with_config(
           continue
         }
         None =>
-          if raw_end > pos {
-            pos = raw_end
-            continue
+          match linkify_embedded_scheme_start(text, pos, raw_end) {
+            Some(next) => {
+              pos = next
+              continue
+            }
+            None =>
+              if raw_end > pos {
+                pos = raw_end
+                continue
+              }
           }
       }
     }
@@ -276,6 +283,34 @@ fn linkify_find_substring(haystack : StringView, needle : StringView) -> Int? {
 }
 
 ///|
+fn linkify_embedded_scheme_start(
+  text : StringView,
+  start : Int,
+  end : Int,
+) -> Int? {
+  let mut pos = start
+  while pos < end {
+    match text.get_char(pos) {
+      Some(ch) => {
+        let next = pos + ch.utf16_len()
+        if next < end &&
+          (
+            starts_with_case_insensitive(text, next, "http://") ||
+            starts_with_case_insensitive(text, next, "https://") ||
+            starts_with_case_insensitive(text, next, "ftp://") ||
+            starts_with_case_insensitive(text, next, "mailto:")
+          ) {
+          return Some(next)
+        }
+        pos = next
+      }
+      None => break
+    }
+  }
+  None
+}
+
+///|
 fn linkify_validate_candidate(
   candidate : StringView,
   source : StringView,
@@ -291,7 +326,7 @@ fn linkify_validate_candidate(
     guard candidate.get_view(start=7, end=candidate.length()) is Some(address) else {
       return false
     }
-    return linkify_validate_email_address(address, config)
+    return linkify_validate_email_address(address, config, true)
   }
   if !is_scheme && !is_proto_rel && !is_www && !has_at {
     if linkify_broken_schema_context(source, start) {
@@ -318,6 +353,9 @@ fn linkify_validate_candidate(
     if string_view_contains(host, "_") {
       return false
     }
+    if string_view_contains(host, ":") {
+      return false
+    }
     if string_view_contains(host, ".") &&
       linkify_all_digits_or_dots(host) &&
       linkify_valid_ipv4(host) {
@@ -334,7 +372,7 @@ fn linkify_validate_candidate(
     !is_scheme_url &&
     !is_proto_rel &&
     !starts_with_case_insensitive(candidate, 0, "mailto:") {
-    if !linkify_validate_email_address(candidate, config) {
+    if !linkify_validate_email_address(candidate, config, false) {
       return false
     }
   }
@@ -348,6 +386,7 @@ fn linkify_validate_candidate(
 fn linkify_validate_email_address(
   address : StringView,
   config : LinkifyConfig,
+  allow_tldless_domain : Bool,
 ) -> Bool {
   guard linkify_last_char_index(address, '@') is Some(at) else { return false }
   if at == 0 || at + 1 >= address.length() {
@@ -360,10 +399,10 @@ fn linkify_validate_email_address(
   if string_view_contains(host, "_") {
     return false
   }
-  guard linkify_split_domain_for_tld(host) is Some((_base, tld)) else {
-    return false
+  match linkify_split_domain_for_tld(host) {
+    Some((_base, tld)) => linkify_valid_tld(tld, config.extra_tlds)
+    None => allow_tldless_domain && !host.is_empty()
   }
-  linkify_valid_tld(tld, config.extra_tlds)
 }
 
 ///|
@@ -596,39 +635,254 @@ fn linkify_default_tld(tld : StringView) -> Bool {
 ///|
 fn linkify_common_cc_tld(tld : StringView) -> Bool {
   match tld {
-    "ai"
+    "ac"
+    | "ad"
+    | "ae"
+    | "af"
+    | "ag"
+    | "ai"
+    | "al"
+    | "am"
+    | "an"
+    | "ao"
+    | "aq"
+    | "ar"
+    | "as"
     | "at"
     | "au"
+    | "aw"
+    | "ax"
+    | "az"
+    | "ba"
+    | "bb"
+    | "bd"
     | "be"
+    | "bf"
+    | "bg"
+    | "bh"
+    | "bi"
+    | "bj"
+    | "bm"
+    | "bn"
+    | "bo"
     | "br"
+    | "bs"
+    | "bt"
+    | "bv"
+    | "bw"
+    | "by"
+    | "bz"
     | "ca"
+    | "cc"
+    | "cd"
+    | "cf"
+    | "cg"
     | "ch"
+    | "ci"
+    | "ck"
+    | "cl"
+    | "cm"
     | "cn"
     | "co"
+    | "cr"
+    | "cu"
+    | "cv"
+    | "cw"
+    | "cx"
+    | "cy"
     | "cz"
     | "de"
+    | "dj"
     | "dk"
+    | "dm"
+    | "do"
+    | "dz"
+    | "ec"
+    | "ee"
+    | "eg"
+    | "er"
     | "es"
+    | "et"
     | "eu"
     | "fi"
+    | "fj"
+    | "fk"
+    | "fm"
+    | "fo"
     | "fr"
+    | "ga"
+    | "gb"
+    | "gd"
+    | "ge"
+    | "gf"
+    | "gg"
+    | "gh"
+    | "gi"
+    | "gl"
+    | "gm"
+    | "gn"
+    | "gp"
+    | "gq"
+    | "gr"
+    | "gs"
+    | "gt"
+    | "gu"
+    | "gw"
+    | "gy"
+    | "hk"
+    | "hm"
+    | "hn"
+    | "hr"
+    | "ht"
+    | "hu"
+    | "id"
+    | "ie"
+    | "il"
+    | "im"
     | "in"
     | "io"
+    | "iq"
+    | "ir"
+    | "is"
     | "it"
+    | "je"
+    | "jm"
+    | "jo"
     | "jp"
+    | "ke"
+    | "kg"
+    | "kh"
+    | "ki"
+    | "km"
+    | "kn"
+    | "kp"
     | "kr"
+    | "kw"
+    | "ky"
+    | "kz"
+    | "la"
+    | "lb"
+    | "lc"
+    | "li"
+    | "lk"
+    | "lr"
+    | "ls"
+    | "lt"
+    | "lu"
+    | "lv"
     | "ly"
+    | "ma"
+    | "mc"
+    | "md"
     | "me"
+    | "mg"
+    | "mh"
+    | "mk"
+    | "ml"
+    | "mm"
+    | "mn"
+    | "mo"
+    | "mp"
+    | "mq"
+    | "mr"
+    | "ms"
+    | "mt"
+    | "mu"
+    | "mv"
+    | "mw"
     | "mx"
+    | "my"
+    | "mz"
+    | "na"
+    | "nc"
+    | "ne"
+    | "nf"
+    | "ng"
+    | "ni"
     | "nl"
     | "no"
+    | "np"
+    | "nr"
+    | "nu"
+    | "nz"
+    | "om"
+    | "pa"
+    | "pe"
+    | "pf"
+    | "pg"
+    | "ph"
+    | "pk"
     | "pl"
+    | "pm"
+    | "pn"
+    | "pr"
+    | "ps"
+    | "pt"
+    | "pw"
+    | "py"
+    | "qa"
+    | "re"
+    | "ro"
+    | "rs"
     | "ru"
+    | "rw"
+    | "sa"
+    | "sb"
+    | "sc"
+    | "sd"
     | "se"
+    | "sg"
+    | "sh"
+    | "si"
+    | "sj"
+    | "sk"
+    | "sl"
+    | "sm"
+    | "sn"
+    | "so"
+    | "sr"
+    | "st"
+    | "su"
+    | "sv"
+    | "sx"
+    | "sy"
+    | "sz"
+    | "tc"
+    | "td"
+    | "tf"
+    | "tg"
+    | "th"
+    | "tj"
+    | "tk"
+    | "tl"
+    | "tm"
+    | "tn"
+    | "to"
+    | "tr"
+    | "tt"
     | "tv"
     | "tw"
+    | "tz"
+    | "ua"
+    | "ug"
     | "uk"
-    | "us" => true
+    | "us"
+    | "uy"
+    | "uz"
+    | "va"
+    | "vc"
+    | "ve"
+    | "vg"
+    | "vi"
+    | "vn"
+    | "vu"
+    | "wf"
+    | "ws"
+    | "ye"
+    | "yt"
+    | "za"
+    | "zm"
+    | "zw" => true
     _ => false
   }
 }

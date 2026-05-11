@@ -24,7 +24,7 @@ reference implementation in `.repos/justhtml`.
   - [x] Public `LinkMatch` and `LinkifyConfig` API
   - [x] Scheme, protocol-relative, `www.`, fuzzy domain, fuzzy IP, and email detection
   - [x] Representative `linkify-it` fixture smoke tests
-  - [ ] Full `linkify-it` fixture coverage
+  - [x] Full `linkify-it` fixture coverage
   - [ ] IDNA/punycode handling parity
 - [ ] Linkify DOM transform
   - [ ] Wrap text-node matches in `<a href=...>`
