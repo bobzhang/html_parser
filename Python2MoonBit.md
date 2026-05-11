@@ -710,7 +710,9 @@ JustHTML from Python to MoonBit.
   continue from the correct place.
 - Pseudo-class parsing starts as another simple-selector marker. For
   `:first-child` and `:last-child`, scan only element children under the parent;
-  whitespace text nodes created by parsing must not affect child positions.
+  whitespace text nodes and comments must not affect child positions. Direct
+  `matches()` on a comment can satisfy `:comment`, but structural element
+  pseudos such as `:last-child` and `:last-of-type` should still return false.
 - Pseudo-class names are case-insensitive in the Python matcher, but their
   arguments are not normalized wholesale. Lowercase only the pseudo name before
   dispatching so `:Nth-Child(odd)` works without changing case-sensitive

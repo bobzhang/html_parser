@@ -7645,6 +7645,16 @@ test "matches handles detached nodes for structural pseudo selectors" {
   assert_eq(@html_parser.matches(item, ":nth-of-type(1)"), false)
   assert_eq(@html_parser.matches(item, "p + li"), false)
   assert_eq(@html_parser.matches(item, "p ~ li"), false)
+  let comment_root = @html_parser.fragment(children=[@html_parser.comment("x")])
+  guard comment_root.query_one(":comment") is Some(comment) else {
+    fail("expected comment")
+  }
+  assert_true(@html_parser.matches(comment, ":comment"))
+  assert_true(@html_parser.matches(comment, ":empty"))
+  assert_eq(@html_parser.matches(comment, ":last-child"), false)
+  assert_eq(@html_parser.matches(comment, ":only-child"), false)
+  assert_eq(@html_parser.matches(comment, ":last-of-type"), false)
+  assert_eq(@html_parser.matches(comment, ":only-of-type"), false)
 }
 
 ///|
