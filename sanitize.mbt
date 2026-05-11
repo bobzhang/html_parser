@@ -81,7 +81,7 @@ pub struct SanitizationPolicy {
 
 ///|
 fn sanitized_string_set(values : Array[String]) -> Set[String] {
-  let set : Set[String] = Set::new(capacity=values.length())
+  let set : Set[String] = Set([], capacity=values.length())
   for value in values {
     let normalized = lower_ascii(value[:].trim())
     if normalized != "" {

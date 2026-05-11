@@ -606,7 +606,10 @@ JustHTML from Python to MoonBit.
   unsafe too: backslashes, control or DEL characters, empty URLs, missing
   delimiters, missing closing quotes, a missing `)` after a quoted URL, or
   unexpected non-separator text after `)` should drop that declaration rather
-  than trying to repair it. URL filter output is still
+  than trying to repair it. Normalize CSS safety checks by removing URL
+  whitespace/control characters so obfuscated spellings such as `u rl(...)`
+  are still detected as resource loads, but do not repair them into valid
+  `url(...)` values. URL filter output is still
   untrusted: run the filtered value through the same URL validation and CSS
   quote-safety checks before serializing it back into `url('...')`.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
