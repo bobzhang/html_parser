@@ -703,7 +703,7 @@ fn extract_bracketed_authority_host(
           return None
         }
         let after_bracket = pos + 1
-        if after_bracket < end && value.get_char(after_bracket) != Some(':') {
+        if after_bracket < end && !(value.get_char(after_bracket) is Some(':')) {
           return None
         }
         guard value.get_view(start=start + 1, end=pos) is Some(host) else {
@@ -755,8 +755,8 @@ fn extract_absolute_url_host(value : StringView) -> String? {
     match value.get_char(pos) {
       Some(':') => {
         let after_colon = pos + 1
-        if value.get_char(after_colon) != Some('/') ||
-          value.get_char(after_colon + 1) != Some('/') {
+        if !(value.get_char(after_colon) is Some('/')) ||
+          !(value.get_char(after_colon + 1) is Some('/')) {
           return None
         }
         let authority_start = after_colon + 2
@@ -1300,12 +1300,12 @@ fn css_safety_normalize(value : StringView) -> String? {
   while pos < value.length() {
     match value.get_char(pos) {
       Some('\\') => return None
-      Some('/') if value.get_char(pos + 1) == Some('*') => {
+      Some('/') if value.get_char(pos + 1) is Some('*') => {
         pos += 2
         let mut closed = false
         while pos < value.length() {
-          if value.get_char(pos) == Some('*') &&
-            value.get_char(pos + 1) == Some('/') {
+          if value.get_char(pos) is Some('*') &&
+            value.get_char(pos + 1) is Some('/') {
             pos += 2
             closed = true
             break
@@ -1495,7 +1495,7 @@ fn sanitize_url_function_value(
               return None
             }
             cursor = css_url_skip_whitespace(value, url_end + quote.utf16_len())
-            if value.get_char(cursor) != Some(')') {
+            if !(value.get_char(cursor) is Some(')')) {
               return None
             }
             guard value.get_view(start=url_start, end=url_end) is Some(raw) else {

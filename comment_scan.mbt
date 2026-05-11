@@ -38,7 +38,7 @@ fn write_comment_char(
   if ch == '\r' {
     out.write_char('\n')
     let next = pos + 1
-    if next < input.length() && input.get_char(next) == Some('\n') {
+    if input.get_char(next) is Some('\n') {
       next + 1
     } else {
       next
@@ -57,7 +57,7 @@ fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
     push_comment_scan_error(errors, "eof-in-comment", eof_error_pos(input))
     return CommentScan::{ data: "", end: input.length(), eof: true, errors }
   }
-  if input.get_char(start) == Some('>') {
+  if input.get_char(start) is Some('>') {
     push_comment_scan_error(errors, "abrupt-closing-of-empty-comment", start)
     return CommentScan::{ data: "", end: start + 1, eof: false, errors }
   }
@@ -74,7 +74,7 @@ fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
     match input.get_char(pos) {
       Some('-') => {
         let dash_start = pos
-        while pos < input.length() && input.get_char(pos) == Some('-') {
+        while input.get_char(pos) is Some('-') {
           pos += 1
         }
         let dash_count = pos - dash_start

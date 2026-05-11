@@ -5480,7 +5480,7 @@ fn Parser::decoded_special_text(
 fn strip_one_initial_lf_with_offset(input : StringView) -> (StringView, Int) {
   match input.get_char(0) {
     Some('\r') =>
-      if input.get_char(1) == Some('\n') {
+      if input.get_char(1) is Some('\n') {
         (input[2:], 2)
       } else {
         (input[1:], 1)
@@ -5589,7 +5589,7 @@ fn normalize_doctype_value(
       Some('\r') => {
         out.write_char('\n')
         pos += 1
-        if pos < end && input.get_char(pos) == Some('\n') {
+        if pos < end && input.get_char(pos) is Some('\n') {
           pos += 1
         }
       }
@@ -6509,7 +6509,7 @@ fn line_col_at(input : StringView, target : Int) -> (Int, Int) {
         line += 1
         col = 1
         offset += 1
-        if offset < target && input.get_char(offset) == Some('\n') {
+        if offset < target && input.get_char(offset) is Some('\n') {
           offset += 1
         }
       }
@@ -6558,7 +6558,7 @@ fn eof_line_col(input : StringView) -> (Int, Int) {
         line += 1
         col = 0
         offset += 1
-        if offset < input.length() && input.get_char(offset) == Some('\n') {
+        if input.get_char(offset) is Some('\n') {
           offset += 1
         }
       }
@@ -6595,7 +6595,7 @@ fn normalize_newlines(input : StringView) -> String {
       Some('\r') => {
         out.write_char('\n')
         pos += 1
-        if input.get_char(pos) == Some('\n') {
+        if input.get_char(pos) is Some('\n') {
           pos += 1
         }
       }
@@ -6622,7 +6622,7 @@ fn normalize_bogus_comment_data(input : StringView) -> String {
       Some('\r') => {
         out.write_char('\n')
         pos += 1
-        if input.get_char(pos) == Some('\n') {
+        if input.get_char(pos) is Some('\n') {
           pos += 1
         }
       }
@@ -6646,7 +6646,7 @@ fn write_normalized_char(
     Some('\r') => {
       out.write_char('\n')
       let next = pos + 1
-      if input.get_char(next) == Some('\n') {
+      if input.get_char(next) is Some('\n') {
         next + 1
       } else {
         next
@@ -6949,7 +6949,7 @@ fn consume_named_entity_with_errors(
   if name_end == name_start {
     return None
   }
-  let has_semicolon = input.get_char(name_end) == Some(';')
+  let has_semicolon = input.get_char(name_end) is Some(';')
   match input.get_view(start=name_start, end=name_end) {
     Some(name) =>
       if has_semicolon {
@@ -7075,7 +7075,7 @@ fn consume_numeric_entity(
   }
   let errors : Array[EntityDecodeError] = []
   let mut error_offset = pos - 1
-  if pos < input.length() && input.get_char(pos) == Some(';') {
+  if input.get_char(pos) is Some(';') {
     pos += 1
     error_offset = pos - 1
   } else {
