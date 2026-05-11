@@ -253,7 +253,10 @@ JustHTML from Python to MoonBit.
   exact tag/attribute rule for each token, normalize surviving tokens with a
   single space separator, and drop the whole attribute if any token is unsafe.
   Empty whitespace-separated tokens are ignored, but a list with no surviving
-  token still drops the whole attribute.
+  token still drops the whole attribute. Do not rely only on `StringView.trim()`
+  to detect an empty list: MoonBit trim does not remove every HTML whitespace
+  code point, such as form feed, so the list splitter must still handle
+  HTML-whitespace-only values after the initial trim.
 - URL proxying is a post-validation handling mode, not a way to bypass URL
   checks. First validate fragments, protocol-relative rewrites, schemes,
   hosts, and relative URL permission; only then rewrite the resulting URL

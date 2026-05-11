@@ -2124,12 +2124,12 @@ test "sanitize_dom normalizes whitespace URL lists atomically" {
     url_policy~,
   )
   let fragment = @html_parser.parse_fragment(
-    "<a ping=' https://trusted.example/a  https://trusted.example/b '>ok</a><a ping='   '>empty</a><a ping='https://trusted.example/a https://evil.example/b'>bad-final</a><a ping='https://evil.example/b https://trusted.example/a'>bad-first</a><img attributionsrc=' https://trusted.example/i  https://trusted.example/j '>",
+    "<a ping=' https://trusted.example/a  https://trusted.example/b '>ok</a><a ping='   '>empty</a><a ping='\u{000C}'>form-feed</a><a ping='https://trusted.example/a https://evil.example/b'>bad-final</a><a ping='https://evil.example/b https://trusted.example/a'>bad-first</a><img attributionsrc=' https://trusted.example/i  https://trusted.example/j '>",
     sanitize=false,
   )
   assert_eq(
     @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<a ping=\"https://trusted.example/a https://trusted.example/b\">ok</a><a>empty</a><a>bad-final</a><a>bad-first</a><img attributionsrc=\"https://trusted.example/i https://trusted.example/j\">",
+    "<a ping=\"https://trusted.example/a https://trusted.example/b\">ok</a><a>empty</a><a>form-feed</a><a>bad-final</a><a>bad-first</a><img attributionsrc=\"https://trusted.example/i https://trusted.example/j\">",
   )
 }
 
