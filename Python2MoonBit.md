@@ -533,7 +533,9 @@ JustHTML from Python to MoonBit.
   allowlists are lowercased and matched against the parsed host only, not the
   whole URL. Strip userinfo and port for matching, accept bracketed IPv6 by
   matching the inner host, and reject malformed bracket hosts or backslashes
-  before applying the allowlist.
+  before applying the allowlist. If a non-empty host allowlist is configured,
+  hostless schemes such as `mailto:` should still be rejected even when their
+  scheme is otherwise allowed.
 - URL attribute checks must run after attribute entity decoding. A URL that
   matches the scheme and host allowlists is still unsafe when the decoded value
   contains C0 controls, DEL, or a backslash, so reject those values before
