@@ -2173,7 +2173,7 @@ test "sanitize_dom strips html descendants inside foreign text integration point
     drop_content_tags=[],
   )
   let fragment = @html_parser.parse_fragment(
-    "<svg><title>Hello<script>bad</script><img src='/x'></title><desc>World<b>drop</b></desc></svg><math><mtext>Hi<script>bad</script><img src='/x'></mtext></math>",
+    "<svg><title>He\u{200B}llo<script>bad</script><img src='/x'></title><desc>World<b>drop</b></desc></svg><math><mtext>Hi<script>bad</script><img src='/x'></mtext></math>",
     sanitize=false,
   )
   assert_eq(

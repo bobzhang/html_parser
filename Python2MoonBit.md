@@ -369,11 +369,13 @@ JustHTML from Python to MoonBit.
   as `drop_content_tags` the same way so uppercase policy input still drops
   mixed-case programmatic roots as whole subtrees.
 - The sanitizer's invisible-Unicode stripping applies to text nodes and
-  attribute values before later checks. Keep the strip table aligned with the
-  Python regex: zero-width/bidi controls, variation selectors, FEFF, BMP
-  private-use characters, supplementary variation selectors, and supplementary
-  private-use planes. In MoonBit, iterate by `Char` so ranges above U+FFFF are
-  matched as scalar values rather than UTF-16 halves.
+  attribute values before later checks, including text kept inside foreign
+  text-integration points such as SVG `title` and MathML `mtext`. Keep the
+  strip table aligned with the Python regex: zero-width/bidi controls,
+  variation selectors, FEFF, BMP private-use characters, supplementary
+  variation selectors, and supplementary private-use planes. In MoonBit,
+  iterate by `Char` so ranges above U+FFFF are matched as scalar values rather
+  than UTF-16 halves.
 - URL serialization context is based on text content, not the serialized markup
   string. Match Python by trimming the text and percent-encoding its UTF-8
   bytes while preserving URL delimiter characters such as `/`, `?`, `&`, and
