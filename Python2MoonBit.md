@@ -953,7 +953,10 @@ JustHTML from Python to MoonBit.
   comments after an explicit closed `<head>` between head and body, move late
   head-element starts back into `<head>`, move children of a duplicate late
   `<head>` into the body, and preserve whitespace/comments that trail a valid
-  frameset.
+  frameset. Keep the text-splitting helpers explicit: an all-whitespace node
+  before implicit body content is discarded as body text, while a mixed node is
+  split so the leading whitespace can stay with the synthetic head and the rest
+  starts the body.
 - Keep tokenizer flags separate from tree-builder effects. A `/>` slash should
   remain visible on the start-tag token, but in HTML tree construction only
   void elements actually self-close; non-void elements still receive later text

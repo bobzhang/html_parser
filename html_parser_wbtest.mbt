@@ -101,6 +101,40 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
 }
 
 ///|
+test "document scaffold text helpers preserve whitespace boundaries" {
+  assert_true(text_node_without_leading_ascii_whitespace(text(" \t\n")) is None)
+  guard text_node_without_leading_ascii_whitespace(text(" \tbody"))
+    is Some(stripped) else {
+    fail("expected stripped body text")
+  }
+  assert_eq(stripped.data, "body")
+  let body = text("body")
+  let (no_leading, unchanged) = split_text_node_leading_ascii_whitespace(body)
+  assert_true(no_leading is None)
+  guard unchanged is Some(actual) else { fail("expected original body text") }
+  assert_true(physical_equal(actual, body))
+  let (all_leading, empty_rest) = split_text_node_leading_ascii_whitespace(
+    text(" \n"),
+  )
+  guard all_leading is Some(leading_only) else {
+    fail("expected all-whitespace leading node")
+  }
+  assert_eq(leading_only.data, " \n")
+  assert_true(empty_rest is None)
+  let (leading, rest) = split_text_node_leading_ascii_whitespace(
+    text(" \nBody"),
+  )
+  guard leading is Some(leading_node) else {
+    fail("expected leading whitespace node")
+  }
+  assert_eq(leading_node.data, " \n")
+  guard rest is Some(rest_node) else {
+    fail("expected non-whitespace rest node")
+  }
+  assert_eq(rest_node.data, "Body")
+}
+
+///|
 test "tokenizer eof helper reports empty input origin" {
   let tokenizer = SourceTokenizer::new(
     "",
