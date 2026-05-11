@@ -1428,3 +1428,6 @@ JustHTML from Python to MoonBit.
   needs block-level chunks with a separate inline join separator. Keep the
   helper-level chunk operations tolerant of an empty scratch array even when
   the public entry point seeds one.
+- Pretty serialization should not classify empty elements as text-only. For
+  text-only elements, preserve whitespace for `pre`/rawtext-like names and
+  collapse ordinary element text in the helper before wrapping tags.

@@ -138,6 +138,17 @@ test "text chunk helpers initialize empty chunk arrays" {
 }
 
 ///|
+test "pretty text helpers keep empty elements out of text-only path" {
+  assert_eq(element_has_only_text_children(element("div")), false)
+  let pre = element("pre", children=[text("  a\n<b>&c  ")])
+  assert_true(element_has_only_text_children(pre))
+  assert_eq(compact_pretty_text_children(pre, '"'), "  a\n&lt;b&gt;&amp;c  ")
+  let paragraph = element("p", children=[text("  a\n"), text("  b  ")])
+  assert_true(element_has_only_text_children(paragraph))
+  assert_eq(compact_pretty_text_children(paragraph, '"'), "a b")
+}
+
+///|
 test "pseudo matcher rejects unknown and blank contains pseudos" {
   let note = comment("note")
   assert_eq(pseudo_selector_matches(note, "hover"), false)
