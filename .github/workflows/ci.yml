@@ -42,6 +42,10 @@ jobs:
 
       - name: Verify Mooncakes package
         run: |
+          if [ ! -f "$HOME/.moon/credentials.json" ]; then
+            echo "Skipping Mooncakes dry-run because this runner is not logged in."
+            exit 0
+          fi
           set +e
           output="$(moon publish --dry-run 2>&1)"
           exit_code=$?
