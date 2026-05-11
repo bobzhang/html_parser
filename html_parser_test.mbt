@@ -9130,6 +9130,23 @@ test "document parser scaffolds framesets outside body" {
   guard html_inside.errors[1].column is Some(49) else {
     fail("expected ignored frame after html-in-frameset at close bracket")
   }
+  let html_inside_stray_p_end = @html_parser.parse(
+    "<!doctype html><frameset><html id=x></p></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    html_inside_stray_p_end.to_html(pretty=false),
+    "<!DOCTYPE html><html id=\"x\"><head></head><frameset><p></p></frameset></html>",
+  )
+  assert_eq(html_inside_stray_p_end.errors.length(), 2)
+  assert_eq(html_inside_stray_p_end.errors[0].code, "unexpected-start-tag")
+  assert_eq(html_inside_stray_p_end.errors[1].code, "unexpected-end-tag")
+  guard html_inside_stray_p_end.errors[0].column is Some(36) else {
+    fail("expected html-in-frameset reprocess error at close bracket")
+  }
+  guard html_inside_stray_p_end.errors[1].column is Some(40) else {
+    fail("expected reprocessed paragraph end error at close bracket")
+  }
   let explicit_html_inside = @html_parser.parse(
     "<!doctype html><html><frameset><html id=x><frame src=y></frameset>",
     collect_errors=true,
