@@ -46,7 +46,8 @@ JustHTML from Python to MoonBit.
   extra errors, and digitless forms such as `&#x;` stay literal.
 - C1 numeric references use the same Windows-1252 replacement table as byte
   decoding, so values such as `&#x83;` decode to U+0192 while still reporting a
-  control-character-reference error for the original numeric value.
+  control-character-reference error for the original numeric value. Keep sparse
+  table entries too: `&#x85;` is U+2026 and decimal `&#142;` is U+017D.
 - HTML input-stream preprocessing is not the same as generic string handling:
   strip a leading U+FEFF BOM and normalize CR/CRLF to LF before exposing text,
   comment, or attribute values.

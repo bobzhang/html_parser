@@ -12160,6 +12160,42 @@ test "numeric entity decoding covers replacement and no digit edges" {
   guard c1_printable.errors[1].column is Some(13) else {
     fail("expected decimal C1 printable error at column 13")
   }
+  let c1_replacements : Array[(String, String)] = [
+    ("&#x84;", "\u{201E}"),
+    ("&#x85;", "\u{2026}"),
+    ("&#x86;", "\u{2020}"),
+    ("&#x87;", "\u{2021}"),
+    ("&#x88;", "\u{02C6}"),
+    ("&#x89;", "\u{2030}"),
+    ("&#x8A;", "\u{0160}"),
+    ("&#x8B;", "\u{2039}"),
+    ("&#x8C;", "\u{0152}"),
+    ("&#x8E;", "\u{017D}"),
+    ("&#x91;", "\u{2018}"),
+    ("&#x92;", "\u{2019}"),
+    ("&#x93;", "\u{201C}"),
+    ("&#x94;", "\u{201D}"),
+    ("&#x95;", "\u{2022}"),
+    ("&#x96;", "\u{2013}"),
+    ("&#x97;", "\u{2014}"),
+    ("&#x98;", "\u{02DC}"),
+    ("&#x99;", "\u{2122}"),
+    ("&#x9A;", "\u{0161}"),
+    ("&#x9B;", "\u{203A}"),
+    ("&#x9C;", "\u{0153}"),
+    ("&#x9E;", "\u{017E}"),
+    ("&#x9F;", "\u{0178}"),
+  ]
+  for item in c1_replacements {
+    let (source, expected) = item
+    let result = @html_parser.tokenize(source, collect_errors=true)
+    guard result.tokens[0] is Characters(actual) else {
+      fail("expected C1 replacement token")
+    }
+    assert_eq(actual, expected)
+    assert_eq(result.errors.length(), 1)
+    assert_eq(result.errors[0].code, "control-character-reference")
+  }
   let lowercase_hex = @html_parser.tokenize("&#xa;", collect_errors=true)
   guard lowercase_hex.tokens[0] is @html_parser.HtmlToken::Characters("\n") else {
     fail("expected lowercase hex numeric reference")
