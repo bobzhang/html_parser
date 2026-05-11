@@ -21,8 +21,8 @@ reference implementation in `.repos/justhtml`.
 ## Remaining Feature Work
 
 - [ ] Linkify core text scanner
-  - [ ] Public `LinkMatch` and `LinkifyConfig` API
-  - [ ] Scheme, protocol-relative, `www.`, fuzzy domain, fuzzy IP, and email detection
+  - [x] Public `LinkMatch` and `LinkifyConfig` API
+  - [x] Scheme, protocol-relative, `www.`, fuzzy domain, fuzzy IP, and email detection
   - [ ] `linkify-it` fixture coverage
   - [ ] IDNA/punycode handling parity
 - [ ] Linkify DOM transform

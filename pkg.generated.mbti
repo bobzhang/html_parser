@@ -20,6 +20,10 @@ pub fn document(children? : Array[Node]) -> Node
 
 pub fn element(StringView, attrs? : Map[String, String?], children? : Array[Node], ns? : String) -> Node
 
+pub fn find_links(StringView) -> Array[LinkMatch]
+
+pub fn find_links_with_config(StringView, LinkifyConfig) -> Array[LinkMatch]
+
 pub fn fragment(children? : Array[Node]) -> Node
 
 pub fn matches(Node, StringView) -> Bool
@@ -83,6 +87,20 @@ pub(all) enum HtmlToken {
   DoctypeToken(DoctypeInfo)
   Eof
 } derive(Eq, @debug.Debug)
+
+pub(all) struct LinkMatch {
+  start : Int
+  end : Int
+  text : String
+  href : String
+  kind : String
+} derive(Eq, @debug.Debug)
+
+pub struct LinkifyConfig {
+  // private fields
+} derive(@debug.Debug)
+pub fn LinkifyConfig::new(fuzzy_ip? : Bool, extra_tlds? : Array[String]) -> Self
+pub fn LinkifyConfig::with_extra_tlds(Array[String]) -> Self
 
 pub struct Node {
   // private fields
