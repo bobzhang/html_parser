@@ -273,7 +273,10 @@ JustHTML from Python to MoonBit.
   by dropping the URL when the effective proxy is missing or has an empty URL.
 - URL helper tests that pass explicit positions use `StringView` UTF-16 offsets.
   Keep fixed offsets to ASCII-only fixtures, and step with `get_char` plus
-  `utf16_len()` when the fixture can contain non-ASCII characters.
+  `utf16_len()` when the fixture can contain non-ASCII characters. If a helper
+  accepts caller-provided offsets, test the defensive path where the offset
+  lands inside a surrogate pair; those should fail closed instead of treating
+  the low surrogate as a host or scheme character.
 - Python accepts a raw callable as `UrlPolicy.url_filter`; in MoonBit, wrap the
   callback with `UrlFilter::new` so `UrlPolicy` can still derive `Debug`.
   Its debug representation should stay opaque: assert the wrapper type label,

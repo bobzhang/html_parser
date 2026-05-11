@@ -906,6 +906,21 @@ test "url authority helpers reject empty hosts" {
 }
 
 ///|
+test "url authority helpers fail closed on surrogate-split offsets" {
+  let host = "x😀"
+  let mid_surrogate = 2
+  assert_eq(url_authority_end("x😀/"[:], mid_surrogate), 4)
+  assert_eq(authority_host_start(host[:], mid_surrogate, host.length()), 2)
+  assert_true(
+    extract_authority_host(host[:], mid_surrogate, host.length()) is None,
+  )
+  assert_true(
+    extract_named_authority_host(host[:], mid_surrogate, host.length()) is None,
+  )
+  assert_true(extract_bracketed_authority_host("x😀]"[:], 1, 4) is None)
+}
+
+///|
 test "sanitize_dom clears mixed-case style rawtext resource loads" {
   let policy = SanitizationPolicy::new(
     ["style"],
