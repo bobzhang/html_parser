@@ -822,7 +822,9 @@ JustHTML from Python to MoonBit.
   behavior, whitespace after it is preserved, non-whitespace text after the
   closed frameset is ignored with `unexpected-token-after-frameset`, and
   post-frameset start tags follow the same after-frameset-to-in-frameset
-  reprocessing distinction as document parsing.
+  reprocessing distinction as document parsing. The html-fragment shell handler
+  must not consume `<html>` while this frameset state is active; let frameset
+  handling merge attrs or switch modes first.
 - Template contents are not ordinary children in the Python reference: they live
   in `Template.template_content`. A direct-child representation can serialize
   the same for early parser slices, but tree-construction rules still need a

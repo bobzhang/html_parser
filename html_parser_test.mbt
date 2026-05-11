@@ -5725,6 +5725,37 @@ test "fragment context seeds html insertion mode" {
   guard sibling_frame.errors[0].column is Some(28) else {
     fail("expected html fragment frame error at close bracket")
   }
+  let detached_end = @html_parser.parse_fragment(
+    "<frameset></frameset><div></frameset>",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    detached_end.to_html(pretty=false),
+    "<head></head><frameset></frameset>",
+  )
+  assert_eq(detached_end.errors.length(), 3)
+  assert_eq(detached_end.errors[0].code, "unexpected-token-after-frameset")
+  assert_eq(detached_end.errors[1].code, "unexpected-token-in-frameset")
+  assert_eq(detached_end.errors[2].code, "unexpected-end-tag")
+  guard detached_end.errors[2].column is Some(37) else {
+    fail("expected html fragment detached frameset end error")
+  }
+  let detached_html = @html_parser.parse_fragment(
+    "<frameset></frameset><div><html id=x><frameset></frameset>",
+    context=@html_parser.FragmentContext::new("html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    detached_html.to_html(pretty=false),
+    "<head></head><frameset></frameset>",
+  )
+  assert_eq(detached_html.errors.length(), 5)
+  assert_eq(detached_html.errors[0].code, "unexpected-token-after-frameset")
+  assert_eq(detached_html.errors[1].code, "unexpected-token-in-frameset")
+  assert_eq(detached_html.errors[2].code, "unexpected-start-tag")
+  assert_eq(detached_html.errors[3].code, "unexpected-start-tag-ignored")
+  assert_eq(detached_html.errors[4].code, "unexpected-end-tag")
   let explicit_html_ns = @html_parser.parse_fragment(
     "<title>T</title>",
     context=@html_parser.FragmentContext::new("html", ns="html"),
@@ -9049,6 +9080,35 @@ test "document parser reprocesses starts after frameset" {
     "unexpected-token-after-frameset",
   )
   assert_eq(nested_reprocessed.errors[3].code, "unexpected-token-in-frameset")
+  let detached_end = @html_parser.parse(
+    "<!doctype html><frameset></frameset><div></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    detached_end.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><frameset></frameset></html>",
+  )
+  assert_eq(detached_end.errors.length(), 3)
+  assert_eq(detached_end.errors[0].code, "unexpected-token-after-frameset")
+  assert_eq(detached_end.errors[1].code, "unexpected-token-in-frameset")
+  assert_eq(detached_end.errors[2].code, "unexpected-end-tag")
+  guard detached_end.errors[2].column is Some(52) else {
+    fail("expected detached frameset end error at close bracket")
+  }
+  let detached_html = @html_parser.parse(
+    "<!doctype html><frameset></frameset><div><html id=x><frameset></frameset>",
+    collect_errors=true,
+  )
+  assert_eq(
+    detached_html.to_html(pretty=false),
+    "<!DOCTYPE html><html id=\"x\"><head></head><frameset></frameset></html>",
+  )
+  assert_eq(detached_html.errors.length(), 5)
+  assert_eq(detached_html.errors[0].code, "unexpected-token-after-frameset")
+  assert_eq(detached_html.errors[1].code, "unexpected-token-in-frameset")
+  assert_eq(detached_html.errors[2].code, "unexpected-start-tag")
+  assert_eq(detached_html.errors[3].code, "unexpected-start-tag-ignored")
+  assert_eq(detached_html.errors[4].code, "unexpected-end-tag")
   let repeated_html = @html_parser.parse(
     "<!doctype html><frameset></frameset><html id=x><frameset></frameset>",
     collect_errors=true,

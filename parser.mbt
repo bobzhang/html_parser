@@ -3727,6 +3727,14 @@ fn Parser::handle_html_fragment_shell_start_tag(
   attrs : Map[String, String?],
   start : Int,
 ) -> Bool {
+  if name == "html" &&
+    (
+      self.after_frameset ||
+      self.detached_frameset_mode ||
+      self.has_open_element("frameset")
+    ) {
+    return false
+  }
   match name {
     "head" =>
       if self.current_node_allows_html_fragment_head() {
