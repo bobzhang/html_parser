@@ -90,6 +90,10 @@ JustHTML from Python to MoonBit.
 - Invalid transport encoding labels should not become the reported encoding.
   Treat them like a missing transport label and continue with BOM/meta/default
   sniffing.
+- Keep the private supported-encoding decoder fail-closed as well: even though
+  public callers normalize labels before dispatch, an unexpected internal label
+  should still decode as Windows-1252 and report `windows-1252`, not UTF-8 or
+  the unrecognized label.
 - Valid transport encoding labels take precedence over BOM and meta sniffing.
   Keep tests for this because a natural refactor is to sniff BOM first, which
   would silently change byte-entry behavior.
