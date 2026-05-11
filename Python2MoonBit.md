@@ -1053,7 +1053,10 @@ JustHTML from Python to MoonBit.
   a transient duplicate head sibling, and either pops that duplicate when a
   body-mode start such as `<p>` arrives or lets document scaffolding later move
   the duplicate head's children into the body. A following head element such as
-  `<title>` must therefore not be pulled back into the real head.
+  `<title>` must therefore not be pulled back into the real head. The same
+  recovery path also applies after a root-level `<head>` has closed but before
+  the synthetic `<html>` wrapper exists: attach the duplicate to the document
+  root, then let scaffolding move its children into `<body>`.
 - Foreign-content integration points depend on attributes, not just tag names.
   MathML `annotation-xml` integrates HTML only for `encoding` values like
   `text/html`; missing or other values still break HTML starts out of MathML.
