@@ -536,6 +536,51 @@ test "active formatting helpers respect marker boundaries" {
 }
 
 ///|
+test "adoption agency removes non-formatting inner stack nodes" {
+  let parser = Parser::new(
+    "",
+    fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  let original_b = element("b", attrs={ "data-origin": Some("start") })
+  let loose_span = element("span")
+  let furthest_block = element("p")
+  parser.stack.push(original_b)
+  parser.stack.push(loose_span)
+  parser.stack.push(furthest_block)
+  parser.active_formatting.push({
+    marker: false,
+    name: "b",
+    ns: "html",
+    attrs: original_b.attrs.copy(),
+    node: original_b,
+  })
+  parser.adoption_agency("b"[:], 0)
+  assert_eq(parser.errors.length(), 1)
+  assert_eq(parser.errors[0].code, "adoption-agency-1.3")
+  assert_eq(parser.stack_index_by_node(loose_span), -1)
+  assert_eq(parser.stack_index_by_node(original_b), -1)
+  assert_eq(parser.stack.length(), 2)
+  assert_eq(parser.stack_index_by_node(furthest_block), 1)
+  assert_eq(
+    parser.root.to_html(pretty=false),
+    "<p><b data-origin=\"start\"></b></p>",
+  )
+  assert_eq(parser.active_formatting.length(), 0)
+  guard furthest_block.children.length() == 1 else {
+    fail("expected replacement formatting child")
+  }
+  let replacement_b = furthest_block.children[0]
+  assert_eq(replacement_b.name, "b")
+  assert_true(!physical_equal(replacement_b, original_b))
+  guard replacement_b.parent is Some(parent) else {
+    fail("expected replacement formatting node to be under furthest block")
+  }
+  assert_true(physical_equal(parent, furthest_block))
+}
+
+///|
 test "table foster helpers handle detached helper state" {
   let root = fragment()
   let parser = Parser::new("", root, scripting_enabled=true, xml_coercion=false)

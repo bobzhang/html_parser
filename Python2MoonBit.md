@@ -835,6 +835,12 @@ JustHTML from Python to MoonBit.
   formatting element below `table`, `td`, `th`, `caption`, `template`, or the
   other default-scope boundaries is treated as not in scope even if the node is
   still present in the stack and active-formatting list.
+- During adoption-agency furthest-block rewrites, open stack nodes that are not
+  in active formatting are removed from the stack instead of being cloned or
+  wrapped. Keep this pointer-based check separate from tag-name matching; a node
+  with the same name is not enough. The outer adoption loop can continue after
+  the rewrite, so assert the final DOM and active-formatting state rather than
+  only the intermediate replacement insertion.
 - Applet-like end tags (`applet`, `marquee`, `object`) are their own recovery
   path. If no matching element is open in default scope, report
   `unexpected-end-tag` at the tag close and consume the token; do not fall
