@@ -11,9 +11,9 @@ priv struct Parser {
   mut form_element : Node?
   mut frameset_ok : Bool
   mut frameset_reprocesses_in_body_mode : Bool
+  mut detached_frameset_mode : Bool
   mut before_html_phase : Bool
   mut after_frameset : Bool
-  mut after_frameset_ignored_depth : Int
   mut document_after_body : Bool
   mut select_insertion_mode : Bool
   mut foreign_table_row_recovery_mode : Bool
@@ -71,9 +71,9 @@ fn Parser::new(
     form_element: None,
     frameset_ok: root.kind == Document,
     frameset_reprocesses_in_body_mode: false,
+    detached_frameset_mode: false,
     before_html_phase: root.kind == Document,
     after_frameset: false,
-    after_frameset_ignored_depth: 0,
     document_after_body: false,
     select_insertion_mode: false,
     foreign_table_row_recovery_mode: false,
@@ -212,11 +212,13 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   }
   if self.uses_document_frameset_rules() &&
     !self.frameset_reprocesses_in_body_mode &&
-    (self.after_frameset || self.has_open_element("frameset")) {
+    (
+      self.after_frameset ||
+      self.detached_frameset_mode ||
+      self.has_open_element("frameset")
+    ) {
     let whitespace = ascii_whitespace_chars_only(cleaned)
-    if self.after_frameset &&
-      self.after_frameset_ignored_depth == 0 &&
-      whitespace.length() != cleaned.length() {
+    if self.after_frameset && whitespace.length() != cleaned.length() {
       self.error_at("unexpected-token-after-frameset", start + raw.length() - 1)
     }
     if !whitespace.is_empty() {
@@ -2652,11 +2654,16 @@ fn Parser::handle_document_frameset_end_tag(
       ()
     } else if name == "frameset" {
       self.error_at("unexpected-token-after-frameset", tag_close_pos)
-    } else if self.after_frameset_ignored_depth > 0 {
-      self.error_at("unexpected-token-in-frameset", tag_close_pos)
-      self.after_frameset_ignored_depth -= 1
     } else {
       self.error_at("unexpected-token-after-frameset", tag_close_pos)
+      self.error_at("unexpected-token-in-frameset", tag_close_pos)
+    }
+    return true
+  }
+  if self.detached_frameset_mode {
+    if name == "frameset" {
+      self.error_at("unexpected-end-tag", tag_close_pos)
+    } else {
       self.error_at("unexpected-token-in-frameset", tag_close_pos)
     }
     return true
@@ -4678,7 +4685,7 @@ fn Parser::handle_document_frameset_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
-  self_closing : Bool,
+  _self_closing : Bool,
   start : Int,
   tag_close_pos : Int,
 ) -> Bool {
@@ -4689,12 +4696,17 @@ fn Parser::handle_document_frameset_start_tag(
     if name == "noframes" {
       return false
     }
-    self.error_at("unexpected-token-after-frameset", tag_close_pos)
-    self.error_at("unexpected-token-in-frameset", tag_close_pos)
-    if !self_closing && !is_void_element(name) {
-      self.after_frameset_ignored_depth += 1
+    if name == "html" {
+      self.after_frameset = false
+      self.frameset_ok = false
+      self.error_at("unexpected-start-tag", tag_close_pos)
+      self.merge_document_html_attrs(attrs)
+      self.repeated_document_html_shell = true
+      return true
     }
-    return true
+    self.error_at("unexpected-token-after-frameset", tag_close_pos)
+    self.after_frameset = false
+    self.detached_frameset_mode = true
   }
   if self.frameset_reprocesses_in_body_mode && self.has_open_element("frameset") {
     match name {
@@ -4709,10 +4721,11 @@ fn Parser::handle_document_frameset_start_tag(
       }
       _ => false
     }
-  } else if self.has_open_element("frameset") {
+  } else if self.has_open_element("frameset") || self.detached_frameset_mode {
     match name {
       "frameset" => {
         self.insert_element_maybe_push(name, attrs, true, start~)
+        self.detached_frameset_mode = false
         true
       }
       "frame" => {
@@ -4720,12 +4733,20 @@ fn Parser::handle_document_frameset_start_tag(
         true
       }
       "noframes" => false
-      "html" => {
-        self.error_at("unexpected-start-tag", tag_close_pos)
-        self.merge_document_html_attrs(attrs)
-        self.frameset_reprocesses_in_body_mode = true
-        true
-      }
+      "html" =>
+        if self.detached_frameset_mode {
+          self.detached_frameset_mode = false
+          self.frameset_ok = false
+          self.error_at("unexpected-start-tag", tag_close_pos)
+          self.merge_document_html_attrs(attrs)
+          self.repeated_document_html_shell = true
+          true
+        } else {
+          self.error_at("unexpected-start-tag", tag_close_pos)
+          self.merge_document_html_attrs(attrs)
+          self.frameset_reprocesses_in_body_mode = true
+          true
+        }
       _ => {
         self.error_at("unexpected-token-in-frameset", tag_close_pos)
         true

@@ -265,13 +265,16 @@ JustHTML from Python to MoonBit.
   the open frameset are ignored immediately and their matching end tags report
   `unexpected-token-in-frameset` too. Non-whitespace tokens after the final
   `</frameset>` are ignored with
-  `unexpected-token-after-frameset`; ordinary tags also report the reprocessed
-  `unexpected-token-in-frameset`, while `<noframes>` remains allowed. A start
-  `<html>` inside an open frameset is another special case: Python reports
-  `unexpected-start-tag` and reprocesses it through body-mode rules, so a
-  following `<frameset>` or `<frame>` is ignored as a body-mode start rather
-  than inserted as a nested frameset child. Missing attributes from that
-  reprocessed `<html>` still merge onto the existing root element.
+  `unexpected-token-after-frameset`; a non-`html`/`noframes` start tag then
+  re-enters in-frameset handling. That means a later `<frameset>` or `<frame>`
+  after the closed frameset is still inserted under `<html>` after the initial
+  after-frameset error, while ordinary tags also report the reprocessed
+  `unexpected-token-in-frameset` and remain ignored. `<noframes>` remains
+  allowed. A start `<html>` inside an open frameset is another special case:
+  Python reports `unexpected-start-tag` and reprocesses it through body-mode
+  rules, so a following `<frameset>` or `<frame>` is ignored as a body-mode
+  start rather than inserted as a nested frameset child. Missing attributes from
+  that reprocessed `<html>` still merge onto the existing root element.
 - Some start tags have their own scope rules even when they look like ordinary
   elements. A repeated `<button>` searches default scope, reports
   `unexpected-start-tag-implies-end-tag`, closes the previous button, and then
@@ -816,8 +819,10 @@ JustHTML from Python to MoonBit.
   ordinary body mode.
 - Frameset state still matters inside `FragmentContext("html")`: a leading
   frameset is allowed even though normal fragments reject document-shell
-  behavior, whitespace after it is preserved, and non-whitespace tokens after
-  the closed frameset are ignored with `unexpected-token-after-frameset`.
+  behavior, whitespace after it is preserved, non-whitespace text after the
+  closed frameset is ignored with `unexpected-token-after-frameset`, and
+  post-frameset start tags follow the same after-frameset-to-in-frameset
+  reprocessing distinction as document parsing.
 - Template contents are not ordinary children in the Python reference: they live
   in `Template.template_content`. A direct-child representation can serialize
   the same for early parser slices, but tree-construction rules still need a
