@@ -602,8 +602,9 @@ JustHTML from Python to MoonBit.
   `/*` comment in the value, even a closed trailing comment, because it only
   supports plain URL function tokens. Treat malformed URL-function syntax as
   unsafe too: backslashes, control or DEL characters, empty URLs, missing
-  delimiters, or unexpected non-separator text after `)` should drop that
-  declaration rather than trying to repair it. URL filter output is still
+  delimiters, missing closing quotes, a missing `)` after a quoted URL, or
+  unexpected non-separator text after `)` should drop that declaration rather
+  than trying to repair it. URL filter output is still
   untrusted: run the filtered value through the same URL validation and CSS
   quote-safety checks before serializing it back into `url('...')`.
 - Clone mutable node metadata explicitly. Attribute maps should be copied on
