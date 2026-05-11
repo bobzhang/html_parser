@@ -134,6 +134,30 @@ test "sanitize_dom clears mixed-case style rawtext resource loads" {
 }
 
 ///|
+test "math text integration child exceptions require math elements" {
+  assert_eq(is_math_text_integration_child_exception(text("x")), false)
+  assert_eq(is_math_text_integration_child_exception(comment("x")), false)
+  assert_true(
+    is_math_text_integration_child_exception(element("mglyph", ns="math")),
+  )
+  assert_true(
+    is_math_text_integration_child_exception(element("malignmark", ns="math")),
+  )
+  assert_eq(
+    is_math_text_integration_child_exception(element("mglyph", ns="html")),
+    false,
+  )
+  assert_eq(
+    is_math_text_integration_child_exception(element("malignmark", ns="html")),
+    false,
+  )
+  assert_eq(
+    is_math_text_integration_child_exception(element("mi", ns="math")),
+    false,
+  )
+}
+
+///|
 fn assert_script_scan(
   value : StringView,
   expected : String,

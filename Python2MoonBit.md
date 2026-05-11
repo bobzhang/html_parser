@@ -181,10 +181,10 @@ JustHTML from Python to MoonBit.
   `mi`/`mn`/`mo`/`ms`/`mtext` should keep text only, with MathML `mglyph` and
   `malignmark` as the exceptions. The exception is namespace-sensitive:
   programmatic HTML-namespace `mglyph`/`malignmark` children are still HTML
-  descendants, while other MathML children such as `mi` are not exceptions; both
-  should be dropped inside MathML text integration points. Do this before
-  unwrapping allowed or disallowed HTML descendants, or an active child can turn
-  into surviving text.
+  descendants, and non-elements can never be marker exceptions. Other MathML
+  children such as `mi` are not exceptions either; both should be dropped inside
+  MathML text integration points. Do this before unwrapping allowed or
+  disallowed HTML descendants, or an active child can turn into surviving text.
   Keep mXSS regression tests that reparse sanitized foreign-content output;
   the serialized form must remain inert after a second parse, not merely after
   the first sanitizer pass.
