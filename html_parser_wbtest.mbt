@@ -208,6 +208,59 @@ test "document and fragment helpers tolerate missing shells" {
     element("html", children=[element("body")]),
   ])
   assert_eq(html_fragment_child_is_before_body(nested_after_body), false)
+  let fragment_parser = Parser::new(
+    "",
+    fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  fragment_parser.insert_html_fragment_body_marker({}, None)
+  assert_eq(fragment_parser.root.children.length(), 0)
+  assert_eq(
+    fragment_parser.handle_html_fragment_shell_start_tag("p", {}, 0),
+    false,
+  )
+}
+
+///|
+test "document head helpers tolerate detached parser stacks" {
+  let document_parser = Parser::new(
+    "",
+    document(children=[element("html")]),
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  assert_true(document_parser.document_has_element_child())
+  let head = element("head")
+  let head_parser = Parser::new(
+    "",
+    head,
+    scripting_enabled=true,
+    xml_coercion=false,
+  )
+  assert_eq(head_parser.current_is_document_head(), false)
+  let shell = fragment()
+  shell.append_child(head)
+  head_parser.stack.clear()
+  assert_true(head_parser.current_is_document_head())
+  assert_eq(head_parser.close_current_document_head_for_start("p"[:], 0), false)
+  assert_eq(head_parser.stack.length(), 0)
+
+  let noscript_parser = Parser::new(
+    "",
+    fragment(),
+    scripting_enabled=false,
+    xml_coercion=false,
+  )
+  let body = element("body")
+  let noscript = element("noscript")
+  noscript_parser.stack.push(body)
+  noscript_parser.stack.push(noscript)
+  noscript_parser.pop_disabled_head_noscript_for_reprocess()
+  guard noscript_parser.stack.last() is Some(last) else {
+    fail("expected non-head parent to remain after noscript pop")
+  }
+  assert_true(physical_equal(last, body))
 }
 
 ///|

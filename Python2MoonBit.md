@@ -907,7 +907,10 @@ JustHTML from Python to MoonBit.
 - Finish-time helper passes should be total over intermediate document roots.
   Pending `<html>` attributes must not be dropped just because the shell is not
   present yet, and post-body children should fall back to the root when no
-  document `<html>` element exists.
+  document `<html>` element exists. The same rule applies to detached head,
+  disabled-noscript, and html-fragment shell helpers: tolerate missing stack
+  parents and missing synthetic fragment roots as no-ops instead of assuming the
+  public parser can only call them in fully formed shell states.
 - Treat an explicit HTML namespace on `FragmentContext` the same as the default
   namespace. `FragmentContext("table", namespace="html")` still uses table
   fragment insertion mode; the namespace value should not make it fall back to
