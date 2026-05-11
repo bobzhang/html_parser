@@ -3799,6 +3799,14 @@ test "document parser preserves head-side whitespace like reference" {
     open_head.to_html(pretty=false),
     "<!DOCTYPE html><html><head><title>T</title>  </head><body>text</body></html>",
   )
+  let coerced_head_space = @html_parser.parse(
+    "<!doctype html><head><title>T</title>\u{000C} x",
+    xml_coercion=true,
+  )
+  assert_eq(
+    coerced_head_space.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><title>T</title>  </head><body>x</body></html>",
+  )
   let explicit = @html_parser.parse(
     "<!doctype html><head></head><!--c-->  <meta name=x><p>y",
   )
@@ -8703,6 +8711,14 @@ test "parser and tokenizer optionally coerce XML-invalid text" {
   assert_eq(
     parsed.to_html(pretty=false),
     "<div>a �</div><textarea> �</textarea>",
+  )
+  let raw_text = @html_parser.parse(
+    "<script>\u{000C}\u{FDD0}</script><style>\u{000C}\u{FDD0}</style>",
+    xml_coercion=true,
+  )
+  assert_eq(
+    raw_text.to_html(pretty=false),
+    "<html><head><script> �</script><style> �</style></head><body></body></html>",
   )
   let comments = @html_parser.parse_fragment(
     "<!--a--b--><?c--d>",

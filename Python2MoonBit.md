@@ -1217,7 +1217,9 @@ JustHTML from Python to MoonBit.
 - XML coercion is an opt-in tokenizer option in the Python reference. Keep it
   out of default parsing, and when enabled apply it after entity decoding for
   text-like tokens: form feed becomes a space, XML noncharacters become U+FFFD,
-  and comment data rewrites `--` to `- -`.
+  and comment data rewrites `--` to `- -`. Parser DOM paths that bypass ordinary
+  character tokens, such as script raw text and head-mode preserved whitespace,
+  still need to apply the same coercion before appending text nodes.
 - Tree building has a separate text normalization step: appended DOM text maps
   form feed to a normal space even when XML coercion is off. Keep tokenizer
   tests separate from parser/tree-builder tests so the opt-in tokenizer behavior
