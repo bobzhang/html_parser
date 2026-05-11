@@ -237,6 +237,8 @@ JustHTML from Python to MoonBit.
 - `ping` and `attributionsrc` are whitespace-separated URL lists. Reuse the
   exact tag/attribute rule for each token, normalize surviving tokens with a
   single space separator, and drop the whole attribute if any token is unsafe.
+  Empty whitespace-separated tokens are ignored, but a list with no surviving
+  token still drops the whole attribute.
 - URL proxying is a post-validation handling mode, not a way to bypass URL
   checks. First validate fragments, protocol-relative rewrites, schemes,
   hosts, and relative URL permission; only then rewrite the resulting URL

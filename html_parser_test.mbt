@@ -1942,6 +1942,32 @@ test "sanitize_dom normalizes srcset candidates atomically" {
 }
 
 ///|
+test "sanitize_dom normalizes whitespace URL lists atomically" {
+  let trusted_rule = @html_parser.UrlRule::new(
+    allowed_schemes=["https"],
+    allowed_hosts=["trusted.example"],
+    allow_relative=false,
+  )
+  let url_policy = @html_parser.UrlPolicy::new(default_allow_relative=false, allow_rules=[
+    @html_parser.UrlPolicyRule::new("a", "ping", trusted_rule),
+    @html_parser.UrlPolicyRule::new("img", "attributionsrc", trusted_rule),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a", "img"],
+    allowed_attributes={ "*": [], "a": ["ping"], "img": ["attributionsrc"] },
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a ping=' https://trusted.example/a  https://trusted.example/b '>ok</a><a ping='   '>empty</a><a ping='https://trusted.example/a https://evil.example/b'>bad-final</a><a ping='https://evil.example/b https://trusted.example/a'>bad-first</a><img attributionsrc=' https://trusted.example/i  https://trusted.example/j '>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a ping=\"https://trusted.example/a https://trusted.example/b\">ok</a><a>empty</a><a>bad-final</a><a>bad-first</a><img attributionsrc=\"https://trusted.example/i https://trusted.example/j\">",
+  )
+}
+
+///|
 test "sanitize_dom enforces URL host allowlists on parsed authorities" {
   let host_rule = @html_parser.UrlRule::new(
     allowed_schemes=["https", "mailto"],
