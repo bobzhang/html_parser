@@ -260,6 +260,8 @@ reference implementation in `.repos/justhtml`.
       non-empty loop guard.
 - [x] Refactored foreign-content text cleanup to iterate by `Char` with UTF-16
       offsets and unwrap namespace after the foreign-start guard.
+- [x] Refactored covered script-text scanner states to unwrap characters after
+      the loop/boundary invariant instead of carrying repeated `None` arms.
 
 ## Working Rule
 

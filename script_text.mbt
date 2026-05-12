@@ -46,57 +46,54 @@ fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
           pos = write_script_text_char(input, pos, out, errors)
         }
       ScriptEscaped =>
-        match input.get_char(pos) {
-          Some('-') => {
+        match input.get_char(pos).unwrap() {
+          '-' => {
             out.write_char('-')
             pos += 1
             state = ScriptEscapedDash
           }
-          Some('<') => {
+          '<' => {
             pos += 1
             state = ScriptEscapedLessThan
           }
-          Some(_) => pos = write_script_text_char(input, pos, out, errors)
-          None => break
+          _ => pos = write_script_text_char(input, pos, out, errors)
         }
       ScriptEscapedDash =>
-        match input.get_char(pos) {
-          Some('-') => {
+        match input.get_char(pos).unwrap() {
+          '-' => {
             out.write_char('-')
             pos += 1
             state = ScriptEscapedDashDash
           }
-          Some('<') => {
+          '<' => {
             pos += 1
             state = ScriptEscapedLessThan
           }
-          Some(_) => {
+          _ => {
             pos = write_script_text_char(input, pos, out, errors)
             state = ScriptEscaped
           }
-          None => break
         }
       ScriptEscapedDashDash =>
-        match input.get_char(pos) {
-          Some('-') => {
+        match input.get_char(pos).unwrap() {
+          '-' => {
             out.write_char('-')
             pos += 1
           }
-          Some('<') => {
+          '<' => {
             out.write_char('<')
             pos += 1
             state = ScriptEscapedLessThan
           }
-          Some('>') => {
+          '>' => {
             out.write_char('>')
             pos += 1
             state = ScriptRawText
           }
-          Some(_) => {
+          _ => {
             pos = write_script_text_char(input, pos, out, errors)
             state = ScriptEscaped
           }
-          None => break
         }
       ScriptEscapedLessThan =>
         match input.get_char(pos) {
@@ -136,59 +133,56 @@ fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
           _ => state = ScriptEscaped
         }
       ScriptDoubleEscaped =>
-        match input.get_char(pos) {
-          Some('-') => {
+        match input.get_char(pos).unwrap() {
+          '-' => {
             out.write_char('-')
             pos += 1
             state = ScriptDoubleEscapedDash
           }
-          Some('<') => {
+          '<' => {
             out.write_char('<')
             pos += 1
             state = ScriptDoubleEscapedLessThan
           }
-          Some(_) => pos = write_script_text_char(input, pos, out, errors)
-          None => break
+          _ => pos = write_script_text_char(input, pos, out, errors)
         }
       ScriptDoubleEscapedDash =>
-        match input.get_char(pos) {
-          Some('-') => {
+        match input.get_char(pos).unwrap() {
+          '-' => {
             out.write_char('-')
             pos += 1
             state = ScriptDoubleEscapedDashDash
           }
-          Some('<') => {
+          '<' => {
             out.write_char('<')
             pos += 1
             state = ScriptDoubleEscapedLessThan
           }
-          Some(_) => {
+          _ => {
             pos = write_script_text_char(input, pos, out, errors)
             state = ScriptDoubleEscaped
           }
-          None => break
         }
       ScriptDoubleEscapedDashDash =>
-        match input.get_char(pos) {
-          Some('-') => {
+        match input.get_char(pos).unwrap() {
+          '-' => {
             out.write_char('-')
             pos += 1
           }
-          Some('<') => {
+          '<' => {
             out.write_char('<')
             pos += 1
             state = ScriptDoubleEscapedLessThan
           }
-          Some('>') => {
+          '>' => {
             out.write_char('>')
             pos += 1
             state = ScriptRawText
           }
-          Some(_) => {
+          _ => {
             pos = write_script_text_char(input, pos, out, errors)
             state = ScriptDoubleEscaped
           }
-          None => break
         }
       ScriptDoubleEscapedLessThan =>
         match input.get_char(pos) {
