@@ -3623,6 +3623,17 @@ test "to_markdown escapes text and line starting markdown markers" {
     digit_prefixes.to_markdown(),
     "a\n3x plain\n4.no space\n5)no space\n6\\. ordered\n7\\) ordered",
   )
+  let non_markers = @html_parser.parse_fragment(
+    "<p>a<br>#heading<br>-x<br>+item<br>~~<br>=x<br>plain text</p>",
+  )
+  assert_eq(
+    non_markers.to_markdown(),
+    "a\n#heading\n-x\n+item\n~~\n=x\nplain text",
+  )
+  let thematic_spacing = @html_parser.parse_fragment(
+    "<p>a<br>- - -<br>=<br>= =<br>=x</p>",
+  )
+  assert_eq(thematic_spacing.to_markdown(), "a\n\\- - -\n\\=\n\\= =\n=x")
 }
 
 ///|

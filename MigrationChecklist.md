@@ -90,6 +90,7 @@ reference implementation in `.repos/justhtml`.
     - [x] Whitespace-only `<pre>` code block parity
     - [x] Whitespace-only `href` Markdown destination parity
     - [x] Newline-only `<pre>` code block parity
+    - [x] Line-start non-trigger and spaced thematic marker coverage
   - [ ] Tests ported from Python Markdown coverage
     - [x] Deep programmatic tree, document-container, and builder edge tests
     - [x] Raw-text passthrough, empty `<br>`, and unknown-container tests
