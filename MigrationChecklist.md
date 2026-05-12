@@ -278,6 +278,8 @@ reference implementation in `.repos/justhtml`.
       direct `StringView` slices and guarded UTF-16 cursor unwraps.
 - [x] Refactored serializer simple-selector match/validation paths to reuse
       prior selector validity and scanner-boundary invariants.
+- [x] Added limited-selector whitebox regressions for malformed attribute
+      selectors, parentless child combinators, and cyclic ancestor walks.
 
 ## Working Rule
 

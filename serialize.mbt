@@ -2553,14 +2553,13 @@ fn selector_validate_simple_parse_depth(
     return
   }
   let mut pos = 0
-  match selector.get_char(pos) {
-    Some('*') => pos += 1
-    Some('.') | Some('#') | Some('[') | Some(':') => ()
-    Some(_) => pos = next_simple_selector_marker(selector, pos)
-    None => return
+  match selector.get_char(pos).unwrap() {
+    '*' => pos += 1
+    '.' | '#' | '[' | ':' => ()
+    _ => pos = next_simple_selector_marker(selector, pos)
   }
   while pos < selector.length() {
-    guard selector.get_char(pos) is Some(marker) else { return }
+    let marker = selector.get_char(pos).unwrap()
     if marker == '[' {
       match find_attribute_selector_end(selector, pos) {
         Some(end) => pos = end + 1
@@ -2571,7 +2570,7 @@ fn selector_validate_simple_parse_depth(
     if marker == ':' {
       let start = pos + marker.utf16_len()
       let end = next_simple_selector_marker(selector, start)
-      guard selector.get_view(start~, end~) is Some(name) else { return }
+      let name = selector[start:end]
       match functional_pseudo_parts(name) {
         Some((pseudo_name, arg)) =>
           if lower_ascii(pseudo_name) == "not" {

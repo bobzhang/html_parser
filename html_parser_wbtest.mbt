@@ -967,6 +967,14 @@ test "limited selector context fails closed on malformed branches" {
     false,
   )
   assert_eq(
+    matches_simple_selector_with_context(second, "p[", context, 0),
+    false,
+  )
+  assert_eq(
+    matches_simple_selector_with_context(second, "p[id]*", context, 0),
+    false,
+  )
+  assert_eq(
     matches_simple_selector_with_context(second, "p.", context, 0),
     false,
   )
@@ -979,9 +987,28 @@ test "limited selector context fails closed on malformed branches" {
     false,
   )
   assert_eq(
+    matches_complex_selector_with_context(
+      element("section"),
+      "main > section",
+      context,
+      0,
+    ),
+    false,
+  )
+  assert_eq(
     matches_complex_selector_with_context(first, "h1 + p", context, 0),
     false,
   )
+  let cyclic_root = element("div")
+  let cyclic_child = element("span")
+  cyclic_root.append_child(cyclic_child)
+  cyclic_child.children.push(cyclic_root)
+  cyclic_root.parent = Some(cyclic_child)
+  assert_eq(
+    matches_complex_selector_with_context(cyclic_child, "em span", context, 0),
+    false,
+  )
+  selector_validate_simple_parse_depth("", default_selector_limits(), 0)
   assert_eq(
     previous_element_sibling_with_context(element("p"), context) is None,
     true,
