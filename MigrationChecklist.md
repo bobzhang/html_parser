@@ -369,6 +369,8 @@ reference implementation in `.repos/justhtml`.
       extended script smoke coverage for their bad-option paths.
 - [x] Added a validation inventory guard so local CI, script smoke checks, and
       Mooncakes archive checks stay wired into the shared validation graph.
+- [x] Added a vendored fixture manifest with size and SHA-256 checks so CI can
+      catch fixture truncation or accidental edits without `.repos/justhtml`.
 
 ## Working Rule
 

@@ -74,6 +74,9 @@ python3 scripts/check_migration_docs.py
 step "Check vendored fixture sync"
 python3 scripts/check_fixture_sync.py
 
+step "Check vendored fixture manifest"
+python3 scripts/check_fixture_manifest.py
+
 step "Check package metadata"
 python3 scripts/check_package_metadata.py
 
