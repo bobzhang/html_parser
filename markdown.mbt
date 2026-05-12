@@ -477,7 +477,7 @@ fn markdown_walk_link(
   match attribute_value_by_name(node, "href") {
     Some(href) => {
       let destination = markdown_link_destination(href)
-      if destination != "" {
+      if href != "" {
         builder.raw("(")
         builder.raw(destination)
         builder.raw(")")

@@ -696,6 +696,9 @@ JustHTML from Python to MoonBit.
   The wrapping trigger set is also narrower than generic Markdown whitespace:
   Python checks only space, tab, LF, CR, parentheses, and angle brackets, so
   form feed and vertical tab inside a programmatic `href` remain unwrapped.
+- Link rendering distinguishes the original `href` presence from the normalized
+  destination. Python skips parens for missing, valueless, or empty-string
+  `href`, but a whitespace-only `href` is truthy and renders as `()`.
 - Attribute serialization has policy baked into the Python helper: `None`,
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids

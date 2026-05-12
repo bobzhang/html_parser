@@ -3684,6 +3684,12 @@ test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
   )
   let no_href = @html_parser.parse_fragment("<p><a>text</a></p>")
   assert_eq(no_href.to_markdown(), "[text]")
+  let empty_href = @html_parser.parse_fragment("<p><a href=''>text</a></p>")
+  assert_eq(empty_href.to_markdown(), "[text]")
+  let whitespace_href = @html_parser.parse_fragment(
+    "<p><a href='   '>text</a></p>",
+  )
+  assert_eq(whitespace_href.to_markdown(), "[text]()")
   let encoded = @html_parser.element(
     "a",
     attrs={ "href": Some("https://e.com/a <b>\"q\"\\x") },
