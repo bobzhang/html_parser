@@ -246,6 +246,8 @@ reference implementation in `.repos/justhtml`.
       `StringView` iteration while preserving final/trailing labels.
 - [x] Refactored linkify validation prefix and TLD split helpers to use direct
       boundary-safe `StringView` slices from known scanner offsets.
+- [x] Refactored linkify IPv4 validation to split with Unicode-safe
+      `StringView` iteration and direct part slices.
 
 ## Working Rule
 

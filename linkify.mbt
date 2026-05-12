@@ -845,27 +845,27 @@ fn linkify_valid_ipv4(host : StringView) -> Bool {
   let mut parts = 0
   let mut pos = 0
   let mut part_start = 0
-  while pos <= host.length() {
-    if pos == host.length() || host.get_char(pos) is Some('.') {
-      guard host.get_view(start=part_start, end=pos) is Some(part) else {
-        return false
-      }
-      guard linkify_parse_uint(part) is Some(value) else { return false }
-      if part.is_empty() || part.length() > 3 || value > 255 {
+  for ch in host {
+    if ch == '.' {
+      if !linkify_valid_ipv4_part(host[part_start:pos]) {
         return false
       }
       parts += 1
       part_start = pos + 1
     }
-    if pos == host.length() {
-      break
-    }
-    match host.get_char(pos) {
-      Some(ch) => pos += ch.utf16_len()
-      None => return false
-    }
+    pos += ch.utf16_len()
   }
+  if !linkify_valid_ipv4_part(host[part_start:host.length()]) {
+    return false
+  }
+  parts += 1
   parts == 4
+}
+
+///|
+fn linkify_valid_ipv4_part(part : StringView) -> Bool {
+  guard linkify_parse_uint(part) is Some(value) else { return false }
+  !part.is_empty() && part.length() <= 3 && value <= 255
 }
 
 ///|
