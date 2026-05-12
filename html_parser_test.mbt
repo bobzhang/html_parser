@@ -2594,6 +2594,7 @@ test "sanitize_dom stabilizes foreign namespace mXSS after reparse" {
     reparsed.to_html(pretty=false),
     "<form><math><mtext></mtext></math></form>",
   )
+  assert_true(!sanitized.to_markdown(html_passthrough=true).contains("onerror"))
 }
 
 ///|
