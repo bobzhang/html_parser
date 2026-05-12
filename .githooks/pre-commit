@@ -1,3 +1,7 @@
-#!/bin/sh
+#!/usr/bin/env bash
+set -euo pipefail
 
-moon check
+repo_root="$(git rev-parse --show-toplevel)"
+cd "$repo_root"
+
+bash scripts/check_ci.sh --skip-without-credentials

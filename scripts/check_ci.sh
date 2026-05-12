@@ -59,6 +59,9 @@ python3 scripts/check_source_layout.py
 step "Check gitignore"
 python3 scripts/check_gitignore.py
 
+step "Check git hooks"
+python3 scripts/check_githooks.py
+
 step "Check migration docs"
 python3 scripts/check_migration_docs.py
 

@@ -361,6 +361,8 @@ reference implementation in `.repos/justhtml`.
       MoonBit test-count floor so fixture coverage cannot silently shrink.
 - [x] Added a `.gitignore` guard for local generated output, Mooncakes state,
       the optional reference checkout, Python bytecode, and macOS metadata.
+- [x] Updated the optional pre-commit hook to call the shared local CI entrypoint
+      and added a guard to keep hook documentation and behavior aligned.
 
 ## Working Rule
 

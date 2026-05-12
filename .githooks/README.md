@@ -2,7 +2,8 @@
 
 ## Pre-commit Hook
 
-This pre-commit hook performs automatic checks before finalizing your commit.
+This pre-commit hook runs the same local validation entrypoint used by CI before
+finalizing your commit.
 
 ### Usage Instructions
 
@@ -18,4 +19,10 @@ To use this pre-commit hook:
    git config core.hooksPath .githooks
    ```
 
-3. The hook will automatically run when you execute `git commit`
+3. The hook will automatically run when you execute `git commit`.
+
+The hook calls:
+
+```bash
+bash scripts/check_ci.sh --skip-without-credentials
+```

@@ -22,6 +22,7 @@ fixture_arg_err="$(mktemp)"
 workflow_arg_err="$(mktemp)"
 source_layout_arg_err="$(mktemp)"
 gitignore_arg_err="$(mktemp)"
+githooks_arg_err="$(mktemp)"
 migration_docs_arg_err="$(mktemp)"
 publish_archive_arg_err="$(mktemp)"
 check_tests_arg_err="$(mktemp)"
@@ -32,6 +33,7 @@ trap '
   rm -f "$workflow_arg_err"
   rm -f "$source_layout_arg_err"
   rm -f "$gitignore_arg_err"
+  rm -f "$githooks_arg_err"
   rm -f "$migration_docs_arg_err"
   rm -f "$publish_archive_arg_err"
   rm -f "$check_tests_arg_err"
@@ -79,6 +81,9 @@ source_layout_arg_code=$?
 python3 scripts/check_gitignore.py \
   --bad-option > "$tmp_out" 2> "$gitignore_arg_err"
 gitignore_arg_code=$?
+python3 scripts/check_githooks.py \
+  --bad-option > "$tmp_out" 2> "$githooks_arg_err"
+githooks_arg_code=$?
 python3 scripts/check_migration_docs.py \
   --bad-option > "$tmp_out" 2> "$migration_docs_arg_err"
 migration_docs_arg_code=$?
@@ -103,6 +108,9 @@ grep -F "usage: python3 scripts/check_source_layout.py" \
 test "$gitignore_arg_code" -eq 2
 grep -F "usage: python3 scripts/check_gitignore.py" \
   "$gitignore_arg_err" > /dev/null
+test "$githooks_arg_code" -eq 2
+grep -F "usage: python3 scripts/check_githooks.py" \
+  "$githooks_arg_err" > /dev/null
 test "$migration_docs_arg_code" -eq 2
 grep -F "usage: python3 scripts/check_migration_docs.py" \
   "$migration_docs_arg_err" > /dev/null
