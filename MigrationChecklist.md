@@ -109,6 +109,7 @@ reference implementation in `.repos/justhtml`.
     - [x] `serialize.mbt` serialization and selector docs
     - [x] `types.mbt` core model docs
     - [x] `stream.mbt` streaming API docs
+    - [x] `sanitize.mbt` sanitizer policy docs
   - [x] Remove unnecessary annotations for warning 73
     - [x] `comment_scan.mbt` constructor annotations
     - [x] `script_text.mbt` constructor annotations

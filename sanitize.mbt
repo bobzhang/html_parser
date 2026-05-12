@@ -1,4 +1,5 @@
 ///|
+/// How sanitizer handles elements whose tag names are not allowlisted.
 pub(all) enum DisallowedTagHandling {
   Unwrap
   Escape
@@ -6,6 +7,7 @@ pub(all) enum DisallowedTagHandling {
 } derive(Debug, Eq)
 
 ///|
+/// How sanitizer reports unsafe input that it strips or rewrites.
 pub(all) enum UnsafeHandling {
   Strip
   Raise
@@ -13,6 +15,7 @@ pub(all) enum UnsafeHandling {
 } derive(Debug, Eq)
 
 ///|
+/// Action used after a URL value passes the configured URL checks.
 pub(all) enum UrlHandling {
   UrlAllow
   UrlStrip
@@ -20,6 +23,10 @@ pub(all) enum UrlHandling {
 } derive(Debug, Eq)
 
 ///|
+/// Callback wrapper used to rewrite or reject URL values before validation.
+///
+/// The callback receives normalized tag name, normalized attribute name, and the
+/// raw attribute value. Returning `None` drops the URL.
 pub struct UrlFilter {
   priv callback : (String, String, String) -> String?
 }
@@ -30,12 +37,22 @@ pub impl Debug for UrlFilter with to_repr(_) {
 }
 
 ///|
+/// Proxy endpoint used when a URL rule selects `UrlProxy`.
+///
+/// Sanitized URLs are emitted as `url?param=<encoded-url>` or
+/// `url&param=<encoded-url>` depending on whether the proxy URL already has a
+/// query string.
 pub struct UrlProxy {
   priv url : String
   priv param : String
 } derive(Debug)
 
 ///|
+/// Per-attribute URL validation rule.
+///
+/// Rules can restrict schemes and hosts, disallow fragments, normalize
+/// protocol-relative URLs, override relative-URL handling, or route accepted
+/// URLs through a proxy.
 pub struct UrlRule {
   priv allow_fragment : Bool
   priv resolve_protocol_relative : String?
@@ -47,6 +64,7 @@ pub struct UrlRule {
 } derive(Debug)
 
 ///|
+/// URL rule bound to a tag and attribute name.
 pub struct UrlPolicyRule {
   priv tag : String
   priv attr : String
@@ -54,6 +72,10 @@ pub struct UrlPolicyRule {
 } derive(Debug)
 
 ///|
+/// URL sanitization policy shared by URL-bearing attributes.
+///
+/// Exact `(tag, attr)` rules take precedence. Unmatched URL-like attributes use
+/// the default handling and relative-URL behavior.
 pub struct UrlPolicy {
   priv default_handling : UrlHandling
   priv default_allow_relative : Bool
@@ -63,6 +85,11 @@ pub struct UrlPolicy {
 } derive(Debug)
 
 ///|
+/// DOM sanitization policy.
+///
+/// A policy controls allowed tags and attributes, URL filtering, comment and
+/// doctype handling, foreign-content hardening, CSS style allowlists, selector
+/// limits used by transform hooks, and unsafe-input reporting.
 pub struct SanitizationPolicy {
   priv allowed_tags : Set[String]
   priv allowed_attributes : Map[String, Set[String]]
@@ -133,6 +160,7 @@ fn sanitize_allowed_attributes(
 }
 
 ///|
+/// Construct a URL filter from a callback.
 pub fn UrlFilter::new(
   callback : (String, String, String) -> String?,
 ) -> UrlFilter {
@@ -140,11 +168,16 @@ pub fn UrlFilter::new(
 }
 
 ///|
+/// Construct a URL proxy descriptor.
 pub fn UrlProxy::new(url : StringView, param? : String = "url") -> UrlProxy {
   { url: url.to_owned(), param }
 }
 
 ///|
+/// Construct a per-attribute URL validation rule.
+///
+/// Schemes and hosts are normalized to lowercase. `resolve_protocol_relative`
+/// rewrites protocol-relative URLs such as `//example.com` before validation.
 pub fn UrlRule::new(
   allowed_schemes? : Array[String] = [],
   allowed_hosts? : Array[String] = [],
@@ -168,6 +201,7 @@ pub fn UrlRule::new(
 }
 
 ///|
+/// Construct a URL policy rule for one tag and attribute.
 pub fn UrlPolicyRule::new(
   tag : StringView,
   attr : StringView,
@@ -195,6 +229,10 @@ fn sanitize_url_policy_rules(
 }
 
 ///|
+/// Construct a URL policy.
+///
+/// `allow_rules` are exact tag/attribute bindings. `url_filter` runs before
+/// rule validation and can rewrite or drop the URL value.
 pub fn UrlPolicy::new(
   default_handling? : UrlHandling = UrlAllow,
   default_allow_relative? : Bool = true,
@@ -235,6 +273,12 @@ fn default_url_policy() -> UrlPolicy {
 }
 
 ///|
+/// Construct a DOM sanitization policy.
+///
+/// Tag and attribute names are normalized to lowercase. By default comments,
+/// doctypes, foreign namespaces, script/style content, and invisible Unicode
+/// controls are removed. Unsafe findings are stripped unless `unsafe_handling`
+/// is set to `Raise` or `Collect`.
 pub fn SanitizationPolicy::new(
   allowed_tags : Array[String],
   allowed_attributes? : Map[String, Array[String]] = {},
@@ -269,6 +313,7 @@ pub fn SanitizationPolicy::new(
 }
 
 ///|
+/// Clear unsafe findings accumulated in `Collect` mode.
 pub fn SanitizationPolicy::reset_collected_security_errors(
   self : SanitizationPolicy,
 ) -> Unit {
@@ -276,6 +321,7 @@ pub fn SanitizationPolicy::reset_collected_security_errors(
 }
 
 ///|
+/// Return a copy of unsafe findings accumulated in `Collect` mode.
 pub fn SanitizationPolicy::collected_security_errors(
   self : SanitizationPolicy,
 ) -> Array[ParseError] {
@@ -357,6 +403,7 @@ fn default_allowed_attributes() -> Map[String, Array[String]] {
 }
 
 ///|
+/// Return the default fragment sanitizer policy.
 pub fn default_sanitization_policy() -> SanitizationPolicy {
   SanitizationPolicy::new(
     default_allowed_tags(),
@@ -365,6 +412,10 @@ pub fn default_sanitization_policy() -> SanitizationPolicy {
 }
 
 ///|
+/// Return the default document sanitizer policy.
+///
+/// This extends the fragment policy with document shell tags and preserves the
+/// doctype.
 pub fn default_document_sanitization_policy() -> SanitizationPolicy {
   let tags = default_allowed_tags()
   tags.push("html")
@@ -379,6 +430,7 @@ pub fn default_document_sanitization_policy() -> SanitizationPolicy {
 }
 
 ///|
+/// Return the conservative text-style CSS property allowlist.
 pub fn css_preset_text() -> Array[String] {
   [
     "background-color", "color", "font-size", "font-style", "font-weight", "letter-spacing",
@@ -2300,6 +2352,10 @@ fn sanitize_container_children(
 }
 
 ///|
+/// Sanitize a DOM node in place and return the sanitized root.
+///
+/// When no policy is supplied, document roots use the document policy and other
+/// roots use the fragment policy.
 pub fn sanitize_dom(
   node : Node,
   policy? : SanitizationPolicy,
