@@ -50,6 +50,9 @@ python3 scripts/check_release_version.py
 step "Check validation scripts"
 bash scripts/check_scripts.sh
 
+step "Check vendored fixture sync"
+python3 scripts/check_fixture_sync.py
+
 step "Check package metadata"
 python3 scripts/check_package_metadata.py
 

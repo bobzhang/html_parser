@@ -341,6 +341,8 @@ reference implementation in `.repos/justhtml`.
       accepted already-published versions explicit in the logs.
 - [x] Added a validation-script self-check for Bash syntax, Python helper
       syntax, and fast argument smoke paths.
+- [x] Added a vendored fixture sync check against `.repos/justhtml` for the
+      copied JustHTML and linkify fixture files.
 
 ## Working Rule
 
