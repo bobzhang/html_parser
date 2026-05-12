@@ -367,6 +367,8 @@ reference implementation in `.repos/justhtml`.
       file under the project-wide `///|` separator convention.
 - [x] Standardized argument validation across local validation helpers and
       extended script smoke coverage for their bad-option paths.
+- [x] Added a validation inventory guard so local CI, script smoke checks, and
+      Mooncakes archive checks stay wired into the shared validation graph.
 
 ## Working Rule
 

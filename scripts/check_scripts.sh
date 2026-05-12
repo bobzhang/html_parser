@@ -34,6 +34,7 @@ release_version_err="$(mktemp)"
 fixture_require_err="$(mktemp)"
 fixture_arg_err="$(mktemp)"
 workflow_arg_err="$(mktemp)"
+validation_inventory_arg_err="$(mktemp)"
 source_layout_arg_err="$(mktemp)"
 moonbit_style_arg_err="$(mktemp)"
 gitignore_arg_err="$(mktemp)"
@@ -49,6 +50,7 @@ trap '
   rm -f "$smoke_native_cli_err" "$release_version_err"
   rm -f "$fixture_require_err" "$fixture_arg_err"
   rm -f "$workflow_arg_err"
+  rm -f "$validation_inventory_arg_err"
   rm -f "$source_layout_arg_err"
   rm -f "$moonbit_style_arg_err"
   rm -f "$gitignore_arg_err"
@@ -125,6 +127,9 @@ fixture_arg_code=$?
 python3 scripts/check_github_workflows.py \
   --bad-option > "$tmp_out" 2> "$workflow_arg_err"
 workflow_arg_code=$?
+python3 scripts/check_validation_inventory.py \
+  --bad-option > "$tmp_out" 2> "$validation_inventory_arg_err"
+validation_inventory_arg_code=$?
 python3 scripts/check_source_layout.py \
   --bad-option > "$tmp_out" 2> "$source_layout_arg_err"
 source_layout_arg_code=$?
@@ -158,6 +163,9 @@ grep -F "usage: python3 scripts/check_fixture_sync.py" "$fixture_arg_err" > /dev
 test "$workflow_arg_code" -eq 2
 grep -F "usage: python3 scripts/check_github_workflows.py" \
   "$workflow_arg_err" > /dev/null
+test "$validation_inventory_arg_code" -eq 2
+grep -F "usage: python3 scripts/check_validation_inventory.py" \
+  "$validation_inventory_arg_err" > /dev/null
 test "$source_layout_arg_code" -eq 2
 grep -F "usage: python3 scripts/check_source_layout.py" \
   "$source_layout_arg_err" > /dev/null

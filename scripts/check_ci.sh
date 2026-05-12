@@ -50,6 +50,9 @@ python3 scripts/check_release_version.py
 step "Check validation scripts"
 bash scripts/check_scripts.sh
 
+step "Check validation inventory"
+python3 scripts/check_validation_inventory.py
+
 step "Check GitHub workflows"
 python3 scripts/check_github_workflows.py
 
