@@ -64,7 +64,9 @@ reference implementation in `.repos/justhtml`.
     - [x] Tag, attribute, URL, style, and meta-refresh sanitizer reports
     - [x] Comment and doctype drops as structural reports, not unsafe findings
     - [x] Invisible-Unicode attribute reports and unsafe-handling behavior
-  - [ ] Compiled stages, selector limits, and deterministic application order
+  - [x] Deterministic stage ordering, nested stage flattening, and implicit
+        leading/trailing stage coverage
+  - [ ] Selector limits and compiled-walk marker parity for inserted or moved nodes
 - [ ] Streaming API
   - [ ] `StreamSink` equivalent
   - [ ] Incremental token/tree event delivery

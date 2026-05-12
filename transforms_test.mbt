@@ -248,6 +248,35 @@ test "apply_transforms runs linkify and selector transforms in order" {
 }
 
 ///|
+test "stage auto grouping preserves ordering and trailing transforms" {
+  let stage_first = @html_parser.parse_fragment("<p>example.com</p>")
+  ignore(
+    @html_parser.apply_transforms(stage_first.root, [
+      @html_parser.TransformSpec::drop("a"),
+      @html_parser.TransformSpec::stage([@html_parser.TransformSpec::linkify()]),
+    ]),
+  )
+  assert_eq(
+    stage_first.root.to_html(pretty=false),
+    "<p><a href=\"http://example.com\">example.com</a></p>",
+  )
+
+  let trailing = @html_parser.parse_fragment("<p>Hello</p>")
+  ignore(
+    @html_parser.apply_transforms(trailing.root, [
+      @html_parser.TransformSpec::stage([
+        @html_parser.TransformSpec::set_attrs("p", { "id": Some("x") }),
+      ]),
+      @html_parser.TransformSpec::set_attrs("p", { "class": Some("y") }),
+    ]),
+  )
+  let paragraphs = trailing.root.query("p")
+  assert_eq(paragraphs.length(), 1)
+  assert_true(paragraphs[0].attrs().get("id") is Some(Some("x")))
+  assert_true(paragraphs[0].attrs().get("class") is Some(Some("y")))
+}
+
+///|
 test "prune_empty drops empty elements with post-order semantics" {
   let doc = @html_parser.parse_fragment(
     "<div><p></p></div><p><img></p><p><!--x--></p><p>   </p><span> </span>",

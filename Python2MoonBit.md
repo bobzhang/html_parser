@@ -405,7 +405,9 @@ JustHTML from Python to MoonBit.
   public pipeline homogeneous by making stages a recursive `TransformSpec`
   variant that stores `Array[TransformSpec]`. Top-level stage handling can
   still mirror Python's implicit leading/trailing stage numbering while nested
-  stages flatten into the surrounding stage.
+  stages flatten into the surrounding stage. Include tests for both an explicit
+  stage followed by ordinary transforms and ordinary transforms followed by a
+  stage, because Python turns both ordinary segments into implicit stages.
 - Some Python transforms are mostly in-place but can still replace the root
   object for standalone nodes. Keep a `current` root when applying a transform
   sequence and return the latest root; otherwise a sanitizer that drops a
