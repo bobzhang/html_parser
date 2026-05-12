@@ -369,8 +369,10 @@ JustHTML from Python to MoonBit.
   pseudos, and valueless attribute byte-cost behavior.
 - Port transform no-op tests explicitly. MoonBit callbacks are value wrappers,
   so unchanged operations such as empty `DropAttrs` patterns, already-normalized
-  `MergeAttrs`, missing `style`/URL attributes, and root leaf nodes should
-  assert both stable output and absent hooks.
+  `MergeAttrs`, empty merge attribute/token configs, missing `style`/URL
+  attributes, and root leaf nodes should assert both stable output and absent
+  hooks. Attribute-drop globs should collapse repeated `*` characters just like
+  Python's pattern matching.
 - Nested `Stage` transforms are flattened for execution, but sanitizer-carried
   selector limits still need to be discovered through nested stages before
   matching later top-level transforms. Test this with a trailing selector that
@@ -508,7 +510,9 @@ JustHTML from Python to MoonBit.
   the callback for every node type reached by the walker, including comments,
   text, doctypes, and nested document/fragment containers. Other selectors only
   invoke the callback for element nodes. Hook/report callbacks fire only for
-  non-`KEEP` decisions, before the structural action is applied.
+  non-`KEEP` decisions, before the structural action is applied. `Escape`
+  removes non-element child nodes, while a root text/comment/doctype node is not
+  traversed by the decision transform.
 - Python's standalone `DropForeignNamespaces` checks the node's direct
   namespace (`None` and `"html"` are kept) and skips comments/doctypes. Do not
   reuse the sanitizer's "effectively foreign" helper there; that helper also

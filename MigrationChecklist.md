@@ -187,12 +187,15 @@ reference implementation in `.repos/justhtml`.
       attributes in byte-budget accounting.
 - [x] Added transform no-op regressions for empty attribute patterns,
       empty-attribute nodes, blank attribute names, boolean merge attributes,
-      root text/comment leaves, and root preformatted text skips.
+      empty merge configs, root text/comment leaves, and root preformatted
+      text skips.
 - [x] Added transform debug regression to keep node, attrs, decide, and report
       callback wrappers opaque in derived `TransformSpec` output.
 - [x] Added transform traversal regressions for nested stage selector limits,
       nested document fragments, `Decide(Escape)` fragment unwrapping,
       text-collapse recursion, linkify recursion, and prune-empty recursion.
+- [x] Added transform edge regressions for repeated `DropAttrs` glob stars and
+      `Decide(Escape)` on non-element children.
 - [x] Added sanitizer/transform observer regressions for escape-only source
       text outside escape mode, hook-only/report-only callbacks, and void
       element escaping.

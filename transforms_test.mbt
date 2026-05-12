@@ -192,6 +192,28 @@ test "decide star can act on comments while selectors only visit elements" {
   )
   assert_eq(doc.root.to_html(pretty=false), "<p>y</p>")
 
+  let escape_misc = @html_parser.fragment(children=[
+    @html_parser.comment("x"),
+    @html_parser.element("p", children=[@html_parser.text("y")]),
+  ])
+  ignore(
+    @html_parser.apply_transforms(escape_misc, [
+      @html_parser.TransformSpec::decide("*", fn(node) {
+        match node.name() {
+          "#comment" => Escape
+          _ => Keep
+        }
+      }),
+    ]),
+  )
+  assert_eq(escape_misc.to_html(pretty=false), "<p>y</p>")
+
+  let root_text = @html_parser.text("root")
+  let root_result = @html_parser.apply_transforms(root_text, [
+    @html_parser.TransformSpec::decide("*", fn(_node) { Drop }),
+  ])
+  assert_eq(root_result.to_html(pretty=false), "root")
+
   let decide_fragment : (@html_parser.Node) -> @html_parser.DecideAction = fn(
     node,
   ) {
@@ -1006,6 +1028,19 @@ test "attribute transforms cover no-op and boolean attribute branches" {
   )
   assert_eq(drop_empty.to_html(pretty=false), "<div onclick=\"run()\"></div>")
 
+  let repeated_glob = @html_parser.fragment(children=[
+    @html_parser.element("div", attrs={
+      "data-long-id": Some("drop"),
+      "data-x": Some("keep"),
+    }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(repeated_glob, [
+      @html_parser.TransformSpec::drop_attrs("*", ["data-**-id"]),
+    ]),
+  )
+  assert_eq(repeated_glob.to_html(pretty=false), "<div data-x=\"keep\"></div>")
+
   let url_policy = @html_parser.UrlPolicy::new()
   let no_attrs = @html_parser.fragment(children=[@html_parser.element("div")])
   ignore(
@@ -1070,6 +1105,17 @@ test "attribute transforms cover no-op and boolean attribute branches" {
     "<a rel=\"noopener\"></a><a rel=\"noopener\"></a>",
   )
   assert_eq(events, ["a"])
+
+  let merge_noops = @html_parser.fragment(children=[
+    @html_parser.element("a", attrs={ "rel": Some("friend") }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(merge_noops, [
+      @html_parser.TransformSpec::merge_attrs("a", attr="", tokens=["noopener"]),
+      @html_parser.TransformSpec::merge_attrs("a", attr="rel", tokens=[]),
+    ]),
+  )
+  assert_eq(merge_noops.to_html(pretty=false), "<a rel=\"friend\"></a>")
 }
 
 ///|
