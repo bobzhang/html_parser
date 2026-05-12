@@ -187,6 +187,9 @@ reference implementation in `.repos/justhtml`.
 - [x] Added limited selector matcher regressions for transform `nth-of-type`
       parity, element/comment pseudos, `*.class`, unknown functional pseudos,
       and valueless attributes in byte-budget accounting.
+- [x] Added limited selector context regressions for `:empty`, `:root`,
+      malformed simple-selector fail-closed branches, detached siblings, and
+      direct match-depth budget errors.
 - [x] Added transform no-op regressions for empty attribute patterns,
       empty-attribute nodes, blank attribute names, boolean merge attributes,
       empty merge configs, root text/comment leaves, and root preformatted

@@ -859,6 +859,7 @@ test "limited selector matcher keeps pseudo parity" {
   let heading = section.children[0]
   let first = section.children[1]
   let second = section.children[2]
+  let empty = element("span", children=[text("  "), comment("blank")])
   let limits = default_selector_limits()
   assert_true(matches_selector_list_with_limits(note, ":comment", limits))
   assert_true(matches_selector_list_with_limits(note, ":comment(any)", limits))
@@ -881,6 +882,10 @@ test "limited selector matcher keeps pseudo parity" {
   assert_true(matches_selector_list_with_limits(second, "*.second", limits))
   assert_true(
     matches_selector_list_with_limits(second, "p.second[disabled]", limits),
+  )
+  assert_true(matches_selector_list_with_limits(empty, "span:empty", limits))
+  assert_true(
+    matches_selector_list_with_limits(section, "section:root", limits),
   )
   assert_eq(matches_selector_list_with_limits(second, "*foo", limits), false)
   assert_true(
@@ -905,6 +910,65 @@ test "limited selector matcher keeps pseudo parity" {
     pseudo_selector_matches_with_context(second, "hover", context, 0),
     false,
   )
+}
+
+///|
+test "limited selector context fails closed on malformed branches" {
+  let root = fragment(children=[
+    element("section", children=[
+      element("p", attrs={ "class": Some("first") }, children=[text("alpha")]),
+      element("p", attrs={ "id": Some("second") }, children=[text("beta")]),
+    ]),
+  ])
+  let section = root.children[0]
+  let first = section.children[0]
+  let second = section.children[1]
+  let context = SelectorMatchContext::new(default_selector_limits())
+  assert_eq(matches_simple_selector_with_context(second, "", context, 0), false)
+  assert_eq(
+    matches_simple_selector_with_context(second, "*foo", context, 0),
+    false,
+  )
+  assert_eq(
+    matches_simple_selector_with_context(second, "p[href]*", context, 0),
+    false,
+  )
+  assert_eq(
+    matches_simple_selector_with_context(second, "p.", context, 0),
+    false,
+  )
+  assert_eq(
+    matches_complex_selector_with_context(second, "", context, 0),
+    false,
+  )
+  assert_eq(
+    matches_complex_selector_with_context(section, "main > section", context, 0),
+    false,
+  )
+  assert_eq(
+    matches_complex_selector_with_context(first, "h1 + p", context, 0),
+    false,
+  )
+  assert_eq(
+    previous_element_sibling_with_context(element("p"), context) is None,
+    true,
+  )
+  assert_eq(
+    previous_matching_sibling_with_context(element("p"), "p", context, 0)
+    is None,
+    true,
+  )
+  let depth_result = try? matches_complex_selector_with_context(
+    second,
+    "p",
+    SelectorMatchContext::new(SelectorLimits::new(max_match_depth=0)),
+    1,
+  )
+  match depth_result {
+    Err(SelectorError(message)) =>
+      assert_eq(message, "Selector nesting is too deep")
+    _ => fail("expected selector match depth error")
+  }
 }
 
 ///|
