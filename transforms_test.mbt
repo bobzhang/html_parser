@@ -391,7 +391,7 @@ test "sanitize transform hooks and reports unsafe mutations" {
     "hook:p", "report:Unsafe attribute 'onclick' on <p> was dropped because it is not allowed",
     "node:p", "hook:#text", "report:Stripped invisible Unicode from text node", "node:#text",
     "hook:#comment", "report:Unsafe comment was dropped", "node:#comment", "hook:script",
-    "report:Unsafe tag 'script' was dropped with its content", "node:script",
+    "report:Unsafe tag 'script' (dropped content)", "node:script",
   ])
   assert_eq(doc.root.to_html(pretty=false), "<p>x</p>")
 }

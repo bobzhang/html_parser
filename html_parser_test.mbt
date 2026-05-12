@@ -1299,9 +1299,7 @@ test "sanitize_dom raises for disallowed standalone root" {
   )
   match result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(
-        message, "Unsafe tag 'x-foo' was dropped because it is not allowed",
-      )
+      assert_eq(message, "Unsafe tag 'x-foo' (not allowed)")
     _ => fail("expected sanitize_dom to raise UnsafeHtml")
   }
 }
@@ -1326,7 +1324,7 @@ test "sanitize_dom raise mode reports dropped content and child tags" {
   )
   match root_script_result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(message, "Unsafe tag 'script' was dropped with its content")
+      assert_eq(message, "Unsafe tag 'script' (dropped content)")
     _ => fail("expected dropped-content root to raise UnsafeHtml")
   }
 
@@ -1348,7 +1346,7 @@ test "sanitize_dom raise mode reports dropped content and child tags" {
   )
   match child_script_result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(message, "Unsafe tag 'script' was dropped with its content")
+      assert_eq(message, "Unsafe tag 'script' (dropped content)")
     _ => fail("expected dropped-content child to raise UnsafeHtml")
   }
 
@@ -1370,9 +1368,7 @@ test "sanitize_dom raise mode reports dropped content and child tags" {
   )
   match child_tag_result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(
-        message, "Unsafe tag 'foo' was dropped because it is not allowed",
-      )
+      assert_eq(message, "Unsafe tag 'foo' (not allowed)")
     _ => fail("expected disallowed child tag to raise UnsafeHtml")
   }
 }
@@ -1398,9 +1394,7 @@ test "sanitize_dom raise mode reports foreign namespace drops" {
   )
   match root_result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(
-        message, "Unsafe tag 'svg' was dropped because it is in a foreign namespace",
-      )
+      assert_eq(message, "Unsafe tag 'svg' (foreign namespace)")
     _ => fail("expected foreign namespace root to raise UnsafeHtml")
   }
 
@@ -1423,9 +1417,7 @@ test "sanitize_dom raise mode reports foreign namespace drops" {
   )
   match child_result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(
-        message, "Unsafe tag 'svg' was dropped because it is in a foreign namespace",
-      )
+      assert_eq(message, "Unsafe tag 'svg' (foreign namespace)")
     _ => fail("expected foreign namespace child to raise UnsafeHtml")
   }
 }
@@ -1451,9 +1443,7 @@ test "sanitize_dom raise mode reports html namespace foreign root drops" {
   )
   match result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(
-        message, "Unsafe tag 'svg' was dropped because it is in a foreign namespace",
-      )
+      assert_eq(message, "Unsafe tag 'svg' (foreign namespace)")
     _ => fail("expected html namespace svg root to raise UnsafeHtml")
   }
 }
@@ -2441,9 +2431,7 @@ test "sanitize_dom raise mode reports active foreign mutation tags" {
   )
   match result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(
-        message, "Unsafe tag 'set' was dropped because it can mutate foreign content",
-      )
+      assert_eq(message, "Unsafe tag 'set' (active foreign content)")
     _ => fail("expected active foreign content to raise UnsafeHtml")
   }
 }

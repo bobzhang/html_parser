@@ -386,6 +386,9 @@ JustHTML from Python to MoonBit.
 - Sanitizer-internal URL checks should share the same callback text as
   `DropUrlAttrs`; for example meta refresh content reports `Unsafe URL in
   attribute 'content' (meta refresh)`.
+- Sanitizer tag-decision messages are shorter than the standalone descriptive
+  wording we first used: `(not allowed)`, `(dropped content)`, `(foreign
+  namespace)`, and `(active foreign content)` are the Python-observable suffixes.
 - Python models `Stage` as a separate union member, but MoonBit can keep the
   public pipeline homogeneous by making stages a recursive `TransformSpec`
   variant that stores `Array[TransformSpec]`. Top-level stage handling can
