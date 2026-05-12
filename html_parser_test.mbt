@@ -3626,6 +3626,10 @@ test "to_markdown handles direct nodes comments doctypes and empty inline nodes"
   assert_eq(@html_parser.text("a*b").to_markdown(), "a\\*b")
   assert_eq(@html_parser.text("a < b & c").to_markdown(), "a &lt; b &amp; c")
   assert_eq(@html_parser.text("").to_markdown(), "")
+  let empty_breaks = @html_parser.parse_fragment("<br><br><br>")
+  assert_eq(empty_breaks.to_markdown(), "")
+  let unknown_inline = @html_parser.parse_fragment("<span>Hi</span>")
+  assert_eq(unknown_inline.to_markdown(), "Hi")
   let document_text = @html_parser.document(children=[@html_parser.text("Hi")])
   assert_eq(document_text.to_markdown(), "Hi")
   let document_empty = @html_parser.document(children=[
@@ -3721,6 +3725,16 @@ test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
   assert_eq(
     script.to_markdown(html_passthrough=true),
     "<script data-x=\"1&amp;2\"></script>",
+  )
+  let script_content = @html_parser.element("div", children=[
+    @html_parser.element("script", children=[
+      @html_parser.text("var x = 1;\nvar y = 2;\n"),
+    ]),
+  ])
+  assert_eq(script_content.to_markdown(), "")
+  assert_eq(
+    script_content.to_markdown(html_passthrough=true),
+    "<script>var x = 1;\nvar y = 2;\n</script>",
   )
   let inline_script = @html_parser.element("span", children=[
     @html_parser.text("A"),

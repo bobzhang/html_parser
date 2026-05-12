@@ -88,6 +88,7 @@ reference implementation in `.repos/justhtml`.
     - [x] Link destination wrap triggers and control-character coverage
   - [ ] Tests ported from Python Markdown coverage
     - [x] Deep programmatic tree, document-container, and builder edge tests
+    - [x] Raw-text passthrough, empty `<br>`, and unknown-container tests
 - [ ] Full conformance harness
   - [ ] Import or translate tokenizer fixtures
   - [ ] Import or translate tree-builder fixtures
