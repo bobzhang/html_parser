@@ -647,6 +647,48 @@ test "drop_attrs reports exact forbidden patterns before hook" {
 }
 
 ///|
+test "allowlist_attrs reports exact unsafe attributes before hook" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let root = @html_parser.fragment(children=[
+    @html_parser.element("a", attrs={
+      "HREF": Some("https://example.com"),
+      "Rel": Some("noreferrer"),
+      "BAD": Some("x"),
+      "id": Some("link"),
+    }),
+    @html_parser.element("span", attrs={ "href": Some("nope") }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::allowlist_attrs(
+        "*",
+        { "*": ["id"], "a": ["href", "rel"] },
+        hook~,
+        report~,
+      ),
+    ]),
+  )
+  assert_eq(events, [
+    "report:Unsafe attribute 'bad' (not allowed)", "node:a", "hook:a", "report:Unsafe attribute 'href' (not allowed)",
+    "node:span", "hook:span",
+  ])
+  assert_eq(
+    root.to_html(pretty=false),
+    "<a href=\"https://example.com\" rel=\"noreferrer\" id=\"link\"></a><span></span>",
+  )
+}
+
+///|
 test "unchanged attribute transforms do not call hooks" {
   let events : Array[String] = []
   let hook : (@html_parser.Node) -> Unit = fn(node) {

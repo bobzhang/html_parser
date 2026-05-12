@@ -836,11 +836,7 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
           index += 1
         }
         AllowlistAttributes => {
-          if apply_allowlist_attrs_transform(child, transform) {
-            transform_report_node_action(
-              child, transform, "Allowlisted attributes on",
-            )
-          }
+          ignore(apply_allowlist_attrs_transform(child, transform))
           transform_children(child, transform)
           index += 1
         }
@@ -1220,10 +1216,16 @@ fn apply_allowlist_attrs_transform(
         }
       } else {
         changed = true
+        transform_report(
+          transform,
+          "Unsafe attribute '" + normalized + "' (not allowed)",
+          Some(node),
+        )
       }
     }
   }
   if changed {
+    transform_call_hook(node, transform)
     attrs_replace_with(node, out)
   }
   changed
