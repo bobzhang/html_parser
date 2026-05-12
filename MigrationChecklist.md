@@ -69,7 +69,8 @@ reference implementation in `.repos/justhtml`.
   - [x] Selector `Unwrap` moved-node walk marker parity
   - [x] Sanitizer policy selector `max_length` and `max_match_bytes`
         transform coverage
-  - [ ] Remaining selector depth/step limits and compiled-walk marker edge cases
+  - [x] Selector parse-depth, match-depth, and step-budget transform coverage
+  - [ ] Remaining compiled-walk marker edge cases
 - [x] Streaming API
   - [x] Public string `stream` event API
   - [x] String tests ported from `tests/test_stream.py`

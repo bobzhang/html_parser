@@ -429,6 +429,11 @@ JustHTML from Python to MoonBit.
   the last enabled `Sanitize` transform. Mirror that at `apply_transforms` time
   in MoonBit so an earlier selector transform can still use a later sanitizer
   policy's larger `max_length` or smaller match budget.
+- Python parses selector ASTs before matching, so nested `:not(...)` selectors
+  consume both parse-depth and match-depth budgets. If the MoonBit selector
+  path stays string-based, add an explicit recursive validation pass for nested
+  functional pseudos and a shared match context so nested matching consumes the
+  same step budget instead of resetting per recursive call.
 - Python's streaming API is a generator of `(kind, data)` tuples. MoonBit does
   not need to mimic tuple-shaped dynamic values; prefer a typed `StreamEvent`
   enum with small event structs, and coalesce adjacent `Characters` tokens into

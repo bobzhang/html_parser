@@ -374,6 +374,57 @@ test "sanitize policy selector limits apply to transform selectors" {
       assert_eq(message, "Selector match byte budget exceeded")
     _ => fail("expected selector match byte budget error")
   }
+
+  let parse_depth_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    selector_limits=@html_parser.SelectorLimits::new(max_parse_depth=1),
+  )
+  let parse_depth = @html_parser.parse_fragment("<p>x</p>")
+  let parse_depth_result = try? @html_parser.apply_transforms(
+    parse_depth.root,
+    [
+      @html_parser.TransformSpec::drop(":not(:not(:not(p)))"),
+      @html_parser.TransformSpec::sanitize(policy=parse_depth_policy),
+    ],
+  )
+  match parse_depth_result {
+    Err(SelectorError(message)) =>
+      assert_eq(message, "Selector nesting is too deep")
+    _ => fail("expected selector parse depth error")
+  }
+
+  let match_depth_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    selector_limits=@html_parser.SelectorLimits::new(max_match_depth=0),
+  )
+  let match_depth = @html_parser.parse_fragment("<p>x</p>")
+  let match_depth_result = try? @html_parser.apply_transforms(
+    match_depth.root,
+    [
+      @html_parser.TransformSpec::drop(":not(p)"),
+      @html_parser.TransformSpec::sanitize(policy=match_depth_policy),
+    ],
+  )
+  match match_depth_result {
+    Err(SelectorError(message)) =>
+      assert_eq(message, "Selector nesting is too deep")
+    _ => fail("expected selector match depth error")
+  }
+
+  let step_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    selector_limits=@html_parser.SelectorLimits::new(max_match_steps=0),
+  )
+  let step_budget = @html_parser.parse_fragment("<p>x</p>")
+  let step_result = try? @html_parser.apply_transforms(step_budget.root, [
+    @html_parser.TransformSpec::drop("p"),
+    @html_parser.TransformSpec::sanitize(policy=step_policy),
+  ])
+  match step_result {
+    Err(SelectorError(message)) =>
+      assert_eq(message, "Selector match budget exceeded")
+    _ => fail("expected selector step budget error")
+  }
 }
 
 ///|

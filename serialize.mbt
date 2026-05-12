@@ -2549,10 +2549,63 @@ fn selector_simple_component_count(selector : StringView) -> Int? {
 }
 
 ///|
-fn selector_validate_limits(
+fn selector_validate_simple_parse_depth(
   selector : StringView,
   limits : SelectorLimits,
+  depth : Int,
 ) -> Unit raise HtmlError {
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return
+  }
+  let mut pos = 0
+  match selector.get_char(pos) {
+    Some('*') => pos += 1
+    Some('.') | Some('#') | Some('[') | Some(':') => ()
+    Some(_) => pos = next_simple_selector_marker(selector, pos)
+    None => return
+  }
+  while pos < selector.length() {
+    guard selector.get_char(pos) is Some(marker) else { return }
+    if marker == '[' {
+      match find_attribute_selector_end(selector, pos) {
+        Some(end) => pos = end + 1
+        None => return
+      }
+      continue
+    }
+    if marker == ':' {
+      let start = pos + marker.utf16_len()
+      let end = next_simple_selector_marker(selector, start)
+      guard selector.get_view(start~, end~) is Some(name) else { return }
+      match functional_pseudo_parts(name) {
+        Some((pseudo_name, arg)) =>
+          if lower_ascii(pseudo_name) == "not" {
+            selector_validate_limits_at_depth(arg, limits, depth + 1)
+          }
+        None => ()
+      }
+      pos = end
+      continue
+    }
+    if marker == '.' || marker == '#' {
+      let start = pos + marker.utf16_len()
+      pos = next_simple_selector_marker(selector, start)
+    } else {
+      return
+    }
+  }
+}
+
+///|
+fn selector_validate_limits_at_depth(
+  selector : StringView,
+  limits : SelectorLimits,
+  depth : Int,
+) -> Unit raise HtmlError {
+  if depth > limits.max_parse_depth {
+    raise SelectorError("Selector nesting is too deep")
+  }
   if selector.length() > limits.max_length {
     raise SelectorError("Selector too long")
   }
@@ -2573,8 +2626,17 @@ fn selector_validate_limits(
           raise SelectorError("Selector has too many simple selectors")
         _ => ()
       }
+      selector_validate_simple_parse_depth(simple, limits, depth)
     }
   }
+}
+
+///|
+fn selector_validate_limits(
+  selector : StringView,
+  limits : SelectorLimits,
+) -> Unit raise HtmlError {
+  selector_validate_limits_at_depth(selector, limits, 0)
 }
 
 ///|
@@ -2619,12 +2681,331 @@ fn selector_check_match_budget(
 }
 
 ///|
-fn matches_selector_list_with_limits(
+priv struct SelectorMatchContext {
+  limits : SelectorLimits
+  mut remaining_steps : Int
+}
+
+///|
+fn SelectorMatchContext::new(limits : SelectorLimits) -> SelectorMatchContext {
+  { limits, remaining_steps: limits.max_match_steps }
+}
+
+///|
+fn SelectorMatchContext::tick(
+  self : SelectorMatchContext,
+  steps? : Int = 1,
+) -> Unit raise HtmlError {
+  if steps <= 0 {
+    return
+  }
+  self.remaining_steps -= steps
+  if self.remaining_steps < 0 {
+    raise SelectorError("Selector match budget exceeded")
+  }
+}
+
+///|
+fn pseudo_selector_matches_with_context(
+  node : Node,
+  name : StringView,
+  context : SelectorMatchContext,
+  depth : Int,
+) -> Bool raise HtmlError {
+  let lower_name = lower_ascii(name)
+  match lower_name[:] {
+    "comment" => node.kind == Comment
+    "first-child" => is_first_element_child(node)
+    "last-child" => is_last_element_child(node)
+    "only-child" => is_only_element_child(node)
+    "empty" => is_empty_for_selector(node)
+    "root" => is_root_for_selector(node)
+    "first-of-type" => is_first_of_type(node)
+    "last-of-type" => is_last_of_type(node)
+    "only-of-type" => is_only_of_type(node)
+    _ =>
+      match functional_pseudo_parts(name) {
+        Some((pseudo_name, arg)) =>
+          match lower_ascii(pseudo_name)[:] {
+            "nth-child" => is_nth_child(node, arg)
+            "nth-of-type" => is_nth_of_type(node, arg)
+            "not" =>
+              !matches_selector_list_with_context(node, arg, context, depth + 1)
+            "contains" => contains_text(node, arg)
+            "comment" => node.kind == Comment
+            _ => false
+          }
+        _ => false
+      }
+  }
+}
+
+///|
+fn non_element_simple_selector_matches_with_context(
   node : Node,
   selector : StringView,
-  limits : SelectorLimits,
+  context : SelectorMatchContext,
+  depth : Int,
 ) -> Bool raise HtmlError {
-  selector_validate_limits(selector, limits)
+  let mut pos = 0
+  while pos < selector.length() {
+    context.tick()
+    guard selector.get_char(pos) is Some(':') else { return false }
+    let start = pos + ':'.utf16_len()
+    let end = next_simple_selector_marker(selector, start)
+    guard selector.get_view(start~, end~) is Some(name) else { return false }
+    if name.is_empty() ||
+      !pseudo_selector_matches_with_context(node, name, context, depth) {
+      return false
+    }
+    pos = end
+  }
+  true
+}
+
+///|
+fn matches_simple_selector_with_context(
+  node : Node,
+  selector : StringView,
+  context : SelectorMatchContext,
+  depth : Int,
+) -> Bool raise HtmlError {
+  context.tick()
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return false
+  }
+  if node.kind != Element {
+    return non_element_simple_selector_matches_with_context(
+      node, selector, context, depth,
+    )
+  }
+  let mut pos = 0
+  match selector.get_char(pos) {
+    Some('*') => {
+      pos += 1
+      if pos < selector.length() {
+        match selector.get_char(pos) {
+          Some('.') | Some('#') | Some('[') | Some(':') => ()
+          _ => return false
+        }
+      }
+    }
+    Some('.') | Some('#') | Some('[') | Some(':') => ()
+    Some(_) => {
+      let end = next_simple_selector_marker(selector, pos)
+      guard selector.get_view(start=pos, end~) is Some(tag) else {
+        return false
+      }
+      if tag.is_empty() ||
+        !selector_identifier_is_valid(tag) ||
+        !tag_selector_matches(node, tag) {
+        return false
+      }
+      pos = end
+    }
+    None => return false
+  }
+  while pos < selector.length() {
+    context.tick()
+    guard selector.get_char(pos) is Some(marker) else { return false }
+    if marker == '[' {
+      guard find_attribute_selector_end(selector, pos) is Some(end) else {
+        return false
+      }
+      guard selector.get_view(start=pos + 1, end~) is Some(attribute) else {
+        return false
+      }
+      if !attribute_selector_matches(node, attribute) {
+        return false
+      }
+      pos = end + 1
+      continue
+    }
+    if marker == ':' {
+      let start = pos + marker.utf16_len()
+      let end = next_simple_selector_marker(selector, start)
+      guard selector.get_view(start~, end~) is Some(name) else { return false }
+      if name.is_empty() ||
+        !pseudo_selector_matches_with_context(node, name, context, depth) {
+        return false
+      }
+      pos = end
+      continue
+    }
+    if marker != '.' && marker != '#' {
+      return false
+    }
+    let start = pos + marker.utf16_len()
+    let end = next_simple_selector_marker(selector, start)
+    guard selector.get_view(start~, end~) is Some(name) else { return false }
+    if name.is_empty() || !selector_identifier_is_valid(name) {
+      return false
+    }
+    if marker == '.' {
+      if !class_selector_matches(node, name) {
+        return false
+      }
+    } else if !id_selector_matches(node, name) {
+      return false
+    }
+    pos = end
+  }
+  true
+}
+
+///|
+fn previous_matching_sibling_with_context(
+  node : Node,
+  selector : StringView,
+  context : SelectorMatchContext,
+  depth : Int,
+) -> Node? raise HtmlError {
+  match node.parent {
+    Some(parent) => {
+      let mut previous_match : Node? = None
+      for child in parent.children {
+        context.tick()
+        if physical_equal(child, node) {
+          return previous_match
+        }
+        if child.kind == Element &&
+          matches_simple_selector_with_context(child, selector, context, depth) {
+          previous_match = Some(child)
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn previous_element_sibling_with_context(
+  node : Node,
+  context : SelectorMatchContext,
+) -> Node? raise HtmlError {
+  match node.parent {
+    Some(parent) => {
+      let mut previous : Node? = None
+      for child in parent.children {
+        context.tick()
+        if physical_equal(child, node) {
+          return previous
+        }
+        if child.kind == Element {
+          previous = Some(child)
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn matches_complex_selector_with_context(
+  node : Node,
+  selector : StringView,
+  context : SelectorMatchContext,
+  depth : Int,
+) -> Bool raise HtmlError {
+  context.tick()
+  if depth > context.limits.max_match_depth {
+    raise SelectorError("Selector nesting is too deep")
+  }
+  guard split_complex_selector(selector) is Some((parts, combinators)) else {
+    return false
+  }
+  let last_index = parts.length() - 1
+  if !matches_simple_selector_with_context(
+      node,
+      parts[last_index],
+      context,
+      depth,
+    ) {
+    return false
+  }
+  let mut needed = last_index - 1
+  let mut current = node
+  while needed >= 0 {
+    context.tick()
+    let wanted = parts[needed]
+    match combinators[needed] {
+      DescendantCombinator => {
+        let visited : Array[Node] = [current]
+        let mut cursor = current.parent
+        let mut found = false
+        while !found {
+          context.tick()
+          match cursor {
+            Some(ancestor) => {
+              if node_identity_seen(visited, ancestor) {
+                return false
+              }
+              visited.push(ancestor)
+              if matches_simple_selector_with_context(
+                  ancestor, wanted, context, depth,
+                ) {
+                current = ancestor
+                found = true
+              } else {
+                cursor = ancestor.parent
+              }
+            }
+            None => return false
+          }
+        }
+      }
+      ChildCombinator =>
+        match current.parent {
+          Some(ancestor) => {
+            if !matches_simple_selector_with_context(
+                ancestor, wanted, context, depth,
+              ) {
+              return false
+            }
+            current = ancestor
+          }
+          None => return false
+        }
+      AdjacentSiblingCombinator =>
+        match previous_element_sibling_with_context(current, context) {
+          Some(sibling) => {
+            if !matches_simple_selector_with_context(
+                sibling, wanted, context, depth,
+              ) {
+              return false
+            }
+            current = sibling
+          }
+          None => return false
+        }
+      GeneralSiblingCombinator =>
+        match
+          previous_matching_sibling_with_context(
+            current, wanted, context, depth,
+          ) {
+          Some(sibling) => current = sibling
+          None => return false
+        }
+    }
+    needed -= 1
+  }
+  true
+}
+
+///|
+fn matches_selector_list_with_context(
+  node : Node,
+  selector : StringView,
+  context : SelectorMatchContext,
+  depth : Int,
+) -> Bool raise HtmlError {
+  context.tick()
+  if depth > context.limits.max_match_depth {
+    raise SelectorError("Selector nesting is too deep")
+  }
   guard selector_list_parts(selector) is Some(parts) else { return false }
   for part in parts {
     if !complex_selector_is_valid(part) {
@@ -2632,12 +3013,27 @@ fn matches_selector_list_with_limits(
     }
   }
   for part in parts {
-    selector_check_match_budget(node, part, limits)
-    if matches_complex_selector(node, part) {
+    selector_check_match_budget(node, part, context.limits)
+    if matches_complex_selector_with_context(node, part, context, depth) {
       return true
     }
   }
   false
+}
+
+///|
+fn matches_selector_list_with_limits(
+  node : Node,
+  selector : StringView,
+  limits : SelectorLimits,
+) -> Bool raise HtmlError {
+  selector_validate_limits(selector, limits)
+  matches_selector_list_with_context(
+    node,
+    selector,
+    SelectorMatchContext::new(limits),
+    0,
+  )
 }
 
 ///|
