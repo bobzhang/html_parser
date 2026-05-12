@@ -1059,6 +1059,10 @@ JustHTML from Python to MoonBit.
   latest previous element that matches the selector to the left. When matching
   right-to-left, set the current node to that sibling so earlier combinators
   continue from the correct place.
+- Test contextual combinators through both matching and nonmatching transform
+  selectors. A positive `em + span` case does not prove the fail-closed paths
+  for missing ancestors, wrong immediate parents, absent adjacent siblings, or
+  missing general siblings.
 - Pseudo-class parsing starts as another simple-selector marker. For
   `:first-child` and `:last-child`, scan only element children under the parent;
   whitespace text nodes and comments must not affect child positions. Direct

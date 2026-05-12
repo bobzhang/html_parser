@@ -655,6 +655,39 @@ test "selector transforms cover contextual combinators and pseudos" {
 }
 
 ///|
+test "selector transforms fail closed for nonmatching contextual selectors" {
+  let doc = @html_parser.parse_fragment(
+    "<div><p id='first'></p><section><p id='nested'></p></section><p id='second'></p></div>",
+  )
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::set_attrs("article p", {
+        "data-miss": Some("descendant"),
+      }),
+      @html_parser.TransformSpec::set_attrs("article > p", {
+        "data-miss": Some("child"),
+      }),
+      @html_parser.TransformSpec::set_attrs("em + p", {
+        "data-miss": Some("adjacent"),
+      }),
+      @html_parser.TransformSpec::set_attrs("em ~ p", {
+        "data-miss": Some("sibling"),
+      }),
+      @html_parser.TransformSpec::set_attrs("p.nope", {
+        "data-miss": Some("class"),
+      }),
+      @html_parser.TransformSpec::set_attrs("p#missing", {
+        "data-miss": Some("id"),
+      }),
+    ]),
+  )
+  assert_eq(
+    doc.root.to_html(pretty=false),
+    "<div><p id=\"first\"></p><section><p id=\"nested\"></p></section><p id=\"second\"></p></div>",
+  )
+}
+
+///|
 test "prune_empty drops empty elements with post-order semantics" {
   let doc = @html_parser.parse_fragment(
     "<div><p></p></div><p><img></p><p><!--x--></p><p>   </p><span> </span>",
