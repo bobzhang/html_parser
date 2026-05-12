@@ -103,14 +103,12 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
 ///|
 test "entity helpers preserve unresolved names and attribute boundaries" {
   assert_true(
-    consume_named_entity_with_errors("&unknown;"[:], 0, in_attribute=false)
-    is None,
+    consume_named_entity_with_errors("&unknown;", 0, in_attribute=false) is None,
   )
   assert_true(
-    consume_named_entity_with_errors("&unknown"[:], 0, in_attribute=false)
-    is None,
+    consume_named_entity_with_errors("&unknown", 0, in_attribute=false) is None,
   )
-  guard consume_named_entity_with_errors("&copy."[:], 0, in_attribute=true)
+  guard consume_named_entity_with_errors("&copy.", 0, in_attribute=true)
     is Some(decoded_attr) else {
     fail("expected punctuation-delimited legacy attribute entity")
   }
@@ -118,20 +116,20 @@ test "entity helpers preserve unresolved names and attribute boundaries" {
   assert_eq(decoded_attr.next, 5)
   assert_eq(decoded_attr.errors.length(), 1)
   assert_true(
-    legacy_entity_blocked_in_attribute("&copyx"[:], 5, in_attribute=true),
+    legacy_entity_blocked_in_attribute("&copyx", 5, in_attribute=true),
   )
   assert_true(
-    legacy_entity_blocked_in_attribute("&copy0"[:], 5, in_attribute=true),
+    legacy_entity_blocked_in_attribute("&copy0", 5, in_attribute=true),
   )
   assert_true(
-    legacy_entity_blocked_in_attribute("&copy="[:], 5, in_attribute=true),
+    legacy_entity_blocked_in_attribute("&copy=", 5, in_attribute=true),
   )
   assert_eq(
-    legacy_entity_blocked_in_attribute("&copyx"[:], 5, in_attribute=false),
+    legacy_entity_blocked_in_attribute("&copyx", 5, in_attribute=false),
     false,
   )
   assert_eq(
-    legacy_entity_blocked_in_attribute("&copy."[:], 5, in_attribute=true),
+    legacy_entity_blocked_in_attribute("&copy.", 5, in_attribute=true),
     false,
   )
   let unresolved = tokenize("&unknown; &unknown", collect_errors=true)
@@ -143,19 +141,17 @@ test "entity helpers preserve unresolved names and attribute boundaries" {
 
 ///|
 test "doctype helpers keep empty eof and unquoted identifiers distinct" {
-  assert_eq(eof_error_pos(""[:]), 0)
-  assert_eq(doctype_eof_error_offset(""[:]), 0)
+  assert_eq(eof_error_pos(""), 0)
+  assert_eq(doctype_eof_error_offset(""), 0)
   let errors : Array[DoctypeExternalError] = []
   let (value, next, closed) = parse_quoted_doctype_value_at(
-    "identifier"[:],
-    0,
-    errors,
+    "identifier", 0, errors,
   )
   assert_true(value is None)
   assert_eq(next, 0)
   assert_eq(closed, false)
   assert_eq(errors.length(), 0)
-  let external = parse_doctype_external(""[:], true)
+  let external = parse_doctype_external("", true)
   assert_true(external.public_id is None)
   assert_true(external.system_id is None)
   assert_eq(external.force_quirks, false)
@@ -200,7 +196,7 @@ test "detached recovery helpers ignore stale parser state" {
   let div = element("div")
   parser.stack.push(div)
   parser.foreign_table_row_recovery_mode = true
-  parser.report_foreign_table_row_recovery_text("x"[:], 0)
+  parser.report_foreign_table_row_recovery_text("x", 0)
   assert_eq(parser.errors.length(), 0)
 
   let parent = element("frameset")
@@ -375,7 +371,7 @@ test "document head helpers tolerate detached parser stacks" {
   shell.append_child(head)
   head_parser.stack.clear()
   assert_true(head_parser.current_is_document_head())
-  assert_eq(head_parser.close_current_document_head_for_start("p"[:], 0), false)
+  assert_eq(head_parser.close_current_document_head_for_start("p", 0), false)
   assert_eq(head_parser.stack.length(), 0)
 
   let noscript_parser = Parser::new(
@@ -526,7 +522,7 @@ test "active formatting helpers respect marker boundaries" {
   )
   let current_b = element("b")
   current_only.stack.push(current_b)
-  current_only.adoption_agency("b"[:], 4)
+  current_only.adoption_agency("b", 4)
   assert_eq(current_only.stack.length(), 1)
   assert_eq(current_only.errors.length(), 0)
 
@@ -546,7 +542,7 @@ test "active formatting helpers respect marker boundaries" {
     attrs: {},
     node: scoped_b,
   })
-  scoped.adoption_agency("b"[:], 7)
+  scoped.adoption_agency("b", 7)
   assert_eq(scoped.errors.length(), 1)
   assert_eq(scoped.errors[0].code, "adoption-agency-1.3")
   assert_eq(scoped.stack.length(), 3)
@@ -574,7 +570,7 @@ test "adoption agency removes non-formatting inner stack nodes" {
     attrs: original_b.attrs.copy(),
     node: original_b,
   })
-  parser.adoption_agency("b"[:], 0)
+  parser.adoption_agency("b", 0)
   assert_eq(parser.errors.length(), 1)
   assert_eq(parser.errors[0].code, "adoption-agency-1.3")
   assert_eq(parser.stack_index_by_node(loose_span), -1)
@@ -639,7 +635,7 @@ test "adoption agency prunes late active inner nodes" {
     attrs: top_em.attrs.copy(),
     node: top_em,
   })
-  parser.adoption_agency("b"[:], 0)
+  parser.adoption_agency("b", 0)
   assert_eq(parser.errors.length(), 1)
   assert_eq(parser.errors[0].code, "adoption-agency-1.3")
   assert_eq(parser.stack_index_by_node(late_i), -1)
@@ -666,11 +662,11 @@ test "table foster helpers handle detached helper state" {
   parser.stack.push(root)
   parser.stack.push(table)
   parser.stack.push(tbody)
-  assert_true(parser.foster_parent_table_text("x"[:], 0))
+  assert_true(parser.foster_parent_table_text("x", 0))
   assert_eq(root.to_html(pretty=false), "x")
   assert_eq(parser.errors.length(), 1)
   assert_eq(parser.errors[0].code, "foster-parenting-character")
-  parser.report_foster_parented_table_context_text("z"[:], 1)
+  parser.report_foster_parented_table_context_text("z", 1)
   assert_eq(parser.errors.length(), 1)
   parser.insert_node_before_open_table(text("y"), 1)
   assert_eq(root.to_html(pretty=false), "xy")
@@ -688,7 +684,7 @@ test "table foster helpers handle detached helper state" {
   blocked.stack.push(blocked_table)
   blocked.stack.push(div)
   assert_eq(blocked.handle_nested_table_start_tag("table", 0), false)
-  assert_eq(blocked.table_start_foster_mode("p"[:]), 0)
+  assert_eq(blocked.table_start_foster_mode("p"), 0)
 
   let open_section = Parser::new(
     "",
@@ -733,7 +729,7 @@ fn stale_template_column_group_parser() -> (Parser, Node) {
 test "template column group mode drops stale inner table state" {
   let (text_parser, text_table) = stale_template_column_group_parser()
   assert_true(text_parser.template_column_group_mode_active())
-  assert_eq(text_parser.handle_template_column_group_text("x"[:], 0), false)
+  assert_eq(text_parser.handle_template_column_group_text("x", 0), false)
   assert_eq(text_parser.template_column_group_mode_active(), false)
   assert_eq(text_parser.errors.length(), 0)
   assert_eq(text_table.children.length(), 0)
@@ -909,15 +905,15 @@ test "url authority helpers reject empty hosts" {
 test "url authority helpers fail closed on surrogate-split offsets" {
   let host = "x😀"
   let mid_surrogate = 2
-  assert_eq(url_authority_end("x😀/"[:], mid_surrogate), 4)
-  assert_eq(authority_host_start(host[:], mid_surrogate, host.length()), 2)
+  assert_eq(url_authority_end("x😀/", mid_surrogate), 4)
+  assert_eq(authority_host_start(host, mid_surrogate, host.length()), 2)
   assert_true(
-    extract_authority_host(host[:], mid_surrogate, host.length()) is None,
+    extract_authority_host(host, mid_surrogate, host.length()) is None,
   )
   assert_true(
-    extract_named_authority_host(host[:], mid_surrogate, host.length()) is None,
+    extract_named_authority_host(host, mid_surrogate, host.length()) is None,
   )
-  assert_true(extract_bracketed_authority_host("x😀]"[:], 1, 4) is None)
+  assert_true(extract_bracketed_authority_host("x😀]", 1, 4) is None)
 }
 
 ///|
@@ -1075,7 +1071,7 @@ test "script text scanner covers escaped and double escaped edge states" {
 test "scanner helpers fail closed on surrogate-split offsets" {
   let value = "x😀>"
   let mid_surrogate = 2
-  let comment_scan = scan_comment_data(value[:], mid_surrogate)
+  let comment_scan = scan_comment_data(value, mid_surrogate)
   assert_eq(comment_scan.data, "")
   assert_eq(comment_scan.end, value.length())
   assert_true(comment_scan.eof)
@@ -1084,7 +1080,7 @@ test "scanner helpers fail closed on surrogate-split offsets" {
 
   let normalized = StringBuilder::new()
   assert_eq(
-    write_normalized_char(value[:], mid_surrogate, normalized),
+    write_normalized_char(value, mid_surrogate, normalized),
     mid_surrogate,
   )
   assert_eq(normalized.to_string(), "")
@@ -1092,25 +1088,25 @@ test "scanner helpers fail closed on surrogate-split offsets" {
   let script_out = StringBuilder::new()
   let script_errors : Array[SpecialTextError] = []
   assert_eq(
-    write_script_text_char(value[:], mid_surrogate, script_out, script_errors),
+    write_script_text_char(value, mid_surrogate, script_out, script_errors),
     mid_surrogate,
   )
   assert_eq(script_out.to_string(), "")
   assert_eq(script_errors.length(), 0)
 
-  assert_true(find_markup_close(value[:], mid_surrogate) is None)
+  assert_true(find_markup_close(value, mid_surrogate) is None)
   assert_true(
-    find_matching_end_tag("x😀</script>"[:], mid_surrogate, "script") is None,
+    find_matching_end_tag("x😀</script>", mid_surrogate, "script") is None,
   )
   assert_eq(
-    matching_end_tag_error_pos("x😀</script>"[:], mid_surrogate),
+    matching_end_tag_error_pos("x😀</script>", mid_surrogate),
     eof_error_pos("x😀</script>"),
   )
 
   let doctype_errors : Array[DoctypeExternalError] = []
   assert_eq(
     normalize_doctype_value(
-      value[:],
+      value,
       mid_surrogate,
       value.length(),
       doctype_errors,
@@ -1119,7 +1115,7 @@ test "scanner helpers fail closed on surrogate-split offsets" {
   )
   assert_eq(doctype_errors.length(), 0)
   let (name, name_errors) = parse_lower_name_value_replacing_nulls(
-    value[:],
+    value,
     mid_surrogate,
     value.length(),
   )
