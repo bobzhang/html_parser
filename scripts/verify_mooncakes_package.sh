@@ -49,4 +49,4 @@ if printf '%s\n' "$output" | grep -Fq "duplicated with an existing version"; the
   exit 0
 fi
 
-  exit "$exit_code"
+exit "$exit_code"

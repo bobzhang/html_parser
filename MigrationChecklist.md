@@ -339,6 +339,8 @@ reference implementation in `.repos/justhtml`.
       the configured Mooncakes README file.
 - [x] Tightened Mooncakes verification script argument handling and made
       accepted already-published versions explicit in the logs.
+- [x] Added a validation-script self-check for Bash syntax, Python helper
+      syntax, and fast argument smoke paths.
 
 ## Working Rule
 
