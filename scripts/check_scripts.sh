@@ -22,6 +22,7 @@ fixture_arg_err="$(mktemp)"
 workflow_arg_err="$(mktemp)"
 source_layout_arg_err="$(mktemp)"
 migration_docs_arg_err="$(mktemp)"
+publish_archive_arg_err="$(mktemp)"
 trap '
   rm -rf "$tmp_home"
   rm -f "$tmp_out" "$verify_err" "$check_ci_err"
@@ -29,6 +30,7 @@ trap '
   rm -f "$workflow_arg_err"
   rm -f "$source_layout_arg_err"
   rm -f "$migration_docs_arg_err"
+  rm -f "$publish_archive_arg_err"
 ' EXIT
 
 HOME="$tmp_home" bash scripts/verify_mooncakes_package.sh \
@@ -73,6 +75,9 @@ source_layout_arg_code=$?
 python3 scripts/check_migration_docs.py \
   --bad-option > "$tmp_out" 2> "$migration_docs_arg_err"
 migration_docs_arg_code=$?
+python3 scripts/check_publish_archive.py \
+  --bad-option > "$tmp_out" 2> "$publish_archive_arg_err"
+publish_archive_arg_code=$?
 set -e
 
 test "$fixture_require_code" -eq 1
@@ -88,3 +93,6 @@ grep -F "usage: python3 scripts/check_source_layout.py" \
 test "$migration_docs_arg_code" -eq 2
 grep -F "usage: python3 scripts/check_migration_docs.py" \
   "$migration_docs_arg_err" > /dev/null
+test "$publish_archive_arg_code" -eq 2
+grep -F "usage: python3 scripts/check_publish_archive.py" \
+  "$publish_archive_arg_err" > /dev/null

@@ -355,6 +355,8 @@ reference implementation in `.repos/justhtml`.
       interfaces, root implementation modules, and vendored fixture coverage.
 - [x] Added migration-doc checks for the Python-to-MoonBit gotchas, fixture
       workflow notes, native CLI constraints, and release validation docs.
+- [x] Added Mooncakes archive-content checks for critical packaged source,
+      fixture, docs, native CLI, generated interface, and forbidden path rules.
 
 ## Working Rule
 

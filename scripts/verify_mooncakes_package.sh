@@ -36,15 +36,18 @@ set -e
 printf '%s\n' "$output"
 
 if [[ "$exit_code" -eq 0 ]]; then
+  python3 scripts/check_publish_archive.py
   exit 0
 fi
 
 if printf '%s\n' "$output" | grep -Fq "Dry run completed successfully"; then
+  python3 scripts/check_publish_archive.py
   echo "Accepted Mooncakes dry-run success response."
   exit 0
 fi
 
 if printf '%s\n' "$output" | grep -Fq "duplicated with an existing version"; then
+  python3 scripts/check_publish_archive.py
   echo "Accepted already-published Mooncakes package version."
   exit 0
 fi
