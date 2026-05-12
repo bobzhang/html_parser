@@ -392,7 +392,10 @@ JustHTML from Python to MoonBit.
   Store transform callbacks behind private wrapper structs with opaque `Debug`
   implementations, then let public constructors accept ordinary function
   values. This keeps `TransformSpec` debuggable without exposing callback
-  internals.
+  internals. Test every callback wrapper kind explicitly; field names such as
+  `node_callback` may still appear in the public spec representation, but the
+  function payload should remain an opaque wrapper like
+  `<TransformNodeCallback: ()>`.
 - Transform hook ordering is not uniform in the Python reference. `Edit` and
   `EditDocument` call the hook/report before the user edit function, while
   `EditAttrs` calls its rewrite function first and only runs hook/report when

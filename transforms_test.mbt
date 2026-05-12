@@ -8,6 +8,27 @@ fn transform_repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
+test "transform callback debug representations stay opaque" {
+  let node_spec = @html_parser.TransformSpec::edit_document(
+    fn(_node) { () },
+    hook=fn(_node) { () },
+    report=fn(_message, _node) { () },
+  )
+  let attrs_spec = @html_parser.TransformSpec::edit_attrs("p", fn(_node) {
+    None
+  })
+  let decide_spec = @html_parser.TransformSpec::decide("*", fn(_node) { Keep })
+  let repr = node_spec.to_repr().to_string() +
+    attrs_spec.to_repr().to_string() +
+    decide_spec.to_repr().to_string()
+  assert_true(repr.contains("<TransformNodeCallback: ()>"))
+  assert_true(repr.contains("<TransformAttrsCallback: ()>"))
+  assert_true(repr.contains("<TransformDecideCallback: ()>"))
+  assert_true(repr.contains("<TransformReportCallback: ()>"))
+  assert_eq(repr.contains("fn("), false)
+}
+
+///|
 test "apply_transforms drops unwraps escapes and empties selected elements" {
   let dropped = @html_parser.parse_fragment(
     "<p>ok</p><script>alert(1)</script>",
