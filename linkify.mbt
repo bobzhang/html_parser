@@ -248,16 +248,9 @@ fn linkify_count_char(
   needle : Char,
 ) -> Int {
   let mut count = 0
-  let mut pos = start
-  while pos < end {
-    match text.get_char(pos) {
-      Some(ch) => {
-        if ch == needle {
-          count += 1
-        }
-        pos += ch.utf16_len()
-      }
-      None => break
+  for ch in text[start:end] {
+    if ch == needle {
+      count += 1
     }
   }
   count
