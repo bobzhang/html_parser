@@ -573,11 +573,11 @@ JustHTML from Python to MoonBit.
   the current MoonBit API does not expose quirks mode; port the observable tree
   and parse errors without adding an API flag until quirks mode itself is
   represented.
-- In JustHTML `.dat` tree fixtures, marker lines such as `#xml-coercion` and
-  `#iframe-srcdoc` are harness flags, not input text. Translate exposed flags
-  into MoonBit parse options where they exist, and keep hidden flags documented
-  in the fixture case rather than threading unrepresented parser state into the
-  public API.
+- In JustHTML `.dat` tree fixtures, marker lines such as `#xml-coercion`,
+  `#script-off`, and `#iframe-srcdoc` are harness flags, not input text.
+  Translate exposed flags into MoonBit parse options where they exist, and keep
+  hidden flags documented in the fixture case rather than threading
+  unrepresented parser state into the public API.
 - The JustHTML tree fixture harness checks diagnostic code sequences, not
   source locations. Keep broad `.dat` table tests aligned with that behavior,
   then add focused parser tests for line/column parity when a location matters.

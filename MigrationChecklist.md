@@ -105,7 +105,7 @@ reference implementation in `.repos/justhtml`.
     - [x] `tokenizer_edge_cases.test` token fixture rows
   - [ ] Import or translate tree-builder fixtures
     - [x] `iframe_srcdoc.dat` and `xml_coercion.dat` tree rows
-    - [ ] `treebuilder_coverage.dat` tree rows
+    - [x] `treebuilder_coverage.dat` tree rows
     - [ ] `branch_coverage.dat` tree rows
     - [ ] `empty_stack_edge_cases.dat` tree rows
   - [ ] Import or translate encoding fixtures
