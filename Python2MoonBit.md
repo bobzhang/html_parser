@@ -1162,6 +1162,10 @@ JustHTML from Python to MoonBit.
   parent link. If a programmatically-created node has a stale parent pointer
   that does not actually contain it, adoption should still replace that pointer;
   do not rely on the old parent's child list as the only source of truth.
+- Parser recovery can leave escape-only text sentinels in the tree so sanitizer
+  escape mode can preserve raw spelling when needed. Every serializer path,
+  including pretty inline-run formatting and direct text-node rendering, must
+  skip those nodes unless the sanitizer explicitly clears the sentinel.
 - Some Python DOM mutation paths raise `ValueError` for invalid references or
   unsupported containers. This MoonBit port generally exposes total builder
   helpers instead: `remove_child` ignores missing children, invalid append/insert

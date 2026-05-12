@@ -835,6 +835,26 @@ test "pretty text helpers keep empty elements out of text-only path" {
 }
 
 ///|
+test "pretty serializer skips escape-only sentinels inside inline runs" {
+  let hidden_text = text("hidden")
+  hidden_text.mark_sanitize_escape_only()
+  assert_eq(node_to_html_pretty(hidden_text, 0, 2, '"'), "")
+
+  let hidden_run = text("hidden")
+  hidden_run.mark_sanitize_escape_only()
+  let inline = element("div", children=[hidden_run, text("\n"), text("shown")])
+  guard node_to_html_pretty_inline_runs(inline, 0, 2, '"') is Some(rendered) else {
+    fail("expected inline run rendering")
+  }
+  assert_eq(rendered, "<div>\n  shown\n</div>")
+
+  let hidden_only = text("hidden")
+  hidden_only.mark_sanitize_escape_only()
+  let empty_inline = element("div", children=[hidden_only, text("\n")])
+  assert_true(node_to_html_pretty_inline_runs(empty_inline, 0, 2, '"') is None)
+}
+
+///|
 test "pseudo matcher rejects unknown and blank contains pseudos" {
   let note = comment("note")
   assert_eq(pseudo_selector_matches(note, "hover"), false)

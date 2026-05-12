@@ -208,6 +208,8 @@ reference implementation in `.repos/justhtml`.
       and generic dropped-attribute report messages.
 - [x] Added serializer regressions ensuring parser escape-only sentinels stay
       hidden in compact HTML, pretty HTML, Markdown, and text output.
+- [x] Added serializer whitebox regressions for escape-only text nodes inside
+      pretty inline runs and all-hidden pretty inline run fallbacks.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
