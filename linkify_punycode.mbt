@@ -78,15 +78,14 @@ fn linkify_punycode_href(href : StringView) -> String {
 ///|
 fn linkify_split_host_and_tail(raw : StringView) -> (StringView, StringView) {
   let mut pos = 0
-  while pos < raw.length() {
-    match raw.get_char(pos) {
-      Some('/') | Some('?') | Some('#') =>
+  for ch in raw {
+    match ch {
+      '/' | '?' | '#' =>
         return (
           raw.get_view(start=0, end=pos).unwrap_or(raw),
           raw.get_view(start=pos, end=raw.length()).unwrap_or(""),
         )
-      Some(ch) => pos += ch.utf16_len()
-      None => break
+      _ => pos += ch.utf16_len()
     }
   }
   (raw, "")

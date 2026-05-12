@@ -230,6 +230,8 @@ reference implementation in `.repos/justhtml`.
       `StringView` iteration while retaining UTF-16 result offsets.
 - [x] Refactored linkify host-prefix scanning to use Unicode-safe
       `StringView` iteration before slicing at URL delimiters.
+- [x] Refactored linkify punycode host/tail splitting to use Unicode-safe
+      `StringView` iteration before slicing at URL delimiters.
 
 ## Working Rule
 
