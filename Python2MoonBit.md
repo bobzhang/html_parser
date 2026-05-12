@@ -287,6 +287,10 @@ JustHTML from Python to MoonBit.
   accepts caller-provided offsets, test the defensive path where the offset
   lands inside a surrogate pair; those should fail closed instead of treating
   the low surrogate as a host or scheme character.
+- Internal DOM splicing helpers often consume offsets produced by another
+  scanner. Even if public scanners only emit safe boundaries, whitebox tests
+  should cover empty match lists and surrogate-split offsets so a future
+  refactor cannot panic or copy partial UTF-16 text.
 - Linkify-style fixture files often use `%` for comments, but URLs can contain
   percent-encoded bytes. When translating those fixtures into MoonBit tests,
   strip full-line `%` comments and trailing `" %"` comments only; splitting on
