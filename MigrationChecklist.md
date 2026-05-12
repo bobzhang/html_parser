@@ -236,6 +236,8 @@ reference implementation in `.repos/justhtml`.
       scanner-produced `StringView` slices while retaining UTF-16 offsets.
 - [x] Refactored linkify substring search to advance with Unicode-safe
       `StringView` iteration while retaining fixed-width `get_view` checks.
+- [x] Refactored linkify embedded-scheme recovery scanning to iterate over
+      scanner-bounded `StringView` slices.
 - [x] Refactored linkify punycode host/tail splitting to use Unicode-safe
       `StringView` iteration before slicing at URL delimiters.
 - [x] Refactored linkify punycode label splitting to use Unicode-safe

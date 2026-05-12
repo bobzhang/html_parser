@@ -280,23 +280,18 @@ fn linkify_embedded_scheme_start(
   end : Int,
 ) -> Int? {
   let mut pos = start
-  while pos < end {
-    match text.get_char(pos) {
-      Some(ch) => {
-        let next = pos + ch.utf16_len()
-        if next < end &&
-          (
-            starts_with_case_insensitive(text, next, "http://") ||
-            starts_with_case_insensitive(text, next, "https://") ||
-            starts_with_case_insensitive(text, next, "ftp://") ||
-            starts_with_case_insensitive(text, next, "mailto:")
-          ) {
-          return Some(next)
-        }
-        pos = next
-      }
-      None => break
+  for ch in text[start:end] {
+    let next = pos + ch.utf16_len()
+    if next < end &&
+      (
+        starts_with_case_insensitive(text, next, "http://") ||
+        starts_with_case_insensitive(text, next, "https://") ||
+        starts_with_case_insensitive(text, next, "ftp://") ||
+        starts_with_case_insensitive(text, next, "mailto:")
+      ) {
+      return Some(next)
     }
+    pos = next
   }
   None
 }
