@@ -1575,6 +1575,10 @@ JustHTML from Python to MoonBit.
   MoonBit `tokenize` deliberately appends `Eof`, so translated fixture tests
   should normalize token streams by ignoring the final EOF unless the case is
   specifically testing public `tokenize` structure.
+- Keep token fixture tables and diagnostic parity tests separate when the
+  Python harness only compares tokens. A compact table runner is useful for
+  broad fixture coverage, while dedicated tests should lock down error codes
+  and locations where the port has intentionally exposed public diagnostics.
 - Initial document-mode doctype checks can be deliberately deferred. If the
   first significant construct is an unfinished comment or tag, report that
   tokenizer/tree-builder EOF error first, then report
