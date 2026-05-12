@@ -42,6 +42,8 @@ pub fn query(Node, StringView) -> Array[Node]
 
 pub fn sanitize_dom(Node, policy? : SanitizationPolicy) -> Node raise HtmlError
 
+pub fn stream(StringView) -> Array[StreamEvent]
+
 pub fn text(StringView) -> Node
 
 pub fn to_html(Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String raise HtmlError
@@ -189,6 +191,25 @@ pub(all) struct SelectorLimits {
   max_match_bytes : Int
 } derive(Eq, @debug.Debug)
 pub fn SelectorLimits::new(max_match_depth? : Int, max_length? : Int, max_list_items? : Int, max_compound_simple_selectors? : Int, max_complex_selector_parts? : Int, max_parse_depth? : Int, max_match_steps? : Int, max_match_bytes? : Int) -> Self
+
+pub(all) struct StreamDoctypeEvent {
+  name : String
+  public_id : String?
+  system_id : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum StreamEvent {
+  StreamStart(StreamStartEvent)
+  StreamText(String)
+  StreamEnd(String)
+  StreamComment(String)
+  StreamDoctype(StreamDoctypeEvent)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct StreamStartEvent {
+  name : String
+  attrs : Map[String, String?]
+} derive(Eq, @debug.Debug)
 
 pub(all) enum TagKind {
   StartTag

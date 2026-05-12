@@ -71,9 +71,10 @@ reference implementation in `.repos/justhtml`.
         transform coverage
   - [ ] Remaining selector depth/step limits and compiled-walk marker edge cases
 - [ ] Streaming API
-  - [ ] `StreamSink` equivalent
-  - [ ] Incremental token/tree event delivery
-  - [ ] Tests ported from `tests/test_stream.py`
+  - [x] Public string `stream` event API
+  - [x] String tests ported from `tests/test_stream.py`
+  - [ ] Byte input stream decoding
+  - [ ] Incremental `StreamSink` equivalent
 - [ ] CLI parity
   - [ ] Argument compatibility with Python `justhtml`
   - [ ] Parse/tokenize/sanitize/transform output modes

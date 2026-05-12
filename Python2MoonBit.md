@@ -429,6 +429,10 @@ JustHTML from Python to MoonBit.
   the last enabled `Sanitize` transform. Mirror that at `apply_transforms` time
   in MoonBit so an earlier selector transform can still use a later sanitizer
   policy's larger `max_length` or smaller match budget.
+- Python's streaming API is a generator of `(kind, data)` tuples. MoonBit does
+  not need to mimic tuple-shaped dynamic values; prefer a typed `StreamEvent`
+  enum with small event structs, and coalesce adjacent `Characters` tokens into
+  one `StreamText` event to preserve the Python-observable behavior.
 - `Decide("*", ...)` is not an element selector shortcut in Python. It calls
   the callback for every node type reached by the walker, including comments,
   text, doctypes, and nested document/fragment containers. Other selectors only
