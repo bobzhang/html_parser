@@ -17,6 +17,7 @@ priv enum TransformKind {
   DropCommentNodes
   DropDoctypeNodes
   CollapseTextWhitespace
+  PruneEmptyElements
   LinkifyTextNodes
   StageGroup
 } derive(Debug)
@@ -73,6 +74,7 @@ pub struct TransformSpec {
   priv node_hook : TransformNodeCallback?
   priv report_callback : TransformReportCallback?
   priv skip_tags : Array[String]
+  priv strip_whitespace : Bool
   priv linkify_config : LinkifyConfig?
   priv linkify_skip_tags : Array[String]
   priv stage_transforms : Array[TransformSpec]
@@ -95,6 +97,7 @@ fn make_transform_spec(
   node_hook? : TransformNodeCallback,
   report_callback? : TransformReportCallback,
   skip_tags? : Array[String] = [],
+  strip_whitespace? : Bool = true,
   linkify_config? : LinkifyConfig,
   linkify_skip_tags? : Array[String] = [],
   stage_transforms? : Array[TransformSpec] = [],
@@ -115,6 +118,7 @@ fn make_transform_spec(
     node_hook,
     report_callback,
     skip_tags: skip_tags.copy(),
+    strip_whitespace,
     linkify_config,
     linkify_skip_tags: linkify_skip_tags.copy(),
     stage_transforms: stage_transforms.copy(),
@@ -163,6 +167,7 @@ fn with_transform_hooks(
     node_hook: wrap_transform_node_callback(hook),
     report_callback: wrap_transform_report_callback(report),
     skip_tags: spec.skip_tags.copy(),
+    strip_whitespace: spec.strip_whitespace,
     linkify_config: spec.linkify_config,
     linkify_skip_tags: spec.linkify_skip_tags.copy(),
     stage_transforms: spec.stage_transforms.copy(),
@@ -505,6 +510,27 @@ pub fn TransformSpec::collapse_whitespace(
 }
 
 ///|
+/// Build a transform that recursively removes empty matching elements.
+pub fn TransformSpec::prune_empty(
+  selector : StringView,
+  strip_whitespace? : Bool = true,
+  enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
+) -> TransformSpec {
+  with_transform_hooks(
+    make_transform_spec(
+      PruneEmptyElements,
+      enabled~,
+      selector=selector.to_owned(),
+      strip_whitespace~,
+    ),
+    hook,
+    report,
+  )
+}
+
+///|
 /// Build a transform that linkifies URL and email text nodes.
 pub fn TransformSpec::linkify(
   config? : LinkifyConfig,
@@ -540,13 +566,7 @@ pub fn apply_transforms(
   if transform_list_has_enabled_stage(transforms) {
     return apply_staged_transforms(node, transforms)
   }
-  let mut current = node
-  for transform in transforms {
-    if transform.enabled {
-      current = apply_transform(current, transform)
-    }
-  }
-  current
+  apply_stage_items(node, transforms)
 }
 
 ///|
@@ -607,17 +627,57 @@ fn apply_stage_items(
   node : Node,
   transforms : Array[TransformSpec],
 ) -> Node raise HtmlError {
+  let transforms = flatten_enabled_stage_items(transforms)
   let mut current = node
-  for transform in transforms {
-    if transform.enabled {
-      match transform.kind {
-        StageGroup =>
-          current = apply_stage_items(current, transform.stage_transforms)
-        _ => current = apply_transform(current, transform)
+  let mut index = 0
+  while index < transforms.length() {
+    let transform = transforms[index]
+    match transform.kind {
+      PruneEmptyElements => {
+        let prune_batch : Array[TransformSpec] = []
+        while index < transforms.length() &&
+              transform_kind_is_prune_empty(transforms[index]) {
+          prune_batch.push(transforms[index])
+          index += 1
+        }
+        apply_prune_empty_transforms(current, prune_batch)
+      }
+      _ => {
+        current = apply_transform(current, transform)
+        index += 1
       }
     }
   }
   current
+}
+
+///|
+fn transform_kind_is_prune_empty(transform : TransformSpec) -> Bool {
+  match transform.kind {
+    PruneEmptyElements => true
+    _ => false
+  }
+}
+
+///|
+fn flatten_enabled_stage_items(
+  transforms : Array[TransformSpec],
+) -> Array[TransformSpec] {
+  let out : Array[TransformSpec] = []
+  for transform in transforms {
+    if transform.enabled {
+      match transform.kind {
+        StageGroup => {
+          let nested = flatten_enabled_stage_items(transform.stage_transforms)
+          for item in nested {
+            out.push(item)
+          }
+        }
+        _ => out.push(transform)
+      }
+    }
+  }
+  out
 }
 
 ///|
@@ -665,6 +725,10 @@ fn apply_transform(
         transform_skip_tag_set(transform.skip_tags),
         transform,
       )
+      node
+    }
+    PruneEmptyElements => {
+      apply_prune_empty_transform(node, transform)
       node
     }
     LinkifyTextNodes => {
@@ -1615,6 +1679,98 @@ fn collapse_whitespace_children(
       _ => ()
     }
     index += 1
+  }
+}
+
+///|
+fn prune_empty_node_is_effectively_empty(
+  node : Node,
+  strip_whitespace : Bool,
+) -> Bool {
+  if node.kind != Element {
+    return false
+  }
+  if node.ns == Some("html") && is_void_element(node.name) {
+    return false
+  }
+  for child in node.children {
+    match child.kind {
+      Text =>
+        if strip_whitespace {
+          if !child.data[:].trim().is_empty() {
+            return false
+          }
+        } else if child.data != "" {
+          return false
+        }
+      Comment | Doctype => ()
+      Element | Document | Fragment => return false
+    }
+  }
+  true
+}
+
+///|
+fn apply_prune_empty_transform(root : Node, transform : TransformSpec) -> Unit {
+  apply_prune_empty_transforms(root, [transform])
+}
+
+///|
+fn apply_prune_empty_transforms(
+  root : Node,
+  transforms : Array[TransformSpec],
+) -> Unit {
+  match root.kind {
+    Document | Fragment | Element => prune_empty_children(root, transforms)
+    _ => ()
+  }
+}
+
+///|
+fn prune_empty_children(
+  parent : Node,
+  transforms : Array[TransformSpec],
+) -> Unit {
+  let mut index = 0
+  while index < parent.children.length() {
+    let child = parent.children[index]
+    match child.kind {
+      Document | Fragment => {
+        prune_empty_children(child, transforms)
+        index += 1
+      }
+      Element => {
+        prune_empty_children(child, transforms)
+        let mut removed = false
+        for transform in transforms {
+          if transform_matches_element(child, transform) &&
+            prune_empty_node_is_effectively_empty(
+              child,
+              transform.strip_whitespace,
+            ) {
+            transform_call_hook(child, transform)
+            transform_report(
+              transform,
+              "Pruned empty <" +
+              lower_ascii(child.name) +
+              "> (matched selector '" +
+              transform.selector +
+              "')",
+              Some(child),
+            )
+            remove_child_at(parent, index)
+            removed = true
+            break
+          }
+        }
+        if removed {
+          ()
+        } else {
+          index += 1
+        }
+      }
+      _ => index += 1
+    }
   }
 }
 

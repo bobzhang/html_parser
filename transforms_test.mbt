@@ -92,6 +92,70 @@ test "apply_transforms runs linkify and selector transforms in order" {
 }
 
 ///|
+test "prune_empty drops empty elements with post-order semantics" {
+  let doc = @html_parser.parse_fragment(
+    "<div><p></p></div><p><img></p><p><!--x--></p><p>   </p><span> </span>",
+  )
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::prune_empty("p, div"),
+    ]),
+  )
+  assert_eq(doc.root.to_html(pretty=false), "<p><img></p><span> </span>")
+
+  let whitespace = @html_parser.parse_fragment("<p>   </p><p></p>")
+  ignore(
+    @html_parser.apply_transforms(whitespace.root, [
+      @html_parser.TransformSpec::prune_empty("p", strip_whitespace=false),
+    ]),
+  )
+  assert_eq(whitespace.root.to_html(pretty=false), "<p>   </p>")
+
+  let ordered = @html_parser.parse_fragment("<p><img></p>")
+  ignore(
+    @html_parser.apply_transforms(ordered.root, [
+      @html_parser.TransformSpec::prune_empty("p"),
+      @html_parser.TransformSpec::drop("img"),
+    ]),
+  )
+  assert_eq(ordered.root.to_html(pretty=false), "<p></p>")
+
+  let consecutive = @html_parser.parse_fragment("<div><p></p></div>")
+  ignore(
+    @html_parser.apply_transforms(consecutive.root, [
+      @html_parser.TransformSpec::prune_empty("div"),
+      @html_parser.TransformSpec::prune_empty("p"),
+    ]),
+  )
+  assert_eq(consecutive.root.to_html(pretty=false), "")
+}
+
+///|
+test "prune_empty reports exact callbacks and preserves void roots" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let doc = @html_parser.parse_fragment("<p></p><br><hr>")
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::prune_empty("*", hook~, report~),
+    ]),
+  )
+  assert_eq(doc.root.to_html(pretty=false), "<br><hr>")
+  assert_eq(events, [
+    "hook:p", "report:Pruned empty <p> (matched selector '*')", "node:p",
+  ])
+}
+
+///|
 test "stage transform reports implicit stage index and skips disabled stage" {
   let events : Array[String] = []
   let hook : (@html_parser.Node) -> Unit = fn(node) {

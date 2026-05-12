@@ -420,6 +420,13 @@ JustHTML from Python to MoonBit.
   whether replacement children can be seen by the current spec, by later specs,
   or only by later stages; tests such as `Drop("a"), Linkify()` versus
   `Linkify(), Drop("a")` catch accidental order changes.
+- `PruneEmpty` is a post-order transform, not a normal pre-order selector
+  rewrite. Recurse into children first, then remove matching elements that have
+  no element children and no content text; comments and doctypes do not count as
+  content, but HTML void elements are never pruned. Adjacent enabled
+  `PruneEmpty` specs are batched into one post-order walk in Python, so
+  `PruneEmpty("div"), PruneEmpty("p")` can remove both a now-empty child and
+  its parent even when the parent selector appears first.
 - Standalone URL/style transforms share sanitizer primitives but not the whole
   sanitizer wrapper. For Python specs such as `DropUrlAttrs` and
   `AllowStyleAttrs`, call the low-level URL and inline-style sanitizers on the

@@ -204,6 +204,7 @@ pub fn TransformSpec::empty(StringView, enabled? : Bool, hook? : (Node) -> Unit,
 pub fn TransformSpec::escape(StringView, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::linkify(config? : LinkifyConfig, skip_tags? : Array[String], enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::merge_attrs(StringView, attr~ : StringView, tokens~ : Array[String], enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::prune_empty(StringView, strip_whitespace? : Bool, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::sanitize(policy? : SanitizationPolicy, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::set_attrs(StringView, Map[String, String?], enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::stage(Array[Self], enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self

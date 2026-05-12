@@ -49,6 +49,7 @@ reference implementation in `.repos/justhtml`.
   - [x] Attribute transforms: `SetAttrs`, `DropAttrs`, `AllowlistAttrs`, `MergeAttrs`
   - [x] Callback attribute transform: `EditAttrs`
   - [x] Utility transforms: `CollapseWhitespace`, `DropComments`, `DropDoctype`
+  - [x] Post-order utility transform: `PruneEmpty`
   - [x] Linkify transform integration and order-sensitive smoke tests
   - [x] `Sanitize` transform integration and order-sensitive smoke tests
   - [x] URL/style transform specs: `DropUrlAttrs`, `AllowStyleAttrs`
