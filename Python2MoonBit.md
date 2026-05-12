@@ -435,6 +435,10 @@ JustHTML from Python to MoonBit.
   one `StreamText` event to preserve the Python-observable behavior. For byte
   input, reuse the same `decode_html_bytes` helper as `parse_bytes`; otherwise
   stream and parser entry points drift on BOM and meta-charset handling.
+- Python can expose streaming with `yield`. In MoonBit, a callback API such as
+  `stream_each` is a closer fit for incremental delivery; keep the reusable
+  sink responsible for flushing pending text before non-text events and for
+  copying tag attributes before the source token data can be mutated.
 - `Decide("*", ...)` is not an element selector shortcut in Python. It calls
   the callback for every node type reached by the walker, including comments,
   text, doctypes, and nested document/fragment containers. Other selectors only

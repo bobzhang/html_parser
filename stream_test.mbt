@@ -68,3 +68,56 @@ test "stream_bytes decodes transport and sniffed encodings" {
     ],
   )
 }
+
+///|
+test "stream sink buffers text and copies tag attrs" {
+  let sink = @html_parser.StreamSink::new()
+  sink.process_characters("a")
+  sink.process_characters("b")
+  assert_true(sink.drain() == [StreamText("ab")])
+  assert_true(sink.drain().is_empty())
+
+  let tokenized = @html_parser.tokenize("<p class=x>y</p>")
+  guard tokenized.tokens[0] is Tag(tag) else {
+    fail("expected start tag token")
+  }
+  sink.process_token(Tag(tag))
+  tag.attrs["class"] = Some("changed")
+  assert_true(
+    sink.drain() == [StreamStart({ name: "p", attrs: { "class": Some("x") } })],
+  )
+  sink.process_token(tokenized.tokens[1])
+  sink.process_token(tokenized.tokens[2])
+  sink.process_token(tokenized.tokens[3])
+  assert_true(sink.drain() == [StreamText("y"), StreamEnd("p")])
+}
+
+///|
+test "stream_each emits events incrementally" {
+  let events : Array[@html_parser.StreamEvent] = []
+  @html_parser.stream_each("<p>a<b>b</b></p>", fn(event) { events.push(event) })
+  assert_true(
+    events ==
+    [
+      StreamStart({ name: "p", attrs: {} }),
+      StreamText("a"),
+      StreamStart({ name: "b", attrs: {} }),
+      StreamText("b"),
+      StreamEnd("b"),
+      StreamEnd("p"),
+    ],
+  )
+
+  let bytes_events : Array[@html_parser.StreamEvent] = []
+  @html_parser.stream_bytes_each(b"<p>\x80</p>", fn(event) {
+    bytes_events.push(event)
+  })
+  assert_true(
+    bytes_events ==
+    [
+      StreamStart({ name: "p", attrs: {} }),
+      StreamText("\u{20AC}"),
+      StreamEnd("p"),
+    ],
+  )
+}
