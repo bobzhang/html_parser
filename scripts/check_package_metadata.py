@@ -69,6 +69,19 @@ def main() -> int:
                 readme_text = ""
             else:
                 readme_text = readme_file.read_text()
+                github_readme = ROOT / "README.md"
+                if not github_readme.exists():
+                    error("README.md must exist for GitHub rendering")
+                    ok = False
+                elif (
+                    github_readme.resolve() != readme_file.resolve()
+                    and github_readme.read_text() != readme_text
+                ):
+                    error(
+                        "README.md must resolve to or match the configured "
+                        f"Mooncakes readme {readme!r}",
+                    )
+                    ok = False
 
         if readme_text:
             expected_install = f"moon add {name}"

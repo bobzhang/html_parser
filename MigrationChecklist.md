@@ -335,6 +335,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Added a package metadata consistency check for Mooncakes fields and README
       install/import snippets.
 - [x] Ignored Python bytecode directories produced by local validation helpers.
+- [x] Extended package metadata checks to keep GitHub `README.md` aligned with
+      the configured Mooncakes README file.
 
 ## Working Rule
 
