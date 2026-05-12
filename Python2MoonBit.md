@@ -1712,3 +1712,26 @@ JustHTML from Python to MoonBit.
 - Pretty serialization should not classify empty elements as text-only. For
   text-only elements, preserve whitespace for `pre`/rawtext-like names and
   collapse ordinary element text in the helper before wrapping tags.
+
+## CLI and Native I/O
+
+- Keep command parsing and rendering as pure library code when possible. The
+  native `cmd/main` wrapper should only translate `@env.args`, stdin/file
+  bytes, stdout/stderr, output-file writes, and process exit codes. This makes
+  almost all Python `test_cli.py` behavior testable under normal `moon test`
+  without process spawning.
+- `@env.args()` includes the executable name on native builds. Slice it with
+  `all_args[1:]` before passing user arguments to parser logic. The slice is an
+  `ArrayView[String]`, so helpers should accept `ArrayView[String]` instead of
+  forcing an allocation.
+- Async stdin and file APIs live in `moonbitlang/async/stdio` and
+  `moonbitlang/async/fs`, and the executable package should set
+  `supported_targets = "+native"`. Use `@stdio.stdin.read_all().binary()` for
+  raw HTML bytes so HTML encoding detection can mirror Python's byte-oriented
+  CLI path.
+- `@fs.write_file` now prefers `create_mode=CreateOrTruncate` plus
+  `permission=0o644`; the older `create=` label is deprecated.
+- For CLI exit-code verification, build the release executable and run it
+  directly. `moon run --target native --release --build-only cmd/main` produces
+  `_build/native/release/build/cmd/main/main.exe`; direct execution preserves
+  exit codes for no-match and argument/selector errors.

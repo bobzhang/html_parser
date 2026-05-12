@@ -76,11 +76,11 @@ reference implementation in `.repos/justhtml`.
   - [x] String tests ported from `tests/test_stream.py`
   - [x] Byte input stream decoding
   - [x] Incremental `StreamSink` equivalent
-- [ ] CLI parity
-  - [ ] Argument compatibility with Python `justhtml`
-  - [ ] Parse/tokenize/sanitize/transform output modes
-  - [ ] File and stdin handling
-  - [ ] Tests ported from `tests/test_cli.py`
+- [x] CLI parity
+  - [x] Argument compatibility with Python `justhtml`
+  - [x] HTML, text, Markdown, sanitizer, and cleanup transform output modes
+  - [x] File, stdin, and output-file handling
+  - [x] Tests ported from `tests/test_cli.py`
 - [ ] Markdown parity sweep
   - [ ] Remaining escaping, code span, fence, list, and block edge cases
   - [ ] Tests ported from Python Markdown coverage

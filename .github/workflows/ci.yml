@@ -37,8 +37,25 @@ jobs:
       - name: Type check
         run: moon check --warn-list +73
 
+      - name: Type check native CLI
+        run: moon check --target native cmd/main --warn-list +73
+
       - name: Run tests
         run: moon test
+
+      - name: Build and smoke test native CLI
+        run: |
+          moon run --target native --release --build-only cmd/main
+          CLI="_build/native/release/build/cmd/main/main.exe"
+          printf '<article><p>Hi <b>there</b></p><p>Bye</p></article>' \
+            | "$CLI" - --selector p --format text > /tmp/html_parser_cli_text.txt
+          diff -u <(printf 'Hi there\nBye\n') /tmp/html_parser_cli_text.txt
+          set +e
+          printf '<p>Hello</p>' | "$CLI" - --selector '.does-not-exist' > /tmp/html_parser_cli_empty.txt
+          code=$?
+          set -e
+          test "$code" -eq 1
+          test ! -s /tmp/html_parser_cli_empty.txt
 
       - name: Verify Mooncakes package
         run: |

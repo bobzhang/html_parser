@@ -8,6 +8,10 @@ import {
 // Values
 pub fn apply_transforms(Node, Array[TransformSpec]) -> Node raise HtmlError
 
+pub fn cli_help() -> String
+
+pub fn cli_read_plan(ArrayView[String]) -> CliReadPlan
+
 pub fn comment(StringView) -> Node
 
 pub fn css_preset_text() -> Array[String]
@@ -40,6 +44,8 @@ pub fn parse_fragment(StringView, context? : FragmentContext, sanitize? : Bool, 
 
 pub fn query(Node, StringView) -> Array[Node]
 
+pub fn run_cli_bytes(ArrayView[String], BytesView) -> CliResult
+
 pub fn sanitize_dom(Node, policy? : SanitizationPolicy) -> Node raise HtmlError
 
 pub fn stream(StringView) -> Array[StreamEvent]
@@ -67,6 +73,19 @@ pub(all) suberror HtmlError {
 } derive(Eq, @debug.Debug)
 
 // Types and methods
+pub(all) enum CliReadPlan {
+  CliImmediate(CliResult)
+  CliReadPath(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CliResult {
+  exit_code : Int
+  stdout : String
+  stderr : String
+  file_output_path : String?
+  file_output_content : String?
+} derive(Eq, @debug.Debug)
+
 pub(all) enum DecideAction {
   Keep
   Drop
