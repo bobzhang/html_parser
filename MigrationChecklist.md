@@ -351,6 +351,8 @@ reference implementation in `.repos/justhtml`.
       settings, and the C stub symbols used by the entrypoint.
 - [x] Added GitHub workflow drift checks so hosted CI keeps invoking the shared
       local validation entrypoint instead of duplicating Moon commands.
+- [x] Added source-layout checks for tracked package directories, generated
+      interfaces, root implementation modules, and vendored fixture coverage.
 
 ## Working Rule
 
