@@ -248,6 +248,8 @@ reference implementation in `.repos/justhtml`.
       boundary-safe `StringView` slices from known scanner offsets.
 - [x] Refactored linkify IPv4 validation to split with Unicode-safe
       `StringView` iteration and direct part slices.
+- [x] Refactored linkify punycode href prefix, userinfo, and tail splitting to
+      use direct `StringView` slices from known-valid offsets.
 
 ## Working Rule
 

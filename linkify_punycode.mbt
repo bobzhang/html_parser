@@ -35,23 +35,14 @@ fn linkify_punycode_href(href : StringView) -> String {
   } else {
     ("", 0)
   }
-  guard href.get_view(start=rest_start, end=href.length()) is Some(rest) else {
-    return href.to_owned()
-  }
+  let rest = href[rest_start:href.length()]
   let (hostport, tail) = linkify_split_host_and_tail(rest)
   let mut userinfo = ""
   let mut hostport_without_userinfo = hostport
   match linkify_last_char_index(hostport, '@') {
     Some(at) => {
-      userinfo = match hostport.get_view(start=0, end=at) {
-        Some(view) => view.to_owned()
-        None => ""
-      }
-      hostport_without_userinfo = match
-        hostport.get_view(start=at + 1, end=hostport.length()) {
-        Some(view) => view
-        None => hostport
-      }
+      userinfo = hostport[0:at].to_owned()
+      hostport_without_userinfo = hostport[at + 1:hostport.length()]
     }
     None => ()
   }
@@ -80,11 +71,7 @@ fn linkify_split_host_and_tail(raw : StringView) -> (StringView, StringView) {
   let mut pos = 0
   for ch in raw {
     match ch {
-      '/' | '?' | '#' =>
-        return (
-          raw.get_view(start=0, end=pos).unwrap_or(raw),
-          raw.get_view(start=pos, end=raw.length()).unwrap_or(""),
-        )
+      '/' | '?' | '#' => return (raw[0:pos], raw[pos:raw.length()])
       _ => pos += ch.utf16_len()
     }
   }
