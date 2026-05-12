@@ -273,6 +273,7 @@ reference implementation in `.repos/justhtml`.
       to rely on scanner-owned UTF-16 boundaries and Unicode-safe iteration.
 - [x] Added linkify astral-left-boundary coverage to lock fuzzy-link UTF-16
       offsets after surrogate-pair characters.
+- [x] Simplified CLI read-plan handling after parser-owned path validation.
 
 ## Working Rule
 

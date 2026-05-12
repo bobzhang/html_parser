@@ -307,11 +307,7 @@ fn cli_parse_args(args : ArrayView[String]) -> CliParseResult {
 pub fn cli_read_plan(args : ArrayView[String]) -> CliReadPlan {
   match cli_parse_args(args) {
     CliParseExit(result) => CliImmediate(result)
-    CliParsed(options) =>
-      match options.path {
-        Some(path) => CliReadPath(path)
-        None => CliImmediate(cli_exit(1, stderr=cli_help()))
-      }
+    CliParsed(options) => CliReadPath(options.path.unwrap())
   }
 }
 
