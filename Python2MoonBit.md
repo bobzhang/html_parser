@@ -677,6 +677,11 @@ JustHTML from Python to MoonBit.
   variation selectors, and supplementary private-use planes. In MoonBit,
   iterate by `Char` so ranges above U+FFFF are matched as scalar values rather
   than UTF-16 halves.
+- Treat dangerous attribute-name checks as a fail-closed layer below the public
+  sanitizer's forbidden-pattern pass. Even if `onclick`, `srcdoc`, or a
+  namespaced attribute is accidentally included in an allowlist, the internal
+  policy helper should still return false. Keep the generic dropped-attribute
+  report message stable for value-level failures that are not URL/style cases.
 - URL serialization context is based on text content, not the serialized markup
   string. Match Python by trimming the text and percent-encoding its UTF-8
   bytes while preserving URL delimiter characters such as `/`, `?`, `&`, and

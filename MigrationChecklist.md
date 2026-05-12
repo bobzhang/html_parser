@@ -201,6 +201,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Added sanitizer/transform observer regressions for escape-only source
       text outside escape mode, hook-only/report-only callbacks, and void
       element escaping.
+- [x] Added sanitizer helper regressions for dangerous allowlisted attributes
+      and generic dropped-attribute report messages.
 - [x] Added serializer regressions ensuring parser escape-only sentinels stay
       hidden in compact HTML, pretty HTML, Markdown, and text output.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
