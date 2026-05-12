@@ -308,6 +308,8 @@ reference implementation in `.repos/justhtml`.
       normal root-package tests.
 - [x] Rechecked coverage from a clean build tree; standard `moon coverage
       analyze` now reports all source files fully covered.
+- [x] Hardened CI to type-check all targets, run JS and native tests, and gate
+      on the fully-covered `moon coverage analyze` result.
 
 ## Working Rule
 

@@ -37,11 +37,26 @@ jobs:
       - name: Type check
         run: moon check --warn-list +73
 
+      - name: Type check all targets
+        run: moon check --target all --warn-list +73
+
       - name: Type check native CLI
         run: moon check --target native cmd/main --warn-list +73
 
       - name: Run tests
         run: moon test
+
+      - name: Run JS tests
+        run: moon test --target js
+
+      - name: Run native tests
+        run: moon test --target native
+
+      - name: Analyze coverage
+        run: |
+          coverage="$(moon coverage analyze)"
+          printf '%s\n' "$coverage"
+          printf '%s\n' "$coverage" | grep -F "All source files are fully covered"
 
       - name: Build and smoke test native CLI
         run: |
