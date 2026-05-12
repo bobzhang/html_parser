@@ -433,6 +433,11 @@ JustHTML from Python to MoonBit.
   the last enabled `Sanitize` transform. Mirror that at `apply_transforms` time
   in MoonBit so an earlier selector transform can still use a later sanitizer
   policy's larger `max_length` or smaller match budget.
+- An explicit `Sanitize` transform is just a transform pass boundary, not a
+  promise that later transforms are sanitized again at serialization time. Keep
+  tests that mutate an `img` after `Sanitize()` and assert both `to_html()` and
+  `to_markdown()` expose the later unsafe attribute unless another sanitizer
+  pass runs.
 - Python parses selector ASTs before matching, so nested `:not(...)` selectors
   consume both parse-depth and match-depth budgets. If the MoonBit selector
   path stays string-based, add an explicit recursive validation pass for nested

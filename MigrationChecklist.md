@@ -96,6 +96,7 @@ reference implementation in `.repos/justhtml`.
     - [x] Deep programmatic tree, document-container, and builder edge tests
     - [x] Raw-text passthrough, empty `<br>`, and unknown-container tests
     - [x] Sanitized `<textarea>` Markdown passthrough breakout regression
+    - [x] Explicit `Sanitize` transform boundary Markdown regression
 - [ ] Full conformance harness
   - [ ] Import or translate tokenizer fixtures
   - [ ] Import or translate tree-builder fixtures

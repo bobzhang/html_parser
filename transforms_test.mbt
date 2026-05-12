@@ -774,6 +774,24 @@ test "sanitize transform runs in order and can resanitize later mutations" {
 }
 
 ///|
+test "sanitize transform does not imply final markdown sanitize" {
+  let doc = @html_parser.parse_fragment("<img src='/x'>")
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::sanitize(),
+      @html_parser.TransformSpec::set_attrs("img", {
+        "onerror": Some("alert(1)"),
+      }),
+    ]),
+  )
+  assert_eq(
+    doc.root.to_html(pretty=false),
+    "<img src=\"/x\" onerror=\"alert(1)\">",
+  )
+  assert_eq(doc.to_markdown(), "<img src=\"/x\" onerror=\"alert(1)\">")
+}
+
+///|
 test "sanitize transform accepts custom policy and can replace standalone root" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["p"],
