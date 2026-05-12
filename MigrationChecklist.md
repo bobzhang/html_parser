@@ -276,6 +276,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Simplified CLI read-plan handling after parser-owned path validation.
 - [x] Refactored serializer raw-text and selector scanner helpers to use
       direct `StringView` slices and guarded UTF-16 cursor unwraps.
+- [x] Refactored serializer simple-selector match/validation paths to reuse
+      prior selector validity and scanner-boundary invariants.
 
 ## Working Rule
 

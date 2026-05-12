@@ -1987,8 +1987,8 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
     return non_element_simple_selector_matches(node, selector)
   }
   let mut pos = 0
-  match selector.get_char(pos) {
-    Some('*') => {
+  match selector.get_char(pos).unwrap() {
+    '*' => {
       pos += 1
       if pos < selector.length() {
         match selector.get_char(pos) {
@@ -1997,12 +1997,10 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
         }
       }
     }
-    Some('.') | Some('#') | Some('[') | Some(':') => ()
-    Some(_) => {
+    '.' | '#' | '[' | ':' => ()
+    _ => {
       let end = next_simple_selector_marker(selector, pos)
-      guard selector.get_view(start=pos, end~) is Some(tag) else {
-        return false
-      }
+      let tag = selector[pos:end]
       if tag.is_empty() ||
         !selector_identifier_is_valid(tag) ||
         !tag_selector_matches(node, tag) {
@@ -2010,17 +2008,14 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
       }
       pos = end
     }
-    None => return false
   }
   while pos < selector.length() {
-    guard selector.get_char(pos) is Some(marker) else { return false }
+    let marker = selector.get_char(pos).unwrap()
     if marker == '[' {
       guard find_attribute_selector_end(selector, pos) is Some(end) else {
         return false
       }
-      guard selector.get_view(start=pos + 1, end~) is Some(attribute) else {
-        return false
-      }
+      let attribute = selector[pos + 1:end]
       if !attribute_selector_matches(node, attribute) {
         return false
       }
@@ -2030,7 +2025,7 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
     if marker == ':' {
       let start = pos + marker.utf16_len()
       let end = next_simple_selector_marker(selector, start)
-      guard selector.get_view(start~, end~) is Some(name) else { return false }
+      let name = selector[start:end]
       if name.is_empty() || !pseudo_selector_matches(node, name) {
         return false
       }
@@ -2042,7 +2037,7 @@ fn matches_simple_selector(node : Node, selector : StringView) -> Bool {
     }
     let start = pos + marker.utf16_len()
     let end = next_simple_selector_marker(selector, start)
-    guard selector.get_view(start~, end~) is Some(name) else { return false }
+    let name = selector[start:end]
     if name.is_empty() || !selector_identifier_is_valid(name) {
       return false
     }
@@ -2065,8 +2060,8 @@ fn simple_selector_is_valid(selector : StringView) -> Bool {
     return false
   }
   let mut pos = 0
-  match selector.get_char(pos) {
-    Some('*') => {
+  match selector.get_char(pos).unwrap() {
+    '*' => {
       pos += 1
       if pos < selector.length() {
         match selector.get_char(pos) {
@@ -2075,28 +2070,23 @@ fn simple_selector_is_valid(selector : StringView) -> Bool {
         }
       }
     }
-    Some('.') | Some('#') | Some('[') | Some(':') => ()
-    Some(_) => {
+    '.' | '#' | '[' | ':' => ()
+    _ => {
       let end = next_simple_selector_marker(selector, pos)
-      guard selector.get_view(start=pos, end~) is Some(tag) else {
-        return false
-      }
+      let tag = selector[pos:end]
       if tag.is_empty() || !selector_identifier_is_valid(tag) {
         return false
       }
       pos = end
     }
-    None => return false
   }
   while pos < selector.length() {
-    guard selector.get_char(pos) is Some(marker) else { return false }
+    let marker = selector.get_char(pos).unwrap()
     if marker == '[' {
       guard find_attribute_selector_end(selector, pos) is Some(end) else {
         return false
       }
-      guard selector.get_view(start=pos + 1, end~) is Some(attribute) else {
-        return false
-      }
+      let attribute = selector[pos + 1:end]
       if !attribute_selector_is_valid(attribute) {
         return false
       }
@@ -2106,7 +2096,7 @@ fn simple_selector_is_valid(selector : StringView) -> Bool {
     if marker == ':' {
       let start = pos + marker.utf16_len()
       let end = next_simple_selector_marker(selector, start)
-      guard selector.get_view(start~, end~) is Some(name) else { return false }
+      let name = selector[start:end]
       if name.is_empty() || !pseudo_selector_is_valid(name) {
         return false
       }
@@ -2118,7 +2108,7 @@ fn simple_selector_is_valid(selector : StringView) -> Bool {
     }
     let start = pos + marker.utf16_len()
     let end = next_simple_selector_marker(selector, start)
-    guard selector.get_view(start~, end~) is Some(name) else { return false }
+    let name = selector[start:end]
     if name.is_empty() || !selector_identifier_is_valid(name) {
       return false
     }
@@ -2524,25 +2514,22 @@ fn selector_simple_component_count(selector : StringView) -> Int? {
   }
   let mut count = 0
   let mut pos = 0
-  match selector.get_char(pos) {
-    Some('*') => {
+  match selector.get_char(pos).unwrap() {
+    '*' => {
       count += 1
       pos += 1
     }
-    Some('.') | Some('#') | Some('[') | Some(':') => ()
-    Some(_) => {
+    '.' | '#' | '[' | ':' => ()
+    _ => {
       count += 1
       pos = next_simple_selector_marker(selector, pos)
     }
-    None => return None
   }
   while pos < selector.length() {
-    guard selector.get_char(pos) is Some(marker) else { return None }
+    let marker = selector.get_char(pos).unwrap()
     count += 1
     if marker == '[' {
-      guard find_attribute_selector_end(selector, pos) is Some(end) else {
-        return None
-      }
+      let end = find_attribute_selector_end(selector, pos).unwrap()
       pos = end + 1
     } else if marker == ':' {
       let start = pos + marker.utf16_len()
@@ -2550,8 +2537,6 @@ fn selector_simple_component_count(selector : StringView) -> Int? {
     } else if marker == '.' || marker == '#' {
       let start = pos + marker.utf16_len()
       pos = next_simple_selector_marker(selector, start)
-    } else {
-      return None
     }
   }
   Some(count)
@@ -2787,8 +2772,8 @@ fn matches_simple_selector_with_context(
     )
   }
   let mut pos = 0
-  match selector.get_char(pos) {
-    Some('*') => {
+  match selector.get_char(pos).unwrap() {
+    '*' => {
       pos += 1
       if pos < selector.length() {
         match selector.get_char(pos) {
@@ -2797,12 +2782,10 @@ fn matches_simple_selector_with_context(
         }
       }
     }
-    Some('.') | Some('#') | Some('[') | Some(':') => ()
-    Some(_) => {
+    '.' | '#' | '[' | ':' => ()
+    _ => {
       let end = next_simple_selector_marker(selector, pos)
-      guard selector.get_view(start=pos, end~) is Some(tag) else {
-        return false
-      }
+      let tag = selector[pos:end]
       if tag.is_empty() ||
         !selector_identifier_is_valid(tag) ||
         !tag_selector_matches(node, tag) {
@@ -2810,18 +2793,15 @@ fn matches_simple_selector_with_context(
       }
       pos = end
     }
-    None => return false
   }
   while pos < selector.length() {
     context.tick()
-    guard selector.get_char(pos) is Some(marker) else { return false }
+    let marker = selector.get_char(pos).unwrap()
     if marker == '[' {
       guard find_attribute_selector_end(selector, pos) is Some(end) else {
         return false
       }
-      guard selector.get_view(start=pos + 1, end~) is Some(attribute) else {
-        return false
-      }
+      let attribute = selector[pos + 1:end]
       if !attribute_selector_matches(node, attribute) {
         return false
       }
@@ -2831,7 +2811,7 @@ fn matches_simple_selector_with_context(
     if marker == ':' {
       let start = pos + marker.utf16_len()
       let end = next_simple_selector_marker(selector, start)
-      guard selector.get_view(start~, end~) is Some(name) else { return false }
+      let name = selector[start:end]
       if name.is_empty() ||
         !pseudo_selector_matches_with_context(node, name, context, depth) {
         return false
@@ -2844,7 +2824,7 @@ fn matches_simple_selector_with_context(
     }
     let start = pos + marker.utf16_len()
     let end = next_simple_selector_marker(selector, start)
-    guard selector.get_view(start~, end~) is Some(name) else { return false }
+    let name = selector[start:end]
     if name.is_empty() || !selector_identifier_is_valid(name) {
       return false
     }
