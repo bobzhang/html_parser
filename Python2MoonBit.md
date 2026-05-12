@@ -633,9 +633,11 @@ JustHTML from Python to MoonBit.
   public `Node::to_markdown` path must ignore comments/doctypes, drop empty
   inline formatting, and escape direct text nodes exactly like parsed text.
 - Fenced Markdown code blocks need delimiter selection from the raw code
-  content, not a fixed triple-backtick string. Strip trailing newlines and the
-  spaces/tabs that would sit immediately before the closing fence, and choose a
-  fence longer than any backtick run inside the code.
+  content, not a fixed triple-backtick string. Strip trailing newlines from the
+  body, then let the Markdown builder trim spaces/tabs when it emits the
+  following newline; trimming spaces before writing the body loses the blank
+  code line for whitespace-only `<pre>` content. Choose a fence longer than any
+  backtick run inside the code.
 - Inline code spans use the same longest-backtick-run rule, but CommonMark also
   needs a single padding space when the code content starts or ends with a
   backtick. Keep separate tests for leading and trailing backticks.

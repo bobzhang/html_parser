@@ -311,12 +311,6 @@ fn markdown_code_block_body(value : StringView) -> String {
       _ => break
     }
   }
-  while end > 0 {
-    match value.get_char(end - 1) {
-      Some(' ' | '\t') => end -= 1
-      _ => break
-    }
-  }
   match value.get_view(start=0, end~) {
     Some(body) => body.to_owned()
     None => value.to_owned()
