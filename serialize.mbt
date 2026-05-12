@@ -2508,6 +2508,139 @@ fn matches_selector_list(node : Node, selector : StringView) -> Bool {
 }
 
 ///|
+fn selector_simple_component_count(selector : StringView) -> Int? {
+  let selector = selector.trim()
+  if !simple_selector_is_valid(selector) {
+    return None
+  }
+  let mut count = 0
+  let mut pos = 0
+  match selector.get_char(pos) {
+    Some('*') => {
+      count += 1
+      pos += 1
+    }
+    Some('.') | Some('#') | Some('[') | Some(':') => ()
+    Some(_) => {
+      count += 1
+      pos = next_simple_selector_marker(selector, pos)
+    }
+    None => return None
+  }
+  while pos < selector.length() {
+    guard selector.get_char(pos) is Some(marker) else { return None }
+    count += 1
+    if marker == '[' {
+      guard find_attribute_selector_end(selector, pos) is Some(end) else {
+        return None
+      }
+      pos = end + 1
+    } else if marker == ':' {
+      let start = pos + marker.utf16_len()
+      pos = next_simple_selector_marker(selector, start)
+    } else if marker == '.' || marker == '#' {
+      let start = pos + marker.utf16_len()
+      pos = next_simple_selector_marker(selector, start)
+    } else {
+      return None
+    }
+  }
+  Some(count)
+}
+
+///|
+fn selector_validate_limits(
+  selector : StringView,
+  limits : SelectorLimits,
+) -> Unit raise HtmlError {
+  if selector.length() > limits.max_length {
+    raise SelectorError("Selector too long")
+  }
+  guard selector_list_parts(selector) is Some(parts) else { return }
+  if parts.length() > limits.max_list_items {
+    raise SelectorError("Selector list has too many items")
+  }
+  for part in parts {
+    guard split_complex_selector(part) is Some((simple_parts, _)) else {
+      continue
+    }
+    if simple_parts.length() > limits.max_complex_selector_parts {
+      raise SelectorError("Selector has too many complex parts")
+    }
+    for simple in simple_parts {
+      match selector_simple_component_count(simple) {
+        Some(count) if count > limits.max_compound_simple_selectors =>
+          raise SelectorError("Selector has too many simple selectors")
+        _ => ()
+      }
+    }
+  }
+}
+
+///|
+fn selector_uses_byte_scanned_match(selector : StringView) -> Bool {
+  string_view_contains(selector, "*=") ||
+  string_view_contains(lower_ascii(selector)[:], ":contains")
+}
+
+///|
+fn selector_match_byte_cost(node : Node, include_text : Bool) -> Int {
+  let mut cost = 0
+  for _, value in node.attrs {
+    match value {
+      Some(raw) => cost += raw.length()
+      None => ()
+    }
+  }
+  if include_text {
+    cost += selector_text_content(node).length()
+  }
+  cost
+}
+
+///|
+fn selector_check_match_budget(
+  node : Node,
+  selector : StringView,
+  limits : SelectorLimits,
+) -> Unit raise HtmlError {
+  if limits.max_match_bytes < 0 {
+    raise SelectorError("Selector match byte budget exceeded")
+  }
+  if selector_uses_byte_scanned_match(selector) {
+    let include_text = string_view_contains(
+      lower_ascii(selector)[:],
+      ":contains",
+    )
+    if selector_match_byte_cost(node, include_text) > limits.max_match_bytes {
+      raise SelectorError("Selector match byte budget exceeded")
+    }
+  }
+}
+
+///|
+fn matches_selector_list_with_limits(
+  node : Node,
+  selector : StringView,
+  limits : SelectorLimits,
+) -> Bool raise HtmlError {
+  selector_validate_limits(selector, limits)
+  guard selector_list_parts(selector) is Some(parts) else { return false }
+  for part in parts {
+    if !complex_selector_is_valid(part) {
+      return false
+    }
+  }
+  for part in parts {
+    selector_check_match_budget(node, part, limits)
+    if matches_complex_selector(node, part) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn node_identity_seen(nodes : Array[Node], node : Node) -> Bool {
   for seen in nodes {
     if physical_equal(seen, node) {

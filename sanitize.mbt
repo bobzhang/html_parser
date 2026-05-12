@@ -75,6 +75,7 @@ pub struct SanitizationPolicy {
   priv force_link_rel : Array[String]
   priv allowed_css_properties : Set[String]
   priv strip_invisible_unicode : Bool
+  priv selector_limits : SelectorLimits
   priv unsafe_handling : UnsafeHandling
   priv security_errors : Array[ParseError]
 } derive(Debug)
@@ -246,6 +247,7 @@ pub fn SanitizationPolicy::new(
   force_link_rel? : Array[String] = [],
   allowed_css_properties? : Array[String] = [],
   strip_invisible_unicode? : Bool = true,
+  selector_limits? : SelectorLimits,
   unsafe_handling? : UnsafeHandling = Strip,
 ) -> SanitizationPolicy {
   {
@@ -260,6 +262,7 @@ pub fn SanitizationPolicy::new(
     force_link_rel: sanitized_string_list(force_link_rel),
     allowed_css_properties: sanitized_string_set(allowed_css_properties),
     strip_invisible_unicode,
+    selector_limits: selector_limits.unwrap_or(default_selector_limits()),
     unsafe_handling,
     security_errors: [],
   }

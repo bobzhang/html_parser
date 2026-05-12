@@ -1,4 +1,13 @@
 ///|
+fn transform_repeat_for_test(value : String, count : Int) -> String {
+  let out = StringBuilder::new(size_hint=value.length() * count)
+  for _ in 0..<count {
+    out.write_string(value)
+  }
+  out.to_string()
+}
+
+///|
 test "apply_transforms drops unwraps escapes and empties selected elements" {
   let dropped = @html_parser.parse_fragment(
     "<p>ok</p><script>alert(1)</script>",
@@ -296,6 +305,75 @@ test "stage auto grouping preserves ordering and trailing transforms" {
   assert_eq(paragraphs.length(), 1)
   assert_true(paragraphs[0].attrs().get("id") is Some(Some("x")))
   assert_true(paragraphs[0].attrs().get("class") is Some(Some("y")))
+}
+
+///|
+test "sanitize policy selector limits apply to transform selectors" {
+  let long_class = transform_repeat_for_test("a", 8192)
+  let long_selector = "." + long_class
+  let relaxed_policy = @html_parser.SanitizationPolicy::new(
+    ["div"],
+    allowed_attributes={ "*": ["class", "id"] },
+    selector_limits=@html_parser.SelectorLimits::new(max_length=9000),
+  )
+  let relaxed = @html_parser.parse_fragment(
+    "<div class=\"" + long_class + "\"></div>",
+  )
+  ignore(
+    @html_parser.apply_transforms(relaxed.root, [
+      @html_parser.TransformSpec::set_attrs(long_selector, {
+        "id": Some("matched"),
+      }),
+      @html_parser.TransformSpec::sanitize(policy=relaxed_policy),
+    ]),
+  )
+  let relaxed_divs = relaxed.root.query("div")
+  assert_eq(relaxed_divs.length(), 1)
+  assert_true(relaxed_divs[0].attrs().get("id") is Some(Some("matched")))
+
+  let default_limited = @html_parser.parse_fragment("<div></div>")
+  let default_result = try? @html_parser.apply_transforms(
+    default_limited.root,
+    [
+      @html_parser.TransformSpec::set_attrs(long_selector, {
+        "id": Some("matched"),
+      }),
+      @html_parser.TransformSpec::sanitize(),
+    ],
+  )
+  match default_result {
+    Err(SelectorError(message)) => assert_eq(message, "Selector too long")
+    _ => fail("expected selector length limit error")
+  }
+
+  let budget_policy = @html_parser.SanitizationPolicy::new(
+    ["div"],
+    allowed_attributes={ "*": ["data-x"] },
+    selector_limits=@html_parser.SelectorLimits::new(max_match_bytes=10),
+  )
+  let short_circuit = @html_parser.parse_fragment(
+    "<div data-x=\"xxxxxxxxxxxxxxxxxxxx\"></div>",
+  )
+  ignore(
+    @html_parser.apply_transforms(short_circuit.root, [
+      @html_parser.TransformSpec::drop("div, [data-x*=y]"),
+      @html_parser.TransformSpec::sanitize(policy=budget_policy),
+    ]),
+  )
+  assert_eq(short_circuit.root.to_html(pretty=false), "")
+
+  let budget = @html_parser.parse_fragment(
+    "<div data-x=\"xxxxxxxxxxxxxxxxxxxx\"></div>",
+  )
+  let budget_result = try? @html_parser.apply_transforms(budget.root, [
+    @html_parser.TransformSpec::drop("[data-x*=y]"),
+    @html_parser.TransformSpec::sanitize(policy=budget_policy),
+  ])
+  match budget_result {
+    Err(SelectorError(message)) =>
+      assert_eq(message, "Selector match byte budget exceeded")
+    _ => fail("expected selector match byte budget error")
+  }
 }
 
 ///|

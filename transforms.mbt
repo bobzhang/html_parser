@@ -620,10 +620,46 @@ pub fn apply_transforms(
   node : Node,
   transforms : Array[TransformSpec],
 ) -> Node raise HtmlError {
+  let limits = selector_limits_from_transforms(transforms)
   if transform_list_has_enabled_stage(transforms) {
-    return apply_staged_transforms(node, transforms)
+    return apply_staged_transforms(node, transforms, limits)
   }
-  apply_stage_items(node, transforms)
+  apply_stage_items(node, transforms, limits)
+}
+
+///|
+fn selector_limits_from_transforms(
+  transforms : Array[TransformSpec],
+) -> SelectorLimits {
+  selector_limits_from_transform_list(transforms).unwrap_or(
+    default_selector_limits(),
+  )
+}
+
+///|
+fn selector_limits_from_transform_list(
+  transforms : Array[TransformSpec],
+) -> SelectorLimits? {
+  let mut limits : SelectorLimits? = None
+  for transform in transforms {
+    if transform.enabled {
+      match transform.kind {
+        SanitizeTree =>
+          match transform.sanitize_policy {
+            Some(policy) => limits = Some(policy.selector_limits)
+            None => limits = Some(default_selector_limits())
+          }
+        StageGroup =>
+          match
+            selector_limits_from_transform_list(transform.stage_transforms) {
+            Some(stage_limits) => limits = Some(stage_limits)
+            None => ()
+          }
+        _ => ()
+      }
+    }
+  }
+  limits
 }
 
 ///|
@@ -643,6 +679,7 @@ fn transform_list_has_enabled_stage(transforms : Array[TransformSpec]) -> Bool {
 fn apply_staged_transforms(
   node : Node,
   transforms : Array[TransformSpec],
+  limits : SelectorLimits,
 ) -> Node raise HtmlError {
   let mut current = node
   let mut pending : Array[TransformSpec] = []
@@ -653,17 +690,19 @@ fn apply_staged_transforms(
         if transform.enabled {
           if !pending.is_empty() {
             stage_index += 1
-            current = apply_stage_items(current, pending)
+            current = apply_stage_items(current, pending, limits)
             pending = []
           }
           stage_index += 1
-          current = apply_explicit_stage(current, transform, stage_index)
+          current = apply_explicit_stage(
+            current, transform, stage_index, limits,
+          )
         }
       _ => pending.push(transform)
     }
   }
   if !pending.is_empty() {
-    current = apply_stage_items(current, pending)
+    current = apply_stage_items(current, pending, limits)
   }
   current
 }
@@ -673,16 +712,18 @@ fn apply_explicit_stage(
   node : Node,
   stage : TransformSpec,
   index : Int,
+  limits : SelectorLimits,
 ) -> Node raise HtmlError {
   transform_call_hook(node, stage)
   transform_report(stage, "Stage " + index.to_string(), Some(node))
-  apply_stage_items(node, stage.stage_transforms)
+  apply_stage_items(node, stage.stage_transforms, limits)
 }
 
 ///|
 fn apply_stage_items(
   node : Node,
   transforms : Array[TransformSpec],
+  limits : SelectorLimits,
 ) -> Node raise HtmlError {
   let transforms = flatten_enabled_stage_items(transforms)
   let mut current = node
@@ -697,10 +738,10 @@ fn apply_stage_items(
           prune_batch.push(transforms[index])
           index += 1
         }
-        apply_prune_empty_transforms(current, prune_batch)
+        apply_prune_empty_transforms(current, prune_batch, limits)
       }
       _ => {
-        current = apply_transform(current, transform)
+        current = apply_transform(current, transform, limits)
         index += 1
       }
     }
@@ -741,6 +782,7 @@ fn flatten_enabled_stage_items(
 fn apply_transform(
   node : Node,
   transform : TransformSpec,
+  limits : SelectorLimits,
 ) -> Node raise HtmlError {
   match transform.kind {
     EditDocumentRoot => {
@@ -759,11 +801,11 @@ fn apply_transform(
     | EditAttributes
     | DropUrlAttributes
     | AllowStyleAttributes => {
-      apply_selector_transform(node, transform)
+      apply_selector_transform(node, transform, limits)
       node
     }
     DecideNode => {
-      apply_decide_transform(node, transform)
+      apply_decide_transform(node, transform, limits)
       node
     }
     SanitizeTree =>
@@ -793,7 +835,7 @@ fn apply_transform(
       node
     }
     PruneEmptyElements => {
-      apply_prune_empty_transform(node, transform)
+      apply_prune_empty_transform(node, transform, limits)
       node
     }
     LinkifyTextNodes => {
@@ -805,7 +847,7 @@ fn apply_transform(
         transform,
       )
     }
-    StageGroup => apply_stage_items(node, transform.stage_transforms)
+    StageGroup => apply_stage_items(node, transform.stage_transforms, limits)
   }
 }
 
@@ -914,19 +956,28 @@ fn transform_report_node_action(
 }
 
 ///|
-fn apply_selector_transform(root : Node, transform : TransformSpec) -> Unit {
+fn apply_selector_transform(
+  root : Node,
+  transform : TransformSpec,
+  limits : SelectorLimits,
+) -> Unit raise HtmlError {
   match root.kind {
-    Document | Fragment | Element => transform_children(root, transform)
+    Document | Fragment | Element => transform_children(root, transform, limits)
     _ => ()
   }
 }
 
 ///|
-fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
+fn transform_children(
+  parent : Node,
+  transform : TransformSpec,
+  limits : SelectorLimits,
+) -> Unit raise HtmlError {
   let mut index = 0
   while index < parent.children.length() {
     let child = parent.children[index]
-    if child.kind == Element && transform_matches_element(child, transform) {
+    if child.kind == Element &&
+      transform_matches_element(child, transform, limits) {
       match transform.kind {
         DropElements => {
           transform_report_node_action(child, transform, "Dropped")
@@ -937,7 +988,7 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
           let inserted = unwrap_child_at(parent, index)
           if inserted > 0 {
             transform_inserted_children_after_unwrap(
-              parent, index, inserted, transform,
+              parent, index, inserted, transform, limits,
             )
             index += inserted
           }
@@ -959,17 +1010,17 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
           if apply_set_attrs_transform(child, transform) {
             transform_report_node_action(child, transform, "Set attributes on")
           }
-          transform_children(child, transform)
+          transform_children(child, transform, limits)
           index += 1
         }
         DropAttributes => {
           ignore(apply_drop_attrs_transform(child, transform))
-          transform_children(child, transform)
+          transform_children(child, transform, limits)
           index += 1
         }
         AllowlistAttributes => {
           ignore(apply_allowlist_attrs_transform(child, transform))
-          transform_children(child, transform)
+          transform_children(child, transform, limits)
           index += 1
         }
         MergeAttributeTokens => {
@@ -985,14 +1036,14 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
               Some(child),
             )
           }
-          transform_children(child, transform)
+          transform_children(child, transform, limits)
           index += 1
         }
         EditElement => {
           apply_edit_transform(child, transform)
           if index < parent.children.length() &&
             physical_equal(parent.children[index], child) {
-            transform_children(child, transform)
+            transform_children(child, transform, limits)
             index += 1
           }
         }
@@ -1004,25 +1055,26 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
           }
           if index < parent.children.length() &&
             physical_equal(parent.children[index], child) {
-            transform_children(child, transform)
+            transform_children(child, transform, limits)
             index += 1
           }
         }
         DropUrlAttributes => {
           ignore(apply_drop_url_attrs_transform(child, transform))
-          transform_children(child, transform)
+          transform_children(child, transform, limits)
           index += 1
         }
         AllowStyleAttributes => {
           ignore(apply_allow_style_attrs_transform(child, transform))
-          transform_children(child, transform)
+          transform_children(child, transform, limits)
           index += 1
         }
         _ => index += 1
       }
     } else {
       match child.kind {
-        Document | Fragment | Element => transform_children(child, transform)
+        Document | Fragment | Element =>
+          transform_children(child, transform, limits)
         _ => ()
       }
       index += 1
@@ -1036,12 +1088,14 @@ fn transform_inserted_children_after_unwrap(
   start : Int,
   count : Int,
   transform : TransformSpec,
-) -> Unit {
+  limits : SelectorLimits,
+) -> Unit raise HtmlError {
   let mut offset = 0
   while offset < count && start + offset < parent.children.length() {
     let child = parent.children[start + offset]
     match child.kind {
-      Document | Fragment | Element => transform_children(child, transform)
+      Document | Fragment | Element =>
+        transform_children(child, transform, limits)
       _ => ()
     }
     offset += 1
@@ -1049,9 +1103,14 @@ fn transform_inserted_children_after_unwrap(
 }
 
 ///|
-fn apply_decide_transform(root : Node, transform : TransformSpec) -> Unit {
+fn apply_decide_transform(
+  root : Node,
+  transform : TransformSpec,
+  limits : SelectorLimits,
+) -> Unit raise HtmlError {
   match root.kind {
-    Document | Fragment | Element => decide_transform_children(root, transform)
+    Document | Fragment | Element =>
+      decide_transform_children(root, transform, limits)
     _ => ()
   }
 }
@@ -1086,11 +1145,12 @@ fn decide_transform_matches_node(
   node : Node,
   transform : TransformSpec,
   all_nodes : Bool,
-) -> Bool {
+  limits : SelectorLimits,
+) -> Bool raise HtmlError {
   if all_nodes {
     true
   } else {
-    node.kind == Element && transform_matches_element(node, transform)
+    node.kind == Element && transform_matches_element(node, transform, limits)
   }
 }
 
@@ -1132,17 +1192,21 @@ fn decide_escape_child_at(parent : Node, index : Int) -> Unit {
 }
 
 ///|
-fn decide_transform_children(parent : Node, transform : TransformSpec) -> Unit {
+fn decide_transform_children(
+  parent : Node,
+  transform : TransformSpec,
+  limits : SelectorLimits,
+) -> Unit raise HtmlError {
   let all_nodes = decide_transform_all_nodes(transform)
   let mut index = 0
   while index < parent.children.length() {
     let child = parent.children[index]
-    if decide_transform_matches_node(child, transform, all_nodes) {
+    if decide_transform_matches_node(child, transform, all_nodes, limits) {
       match decide_transform_action(child, transform) {
         Keep => {
           match child.kind {
             Document | Fragment | Element =>
-              decide_transform_children(child, transform)
+              decide_transform_children(child, transform, limits)
             _ => ()
           }
           index += 1
@@ -1158,7 +1222,7 @@ fn decide_transform_children(parent : Node, transform : TransformSpec) -> Unit {
     } else {
       match child.kind {
         Document | Fragment | Element =>
-          decide_transform_children(child, transform)
+          decide_transform_children(child, transform, limits)
         _ => ()
       }
       index += 1
@@ -1167,10 +1231,14 @@ fn decide_transform_children(parent : Node, transform : TransformSpec) -> Unit {
 }
 
 ///|
-fn transform_matches_element(node : Node, transform : TransformSpec) -> Bool {
+fn transform_matches_element(
+  node : Node,
+  transform : TransformSpec,
+  limits : SelectorLimits,
+) -> Bool raise HtmlError {
   match transform.kind {
     MergeAttributeTokens => lower_ascii(node.name) == transform.merge_tag
-    _ => matches(node, transform.selector)
+    _ => matches_selector_list_with_limits(node, transform.selector, limits)
   }
 }
 
@@ -1951,17 +2019,23 @@ fn prune_empty_node_is_effectively_empty(
 }
 
 ///|
-fn apply_prune_empty_transform(root : Node, transform : TransformSpec) -> Unit {
-  apply_prune_empty_transforms(root, [transform])
+fn apply_prune_empty_transform(
+  root : Node,
+  transform : TransformSpec,
+  limits : SelectorLimits,
+) -> Unit raise HtmlError {
+  apply_prune_empty_transforms(root, [transform], limits)
 }
 
 ///|
 fn apply_prune_empty_transforms(
   root : Node,
   transforms : Array[TransformSpec],
-) -> Unit {
+  limits : SelectorLimits,
+) -> Unit raise HtmlError {
   match root.kind {
-    Document | Fragment | Element => prune_empty_children(root, transforms)
+    Document | Fragment | Element =>
+      prune_empty_children(root, transforms, limits)
     _ => ()
   }
 }
@@ -1970,20 +2044,21 @@ fn apply_prune_empty_transforms(
 fn prune_empty_children(
   parent : Node,
   transforms : Array[TransformSpec],
-) -> Unit {
+  limits : SelectorLimits,
+) -> Unit raise HtmlError {
   let mut index = 0
   while index < parent.children.length() {
     let child = parent.children[index]
     match child.kind {
       Document | Fragment => {
-        prune_empty_children(child, transforms)
+        prune_empty_children(child, transforms, limits)
         index += 1
       }
       Element => {
-        prune_empty_children(child, transforms)
+        prune_empty_children(child, transforms, limits)
         let mut removed = false
         for transform in transforms {
-          if transform_matches_element(child, transform) &&
+          if transform_matches_element(child, transform, limits) &&
             prune_empty_node_is_effectively_empty(
               child,
               transform.strip_whitespace,

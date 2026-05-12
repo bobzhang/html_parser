@@ -100,7 +100,48 @@ pub(all) suberror HtmlError {
   StrictMode(ParseError)
   InvalidSerialization(String)
   UnsafeHtml(String)
+  SelectorError(String)
 } derive(Debug, Eq)
+
+///|
+pub(all) struct SelectorLimits {
+  max_match_depth : Int
+  max_length : Int
+  max_list_items : Int
+  max_compound_simple_selectors : Int
+  max_complex_selector_parts : Int
+  max_parse_depth : Int
+  max_match_steps : Int
+  max_match_bytes : Int
+} derive(Debug, Eq)
+
+///|
+pub fn SelectorLimits::new(
+  max_match_depth? : Int = 100,
+  max_length? : Int = 8192,
+  max_list_items? : Int = 256,
+  max_compound_simple_selectors? : Int = 512,
+  max_complex_selector_parts? : Int = 512,
+  max_parse_depth? : Int = 100,
+  max_match_steps? : Int = 100000000,
+  max_match_bytes? : Int = 100000000,
+) -> SelectorLimits {
+  {
+    max_match_depth,
+    max_length,
+    max_list_items,
+    max_compound_simple_selectors,
+    max_complex_selector_parts,
+    max_parse_depth,
+    max_match_steps,
+    max_match_bytes,
+  }
+}
+
+///|
+fn default_selector_limits() -> SelectorLimits {
+  SelectorLimits::new()
+}
 
 ///|
 pub struct Node {

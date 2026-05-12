@@ -425,6 +425,10 @@ JustHTML from Python to MoonBit.
   especially subtle: direct children hoisted by the unwrap skip that same
   selector transform, but their descendants are still walked, and later
   transforms can see the direct children.
+- Python chooses selector resource limits for a compiled transform list from
+  the last enabled `Sanitize` transform. Mirror that at `apply_transforms` time
+  in MoonBit so an earlier selector transform can still use a later sanitizer
+  policy's larger `max_length` or smaller match budget.
 - `Decide("*", ...)` is not an element selector shortcut in Python. It calls
   the callback for every node type reached by the walker, including comments,
   text, doctypes, and nested document/fragment containers. Other selectors only

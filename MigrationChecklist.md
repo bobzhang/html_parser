@@ -67,7 +67,9 @@ reference implementation in `.repos/justhtml`.
   - [x] Deterministic stage ordering, nested stage flattening, and implicit
         leading/trailing stage coverage
   - [x] Selector `Unwrap` moved-node walk marker parity
-  - [ ] Selector limits and remaining compiled-walk marker edge cases
+  - [x] Sanitizer policy selector `max_length` and `max_match_bytes`
+        transform coverage
+  - [ ] Remaining selector depth/step limits and compiled-walk marker edge cases
 - [ ] Streaming API
   - [ ] `StreamSink` equivalent
   - [ ] Incremental token/tree event delivery
