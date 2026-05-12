@@ -330,6 +330,8 @@ reference implementation in `.repos/justhtml`.
       kept CI calling it.
 - [x] Added a single local CI entrypoint that runs the repository validation
       gates and made GitHub Actions call it.
+- [x] Added GitHub Actions log grouping to the local CI entrypoint so hosted
+      failures remain easy to inspect.
 
 ## Working Rule
 

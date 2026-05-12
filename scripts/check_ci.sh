@@ -23,8 +23,25 @@ if [[ "$#" -gt 1 ]]; then
   exit 2
 fi
 
+group_open=false
+
+finish_group() {
+  if [[ "${GITHUB_ACTIONS:-}" == "true" && "$group_open" == true ]]; then
+    echo "::endgroup::"
+    group_open=false
+  fi
+}
+
+trap finish_group EXIT
+
 step() {
-  printf '\n==> %s\n' "$1"
+  if [[ "${GITHUB_ACTIONS:-}" == "true" ]]; then
+    finish_group
+    echo "::group::$1"
+    group_open=true
+  else
+    printf '\n==> %s\n' "$1"
+  fi
 }
 
 step "Check release version consistency"
