@@ -680,32 +680,32 @@ fn extract_url_scheme(value : StringView) -> String? {
   let mut pos = 0
   let mut saw_scheme_char = false
   while pos < value.length() {
-    match value.get_char(pos) {
-      Some(ch) if is_ascii_url_boundary(ch) => return None
-      Some(':') =>
-        if saw_scheme_char {
-          return Some(out.to_string())
-        } else {
-          return None
-        }
-      Some(ch) if is_url_ignored_scheme_char(ch) => pos += ch.utf16_len()
-      Some(ch) => {
-        if !saw_scheme_char {
-          if !is_url_scheme_start(ch) {
-            return None
-          }
-          saw_scheme_char = true
-        } else if !is_url_scheme_char(ch) {
-          return None
-        }
-        if ch.is_ascii_uppercase() {
-          out.write_char(ch.to_ascii_lowercase())
-        } else {
-          out.write_char(ch)
-        }
-        pos += ch.utf16_len()
+    let ch = value.get_char(pos).unwrap()
+    if is_ascii_url_boundary(ch) {
+      return None
+    } else if ch == ':' {
+      if saw_scheme_char {
+        return Some(out.to_string())
+      } else {
+        return None
       }
-      None => return None
+    } else if is_url_ignored_scheme_char(ch) {
+      pos += ch.utf16_len()
+    } else {
+      if !saw_scheme_char {
+        if !is_url_scheme_start(ch) {
+          return None
+        }
+        saw_scheme_char = true
+      } else if !is_url_scheme_char(ch) {
+        return None
+      }
+      if ch.is_ascii_uppercase() {
+        out.write_char(ch.to_ascii_lowercase())
+      } else {
+        out.write_char(ch)
+      }
+      pos += ch.utf16_len()
     }
   }
   None
@@ -716,20 +716,19 @@ fn url_scheme_prefix_is_valid(value : StringView, end : Int) -> Bool {
   let mut pos = 0
   let mut saw_scheme_char = false
   while pos < end {
-    match value.get_char(pos) {
-      Some(ch) if is_url_ignored_scheme_char(ch) => pos += ch.utf16_len()
-      Some(ch) => {
-        if !saw_scheme_char {
-          if !is_url_scheme_start(ch) {
-            return false
-          }
-          saw_scheme_char = true
-        } else if !is_url_scheme_char(ch) {
+    let ch = value.get_char(pos).unwrap()
+    if is_url_ignored_scheme_char(ch) {
+      pos += ch.utf16_len()
+    } else {
+      if !saw_scheme_char {
+        if !is_url_scheme_start(ch) {
           return false
         }
-        pos += ch.utf16_len()
+        saw_scheme_char = true
+      } else if !is_url_scheme_char(ch) {
+        return false
       }
-      None => return false
+      pos += ch.utf16_len()
     }
   }
   saw_scheme_char
@@ -739,16 +738,16 @@ fn url_scheme_prefix_is_valid(value : StringView, end : Int) -> Bool {
 fn has_invalid_scheme_like_prefix(value : StringView) -> Bool {
   let mut pos = 0
   while pos < value.length() {
-    match value.get_char(pos) {
-      Some(':') =>
+    let ch = value.get_char(pos).unwrap()
+    match ch {
+      ':' =>
         if pos == 0 {
           return false
         } else {
           return !url_scheme_prefix_is_valid(value, pos)
         }
-      Some(ch) if is_ascii_url_boundary(ch) => return false
-      Some(ch) => pos += ch.utf16_len()
-      None => break
+      _ if is_ascii_url_boundary(ch) => return false
+      _ => pos += ch.utf16_len()
     }
   }
   false
@@ -818,9 +817,7 @@ fn extract_bracketed_authority_host(
         if after_bracket < end && !(value.get_char(after_bracket) is Some(':')) {
           return None
         }
-        guard value.get_view(start=start + 1, end=pos) is Some(host) else {
-          return None
-        }
+        let host = value[start + 1:pos]
         return Some(lower_ascii(host))
       }
       Some(ch) => pos += ch.utf16_len()
@@ -864,8 +861,9 @@ fn extract_absolute_url_host(value : StringView) -> String? {
   guard extract_url_scheme(value) is Some(_) else { return None }
   let mut pos = 0
   while pos < value.length() {
-    match value.get_char(pos) {
-      Some(':') => {
+    let ch = value.get_char(pos).unwrap()
+    match ch {
+      ':' => {
         let after_colon = pos + 1
         if !(value.get_char(after_colon) is Some('/')) ||
           !(value.get_char(after_colon + 1) is Some('/')) {
@@ -875,8 +873,7 @@ fn extract_absolute_url_host(value : StringView) -> String? {
         let authority_end = url_authority_end(value, authority_start)
         return extract_authority_host(value, authority_start, authority_end)
       }
-      Some(ch) => pos += ch.utf16_len()
-      None => break
+      _ => pos += ch.utf16_len()
     }
   }
   None
@@ -1009,9 +1006,6 @@ fn sanitize_url_attribute_value_with_rule(
     return None
   } else {
     let normalized = normalize_url_for_checking(trimmed)
-    if normalized == "" {
-      return None
-    }
     let handling = rule.handling.unwrap_or(policy.default_handling)
     let allow_relative = rule.allow_relative.unwrap_or(
       policy.default_allow_relative,
@@ -1084,17 +1078,13 @@ fn sanitize_single_url_attribute_value(
 fn split_srcset_candidate(candidate : StringView) -> (StringView, StringView) {
   let mut pos = 0
   while pos < candidate.length() {
-    match candidate.get_char(pos) {
-      Some(ch) if is_html_whitespace_char(ch) => {
-        let url = candidate.get_view(start=0, end=pos).unwrap_or(candidate)
-        let descriptor = candidate
-          .get_view(start=pos, end=candidate.length())
-          .map(fn(view) { view.trim() })
-          .unwrap_or("")
-        return (url, descriptor)
-      }
-      Some(ch) => pos += ch.utf16_len()
-      None => break
+    let ch = candidate.get_char(pos).unwrap()
+    if is_html_whitespace_char(ch) {
+      let url = candidate[0:pos]
+      let descriptor = candidate[pos:candidate.length()].trim()
+      return (url, descriptor)
+    } else {
+      pos += ch.utf16_len()
     }
   }
   (candidate, "")
@@ -1158,31 +1148,9 @@ fn sanitize_srcset_attribute_value(
   let mut start = 0
   let mut pos = 0
   while pos < view.length() {
-    match view.get_char(pos) {
-      Some(',') => {
-        match view.get_view(start~, end=pos) {
-          Some(candidate) =>
-            if !push_sanitized_srcset_candidate(
-                out,
-                policy.url_policy,
-                rule,
-                tag_name,
-                attr_name,
-                candidate,
-              ) {
-              return None
-            }
-          None => ()
-        }
-        pos += 1
-        start = pos
-      }
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
-  }
-  match view.get_view(start~, end=view.length()) {
-    Some(candidate) =>
+    let ch = view.get_char(pos).unwrap()
+    if ch == ',' {
+      let candidate = view[start:pos]
       if !push_sanitized_srcset_candidate(
           out,
           policy.url_policy,
@@ -1193,7 +1161,22 @@ fn sanitize_srcset_attribute_value(
         ) {
         return None
       }
-    None => ()
+      pos += 1
+      start = pos
+    } else {
+      pos += ch.utf16_len()
+    }
+  }
+  let candidate = view[start:view.length()]
+  if !push_sanitized_srcset_candidate(
+      out,
+      policy.url_policy,
+      rule,
+      tag_name,
+      attr_name,
+      candidate,
+    ) {
+    return None
   }
   if out.is_empty() {
     None
@@ -1255,31 +1238,9 @@ fn sanitize_space_separated_url_list_attribute_value(
   let mut start = 0
   let mut pos = 0
   while pos < view.length() {
-    match view.get_char(pos) {
-      Some(ch) if is_html_whitespace_char(ch) => {
-        match view.get_view(start~, end=pos) {
-          Some(token) =>
-            if !push_sanitized_url_list_token(
-                out,
-                policy.url_policy,
-                rule,
-                tag_name,
-                attr_name,
-                token,
-              ) {
-              return None
-            }
-          None => ()
-        }
-        pos += ch.utf16_len()
-        start = pos
-      }
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
-  }
-  match view.get_view(start~, end=view.length()) {
-    Some(token) =>
+    let ch = view.get_char(pos).unwrap()
+    if is_html_whitespace_char(ch) {
+      let token = view[start:pos]
       if !push_sanitized_url_list_token(
           out,
           policy.url_policy,
@@ -1290,7 +1251,22 @@ fn sanitize_space_separated_url_list_attribute_value(
         ) {
         return None
       }
-    None => ()
+      pos += ch.utf16_len()
+      start = pos
+    } else {
+      pos += ch.utf16_len()
+    }
+  }
+  let token = view[start:view.length()]
+  if !push_sanitized_url_list_token(
+      out,
+      policy.url_policy,
+      rule,
+      tag_name,
+      attr_name,
+      token,
+    ) {
+    return None
   }
   if out.is_empty() {
     None
@@ -1409,9 +1385,10 @@ fn css_safety_normalize(value : StringView) -> String? {
   let out = StringBuilder::new(size_hint=value.length())
   let mut pos = 0
   while pos < value.length() {
-    match value.get_char(pos) {
-      Some('\\') => return None
-      Some('/') if value.get_char(pos + 1) is Some('*') => {
+    let ch = value.get_char(pos).unwrap()
+    match ch {
+      '\\' => return None
+      '/' if value.get_char(pos + 1) is Some('*') => {
         pos += 2
         let mut closed = false
         while pos < value.length() {
@@ -1421,17 +1398,15 @@ fn css_safety_normalize(value : StringView) -> String? {
             closed = true
             break
           }
-          match value.get_char(pos) {
-            Some(ch) => pos += ch.utf16_len()
-            None => break
-          }
+          let ch = value.get_char(pos).unwrap()
+          pos += ch.utf16_len()
         }
         if !closed {
           return None
         }
       }
-      Some(ch) if is_url_ignored_scheme_char(ch) => pos += ch.utf16_len()
-      Some(ch) => {
+      _ if is_url_ignored_scheme_char(ch) => pos += ch.utf16_len()
+      _ => {
         if ch.is_ascii_uppercase() {
           out.write_char(ch.to_ascii_lowercase())
         } else {
@@ -1439,7 +1414,6 @@ fn css_safety_normalize(value : StringView) -> String? {
         }
         pos += ch.utf16_len()
       }
-      None => break
     }
   }
   Some(out.to_string())
@@ -1505,10 +1479,11 @@ fn css_url_skip_whitespace(value : StringView, start : Int) -> Int {
 fn css_find_char(value : StringView, start : Int, needle : Char) -> Int? {
   let mut pos = start
   while pos < value.length() {
-    match value.get_char(pos) {
-      Some(ch) if ch == needle => return Some(pos)
-      Some(ch) => pos += ch.utf16_len()
-      None => break
+    let ch = value.get_char(pos).unwrap()
+    if ch == needle {
+      return Some(pos)
+    } else {
+      pos += ch.utf16_len()
     }
   }
   None
@@ -1521,10 +1496,8 @@ fn css_next_url_function(value : StringView, start : Int) -> Int? {
     if starts_with_case_insensitive(value, pos, "url(") {
       return Some(pos)
     }
-    match value.get_char(pos) {
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
+    let ch = value.get_char(pos).unwrap()
+    pos += ch.utf16_len()
   }
   None
 }
@@ -1591,10 +1564,8 @@ fn sanitize_url_function_value(
   while true {
     match css_next_url_function(value, pos) {
       Some(url_start) => {
-        match value.get_view(start=pos, end=url_start) {
-          Some(prefix) => write_string_view(out, prefix)
-          None => return None
-        }
+        let prefix = value[pos:url_start]
+        write_string_view(out, prefix)
         let mut cursor = css_url_skip_whitespace(value, url_start + 4)
         guard value.get_char(cursor) is Some(first) else { return None }
         let url_raw = match first {
@@ -1609,10 +1580,7 @@ fn sanitize_url_function_value(
             if !(value.get_char(cursor) is Some(')')) {
               return None
             }
-            guard value.get_view(start=url_start, end=url_end) is Some(raw) else {
-              return None
-            }
-            raw
+            value[url_start:url_end]
           }
           _ => {
             let url_start = cursor
@@ -1620,10 +1588,7 @@ fn sanitize_url_function_value(
               return None
             }
             cursor = url_end
-            guard value.get_view(start=url_start, end=url_end) is Some(raw) else {
-              return None
-            }
-            let raw = raw.trim()
+            let raw = value[url_start:url_end].trim()
             if raw.is_empty() || string_contains_forbidden_url_char(raw) {
               return None
             }
@@ -1657,10 +1622,8 @@ fn sanitize_url_function_value(
         pos = after_paren
       }
       None => {
-        match value.get_view(start=pos, end=value.length()) {
-          Some(rest) => write_string_view(out, rest)
-          None => return None
-        }
+        let rest = value[pos:value.length()]
+        write_string_view(out, rest)
         break
       }
     }
@@ -1696,10 +1659,11 @@ fn sanitize_foreign_url_function_attribute_value(
 fn style_declaration_colon(declaration : StringView) -> Int? {
   let mut pos = 0
   while pos < declaration.length() {
-    match declaration.get_char(pos) {
-      Some(':') => return Some(pos)
-      Some(ch) => pos += ch.utf16_len()
-      None => break
+    let ch = declaration.get_char(pos).unwrap()
+    if ch == ':' {
+      return Some(pos)
+    } else {
+      pos += ch.utf16_len()
     }
   }
   None
@@ -1716,18 +1680,13 @@ fn sanitize_style_declaration(
     return None
   }
   guard style_declaration_colon(declaration) is Some(colon) else { return None }
-  guard declaration.get_view(start=0, end=colon) is Some(prop_view) else {
-    return None
-  }
+  let prop_view = declaration[0:colon]
   let prop = lower_ascii(prop_view.trim())
   if !is_valid_css_property_name(prop) ||
     !policy.allowed_css_properties.contains(prop) {
     return None
   }
-  guard declaration.get_view(start=colon + 1, end=declaration.length())
-    is Some(value_view) else {
-    return None
-  }
+  let value_view = declaration[colon + 1:declaration.length()]
   let value = value_view.trim()
   if value.is_empty() {
     return None
@@ -1756,29 +1715,22 @@ fn sanitize_inline_style_value(
   let mut start = 0
   let mut pos = 0
   while pos < view.length() {
-    match view.get_char(pos) {
-      Some(';') => {
-        match view.get_view(start~, end=pos) {
-          Some(declaration) =>
-            match sanitize_style_declaration(declaration, policy, tag_name) {
-              Some(part) => parts.push(part)
-              None => ()
-            }
-          None => ()
-        }
-        pos += 1
-        start = pos
-      }
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
-  }
-  match view.get_view(start~, end=view.length()) {
-    Some(declaration) =>
+    let ch = view.get_char(pos).unwrap()
+    if ch == ';' {
+      let declaration = view[start:pos]
       match sanitize_style_declaration(declaration, policy, tag_name) {
         Some(part) => parts.push(part)
         None => ()
       }
+      pos += 1
+      start = pos
+    } else {
+      pos += ch.utf16_len()
+    }
+  }
+  let declaration = view[start:view.length()]
+  match sanitize_style_declaration(declaration, policy, tag_name) {
+    Some(part) => parts.push(part)
     None => ()
   }
   if parts.is_empty() {
@@ -1825,26 +1777,21 @@ fn push_html_whitespace_tokens(
   let mut token_start = 0
   let mut pos = 0
   while pos < value.length() {
-    match value.get_char(pos) {
-      Some(ch) if is_html_whitespace_char(ch) => {
-        if token_start < pos {
-          match value.get_view(start=token_start, end=pos) {
-            Some(token) => push_unique_string(tokens, lower_ascii(token.trim()))
-            None => ()
-          }
-        }
-        pos += ch.utf16_len()
-        token_start = pos
+    let ch = value.get_char(pos).unwrap()
+    if is_html_whitespace_char(ch) {
+      if token_start < pos {
+        let token = value[token_start:pos]
+        push_unique_string(tokens, lower_ascii(token.trim()))
       }
-      Some(ch) => pos += ch.utf16_len()
-      None => break
+      pos += ch.utf16_len()
+      token_start = pos
+    } else {
+      pos += ch.utf16_len()
     }
   }
   if token_start < value.length() {
-    match value.get_view(start=token_start, end=value.length()) {
-      Some(token) => push_unique_string(tokens, lower_ascii(token.trim()))
-      None => ()
-    }
+    let token = value[token_start:value.length()]
+    push_unique_string(tokens, lower_ascii(token.trim()))
   }
 }
 
@@ -1970,8 +1917,8 @@ fn sanitize_element_attributes(
   if policy.strip_invisible_unicode {
     let stripped_attr_names : Array[String] = []
     for key in node.attrs.keys() {
-      match node.attrs.get(key) {
-        Some(Some(raw_value)) => {
+      match node.attrs.get(key).unwrap() {
+        Some(raw_value) => {
           let stripped = strip_invisible_unicode(raw_value)
           if stripped != raw_value {
             node.attrs[key] = Some(stripped)
@@ -2020,8 +1967,8 @@ fn sanitize_element_attributes(
       )
       node.attrs.remove(key)
     } else {
-      match node.attrs.get(key) {
-        Some(Some(raw_value)) => {
+      match node.attrs.get(key).unwrap() {
+        Some(raw_value) => {
           let value = raw_value
           match
             sanitize_attribute_value(
@@ -2053,7 +2000,7 @@ fn sanitize_element_attributes(
             }
           }
         }
-        Some(None) if attr_name == "href" ||
+        None if attr_name == "href" ||
           attr_name == "src" ||
           attr_name == "style" ||
           is_single_url_like_attr(attr_name) ||
@@ -2073,12 +2020,11 @@ fn sanitize_element_attributes(
           )
           node.attrs.remove(key)
         }
-        Some(value) =>
+        value =>
           if attr_name != key {
             node.attrs.remove(key)
             node.attrs[attr_name] = value
           }
-        None => ()
       }
     }
   }

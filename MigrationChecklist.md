@@ -286,6 +286,9 @@ reference implementation in `.repos/justhtml`.
       UTF-16 cursor and map-key invariants.
 - [x] Removed impossible transform escape/linkify inserted-count fallbacks and
       added whitebox coverage for defensive transform helper/constructor no-ops.
+- [x] Refactored sanitizer URL, CSS, srcset, style, and token-list scanners to
+      use direct `StringView` slices and guarded UTF-16 cursor unwraps, with
+      astral-character boundary coverage for URL/style/token splitting.
 
 ## Working Rule
 
