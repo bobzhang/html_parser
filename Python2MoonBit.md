@@ -353,6 +353,10 @@ JustHTML from Python to MoonBit.
   so unchanged operations such as empty `DropAttrs` patterns, already-normalized
   `MergeAttrs`, missing `style`/URL attributes, and root leaf nodes should
   assert both stable output and absent hooks.
+- Nested `Stage` transforms are flattened for execution, but sanitizer-carried
+  selector limits still need to be discovered through nested stages before
+  matching later top-level transforms. Test this with a trailing selector that
+  only passes under the nested policy's custom limits.
 - Required labeled arguments use the `name~ : Type` parameter form. Without
   that tilde in the declaration, black-box callers cannot write labels such as
   `attr="rel"` or `tokens=[...]`, even though optional arguments are labeled

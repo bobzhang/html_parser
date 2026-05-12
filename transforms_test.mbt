@@ -157,6 +157,27 @@ test "decide star can act on comments while selectors only visit elements" {
   )
   assert_eq(doc.root.to_html(pretty=false), "<p>y</p>")
 
+  let decide_fragment : (@html_parser.Node) -> @html_parser.DecideAction = fn(
+    node,
+  ) {
+    if node.name() == "#document-fragment" {
+      Escape
+    } else {
+      Keep
+    }
+  }
+  let nested_fragment = @html_parser.fragment(children=[
+    @html_parser.fragment(children=[
+      @html_parser.element("span", children=[@html_parser.text("z")]),
+    ]),
+  ])
+  ignore(
+    @html_parser.apply_transforms(nested_fragment, [
+      @html_parser.TransformSpec::decide("*", decide_fragment),
+    ]),
+  )
+  assert_eq(nested_fragment.to_html(pretty=false), "<span>z</span>")
+
   let seen : Array[String] = []
   let decide_p : (@html_parser.Node) -> @html_parser.DecideAction = fn(node) {
     seen.push(node.name())
@@ -757,6 +778,33 @@ test "nested stage transforms are flattened without nested hooks" {
     root.to_html(pretty=false),
     "<p><a href=\"http://example.com\">example.com</a></p>",
   )
+}
+
+///|
+test "nested stage sanitizer limits apply to trailing transforms" {
+  let long_class = transform_repeat_for_test("s", 8192)
+  let long_selector = "." + long_class
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["div"],
+    allowed_attributes={ "*": ["class", "id"] },
+    selector_limits=@html_parser.SelectorLimits::new(max_length=9000),
+  )
+  let doc = @html_parser.parse_fragment(
+    "<div class=\"" + long_class + "\"></div>",
+  )
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::stage([
+        @html_parser.TransformSpec::sanitize(policy~),
+      ]),
+      @html_parser.TransformSpec::set_attrs(long_selector, {
+        "id": Some("matched"),
+      }),
+    ]),
+  )
+  let divs = doc.root.query("div")
+  assert_eq(divs.length(), 1)
+  assert_true(divs[0].attrs().get("id") is Some(Some("matched")))
 }
 
 ///|
@@ -1668,6 +1716,27 @@ test "root text and leaf transforms no-op when kind cannot apply" {
     ]),
   )
   assert_eq(pre_root.to_html(pretty=false), "<pre>example.com  x</pre>")
+}
+
+///|
+test "text transforms recurse through nested fragment children" {
+  let root = @html_parser.fragment(children=[
+    @html_parser.fragment(children=[
+      @html_parser.text("visit example.com  now"),
+      @html_parser.element("p"),
+    ]),
+  ])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::collapse_whitespace(),
+      @html_parser.TransformSpec::linkify(),
+      @html_parser.TransformSpec::prune_empty("p"),
+    ]),
+  )
+  assert_eq(
+    root.to_html(pretty=false),
+    "visit <a href=\"http://example.com\">example.com</a> now",
+  )
 }
 
 ///|
