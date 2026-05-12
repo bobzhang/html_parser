@@ -93,6 +93,8 @@ reference implementation in `.repos/justhtml`.
     - [x] Line-start non-trigger and spaced thematic marker coverage
     - [x] List non-`li` child skipping parity
     - [x] Builder leading-whitespace and raw-newline accounting coverage
+    - [x] Public blockquote marker, multi-digit ordered marker, and two-item
+          list parity
   - [ ] Tests ported from Python Markdown coverage
     - [x] Deep programmatic tree, document-container, and builder edge tests
     - [x] Raw-text passthrough, empty `<br>`, and unknown-container tests

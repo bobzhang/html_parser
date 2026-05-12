@@ -3506,6 +3506,10 @@ test "to_markdown renders code spans blocks lists and blockquotes" {
     "<ul>\n<li>One</li>\n</ul><ol><li>A</li><li>B</li></ol>",
   )
   assert_eq(list.to_markdown(), "- One\n\n1. A\n2. B")
+  let simple_list = @html_parser.parse_fragment(
+    "<ul><li>One</li><li>Two</li></ul>",
+  )
+  assert_eq(simple_list.to_markdown(), "- One\n- Two")
 }
 
 ///|
@@ -3634,11 +3638,11 @@ test "to_markdown escapes text and line starting markdown markers" {
   )
   assert_eq(escaped.to_markdown(), "&lt;img src=x onerror=alert(1)>")
   let markers = @html_parser.parse_fragment(
-    "<p>a<br># heading<br>- item<br>+ next<br>1. ordered<br>2) ordered<br>~~~<br>```<br>---<br>===</p>",
+    "<p>a<br># heading<br>&gt; quote<br>- item<br>+ next<br>1. ordered<br>2) ordered<br>12. multi<br>~~~<br>```<br>---<br>===</p>",
   )
   assert_eq(
     markers.to_markdown(),
-    "a\n\\# heading\n\\- item\n\\+ next\n1\\. ordered\n2\\) ordered\n\\~~~\n\\`\\`\\`\n\\---\n\\===",
+    "a\n\\# heading\n\\> quote\n\\- item\n\\+ next\n1\\. ordered\n2\\) ordered\n12\\. multi\n\\~~~\n\\`\\`\\`\n\\---\n\\===",
   )
   let digit_prefixes = @html_parser.parse_fragment(
     "<p>a<br>3x plain<br>4.no space<br>5)no space<br>6. ordered<br>7) ordered</p>",
