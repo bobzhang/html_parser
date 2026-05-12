@@ -103,11 +103,11 @@ reference implementation in `.repos/justhtml`.
     - [x] `coverage_gaps.test`, `entities.test`, and
       `xml_coercion_coverage.test` token fixture rows
     - [x] `tokenizer_edge_cases.test` token fixture rows
-  - [ ] Import or translate tree-builder fixtures
+  - [x] Import or translate tree-builder fixtures
     - [x] `iframe_srcdoc.dat` and `xml_coercion.dat` tree rows
     - [x] `treebuilder_coverage.dat` tree rows
     - [x] `branch_coverage.dat` tree rows
-    - [ ] `empty_stack_edge_cases.dat` tree rows
+    - [x] `empty_stack_edge_cases.dat` tree rows
   - [ ] Import or translate encoding fixtures
   - [ ] Regression harness for JustHTML-specific `.dat` and `.test` files
 - [x] Documentation and warning cleanup

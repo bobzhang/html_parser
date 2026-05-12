@@ -74,6 +74,13 @@ test "tree builder matches vendored branch coverage fixtures" {
 }
 
 ///|
+test "tree builder matches vendored empty stack edge fixtures" {
+  for case in empty_stack_edge_fixture_cases() {
+    assert_tree_fixture(case)
+  }
+}
+
+///|
 fn iframe_srcdoc_tree_fixture_cases() -> Array[TreeFixtureCase] {
   [
     {
@@ -83,6 +90,45 @@ fn iframe_srcdoc_tree_fixture_cases() -> Array[TreeFixtureCase] {
       xml_coercion: false,
       expected_tree: "| <!DOCTYPE foo>\n| <html>\n|   <head>\n|   <body>\n|     <p>\n|     <table>",
       error_codes: ["unknown-doctype"],
+    },
+  ]
+}
+
+///|
+fn empty_stack_edge_fixture_cases() -> Array[TreeFixtureCase] {
+  [
+    {
+      line: 3,
+      input: "<!><svg><th><title><n><select><td>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <!--  -->\n| <html>\n|   <head>\n|   <body>\n|     <svg svg>\n|       <svg th>\n|         <svg title>\n|           <n>\n|             <select>\n|   <td>",
+      error_codes: [
+        "incorrectly-opened-comment", "expected-doctype-but-got-start-tag", "unexpected-start-tag-in-select",
+      ],
+    },
+    {
+      line: 19,
+      input: "<svg><slot><select/e><title/a><select><select></slot></select>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <svg svg>\n|       <svg slot>\n|         <svg select>\n|           e=\"\"\n|           <svg title>\n|             a=\"\"\n|             <select>",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-character-after-solidus-in-tag",
+        "unexpected-character-after-solidus-in-tag", "unexpected-select-in-select",
+        "unexpected-end-tag", "unexpected-end-tag",
+      ],
+    },
+    {
+      line: 38,
+      input: "<svg><tr><title><section\n><math><p><tr>>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <svg svg>\n|       <svg tr>\n|         <svg title>\n|           <section>\n|             <math math>\n|             <p>\n|   <tr>\n|     \">\"",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-html-element-in-foreign-content",
+        "unexpected-character-implies-table-voodoo",
+      ],
     },
   ]
 }
