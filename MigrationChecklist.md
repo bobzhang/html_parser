@@ -357,6 +357,8 @@ reference implementation in `.repos/justhtml`.
       workflow notes, native CLI constraints, and release validation docs.
 - [x] Added Mooncakes archive-content checks for critical packaged source,
       fixture, docs, native CLI, generated interface, and forbidden path rules.
+- [x] Added a shared test runner that enforces the default, JS, and native
+      MoonBit test-count floor so fixture coverage cannot silently shrink.
 
 ## Working Rule
 

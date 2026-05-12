@@ -80,14 +80,8 @@ moon check --target all --warn-list +73
 step "Type check native CLI"
 moon check --target native cmd/main --warn-list +73
 
-step "Run default tests"
-moon test
-
-step "Run JS tests"
-moon test --target js
-
-step "Run native tests"
-moon test --target native
+step "Run tests with count floor"
+bash scripts/check_tests.sh
 
 step "Analyze coverage"
 bash scripts/check_coverage.sh
