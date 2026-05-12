@@ -878,12 +878,12 @@ JustHTML from Python to MoonBit.
   tags, and incomplete tag-like text can all differ. In MoonBit, keep this as
   private parser metadata (`source_start_tag`/`source_end_tag`) plus hidden
   escape-only text fragments for malformed source that normal `to_html()` must
-  still ignore. Apply that skip in compact HTML, pretty HTML, and text
-  collection paths; text-only pretty element helpers are easy to miss because
-  they may concatenate child data directly. Only materialize those hidden
-  fragments when sanitizer `disallowed_tag_handling=Escape` is active; a second
-  sanitization pass with `Drop` or `Unwrap` must remove the hidden fragments
-  rather than leak the raw malformed source text.
+  still ignore. Apply that skip in compact HTML, pretty HTML, Markdown, and
+  text collection paths; text-only pretty element helpers are easy to miss
+  because they may concatenate child data directly. Only materialize those
+  hidden fragments when sanitizer `disallowed_tag_handling=Escape` is active; a
+  second sanitization pass with `Drop` or `Unwrap` must remove the hidden
+  fragments rather than leak the raw malformed source text.
 - Transform hooks and report callbacks are independent optional callbacks in
   MoonBit, while Python tends to pass callables or `None` through dynamic
   branches. Test hook-only and report-only paths separately so wrapper
