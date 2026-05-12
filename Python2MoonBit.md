@@ -1571,6 +1571,10 @@ JustHTML from Python to MoonBit.
   tokenizer reports `eof-in-tag` at the final input character and emits no
   partial tag token; the tree builder likewise must not create or close a node
   from the unfinished markup.
+- The Python tokenizer fixture harness drops EOF tokens before comparing output.
+  MoonBit `tokenize` deliberately appends `Eof`, so translated fixture tests
+  should normalize token streams by ignoring the final EOF unless the case is
+  specifically testing public `tokenize` structure.
 - Initial document-mode doctype checks can be deliberately deferred. If the
   first significant construct is an unfinished comment or tag, report that
   tokenizer/tree-builder EOF error first, then report

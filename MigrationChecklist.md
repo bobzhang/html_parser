@@ -100,6 +100,9 @@ reference implementation in `.repos/justhtml`.
     - [x] Foreign-namespace mXSS Markdown passthrough regression
 - [ ] Full conformance harness
   - [ ] Import or translate tokenizer fixtures
+    - [x] `coverage_gaps.test`, `entities.test`, and
+      `xml_coercion_coverage.test` token fixture rows
+    - [ ] `tokenizer_edge_cases.test` token fixture rows
   - [ ] Import or translate tree-builder fixtures
   - [ ] Import or translate encoding fixtures
   - [ ] Regression harness for JustHTML-specific `.dat` and `.test` files
