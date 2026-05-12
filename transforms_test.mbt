@@ -432,6 +432,136 @@ test "disabled transforms are skipped" {
 }
 
 ///|
+test "transform hooks and reports run for changed transforms" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let doc = @html_parser.document(children=[
+    @html_parser.doctype(),
+    @html_parser.comment("c"),
+    @html_parser.element("p", attrs={ "onclick": Some("run()") }),
+    @html_parser.element("script", children=[@html_parser.text("x")]),
+  ])
+  ignore(
+    @html_parser.apply_transforms(doc, [
+      @html_parser.TransformSpec::set_attrs(
+        "p",
+        { "data-x": Some("1") },
+        hook~,
+        report~,
+      ),
+      @html_parser.TransformSpec::drop_attrs("p", ["on*"], hook~, report~),
+      @html_parser.TransformSpec::drop("script", hook~, report~),
+      @html_parser.TransformSpec::drop_comments(hook~, report~),
+      @html_parser.TransformSpec::drop_doctype(hook~, report~),
+    ]),
+  )
+  assert_eq(events, [
+    "hook:p", "report:Set attributes on <p> (matched selector 'p')", "node:p", "hook:p",
+    "report:Dropped attributes on <p> (matched selector 'p')", "node:p", "hook:script",
+    "report:Dropped <script> (matched selector 'script')", "node:script", "hook:#comment",
+    "report:Dropped comment", "node:#comment", "hook:#doctype", "report:Dropped doctype",
+    "node:#doctype",
+  ])
+  assert_eq(doc.to_html(pretty=false), "<p data-x=\"1\"></p>")
+}
+
+///|
+test "unchanged attribute transforms do not call hooks" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, _node) {
+    events.push("report:" + message)
+  }
+  let p = @html_parser.element("p", attrs={ "id": Some("x") })
+  let span = @html_parser.element("span", attrs={ "style": Some("color: red") })
+  let root = @html_parser.fragment(children=[p, span])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::set_attrs(
+        "p",
+        { "id": Some("x") },
+        hook~,
+        report~,
+      ),
+      @html_parser.TransformSpec::drop_attrs("p", ["missing*"], hook~, report~),
+      @html_parser.TransformSpec::allow_style_attrs(
+        "span",
+        allowed_css_properties=["color"],
+        hook~,
+        report~,
+      ),
+    ]),
+  )
+  assert_eq(events, [])
+  assert_eq(
+    root.to_html(pretty=false),
+    "<p id=\"x\"></p><span style=\"color: red\"></span>",
+  )
+}
+
+///|
+test "edit hooks and reports follow Python callback ordering" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let p = @html_parser.element("p", attrs={ "id": Some("old") })
+  let root = @html_parser.fragment(children=[p])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::edit_document(
+        fn(node) { events.push("edit-document:" + node.name()) },
+        hook~,
+        report~,
+      ),
+      @html_parser.TransformSpec::edit(
+        "p",
+        fn(node) {
+          events.push("edit:" + node.name())
+          node.append_child(@html_parser.text("x"))
+        },
+        hook~,
+        report~,
+      ),
+      @html_parser.TransformSpec::edit_attrs(
+        "p",
+        fn(node) {
+          events.push("edit-attrs:" + node.name())
+          Some({ "class": Some("done") })
+        },
+        hook~,
+        report~,
+      ),
+    ]),
+  )
+  assert_eq(events, [
+    "hook:#document-fragment", "report:Edited document root", "node:#document-fragment",
+    "edit-document:#document-fragment", "hook:p", "report:Edited <p> (matched selector 'p')",
+    "node:p", "edit:p", "edit-attrs:p", "hook:p", "report:Edited attributes on <p> (matched selector 'p')",
+    "node:p",
+  ])
+  assert_eq(root.to_html(pretty=false), "<p class=\"done\">x</p>")
+}
+
+///|
 test "drop_url_attrs validates URL attrs and normalizes mixed-case names" {
   let trusted_rule = @html_parser.UrlRule::new(
     allowed_schemes=["https"],

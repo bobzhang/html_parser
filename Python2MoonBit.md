@@ -321,6 +321,12 @@ JustHTML from Python to MoonBit.
   A helper with `config? : LinkifyConfig` may store a `LinkifyConfig?`
   internally, but callers still write `config=config`, not
   `config=Some(config)`.
+- Optional function-valued labels follow the same payload rule. A public
+  transform constructor can accept `hook? : (Node) -> Unit`, but an internal
+  helper cannot pass a stored `TransformNodeCallback?` to a parameter declared
+  as `node_hook? : TransformNodeCallback`; either pass the callback payload only
+  in the `Some` branch or build the base spec first and copy it with wrapped
+  hook/report fields.
 - Required labeled arguments use the `name~ : Type` parameter form. Without
   that tilde in the declaration, black-box callers cannot write labels such as
   `attr="rel"` or `tokens=[...]`, even though optional arguments are labeled
@@ -339,6 +345,11 @@ JustHTML from Python to MoonBit.
   implementations, then let public constructors accept ordinary function
   values. This keeps `TransformSpec` debuggable without exposing callback
   internals.
+- Transform hook ordering is not uniform in the Python reference. `Edit` and
+  `EditDocument` call the hook/report before the user edit function, while
+  `EditAttrs` calls its rewrite function first and only runs hook/report when
+  the returned map is `Some`. Attribute setters likewise run hook/report only
+  when a real mutation happened.
 - Python transform specs carry an `enabled` flag on every constructor. In
   MoonBit, store it once on `TransformSpec` and skip disabled entries in the
   outer `apply_transforms` loop before dispatching to selector, callback, or

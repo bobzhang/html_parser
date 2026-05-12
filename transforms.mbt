@@ -41,11 +41,21 @@ impl Debug for TransformAttrsCallback with to_repr(_) {
 }
 
 ///|
+priv struct TransformReportCallback {
+  callback : (String, Node?) -> Unit
+}
+
+///|
+impl Debug for TransformReportCallback with to_repr(_) {
+  Repr::opaque_("TransformReportCallback", Repr::unit())
+}
+
+///|
 /// A DOM transform specification for `apply_transforms`.
 ///
 /// The current port covers deterministic structural, attribute, callback,
-/// URL/style, utility, and sanitizer transforms. Callback hooks/reports will be
-/// added as separate slices.
+/// URL/style, utility, and sanitizer transforms. Most selector and node-kind
+/// transforms also support hook/report callbacks.
 pub struct TransformSpec {
   priv kind : TransformKind
   priv enabled : Bool
@@ -59,6 +69,8 @@ pub struct TransformSpec {
   priv sanitize_policy : SanitizationPolicy?
   priv node_callback : TransformNodeCallback?
   priv attrs_callback : TransformAttrsCallback?
+  priv node_hook : TransformNodeCallback?
+  priv report_callback : TransformReportCallback?
   priv skip_tags : Array[String]
   priv linkify_config : LinkifyConfig?
   priv linkify_skip_tags : Array[String]
@@ -78,6 +90,8 @@ fn make_transform_spec(
   sanitize_policy? : SanitizationPolicy,
   node_callback? : TransformNodeCallback,
   attrs_callback? : TransformAttrsCallback,
+  node_hook? : TransformNodeCallback,
+  report_callback? : TransformReportCallback,
   skip_tags? : Array[String] = [],
   linkify_config? : LinkifyConfig,
   linkify_skip_tags? : Array[String] = [],
@@ -95,9 +109,58 @@ fn make_transform_spec(
     sanitize_policy,
     node_callback,
     attrs_callback,
+    node_hook,
+    report_callback,
     skip_tags: skip_tags.copy(),
     linkify_config,
     linkify_skip_tags: linkify_skip_tags.copy(),
+  }
+}
+
+///|
+fn wrap_transform_node_callback(
+  callback : ((Node) -> Unit)?,
+) -> TransformNodeCallback? {
+  match callback {
+    Some(callback) => Some({ callback, })
+    None => None
+  }
+}
+
+///|
+fn wrap_transform_report_callback(
+  callback : ((String, Node?) -> Unit)?,
+) -> TransformReportCallback? {
+  match callback {
+    Some(callback) => Some({ callback, })
+    None => None
+  }
+}
+
+///|
+fn with_transform_hooks(
+  spec : TransformSpec,
+  hook : ((Node) -> Unit)?,
+  report : ((String, Node?) -> Unit)?,
+) -> TransformSpec {
+  {
+    kind: spec.kind,
+    enabled: spec.enabled,
+    selector: spec.selector,
+    attr_patch: spec.attr_patch.map(fn(attrs) { attrs.copy() }),
+    attr_patterns: spec.attr_patterns.copy(),
+    allowed_attrs: spec.allowed_attrs.map(copy_allowed_attrs_map),
+    merge_tag: spec.merge_tag,
+    merge_attr: spec.merge_attr,
+    merge_tokens: spec.merge_tokens.copy(),
+    sanitize_policy: spec.sanitize_policy,
+    node_callback: spec.node_callback,
+    attrs_callback: spec.attrs_callback,
+    node_hook: wrap_transform_node_callback(hook),
+    report_callback: wrap_transform_report_callback(report),
+    skip_tags: spec.skip_tags.copy(),
+    linkify_config: spec.linkify_config,
+    linkify_skip_tags: spec.linkify_skip_tags.copy(),
   }
 }
 
@@ -106,8 +169,14 @@ fn make_transform_spec(
 pub fn TransformSpec::drop(
   selector : StringView,
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(DropElements, enabled~, selector=selector.to_owned())
+  with_transform_hooks(
+    make_transform_spec(DropElements, enabled~, selector=selector.to_owned()),
+    hook,
+    report,
+  )
 }
 
 ///|
@@ -115,8 +184,14 @@ pub fn TransformSpec::drop(
 pub fn TransformSpec::unwrap(
   selector : StringView,
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(UnwrapElements, enabled~, selector=selector.to_owned())
+  with_transform_hooks(
+    make_transform_spec(UnwrapElements, enabled~, selector=selector.to_owned()),
+    hook,
+    report,
+  )
 }
 
 ///|
@@ -124,8 +199,14 @@ pub fn TransformSpec::unwrap(
 pub fn TransformSpec::escape(
   selector : StringView,
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(EscapeElements, enabled~, selector=selector.to_owned())
+  with_transform_hooks(
+    make_transform_spec(EscapeElements, enabled~, selector=selector.to_owned()),
+    hook,
+    report,
+  )
 }
 
 ///|
@@ -133,8 +214,14 @@ pub fn TransformSpec::escape(
 pub fn TransformSpec::empty(
   selector : StringView,
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(EmptyElements, enabled~, selector=selector.to_owned())
+  with_transform_hooks(
+    make_transform_spec(EmptyElements, enabled~, selector=selector.to_owned()),
+    hook,
+    report,
+  )
 }
 
 ///|
@@ -143,10 +230,16 @@ pub fn TransformSpec::edit(
   selector : StringView,
   callback : (Node) -> Unit,
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(EditElement, enabled~, selector=selector.to_owned(), node_callback={
-    callback,
-  })
+  with_transform_hooks(
+    make_transform_spec(EditElement, enabled~, selector=selector.to_owned(), node_callback={
+      callback,
+    }),
+    hook,
+    report,
+  )
 }
 
 ///|
@@ -154,8 +247,14 @@ pub fn TransformSpec::edit(
 pub fn TransformSpec::edit_document(
   callback : (Node) -> Unit,
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(EditDocumentRoot, enabled~, node_callback={ callback, })
+  with_transform_hooks(
+    make_transform_spec(EditDocumentRoot, enabled~, node_callback={ callback, }),
+    hook,
+    report,
+  )
 }
 
 ///|
@@ -164,12 +263,18 @@ pub fn TransformSpec::set_attrs(
   selector : StringView,
   attrs : Map[String, String?],
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(
-    SetAttributes,
-    enabled~,
-    selector=selector.to_owned(),
-    attr_patch=attrs,
+  with_transform_hooks(
+    make_transform_spec(
+      SetAttributes,
+      enabled~,
+      selector=selector.to_owned(),
+      attr_patch=attrs,
+    ),
+    hook,
+    report,
   )
 }
 
@@ -179,12 +284,18 @@ pub fn TransformSpec::drop_attrs(
   selector : StringView,
   patterns : Array[String],
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(
-    DropAttributes,
-    enabled~,
-    selector=selector.to_owned(),
-    attr_patterns=normalize_transform_strings(patterns),
+  with_transform_hooks(
+    make_transform_spec(
+      DropAttributes,
+      enabled~,
+      selector=selector.to_owned(),
+      attr_patterns=normalize_transform_strings(patterns),
+    ),
+    hook,
+    report,
   )
 }
 
@@ -194,12 +305,18 @@ pub fn TransformSpec::allowlist_attrs(
   selector : StringView,
   allowed_attributes : Map[String, Array[String]],
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(
-    AllowlistAttributes,
-    enabled~,
-    selector=selector.to_owned(),
-    allowed_attrs=normalize_allowed_attrs_map(allowed_attributes),
+  with_transform_hooks(
+    make_transform_spec(
+      AllowlistAttributes,
+      enabled~,
+      selector=selector.to_owned(),
+      allowed_attrs=normalize_allowed_attrs_map(allowed_attributes),
+    ),
+    hook,
+    report,
   )
 }
 
@@ -210,10 +327,19 @@ pub fn TransformSpec::edit_attrs(
   selector : StringView,
   callback : (Node) -> Map[String, String?]?,
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(EditAttributes, enabled~, selector=selector.to_owned(), attrs_callback={
-    callback,
-  })
+  with_transform_hooks(
+    make_transform_spec(
+      EditAttributes,
+      enabled~,
+      selector=selector.to_owned(),
+      attrs_callback={ callback, },
+    ),
+    hook,
+    report,
+  )
 }
 
 ///|
@@ -223,16 +349,22 @@ pub fn TransformSpec::merge_attrs(
   attr~ : StringView,
   tokens~ : Array[String],
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
   let tag = lower_ascii(tag.trim())
   let attr = lower_ascii(attr.trim())
-  make_transform_spec(
-    MergeAttributeTokens,
-    enabled~,
-    selector=tag,
-    merge_tag=tag,
-    merge_attr=attr,
-    merge_tokens=normalize_transform_strings(tokens),
+  with_transform_hooks(
+    make_transform_spec(
+      MergeAttributeTokens,
+      enabled~,
+      selector=tag,
+      merge_tag=tag,
+      merge_attr=attr,
+      merge_tokens=normalize_transform_strings(tokens),
+    ),
+    hook,
+    report,
   )
 }
 
@@ -242,12 +374,18 @@ pub fn TransformSpec::drop_url_attrs(
   selector : StringView,
   url_policy~ : UrlPolicy,
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(
-    DropUrlAttributes,
-    enabled~,
-    selector=selector.to_owned(),
-    sanitize_policy=SanitizationPolicy::new([], url_policy~),
+  with_transform_hooks(
+    make_transform_spec(
+      DropUrlAttributes,
+      enabled~,
+      selector=selector.to_owned(),
+      sanitize_policy=SanitizationPolicy::new([], url_policy~),
+    ),
+    hook,
+    report,
   )
 }
 
@@ -257,15 +395,23 @@ pub fn TransformSpec::allow_style_attrs(
   selector : StringView,
   allowed_css_properties~ : Array[String],
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(
-    AllowStyleAttributes,
-    enabled~,
-    selector=selector.to_owned(),
-    sanitize_policy=SanitizationPolicy::new(
-      [],
-      allowed_css_properties=normalize_transform_strings(allowed_css_properties),
+  with_transform_hooks(
+    make_transform_spec(
+      AllowStyleAttributes,
+      enabled~,
+      selector=selector.to_owned(),
+      sanitize_policy=SanitizationPolicy::new(
+        [],
+        allowed_css_properties=normalize_transform_strings(
+          allowed_css_properties,
+        ),
+      ),
     ),
+    hook,
+    report,
   )
 }
 
@@ -284,14 +430,30 @@ pub fn TransformSpec::sanitize(
 
 ///|
 /// Build a transform that removes comment nodes.
-pub fn TransformSpec::drop_comments(enabled? : Bool = true) -> TransformSpec {
-  make_transform_spec(DropCommentNodes, enabled~)
+pub fn TransformSpec::drop_comments(
+  enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
+) -> TransformSpec {
+  with_transform_hooks(
+    make_transform_spec(DropCommentNodes, enabled~),
+    hook,
+    report,
+  )
 }
 
 ///|
 /// Build a transform that removes doctype nodes.
-pub fn TransformSpec::drop_doctype(enabled? : Bool = true) -> TransformSpec {
-  make_transform_spec(DropDoctypeNodes, enabled~)
+pub fn TransformSpec::drop_doctype(
+  enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
+) -> TransformSpec {
+  with_transform_hooks(
+    make_transform_spec(DropDoctypeNodes, enabled~),
+    hook,
+    report,
+  )
 }
 
 ///|
@@ -379,11 +541,11 @@ fn apply_transform(
         None => sanitize_dom(node)
       }
     DropCommentNodes => {
-      apply_drop_kind_transform(node, Comment)
+      apply_drop_kind_transform(node, Comment, transform)
       node
     }
     DropDoctypeNodes => {
-      apply_drop_kind_transform(node, Doctype)
+      apply_drop_kind_transform(node, Doctype, transform)
       node
     }
     CollapseTextWhitespace => {
@@ -453,6 +615,46 @@ fn normalize_allowed_attrs_map(
 }
 
 ///|
+fn transform_call_hook(node : Node, transform : TransformSpec) -> Unit {
+  match transform.node_hook {
+    Some(hook) => (hook.callback)(node)
+    None => ()
+  }
+}
+
+///|
+fn transform_report(
+  transform : TransformSpec,
+  message : String,
+  node : Node?,
+) -> Unit {
+  match transform.report_callback {
+    Some(report) => (report.callback)(message, node)
+    None => ()
+  }
+}
+
+///|
+fn transform_report_node_action(
+  node : Node,
+  transform : TransformSpec,
+  action : StringView,
+) -> Unit {
+  transform_call_hook(node, transform)
+  let tag = lower_ascii(node.name[:])
+  transform_report(
+    transform,
+    action.to_owned() +
+    " <" +
+    tag +
+    "> (matched selector '" +
+    transform.selector +
+    "')",
+    Some(node),
+  )
+}
+
+///|
 fn apply_selector_transform(root : Node, transform : TransformSpec) -> Unit {
   match root.kind {
     Document | Fragment | Element => transform_children(root, transform)
@@ -467,40 +669,61 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
     let child = parent.children[index]
     if child.kind == Element && transform_matches_element(child, transform) {
       match transform.kind {
-        DropElements => remove_child_at(parent, index)
+        DropElements => {
+          transform_report_node_action(child, transform, "Dropped")
+          remove_child_at(parent, index)
+        }
         UnwrapElements => {
+          transform_report_node_action(child, transform, "Unwrapped")
           let inserted = unwrap_child_at(parent, index)
           if inserted == 0 {
             ()
           }
         }
         EscapeElements => {
+          transform_report_node_action(child, transform, "Escaped")
           let inserted = escape_transform_child_at(parent, index)
           if inserted == 0 {
             ()
           }
         }
         EmptyElements => {
-          empty_transform_node(child)
+          if empty_transform_node(child) {
+            transform_report_node_action(child, transform, "Emptied")
+          }
           index += 1
         }
         SetAttributes => {
-          apply_set_attrs_transform(child, transform)
+          if apply_set_attrs_transform(child, transform) {
+            transform_report_node_action(child, transform, "Set attributes on")
+          }
           transform_children(child, transform)
           index += 1
         }
         DropAttributes => {
-          apply_drop_attrs_transform(child, transform)
+          if apply_drop_attrs_transform(child, transform) {
+            transform_report_node_action(
+              child, transform, "Dropped attributes on",
+            )
+          }
           transform_children(child, transform)
           index += 1
         }
         AllowlistAttributes => {
-          apply_allowlist_attrs_transform(child, transform)
+          if apply_allowlist_attrs_transform(child, transform) {
+            transform_report_node_action(
+              child, transform, "Allowlisted attributes on",
+            )
+          }
           transform_children(child, transform)
           index += 1
         }
         MergeAttributeTokens => {
-          apply_merge_attrs_transform(child, transform)
+          if apply_merge_attrs_transform(child, transform) {
+            transform_report_node_action(
+              child, transform, "Merged attributes on",
+            )
+          }
           transform_children(child, transform)
           index += 1
         }
@@ -513,7 +736,11 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
           }
         }
         EditAttributes => {
-          apply_edit_attrs_transform(child, transform)
+          if apply_edit_attrs_transform(child, transform) {
+            transform_report_node_action(
+              child, transform, "Edited attributes on",
+            )
+          }
           if index < parent.children.length() &&
             physical_equal(parent.children[index], child) {
             transform_children(child, transform)
@@ -521,12 +748,18 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
           }
         }
         DropUrlAttributes => {
-          apply_drop_url_attrs_transform(child, transform)
+          if apply_drop_url_attrs_transform(child, transform) {
+            transform_report_node_action(
+              child, transform, "Sanitized URL attributes on",
+            )
+          }
           transform_children(child, transform)
           index += 1
         }
         AllowStyleAttributes => {
-          apply_allow_style_attrs_transform(child, transform)
+          if apply_allow_style_attrs_transform(child, transform) {
+            transform_report_node_action(child, transform, "Sanitized style on")
+          }
           transform_children(child, transform)
           index += 1
         }
@@ -551,7 +784,8 @@ fn transform_matches_element(node : Node, transform : TransformSpec) -> Bool {
 }
 
 ///|
-fn empty_transform_node(node : Node) -> Unit {
+fn empty_transform_node(node : Node) -> Bool {
+  let had_children = !node.children.is_empty()
   while !node.children.is_empty() {
     let child = node.children[0]
     ignore(node.children.remove(0))
@@ -560,6 +794,7 @@ fn empty_transform_node(node : Node) -> Unit {
       child.parent = None
     }
   }
+  had_children
 }
 
 ///|
@@ -568,7 +803,11 @@ fn apply_edit_document_transform(
   transform : TransformSpec,
 ) -> Unit {
   match transform.node_callback {
-    Some(callback) => (callback.callback)(node)
+    Some(callback) => {
+      transform_call_hook(node, transform)
+      transform_report(transform, "Edited document root", Some(node))
+      (callback.callback)(node)
+    }
     None => ()
   }
 }
@@ -576,31 +815,43 @@ fn apply_edit_document_transform(
 ///|
 fn apply_edit_transform(node : Node, transform : TransformSpec) -> Unit {
   match transform.node_callback {
-    Some(callback) => (callback.callback)(node)
+    Some(callback) => {
+      transform_report_node_action(node, transform, "Edited")
+      (callback.callback)(node)
+    }
     None => ()
   }
 }
 
 ///|
-fn apply_edit_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
+fn apply_edit_attrs_transform(node : Node, transform : TransformSpec) -> Bool {
   match transform.attrs_callback {
     Some(callback) =>
       match (callback.callback)(node) {
-        Some(attrs) => attrs_replace_with(node, attrs)
-        None => ()
+        Some(attrs) => {
+          attrs_replace_with(node, attrs)
+          true
+        }
+        None => false
       }
-    None => ()
+    None => false
   }
 }
 
 ///|
-fn apply_set_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
+fn apply_set_attrs_transform(node : Node, transform : TransformSpec) -> Bool {
   match transform.attr_patch {
-    Some(attrs) =>
+    Some(attrs) => {
+      let mut changed = false
       for name, value in attrs {
+        if node.attrs.get(name) != Some(value) {
+          changed = true
+        }
         node.attrs[name] = value
       }
-    None => ()
+      changed
+    }
+    None => false
   }
 }
 
@@ -689,9 +940,9 @@ fn transform_drop_attrs_hot_path(patterns : Array[String]) -> Bool {
 }
 
 ///|
-fn apply_drop_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
+fn apply_drop_attrs_transform(node : Node, transform : TransformSpec) -> Bool {
   if transform.attr_patterns.is_empty() || node.attrs.length() == 0 {
-    return
+    return false
   }
   let preserve_safe_key_case = transform_drop_attrs_hot_path(
     transform.attr_patterns,
@@ -705,7 +956,7 @@ fn apply_drop_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
     }
   }
   if !found {
-    return
+    return false
   }
   let out : Map[String, String?] = {}
   for raw_name, value in node.attrs {
@@ -719,6 +970,7 @@ fn apply_drop_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
     }
   }
   attrs_replace_with(node, out)
+  true
 }
 
 ///|
@@ -746,10 +998,10 @@ fn allowed_attrs_for_node(
 fn apply_allowlist_attrs_transform(
   node : Node,
   transform : TransformSpec,
-) -> Unit {
-  guard transform.allowed_attrs is Some(allowed) else { return }
+) -> Bool {
+  guard transform.allowed_attrs is Some(allowed) else { return false }
   if node.attrs.length() == 0 {
-    return
+    return false
   }
   let allowed_for_node = allowed_attrs_for_node(node, allowed)
   let out : Map[String, String?] = {}
@@ -777,12 +1029,13 @@ fn apply_allowlist_attrs_transform(
   if changed {
     attrs_replace_with(node, out)
   }
+  changed
 }
 
 ///|
-fn apply_merge_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
+fn apply_merge_attrs_transform(node : Node, transform : TransformSpec) -> Bool {
   if transform.merge_attr == "" || transform.merge_tokens.is_empty() {
-    return
+    return false
   }
   let matched_keys : Array[String] = []
   let existing : Array[String] = []
@@ -809,6 +1062,9 @@ fn apply_merge_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
       node.attrs.remove(key)
     }
     node.attrs[transform.merge_attr] = Some(normalized)
+    true
+  } else {
+    false
   }
 }
 
@@ -854,11 +1110,12 @@ fn transform_attr_is_url_like(
 fn apply_drop_url_attrs_transform(
   node : Node,
   transform : TransformSpec,
-) -> Unit {
-  guard transform.sanitize_policy is Some(policy) else { return }
+) -> Bool {
+  guard transform.sanitize_policy is Some(policy) else { return false }
   if node.attrs.length() == 0 {
-    return
+    return false
   }
+  let mut changed = false
   let tag_name = lower_ascii(node.name[:])
   match
     (
@@ -872,6 +1129,7 @@ fn apply_drop_url_attrs_transform(
       }
       if attr_value_is_refresh(http_equiv_value) {
         node.attrs.remove(content_key)
+        changed = true
       }
     }
     _ => ()
@@ -904,22 +1162,30 @@ fn apply_drop_url_attrs_transform(
             if cleaned != raw_value || attr_name != key {
               node.attrs.remove(key)
               node.attrs[attr_name] = Some(cleaned)
+              changed = true
             }
-          None => node.attrs.remove(key)
+          None => {
+            node.attrs.remove(key)
+            changed = true
+          }
         }
-      None => node.attrs.remove(key)
+      None => {
+        node.attrs.remove(key)
+        changed = true
+      }
     }
   }
+  changed
 }
 
 ///|
 fn apply_allow_style_attrs_transform(
   node : Node,
   transform : TransformSpec,
-) -> Unit {
-  guard transform.sanitize_policy is Some(policy) else { return }
+) -> Bool {
+  guard transform.sanitize_policy is Some(policy) else { return false }
   guard find_attr_key_case_insensitive(node, "style") is Some(style_key) else {
-    return
+    return false
   }
   let tag_name = lower_ascii(node.name[:])
   match node.attrs.get(style_key) {
@@ -929,11 +1195,20 @@ fn apply_allow_style_attrs_transform(
           if cleaned != raw_value || style_key != "style" {
             node.attrs.remove(style_key)
             node.attrs["style"] = Some(cleaned)
+            true
+          } else {
+            false
           }
-        None => node.attrs.remove(style_key)
+        None => {
+          node.attrs.remove(style_key)
+          true
+        }
       }
-    Some(None) => node.attrs.remove(style_key)
-    None => ()
+    Some(None) => {
+      node.attrs.remove(style_key)
+      true
+    }
+    None => false
   }
 }
 
@@ -972,16 +1247,27 @@ fn escape_transform_child_at(parent : Node, index : Int) -> Int {
 }
 
 ///|
-fn apply_drop_kind_transform(root : Node, kind : NodeKind) -> Unit {
+fn apply_drop_kind_transform(
+  root : Node,
+  kind : NodeKind,
+  transform : TransformSpec,
+) -> Unit {
   match root.kind {
     Document | Fragment | Element => {
       let mut index = 0
       while index < root.children.length() {
         let child = root.children[index]
         if child.kind == kind {
+          transform_call_hook(child, transform)
+          let label = match kind {
+            Comment => "comment"
+            Doctype => "doctype"
+            _ => "node"
+          }
+          transform_report(transform, "Dropped " + label, Some(child))
           remove_child_at(root, index)
         } else {
-          apply_drop_kind_transform(child, kind)
+          apply_drop_kind_transform(child, kind, transform)
           index += 1
         }
       }

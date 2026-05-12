@@ -189,24 +189,24 @@ pub(all) struct TokenizedHtml {
 pub struct TransformSpec {
   // private fields
 } derive(@debug.Debug)
-pub fn TransformSpec::allow_style_attrs(StringView, allowed_css_properties~ : Array[String], enabled? : Bool) -> Self
-pub fn TransformSpec::allowlist_attrs(StringView, Map[String, Array[String]], enabled? : Bool) -> Self
+pub fn TransformSpec::allow_style_attrs(StringView, allowed_css_properties~ : Array[String], enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::allowlist_attrs(StringView, Map[String, Array[String]], enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::collapse_whitespace(skip_tags? : Array[String], enabled? : Bool) -> Self
-pub fn TransformSpec::drop(StringView, enabled? : Bool) -> Self
-pub fn TransformSpec::drop_attrs(StringView, Array[String], enabled? : Bool) -> Self
-pub fn TransformSpec::drop_comments(enabled? : Bool) -> Self
-pub fn TransformSpec::drop_doctype(enabled? : Bool) -> Self
-pub fn TransformSpec::drop_url_attrs(StringView, url_policy~ : UrlPolicy, enabled? : Bool) -> Self
-pub fn TransformSpec::edit(StringView, (Node) -> Unit, enabled? : Bool) -> Self
-pub fn TransformSpec::edit_attrs(StringView, (Node) -> Map[String, String?]?, enabled? : Bool) -> Self
-pub fn TransformSpec::edit_document((Node) -> Unit, enabled? : Bool) -> Self
-pub fn TransformSpec::empty(StringView, enabled? : Bool) -> Self
-pub fn TransformSpec::escape(StringView, enabled? : Bool) -> Self
+pub fn TransformSpec::drop(StringView, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::drop_attrs(StringView, Array[String], enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::drop_comments(enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::drop_doctype(enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::drop_url_attrs(StringView, url_policy~ : UrlPolicy, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::edit(StringView, (Node) -> Unit, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::edit_attrs(StringView, (Node) -> Map[String, String?]?, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::edit_document((Node) -> Unit, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::empty(StringView, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::escape(StringView, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::linkify(config? : LinkifyConfig, skip_tags? : Array[String], enabled? : Bool) -> Self
-pub fn TransformSpec::merge_attrs(StringView, attr~ : StringView, tokens~ : Array[String], enabled? : Bool) -> Self
+pub fn TransformSpec::merge_attrs(StringView, attr~ : StringView, tokens~ : Array[String], enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::sanitize(policy? : SanitizationPolicy, enabled? : Bool) -> Self
-pub fn TransformSpec::set_attrs(StringView, Map[String, String?], enabled? : Bool) -> Self
-pub fn TransformSpec::unwrap(StringView, enabled? : Bool) -> Self
+pub fn TransformSpec::set_attrs(StringView, Map[String, String?], enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::unwrap(StringView, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 
 pub(all) enum UnsafeHandling {
   Strip
