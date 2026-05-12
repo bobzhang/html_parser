@@ -280,6 +280,8 @@ reference implementation in `.repos/justhtml`.
       prior selector validity and scanner-boundary invariants.
 - [x] Added limited-selector whitebox regressions for malformed attribute
       selectors, parentless child combinators, and cyclic ancestor walks.
+- [x] Covered the serializer percent-encoding hex fallback to keep the helper
+      total for defensive private calls.
 
 ## Working Rule
 

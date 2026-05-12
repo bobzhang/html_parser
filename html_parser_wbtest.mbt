@@ -1057,6 +1057,13 @@ test "nth selector helpers reject empty signed integer fragments" {
 }
 
 ///|
+test "serializer hex digit helper keeps defensive fallback" {
+  assert_eq(hex_digit_upper(0), '0')
+  assert_eq(hex_digit_upper(15), 'F')
+  assert_eq(hex_digit_upper(16), '0')
+}
+
+///|
 test "selector helper fragments fail closed on malformed syntax" {
   let node = element("div", attrs={
     "class": Some("alpha beta"),
