@@ -170,6 +170,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Added CLI parser regressions for equals-form options, missing option
       values, invalid formats, strip/no-strip conflicts, unknown options,
       duplicate input paths, and strict valid input.
+- [x] Added CLI regressions for no-path option parsing, empty equals-form
+      selectors, and custom fragment cleanup policy handling.
 
 ## Working Rule
 

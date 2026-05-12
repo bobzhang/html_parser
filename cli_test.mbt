@@ -87,6 +87,33 @@ test "CLI accepts equals-form options and strict valid input" {
 }
 
 ///|
+test "CLI handles empty selectors no path and custom fragment cleanup policy" {
+  let no_path = @html_parser.run_cli_bytes(["--format=text"], b"")
+  assert_eq(no_path.exit_code, 1)
+  assert_eq(no_path.stdout, "")
+  assert_true(no_path.stderr.contains("usage: justhtml"))
+
+  guard @html_parser.cli_read_plan(["--format=text"]) is CliImmediate(result) else {
+    fail("expected no-path read plan to be immediate")
+  }
+  assert_eq(result.exit_code, 1)
+  assert_true(result.stderr.contains("usage: justhtml"))
+
+  let empty_selector = cli_run(["-", "--selector="], "<p>Hello</p>")
+  assert_eq(empty_selector.exit_code, 2)
+  assert_eq(empty_selector.stdout, "")
+  assert_true(empty_selector.stderr.contains("Invalid selector"))
+
+  let cleanup = cli_run(
+    ["-", "--fragment", "--cleanup", "--allow-tags=article"],
+    "<article><p>Hello</p><script>bad</script><a>text</a></article>",
+  )
+  assert_eq(cleanup.exit_code, 0)
+  assert_eq(cleanup.stdout, "<article>\n  <p>Hello</p>\n  text\n</article>\n")
+  assert_eq(cleanup.stderr, "")
+}
+
+///|
 test "CLI renders stdin document and fragment HTML" {
   let doc = cli_run(["-"], "<p>Hello <b>world</b></p>")
   assert_eq(doc.exit_code, 0)
