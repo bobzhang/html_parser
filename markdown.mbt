@@ -531,7 +531,7 @@ fn markdown_walk_link_list(
   html_passthrough : Bool,
 ) -> Unit raise HtmlError {
   for child in node.children {
-    if child.kind == Element && child.name == "li" {
+    if child.kind == Element && child.name.to_lower() == "li" {
       builder.raw(" ")
       for grandchild in child.children {
         markdown_walk_link_text(grandchild, builder, html_passthrough)
@@ -553,15 +553,16 @@ fn markdown_walk_link_text(
       for child in node.children {
         markdown_walk_link_text(child, builder, html_passthrough)
       }
-    Element =>
-      if markdown_should_skip_head_or_title(node) || node.name == "hr" {
+    Element => {
+      let tag = node.name.to_lower()
+      if markdown_should_skip_head_or_title(node, tag) || tag == "hr" {
         ()
-      } else if markdown_heading_level(node.name) > 0 {
+      } else if markdown_heading_level(tag) > 0 {
         for child in node.children {
           markdown_walk_link_text(child, builder, html_passthrough)
         }
       } else {
-        match node.name {
+        match tag {
           "br" => builder.text(" ")
           "html" | "body" | "span" | "blockquote" =>
             for child in node.children {
@@ -588,7 +589,7 @@ fn markdown_walk_link_text(
             }
           "img" => builder.raw(node.to_html(pretty=false))
           _ =>
-            if markdown_block_container_name(node.name) {
+            if markdown_block_container_name(tag) {
               for child in node.children {
                 markdown_walk_link_text(child, builder, html_passthrough)
               }
@@ -600,6 +601,7 @@ fn markdown_walk_link_text(
             }
         }
       }
+    }
   }
 }
 
@@ -633,7 +635,7 @@ fn markdown_walk_list(
   let mut index = 1
   let mut rendered = 0
   for child in node.children {
-    if child.kind == Element && child.name == "li" {
+    if child.kind == Element && child.name.to_lower() == "li" {
       if rendered > 0 {
         builder.newline(1)
       }
@@ -695,8 +697,9 @@ fn markdown_walk(
     Document | Fragment =>
       markdown_render_children(node, builder, html_passthrough, list_depth)
     Element => {
-      let level = markdown_heading_level(node.name)
-      if markdown_should_skip_head_or_title(node) {
+      let tag = node.name.to_lower()
+      let level = markdown_heading_level(tag)
+      if markdown_should_skip_head_or_title(node, tag) {
         ()
       } else if level > 0 {
         let inner = markdown_render_children_to_string(
@@ -708,7 +711,7 @@ fn markdown_walk(
         builder.raw(inner)
         builder.ensure_newlines(2)
       } else {
-        match node.name {
+        match tag {
           "html" | "body" | "span" =>
             markdown_render_children(
               node, builder, html_passthrough, list_depth,
@@ -763,7 +766,7 @@ fn markdown_walk(
             builder.ensure_newlines(2)
           }
           _ =>
-            if markdown_block_container_name(node.name) {
+            if markdown_block_container_name(tag) {
               markdown_render_children(
                 node, builder, html_passthrough, list_depth,
               )
@@ -780,8 +783,8 @@ fn markdown_walk(
 }
 
 ///|
-fn markdown_should_skip_head_or_title(node : Node) -> Bool {
-  match node.name {
+fn markdown_should_skip_head_or_title(node : Node, tag : StringView) -> Bool {
+  match tag {
     "head" | "title" =>
       !(node.parsed_from_source && markdown_node_inside_fragment(node))
     _ => false

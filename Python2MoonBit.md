@@ -664,6 +664,10 @@ JustHTML from Python to MoonBit.
   those elements. MoonBit currently retains parsed fragment elements there, so
   Markdown must render fragment-rooted `head`/`title` children while still
   skipping detached builder nodes and full-document head/title nodes.
+- Python's Markdown walker dispatches on `node.name.lower()`, even for direct
+  builder-created nodes. Keep that separate from canonical HTML serialization:
+  `Node("STRONG")` should render as bold Markdown, while raw HTML passthrough
+  and `to_html()` may still preserve the original tag spelling.
 - Markdown intentionally preserves `<img>` and `<table>` subtrees as canonical
   compact HTML. Pair these tests with parser normalization because table
   serialization may include inserted row groups such as `<tbody>`.

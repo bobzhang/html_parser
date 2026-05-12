@@ -86,6 +86,7 @@ reference implementation in `.repos/justhtml`.
     - [x] Orphan `li` block handling and link-text flattening
     - [x] Fragment `head`/`title` Markdown parity
     - [x] Link destination wrap triggers and control-character coverage
+    - [x] Mixed-case programmatic tag dispatch
   - [ ] Tests ported from Python Markdown coverage
     - [x] Deep programmatic tree, document-container, and builder edge tests
     - [x] Raw-text passthrough, empty `<br>`, and unknown-container tests
