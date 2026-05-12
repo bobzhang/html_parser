@@ -107,6 +107,7 @@ reference implementation in `.repos/justhtml`.
     - [x] `cli.mbt` embeddable CLI API docs
     - [x] `parser.mbt` parser entry point docs
     - [x] `serialize.mbt` serialization and selector docs
+    - [x] `types.mbt` core model docs
   - [x] Remove unnecessary annotations for warning 73
     - [x] `comment_scan.mbt` constructor annotations
     - [x] `script_text.mbt` constructor annotations

@@ -1,4 +1,5 @@
 ///|
+/// Kind of DOM node represented by `Node`.
 pub(all) enum NodeKind {
   Document
   Fragment
@@ -9,6 +10,10 @@ pub(all) enum NodeKind {
 } derive(Debug, Eq)
 
 ///|
+/// Output context used by HTML serialization.
+///
+/// Non-`Html` contexts escape serialized output for embedding in JavaScript
+/// strings, HTML attribute values, or URL text.
 pub(all) enum HtmlContext {
   Html
   JsString
@@ -17,6 +22,10 @@ pub(all) enum HtmlContext {
 } derive(Debug, Eq)
 
 ///|
+/// Parser or tokenizer diagnostic with optional source location.
+///
+/// `category` identifies the source of the error, such as `tokenizer` or
+/// `treebuilder`. `message` defaults to `code` when no custom message is given.
 pub(all) struct ParseError {
   code : String
   line : Int?
@@ -26,6 +35,7 @@ pub(all) struct ParseError {
 } derive(Debug, Eq)
 
 ///|
+/// Construct a parse diagnostic.
 pub fn ParseError::new(
   code : String,
   line? : Int,
@@ -96,6 +106,8 @@ fn parser_error_category(code : StringView) -> String {
 }
 
 ///|
+/// Error type raised by strict parsing, serialization, sanitizer, and selector
+/// operations.
 pub(all) suberror HtmlError {
   StrictMode(ParseError)
   InvalidSerialization(String)
@@ -104,6 +116,10 @@ pub(all) suberror HtmlError {
 } derive(Debug, Eq)
 
 ///|
+/// Resource limits used while parsing and matching CSS selectors.
+///
+/// Limits are defensive bounds for selector length, nesting, list size, and
+/// match cost. Negative match budgets are treated as exhausted.
 pub(all) struct SelectorLimits {
   max_match_depth : Int
   max_length : Int
@@ -116,6 +132,7 @@ pub(all) struct SelectorLimits {
 } derive(Debug, Eq)
 
 ///|
+/// Construct selector limits, using conservative defaults for omitted values.
 pub fn SelectorLimits::new(
   max_match_depth? : Int = 100,
   max_length? : Int = 8192,
@@ -144,6 +161,11 @@ fn default_selector_limits() -> SelectorLimits {
 }
 
 ///|
+/// DOM node used for documents, fragments, elements, text, comments, and
+/// doctypes.
+///
+/// Nodes are created with helpers such as `document`, `fragment`, `element`,
+/// `text`, `comment`, and `doctype`.
 pub struct Node {
   priv kind : NodeKind
   priv name : String
@@ -162,12 +184,17 @@ pub struct Node {
 } derive(Debug)
 
 ///|
+/// Context element used when parsing an HTML fragment.
+///
+/// The tag name is normalized to lowercase. `ns` can be used for foreign
+/// content contexts such as SVG or MathML.
 pub(all) struct FragmentContext {
   tag_name : String
   ns : String?
 } derive(Debug, Eq)
 
 ///|
+/// Construct a fragment parsing context.
 pub fn FragmentContext::new(
   tag_name : StringView,
   ns? : String,
@@ -176,6 +203,11 @@ pub fn FragmentContext::new(
 }
 
 ///|
+/// Result of parsing HTML.
+///
+/// `root` is the document or fragment root. `errors` is populated when
+/// `collect_errors=true` or strict parsing observes an error. `encoding` is set
+/// by byte parsing APIs.
 pub struct ParsedHtml {
   root : Node
   errors : Array[ParseError]
