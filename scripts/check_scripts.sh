@@ -19,10 +19,12 @@ verify_err="$(mktemp)"
 check_ci_err="$(mktemp)"
 fixture_require_err="$(mktemp)"
 fixture_arg_err="$(mktemp)"
+workflow_arg_err="$(mktemp)"
 trap '
   rm -rf "$tmp_home"
   rm -f "$tmp_out" "$verify_err" "$check_ci_err"
   rm -f "$fixture_require_err" "$fixture_arg_err"
+  rm -f "$workflow_arg_err"
 ' EXIT
 
 HOME="$tmp_home" bash scripts/verify_mooncakes_package.sh \
@@ -58,9 +60,15 @@ fixture_require_code=$?
 python3 scripts/check_fixture_sync.py \
   --bad-option > "$tmp_out" 2> "$fixture_arg_err"
 fixture_arg_code=$?
+python3 scripts/check_github_workflows.py \
+  --bad-option > "$tmp_out" 2> "$workflow_arg_err"
+workflow_arg_code=$?
 set -e
 
 test "$fixture_require_code" -eq 1
 grep -F "reference checkout is absent:" "$fixture_require_err" > /dev/null
 test "$fixture_arg_code" -eq 2
 grep -F "usage: python3 scripts/check_fixture_sync.py" "$fixture_arg_err" > /dev/null
+test "$workflow_arg_code" -eq 2
+grep -F "usage: python3 scripts/check_github_workflows.py" \
+  "$workflow_arg_err" > /dev/null

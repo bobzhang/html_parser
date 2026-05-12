@@ -50,6 +50,9 @@ python3 scripts/check_release_version.py
 step "Check validation scripts"
 bash scripts/check_scripts.sh
 
+step "Check GitHub workflows"
+python3 scripts/check_github_workflows.py
+
 step "Check vendored fixture sync"
 python3 scripts/check_fixture_sync.py
 
