@@ -1663,6 +1663,12 @@ JustHTML from Python to MoonBit.
   MoonBit `tokenize` deliberately appends `Eof`, so translated fixture tests
   should normalize token streams by ignoring the final EOF unless the case is
   specifically testing public `tokenize` structure.
+- Internal tokenizer helpers still need targeted whitebox coverage for guard
+  paths that public parsing normally enters only through higher-level state
+  checks. Examples include `step()` on empty input, which reports that the
+  tokenizer is still within bounds without moving, and delimiter-only
+  `parse_attribute` calls, which consume the boundary without creating a bogus
+  attribute.
 - Keep token fixture tables and diagnostic parity tests separate when the
   Python harness only compares tokens. A compact table runner is useful for
   broad fixture coverage, while dedicated tests should lock down error codes

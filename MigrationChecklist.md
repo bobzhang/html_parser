@@ -194,6 +194,8 @@ reference implementation in `.repos/justhtml`.
       UTF-16 boundary fallback paths in internal text splicing.
 - [x] Added punycode whitebox regressions for private href passthrough,
       prefixless Unicode hosts, IPv6 passthrough, and all-ASCII IDNA mappings.
+- [x] Added tokenizer whitebox regressions for EOF stepping and delimiter-only
+      attribute helper parsing.
 
 ## Working Rule
 
