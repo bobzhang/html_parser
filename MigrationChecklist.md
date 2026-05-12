@@ -66,7 +66,8 @@ reference implementation in `.repos/justhtml`.
     - [x] Invisible-Unicode attribute reports and unsafe-handling behavior
   - [x] Deterministic stage ordering, nested stage flattening, and implicit
         leading/trailing stage coverage
-  - [ ] Selector limits and compiled-walk marker parity for inserted or moved nodes
+  - [x] Selector `Unwrap` moved-node walk marker parity
+  - [ ] Selector limits and remaining compiled-walk marker edge cases
 - [ ] Streaming API
   - [ ] `StreamSink` equivalent
   - [ ] Incremental token/tree event delivery

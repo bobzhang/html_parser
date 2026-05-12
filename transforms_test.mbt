@@ -39,6 +39,28 @@ test "apply_transforms drops unwraps escapes and empties selected elements" {
 }
 
 ///|
+test "unwrap skips direct moved children but walks their descendants" {
+  let root = @html_parser.parse_fragment(
+    "<div><div>x</div><section><div>y</div></section></div>",
+  )
+  ignore(
+    @html_parser.apply_transforms(root.root, [
+      @html_parser.TransformSpec::unwrap("div"),
+    ]),
+  )
+  assert_eq(root.root.to_html(pretty=false), "<div>x</div><section>y</section>")
+
+  let later = @html_parser.parse_fragment("<div><div>x</div></div>")
+  ignore(
+    @html_parser.apply_transforms(later.root, [
+      @html_parser.TransformSpec::unwrap("div"),
+      @html_parser.TransformSpec::set_attrs("div", { "class": Some("later") }),
+    ]),
+  )
+  assert_eq(later.root.to_html(pretty=false), "<div class=\"later\">x</div>")
+}
+
+///|
 test "decide star can act on comments while selectors only visit elements" {
   let seen_all : Array[String] = []
   let keep_seen : (@html_parser.Node) -> @html_parser.DecideAction = fn(node) {

@@ -421,7 +421,10 @@ JustHTML from Python to MoonBit.
   not run on them again. When porting stage/order behavior, decide explicitly
   whether replacement children can be seen by the current spec, by later specs,
   or only by later stages; tests such as `Drop("a"), Linkify()` versus
-  `Linkify(), Drop("a")` catch accidental order changes.
+  `Linkify(), Drop("a")` catch accidental order changes. Selector `Unwrap` is
+  especially subtle: direct children hoisted by the unwrap skip that same
+  selector transform, but their descendants are still walked, and later
+  transforms can see the direct children.
 - `Decide("*", ...)` is not an element selector shortcut in Python. It calls
   the callback for every node type reached by the walker, including comments,
   text, doctypes, and nested document/fragment containers. Other selectors only

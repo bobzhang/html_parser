@@ -935,8 +935,11 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
         UnwrapElements => {
           transform_report_node_action(child, transform, "Unwrapped")
           let inserted = unwrap_child_at(parent, index)
-          if inserted == 0 {
-            ()
+          if inserted > 0 {
+            transform_inserted_children_after_unwrap(
+              parent, index, inserted, transform,
+            )
+            index += inserted
           }
         }
         EscapeElements => {
@@ -1024,6 +1027,24 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
       }
       index += 1
     }
+  }
+}
+
+///|
+fn transform_inserted_children_after_unwrap(
+  parent : Node,
+  start : Int,
+  count : Int,
+  transform : TransformSpec,
+) -> Unit {
+  let mut offset = 0
+  while offset < count && start + offset < parent.children.length() {
+    let child = parent.children[start + offset]
+    match child.kind {
+      Document | Fragment | Element => transform_children(child, transform)
+      _ => ()
+    }
+    offset += 1
   }
 }
 
