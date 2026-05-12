@@ -154,6 +154,9 @@ reference implementation in `.repos/justhtml`.
 - [x] Ported the Wikipedia Markdown regression as a native CLI fixture smoke in
       CI, including title/body ordering, safe-mode protocol-relative link
       normalization, and footer project links.
+- [x] Translated focused sanitizer JSON fixture rows for URL proxy handling,
+      URL filters, protocol-relative URL validation, malformed scheme
+      normalization, and template-content sanitization.
 
 ## Working Rule
 

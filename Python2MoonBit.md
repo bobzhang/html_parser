@@ -845,6 +845,11 @@ JustHTML from Python to MoonBit.
   `UrlPolicyRule::new(tag, attr, rule)` wrapper and normalize it into an
   internal string-keyed map; this avoids depending on tuple-key hashing in the
   public API while still keeping exact tag/attribute rule semantics.
+- In the Python sanitizer fixtures, a per-rule `proxy_url` implies proxy
+  handling for that exact tag/attribute rule. In MoonBit, keep that explicit
+  with `UrlRule::new(handling=UrlProxy, proxy=UrlProxy::new(...))`; a proxy
+  descriptor alone is only endpoint configuration and should not silently change
+  `UrlAllow` semantics.
 - Python's `UrlRule.allowed_hosts` is optional. The MoonBit constructor uses an
   empty `allowed_hosts` array to mean "no host restriction"; non-empty
   allowlists are lowercased and matched against the parsed host only, not the
