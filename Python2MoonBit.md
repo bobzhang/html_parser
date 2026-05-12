@@ -659,9 +659,11 @@ JustHTML from Python to MoonBit.
 - `script`, `style`, and `textarea` are block-like in Markdown output even when
   their content is dropped by default. Preserve surrounding text separation, and
   only emit the raw HTML itself when `html_passthrough` is enabled.
-- Python Markdown skips both `head` and `title` elements entirely. Do not treat
-  parsed fragment `<title>` as raw text output; `to_markdown()` should return
-  an empty string for direct and parsed title elements.
+- Python Markdown skips actual `head` and `title` nodes, but Python fragment
+  parsing turns `<head>`/`<title>` wrappers into text output instead of keeping
+  those elements. MoonBit currently retains parsed fragment elements there, so
+  Markdown must render fragment-rooted `head`/`title` children while still
+  skipping detached builder nodes and full-document head/title nodes.
 - Markdown intentionally preserves `<img>` and `<table>` subtrees as canonical
   compact HTML. Pair these tests with parser normalization because table
   serialization may include inserted row groups such as `<tbody>`.

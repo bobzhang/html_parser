@@ -3647,7 +3647,7 @@ test "to_markdown handles direct nodes comments doctypes and empty inline nodes"
 }
 
 ///|
-test "to_markdown preserves table and image HTML and skips title text" {
+test "to_markdown preserves table image HTML and title text parity" {
   let doc = @html_parser.parse_fragment(
     "<p>Hi<img src=x alt=y>there</p><table><tr><td>A</td></tr></table>",
   )
@@ -3658,7 +3658,9 @@ test "to_markdown preserves table and image HTML and skips title text" {
   let title = @html_parser.parse_fragment(
     "<title><script>alert(1)</script></title>",
   )
-  assert_eq(title.to_markdown(), "")
+  assert_eq(title.to_markdown(), "&lt;script>alert(1)&lt;/script>")
+  let parsed_head = @html_parser.parse_fragment("<head><title>T</title></head>")
+  assert_eq(parsed_head.to_markdown(), "T")
   let direct_title = @html_parser.element("title", children=[
     @html_parser.text("T"),
   ])
@@ -3787,6 +3789,10 @@ test "to_markdown flattens block content inside links" {
     ],
   )
   assert_eq(blocks.to_markdown(), "[Q One Two](https://e.com)")
+  let parsed_title = @html_parser.parse_fragment(
+    "<a href='https://e.com'><title>T</title></a>",
+  )
+  assert_eq(parsed_title.to_markdown(), "[T](https://e.com)")
   let table_link = @html_parser.element(
     "a",
     attrs={ "href": Some("https://e.com") },

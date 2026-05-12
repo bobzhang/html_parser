@@ -19,6 +19,7 @@ fn make_node(
     public_id,
     system_id,
     force_quirks,
+    parsed_from_source: false,
     origin_offset: None,
     origin_line: None,
     origin_col: None,
@@ -307,7 +308,13 @@ fn Node::set_origin(self : Node, offset : Int, line : Int, col : Int) -> Unit {
 }
 
 ///|
+fn Node::mark_parsed_from_source(self : Node) -> Unit {
+  self.parsed_from_source = true
+}
+
+///|
 fn Node::copy_origin_from(self : Node, source : Node) -> Unit {
+  self.parsed_from_source = source.parsed_from_source
   self.origin_offset = source.origin_offset
   self.origin_line = source.origin_line
   self.origin_col = source.origin_col

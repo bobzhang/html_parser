@@ -153,6 +153,7 @@ pub struct Node {
   priv public_id : String?
   priv system_id : String?
   priv force_quirks : Bool
+  priv mut parsed_from_source : Bool
   priv mut origin_offset : Int?
   priv mut origin_line : Int?
   priv mut origin_col : Int?

@@ -553,15 +553,15 @@ fn markdown_walk_link_text(
       for child in node.children {
         markdown_walk_link_text(child, builder, html_passthrough)
       }
-    Element => {
-      let level = markdown_heading_level(node.name)
-      if level > 0 {
+    Element =>
+      if markdown_should_skip_head_or_title(node) || node.name == "hr" {
+        ()
+      } else if markdown_heading_level(node.name) > 0 {
         for child in node.children {
           markdown_walk_link_text(child, builder, html_passthrough)
         }
       } else {
         match node.name {
-          "head" | "title" | "hr" => ()
           "br" => builder.text(" ")
           "html" | "body" | "span" | "blockquote" =>
             for child in node.children {
@@ -600,7 +600,6 @@ fn markdown_walk_link_text(
             }
         }
       }
-    }
   }
 }
 
@@ -697,7 +696,9 @@ fn markdown_walk(
       markdown_render_children(node, builder, html_passthrough, list_depth)
     Element => {
       let level = markdown_heading_level(node.name)
-      if level > 0 {
+      if markdown_should_skip_head_or_title(node) {
+        ()
+      } else if level > 0 {
         let inner = markdown_render_children_to_string(
           node, html_passthrough, list_depth,
         )
@@ -712,7 +713,6 @@ fn markdown_walk(
             markdown_render_children(
               node, builder, html_passthrough, list_depth,
             )
-          "head" | "title" => ()
           "p" => {
             builder.ensure_newlines(2)
             markdown_render_children(
@@ -777,6 +777,27 @@ fn markdown_walk(
       }
     }
   }
+}
+
+///|
+fn markdown_should_skip_head_or_title(node : Node) -> Bool {
+  match node.name {
+    "head" | "title" =>
+      !(node.parsed_from_source && markdown_node_inside_fragment(node))
+    _ => false
+  }
+}
+
+///|
+fn markdown_node_inside_fragment(node : Node) -> Bool {
+  let mut current = node
+  while true {
+    match current.parent {
+      Some(parent) => current = parent
+      None => return current.kind == Fragment
+    }
+  }
+  false
 }
 
 ///|

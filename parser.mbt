@@ -104,6 +104,7 @@ fn Parser::new(
 
 ///|
 fn Parser::node_with_origin(self : Parser, node : Node, offset : Int) -> Node {
+  node.mark_parsed_from_source()
   if self.track_node_locations {
     let (line, col) = line_col_at(self.input, offset)
     node.set_origin(offset, line, col)
