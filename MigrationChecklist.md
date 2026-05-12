@@ -314,6 +314,8 @@ reference implementation in `.repos/justhtml`.
       already present on the registry, and locked the CLI version output to it.
 - [x] Adjusted the Mooncakes CI dry-run gate so published versions keep passing
       after package validation reports the expected duplicate-version response.
+- [x] Prepared `0.1.2` so the published package includes the post-release CI
+      and README installation-documentation updates.
 
 ## Working Rule
 
