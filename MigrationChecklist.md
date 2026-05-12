@@ -373,6 +373,8 @@ reference implementation in `.repos/justhtml`.
       catch fixture truncation or accidental edits without `.repos/justhtml`.
 - [x] Tightened the validation inventory guard so it covers itself and fails on
       any tracked validation helper missing from the inventory.
+- [x] Added validation-helper convention checks for tracked `scripts/*`
+      suffixes and interpreter shebangs.
 
 ## Working Rule
 

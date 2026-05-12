@@ -22,6 +22,49 @@ for path in sorted(pathlib.Path("scripts").glob("*.py")):
     ast.parse(path.read_text(), filename=str(path))
 PY
 
+python3 - <<'PY'
+import pathlib
+import subprocess
+import sys
+
+expected_shebangs = {
+    ".py": "#!/usr/bin/env python3",
+    ".sh": "#!/usr/bin/env bash",
+}
+tracked_scripts = subprocess.run(
+    ["git", "ls-files", "scripts/*"],
+    check=True,
+    capture_output=True,
+    text=True,
+).stdout.splitlines()
+
+ok = True
+for script in tracked_scripts:
+    path = pathlib.Path(script)
+    expected_shebang = expected_shebangs.get(path.suffix)
+    if expected_shebang is None:
+        print(
+            f"tracked validation helper has unsupported extension: {script}",
+            file=sys.stderr,
+        )
+        ok = False
+        continue
+    if not path.is_file():
+        print(f"tracked validation helper is not a file: {script}", file=sys.stderr)
+        ok = False
+        continue
+    text = path.read_text()
+    first_line = text.splitlines()[0] if text else ""
+    if first_line != expected_shebang:
+        print(
+            f"{script} must start with {expected_shebang!r}",
+            file=sys.stderr,
+        )
+        ok = False
+
+sys.exit(0 if ok else 1)
+PY
+
 tmp_home="$(mktemp -d)"
 tmp_out="$(mktemp)"
 verify_err="$(mktemp)"
