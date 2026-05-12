@@ -1,9 +1,6 @@
 {
   "name": "bobzhang/html_parser",
   "version": "0.1.0",
-  "deps": {
-    "moonbitlang/async": "0.19.0"
-  },
   "readme": "README.mbt.md",
   "repository": "https://github.com/bobzhang/html_parser",
   "license": "Apache-2.0",

@@ -1,53 +1,37 @@
 ///|
-async fn main {
+fn main {
   let all_args = @env.args()
   let args = if all_args.is_empty() { all_args[:] } else { all_args[1:] }
   match @html_parser.cli_read_plan(args) {
     CliImmediate(result) => emit_cli_result(result)
     CliReadPath(path) => {
-      let input = read_cli_input(path) catch {
-        _ => {
-          @stdio.stderr.write("failed to read input: \{path}\n")
-          cli_exit_process(2)
-          b""
-        }
-      }
+      let input = read_cli_input(path)
       emit_cli_result(@html_parser.run_cli_bytes(args, input))
     }
   }
 }
 
 ///|
-async fn read_cli_input(path : String) -> Bytes {
+fn read_cli_input(path : String) -> Bytes {
   if path == "-" {
-    @stdio.stdin.read_all().binary()
+    cli_read_stdin()
   } else {
-    @fs.read_file(path).binary()
+    cli_read_file(@utf8.encode(path))
   }
 }
 
 ///|
-async fn emit_cli_result(result : @html_parser.CliResult) -> Unit {
+fn emit_cli_result(result : @html_parser.CliResult) -> Unit {
   match (result.file_output_path, result.file_output_content) {
     (Some(path), Some(content)) =>
-      @fs.write_file(
-        path,
-        content,
-        create_mode=CreateOrTruncate,
-        permission=0o644,
-      ) catch {
-        _ => {
-          @stdio.stderr.write("failed to write output: \{path}\n")
-          cli_exit_process(2)
-        }
-      }
+      cli_write_file(@utf8.encode(path), @utf8.encode(content))
     _ => ()
   }
   if !result.stdout.is_empty() {
-    @stdio.stdout.write(result.stdout)
+    cli_write_stdout(@utf8.encode(result.stdout))
   }
   if !result.stderr.is_empty() {
-    @stdio.stderr.write(result.stderr)
+    cli_write_stderr(@utf8.encode(result.stderr))
   }
   if result.exit_code != 0 {
     cli_exit_process(result.exit_code)
@@ -55,4 +39,23 @@ async fn emit_cli_result(result : @html_parser.CliResult) -> Unit {
 }
 
 ///|
-extern "C" fn cli_exit_process(code : Int) = "exit"
+extern "C" fn cli_read_stdin() -> Bytes = "html_parser_cli_read_stdin"
+
+///|
+#borrow(path)
+extern "C" fn cli_read_file(path : Bytes) -> Bytes = "html_parser_cli_read_file"
+
+///|
+#borrow(data)
+extern "C" fn cli_write_stdout(data : Bytes) -> Unit = "html_parser_cli_write_stdout"
+
+///|
+#borrow(data)
+extern "C" fn cli_write_stderr(data : Bytes) -> Unit = "html_parser_cli_write_stderr"
+
+///|
+#borrow(path, data)
+extern "C" fn cli_write_file(path : Bytes, data : Bytes) -> Unit = "html_parser_cli_write_file"
+
+///|
+extern "C" fn cli_exit_process(code : Int) = "html_parser_cli_exit"

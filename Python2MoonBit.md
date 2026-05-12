@@ -1724,13 +1724,16 @@ JustHTML from Python to MoonBit.
   `all_args[1:]` before passing user arguments to parser logic. The slice is an
   `ArrayView[String]`, so helpers should accept `ArrayView[String]` instead of
   forcing an allocation.
-- Async stdin and file APIs live in `moonbitlang/async/stdio` and
-  `moonbitlang/async/fs`, and the executable package should set
-  `supported_targets = "+native"`. Use `@stdio.stdin.read_all().binary()` for
-  raw HTML bytes so HTML encoding detection can mirror Python's byte-oriented
-  CLI path.
-- `@fs.write_file` now prefers `create_mode=CreateOrTruncate` plus
-  `permission=0o644`; the older `create=` label is deprecated.
+- Avoid adding a MoonBit dependency just for CLI I/O unless it is published in
+  the registry used by CI and Mooncakes. A tiny executable-local C stub listed
+  in `cmd/main/moon.pkg` with `"native-stub": [ "cli_io.c" ]` keeps the library
+  package dependency-free while still reading raw stdin/file bytes.
+- MoonBit `String` is UTF-16, while C file APIs expect byte strings. Encode
+  paths and output with `@utf8.encode` before calling FFI stubs, and pass
+  `Bytes` parameters with `#borrow(...)`.
+- Use raw `Bytes` for CLI input so HTML encoding detection can mirror Python's
+  byte-oriented CLI path. Decode only inside the parser/fragment helper, not in
+  the process wrapper.
 - For CLI exit-code verification, build the release executable and run it
   directly. `moon run --target native --release --build-only cmd/main` produces
   `_build/native/release/build/cmd/main/main.exe`; direct execution preserves
