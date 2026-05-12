@@ -92,6 +92,82 @@ test "apply_transforms runs linkify and selector transforms in order" {
 }
 
 ///|
+test "stage transform reports implicit stage index and skips disabled stage" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let root = @html_parser.parse_fragment("<!--c--><p>example.com</p>").root
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::drop_comments(),
+      @html_parser.TransformSpec::stage(
+        [@html_parser.TransformSpec::linkify()],
+        hook~,
+        report~,
+      ),
+      @html_parser.TransformSpec::stage(
+        [
+          @html_parser.TransformSpec::set_attrs("a", { "rel": Some("noopener") }),
+        ],
+        enabled=false,
+        hook~,
+        report~,
+      ),
+    ]),
+  )
+  assert_eq(events, [
+    "hook:#document-fragment", "report:Stage 2", "node:#document-fragment",
+  ])
+  assert_eq(
+    root.to_html(pretty=false),
+    "<p><a href=\"http://example.com\">example.com</a></p>",
+  )
+}
+
+///|
+test "nested stage transforms are flattened without nested hooks" {
+  let events : Array[String] = []
+  let outer_hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("outer:" + node.name())
+  }
+  let inner_hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("inner:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, _node) {
+    events.push("report:" + message)
+  }
+  let root = @html_parser.parse_fragment("<p>example.com</p>").root
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::stage(
+        [
+          @html_parser.TransformSpec::stage(
+            [@html_parser.TransformSpec::linkify()],
+            hook=inner_hook,
+            report~,
+          ),
+        ],
+        hook=outer_hook,
+        report~,
+      ),
+    ]),
+  )
+  assert_eq(events, ["outer:#document-fragment", "report:Stage 1"])
+  assert_eq(
+    root.to_html(pretty=false),
+    "<p><a href=\"http://example.com\">example.com</a></p>",
+  )
+}
+
+///|
 test "apply_transforms sets and drops attributes by selector" {
   let doc = @html_parser.parse_fragment(
     "<p>Hello</p><div onclick='x' xml:lang='sv' srcdoc='x' data-ok='1'></div>",

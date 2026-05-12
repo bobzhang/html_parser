@@ -18,6 +18,7 @@ priv enum TransformKind {
   DropDoctypeNodes
   CollapseTextWhitespace
   LinkifyTextNodes
+  StageGroup
 } derive(Debug)
 
 ///|
@@ -74,6 +75,7 @@ pub struct TransformSpec {
   priv skip_tags : Array[String]
   priv linkify_config : LinkifyConfig?
   priv linkify_skip_tags : Array[String]
+  priv stage_transforms : Array[TransformSpec]
 } derive(Debug)
 
 ///|
@@ -95,6 +97,7 @@ fn make_transform_spec(
   skip_tags? : Array[String] = [],
   linkify_config? : LinkifyConfig,
   linkify_skip_tags? : Array[String] = [],
+  stage_transforms? : Array[TransformSpec] = [],
 ) -> TransformSpec {
   {
     kind,
@@ -114,6 +117,7 @@ fn make_transform_spec(
     skip_tags: skip_tags.copy(),
     linkify_config,
     linkify_skip_tags: linkify_skip_tags.copy(),
+    stage_transforms: stage_transforms.copy(),
   }
 }
 
@@ -161,6 +165,7 @@ fn with_transform_hooks(
     skip_tags: spec.skip_tags.copy(),
     linkify_config: spec.linkify_config,
     linkify_skip_tags: spec.linkify_skip_tags.copy(),
+    stage_transforms: spec.stage_transforms.copy(),
   }
 }
 
@@ -432,6 +437,22 @@ pub fn TransformSpec::sanitize(
 }
 
 ///|
+/// Build an explicit transform stage. Stages split a transform list into
+/// separate passes and may report against the current root before the pass.
+pub fn TransformSpec::stage(
+  transforms : Array[TransformSpec],
+  enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
+) -> TransformSpec {
+  with_transform_hooks(
+    make_transform_spec(StageGroup, enabled~, stage_transforms=transforms),
+    hook,
+    report,
+  )
+}
+
+///|
 /// Build a transform that removes comment nodes.
 pub fn TransformSpec::drop_comments(
   enabled? : Bool = true,
@@ -516,10 +537,84 @@ pub fn apply_transforms(
   node : Node,
   transforms : Array[TransformSpec],
 ) -> Node raise HtmlError {
+  if transform_list_has_enabled_stage(transforms) {
+    return apply_staged_transforms(node, transforms)
+  }
   let mut current = node
   for transform in transforms {
     if transform.enabled {
       current = apply_transform(current, transform)
+    }
+  }
+  current
+}
+
+///|
+fn transform_list_has_enabled_stage(transforms : Array[TransformSpec]) -> Bool {
+  for transform in transforms {
+    if transform.enabled {
+      match transform.kind {
+        StageGroup => return true
+        _ => ()
+      }
+    }
+  }
+  false
+}
+
+///|
+fn apply_staged_transforms(
+  node : Node,
+  transforms : Array[TransformSpec],
+) -> Node raise HtmlError {
+  let mut current = node
+  let mut pending : Array[TransformSpec] = []
+  let mut stage_index = 0
+  for transform in transforms {
+    match transform.kind {
+      StageGroup =>
+        if transform.enabled {
+          if !pending.is_empty() {
+            stage_index += 1
+            current = apply_stage_items(current, pending)
+            pending = []
+          }
+          stage_index += 1
+          current = apply_explicit_stage(current, transform, stage_index)
+        }
+      _ => pending.push(transform)
+    }
+  }
+  if !pending.is_empty() {
+    current = apply_stage_items(current, pending)
+  }
+  current
+}
+
+///|
+fn apply_explicit_stage(
+  node : Node,
+  stage : TransformSpec,
+  index : Int,
+) -> Node raise HtmlError {
+  transform_call_hook(node, stage)
+  transform_report(stage, "Stage " + index.to_string(), Some(node))
+  apply_stage_items(node, stage.stage_transforms)
+}
+
+///|
+fn apply_stage_items(
+  node : Node,
+  transforms : Array[TransformSpec],
+) -> Node raise HtmlError {
+  let mut current = node
+  for transform in transforms {
+    if transform.enabled {
+      match transform.kind {
+        StageGroup =>
+          current = apply_stage_items(current, transform.stage_transforms)
+        _ => current = apply_transform(current, transform)
+      }
     }
   }
   current
@@ -581,6 +676,7 @@ fn apply_transform(
         transform,
       )
     }
+    StageGroup => apply_stage_items(node, transform.stage_transforms)
   }
 }
 

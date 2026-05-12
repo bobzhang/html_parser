@@ -366,6 +366,11 @@ JustHTML from Python to MoonBit.
   sanitizer code. That avoids hidden callback calls and avoids sanitizer
   side-effects from disabled specs while keeping constructor normalization
   simple.
+- Python models `Stage` as a separate union member, but MoonBit can keep the
+  public pipeline homogeneous by making stages a recursive `TransformSpec`
+  variant that stores `Array[TransformSpec]`. Top-level stage handling can
+  still mirror Python's implicit leading/trailing stage numbering while nested
+  stages flatten into the surrounding stage.
 - Some Python transforms are mostly in-place but can still replace the root
   object for standalone nodes. Keep a `current` root when applying a transform
   sequence and return the latest root; otherwise a sanitizer that drops a
