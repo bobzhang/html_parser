@@ -937,6 +937,10 @@ fn node_to_html_pretty(
 }
 
 ///|
+/// Serialize this node and its descendants as HTML or an escaped context value.
+///
+/// `pretty=false` emits compact HTML. `context` controls escaping for raw HTML,
+/// JavaScript strings, HTML attribute values, or URL text extraction.
 pub fn Node::to_html(
   self : Node,
   pretty? : Bool = true,
@@ -967,6 +971,9 @@ pub fn Node::to_html(
 }
 
 ///|
+/// Serialize a node as HTML.
+///
+/// This is the function form of `Node::to_html`.
 pub fn to_html(
   node : Node,
   pretty? : Bool = true,
@@ -1104,6 +1111,10 @@ fn text_chunks_to_string(
 }
 
 ///|
+/// Extract descendant text from this node.
+///
+/// `separator` is inserted between text chunks. Set
+/// `separator_blocks_only=true` to join only block-level text groups.
 pub fn Node::to_text(
   self : Node,
   separator? : String = " ",
@@ -3064,6 +3075,7 @@ fn walk_query(
 }
 
 ///|
+/// Return all descendants that match a CSS selector.
 pub fn Node::query(self : Node, selector : StringView) -> Array[Node] {
   let out : Array[Node] = []
   let allow_non_elements = selector_allows_non_elements(selector)
@@ -3075,22 +3087,26 @@ pub fn Node::query(self : Node, selector : StringView) -> Array[Node] {
 }
 
 ///|
+/// Return the first descendant that matches a CSS selector.
 pub fn Node::query_one(self : Node, selector : StringView) -> Node? {
   let matches = self.query(selector)
   matches.get(0)
 }
 
 ///|
+/// Return whether `node` itself matches a CSS selector.
 pub fn matches(node : Node, selector : StringView) -> Bool {
   matches_selector_list(node, selector)
 }
 
 ///|
+/// Return all descendants of `root` that match a CSS selector.
 pub fn query(root : Node, selector : StringView) -> Array[Node] {
   root.query(selector)
 }
 
 ///|
+/// Render a deterministic tree dump intended for conformance tests.
 pub fn to_test_format(node : Node) -> String {
   let lines : Array[String] = []
   match node.kind {
