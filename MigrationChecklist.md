@@ -297,6 +297,8 @@ reference implementation in `.repos/justhtml`.
       bogus-comment Unicode regressions.
 - [x] Covered final parser defensive branches for omitted template end-tag
       sources and empty private attribute parses.
+- [x] Cleared sanitizer, transform, serializer, and parser package coverage;
+      remaining uncovered lines are CLI integration error/entrypoint branches.
 
 ## Working Rule
 
