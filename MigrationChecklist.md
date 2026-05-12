@@ -17,13 +17,13 @@ reference implementation in `.repos/justhtml`.
 - [x] Default sanitizer policy, URL rules, CSS URL filtering, and unsafe handling
 - [x] Initial Markdown conversion
 - [x] Mooncakes package metadata, GitHub repository, and CI
-- [x] Initial public transform pipeline shell with structural, utility, and
-      deterministic attribute, URL/style, and `Sanitize` DOM transforms
+- [x] Initial public transform pipeline shell with structural, callback,
+      utility, deterministic attribute, URL/style, and `Sanitize` DOM transforms
 
 ## Migration Roadmap
 
-1. Finish the general transform pipeline: callbacks, explicit stages, selector
-   limits, and remaining transform edge-case tests.
+1. Finish the general transform pipeline: enabled flags, callback/report hooks,
+   explicit stages, selector limits, and remaining transform edge-case tests.
 2. Port the streaming API and `tests/test_stream.py` behavior.
 3. Port CLI compatibility and `tests/test_cli.py` behavior.
 4. Sweep Markdown parity against the remaining Python tests.
@@ -45,13 +45,14 @@ reference implementation in `.repos/justhtml`.
 - [ ] General transform pipeline
   - [x] Public `TransformSpec` and `apply_transforms` API shell
   - [x] Structural transform specs: `Drop`, `Unwrap`, `Escape`, `Empty`
-  - [ ] Callback transform specs: `Edit`, `EditDocument`
+  - [x] Callback transform specs: `Edit`, `EditDocument`
   - [x] Attribute transforms: `SetAttrs`, `DropAttrs`, `AllowlistAttrs`, `MergeAttrs`
-  - [ ] Callback attribute transform: `EditAttrs`
+  - [x] Callback attribute transform: `EditAttrs`
   - [x] Utility transforms: `CollapseWhitespace`, `DropComments`, `DropDoctype`
   - [x] Linkify transform integration and order-sensitive smoke tests
   - [x] `Sanitize` transform integration and order-sensitive smoke tests
   - [x] URL/style transform specs: `DropUrlAttrs`, `AllowStyleAttrs`
+  - [ ] Transform enabled flags plus callback/report hooks
   - [ ] Compiled stages, selector limits, and deterministic application order
 - [ ] Streaming API
   - [ ] `StreamSink` equivalent

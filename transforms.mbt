@@ -8,6 +8,9 @@ priv enum TransformKind {
   DropAttributes
   AllowlistAttributes
   MergeAttributeTokens
+  EditElement
+  EditDocumentRoot
+  EditAttributes
   SanitizeTree
   DropUrlAttributes
   AllowStyleAttributes
@@ -18,11 +21,31 @@ priv enum TransformKind {
 } derive(Debug)
 
 ///|
+priv struct TransformNodeCallback {
+  callback : (Node) -> Unit
+}
+
+///|
+impl Debug for TransformNodeCallback with to_repr(_) {
+  Repr::opaque_("TransformNodeCallback", Repr::unit())
+}
+
+///|
+priv struct TransformAttrsCallback {
+  callback : (Node) -> Map[String, String?]?
+}
+
+///|
+impl Debug for TransformAttrsCallback with to_repr(_) {
+  Repr::opaque_("TransformAttrsCallback", Repr::unit())
+}
+
+///|
 /// A DOM transform specification for `apply_transforms`.
 ///
-/// The current port covers deterministic structural, attribute, URL/style,
-/// utility, and sanitizer transforms. Callback-based Python specs will be added
-/// as separate slices.
+/// The current port covers deterministic structural, attribute, callback,
+/// URL/style, utility, and sanitizer transforms. Callback hooks/reports will be
+/// added as separate slices.
 pub struct TransformSpec {
   priv kind : TransformKind
   priv selector : String
@@ -33,6 +56,8 @@ pub struct TransformSpec {
   priv merge_attr : String
   priv merge_tokens : Array[String]
   priv sanitize_policy : SanitizationPolicy?
+  priv node_callback : TransformNodeCallback?
+  priv attrs_callback : TransformAttrsCallback?
   priv skip_tags : Array[String]
   priv linkify_config : LinkifyConfig?
   priv linkify_skip_tags : Array[String]
@@ -49,6 +74,8 @@ fn make_transform_spec(
   merge_attr? : String = "",
   merge_tokens? : Array[String] = [],
   sanitize_policy? : SanitizationPolicy,
+  node_callback? : TransformNodeCallback,
+  attrs_callback? : TransformAttrsCallback,
   skip_tags? : Array[String] = [],
   linkify_config? : LinkifyConfig,
   linkify_skip_tags? : Array[String] = [],
@@ -63,6 +90,8 @@ fn make_transform_spec(
     merge_attr,
     merge_tokens: merge_tokens.copy(),
     sanitize_policy,
+    node_callback,
+    attrs_callback,
     skip_tags: skip_tags.copy(),
     linkify_config,
     linkify_skip_tags: linkify_skip_tags.copy(),
@@ -91,6 +120,23 @@ pub fn TransformSpec::escape(selector : StringView) -> TransformSpec {
 /// Build a transform that removes all children from matching elements.
 pub fn TransformSpec::empty(selector : StringView) -> TransformSpec {
   make_transform_spec(EmptyElements, selector=selector.to_owned())
+}
+
+///|
+/// Build a transform that invokes `callback` for matching elements.
+pub fn TransformSpec::edit(
+  selector : StringView,
+  callback : (Node) -> Unit,
+) -> TransformSpec {
+  make_transform_spec(EditElement, selector=selector.to_owned(), node_callback={
+    callback,
+  })
+}
+
+///|
+/// Build a transform that invokes `callback` once on the supplied root.
+pub fn TransformSpec::edit_document(callback : (Node) -> Unit) -> TransformSpec {
+  make_transform_spec(EditDocumentRoot, node_callback={ callback, })
 }
 
 ///|
@@ -130,6 +176,18 @@ pub fn TransformSpec::allowlist_attrs(
     selector=selector.to_owned(),
     allowed_attrs=normalize_allowed_attrs_map(allowed_attributes),
   )
+}
+
+///|
+/// Build a transform that replaces matching element attributes when `callback`
+/// returns a map.
+pub fn TransformSpec::edit_attrs(
+  selector : StringView,
+  callback : (Node) -> Map[String, String?]?,
+) -> TransformSpec {
+  make_transform_spec(EditAttributes, selector=selector.to_owned(), attrs_callback={
+    callback,
+  })
 }
 
 ///|
@@ -254,6 +312,10 @@ fn apply_transform(
   transform : TransformSpec,
 ) -> Node raise HtmlError {
   match transform.kind {
+    EditDocumentRoot => {
+      apply_edit_document_transform(node, transform)
+      node
+    }
     DropElements
     | UnwrapElements
     | EscapeElements
@@ -261,11 +323,11 @@ fn apply_transform(
     | SetAttributes
     | DropAttributes
     | AllowlistAttributes
-    | MergeAttributeTokens => {
-      apply_selector_transform(node, transform)
-      node
-    }
-    DropUrlAttributes | AllowStyleAttributes => {
+    | MergeAttributeTokens
+    | EditElement
+    | EditAttributes
+    | DropUrlAttributes
+    | AllowStyleAttributes => {
       apply_selector_transform(node, transform)
       node
     }
@@ -400,6 +462,22 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
           transform_children(child, transform)
           index += 1
         }
+        EditElement => {
+          apply_edit_transform(child, transform)
+          if index < parent.children.length() &&
+            physical_equal(parent.children[index], child) {
+            transform_children(child, transform)
+            index += 1
+          }
+        }
+        EditAttributes => {
+          apply_edit_attrs_transform(child, transform)
+          if index < parent.children.length() &&
+            physical_equal(parent.children[index], child) {
+            transform_children(child, transform)
+            index += 1
+          }
+        }
         DropUrlAttributes => {
           apply_drop_url_attrs_transform(child, transform)
           transform_children(child, transform)
@@ -439,6 +517,37 @@ fn empty_transform_node(node : Node) -> Unit {
       physical_equal(current_parent, node) {
       child.parent = None
     }
+  }
+}
+
+///|
+fn apply_edit_document_transform(
+  node : Node,
+  transform : TransformSpec,
+) -> Unit {
+  match transform.node_callback {
+    Some(callback) => (callback.callback)(node)
+    None => ()
+  }
+}
+
+///|
+fn apply_edit_transform(node : Node, transform : TransformSpec) -> Unit {
+  match transform.node_callback {
+    Some(callback) => (callback.callback)(node)
+    None => ()
+  }
+}
+
+///|
+fn apply_edit_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
+  match transform.attrs_callback {
+    Some(callback) =>
+      match (callback.callback)(node) {
+        Some(attrs) => attrs_replace_with(node, attrs)
+        None => ()
+      }
+    None => ()
   }
 }
 

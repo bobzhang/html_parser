@@ -197,6 +197,9 @@ pub fn TransformSpec::drop_attrs(StringView, Array[String]) -> Self
 pub fn TransformSpec::drop_comments() -> Self
 pub fn TransformSpec::drop_doctype() -> Self
 pub fn TransformSpec::drop_url_attrs(StringView, url_policy~ : UrlPolicy) -> Self
+pub fn TransformSpec::edit(StringView, (Node) -> Unit) -> Self
+pub fn TransformSpec::edit_attrs(StringView, (Node) -> Map[String, String?]?) -> Self
+pub fn TransformSpec::edit_document((Node) -> Unit) -> Self
 pub fn TransformSpec::empty(StringView) -> Self
 pub fn TransformSpec::escape(StringView) -> Self
 pub fn TransformSpec::linkify(config? : LinkifyConfig, skip_tags? : Array[String]) -> Self

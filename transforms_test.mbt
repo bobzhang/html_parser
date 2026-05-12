@@ -286,6 +286,101 @@ test "sanitize transform propagates unsafe raise policy errors" {
 }
 
 ///|
+test "edit_document invokes callback once on root" {
+  let seen : Array[String] = []
+  let root = @html_parser.fragment(children=[
+    @html_parser.element("p", children=[@html_parser.text("x")]),
+  ])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::edit_document(fn(node) {
+        seen.push(node.name())
+        node.append_child(@html_parser.element("section"))
+      }),
+      @html_parser.TransformSpec::set_attrs("section", {
+        "data-root": Some("1"),
+      }),
+    ]),
+  )
+  assert_eq(seen, ["#document-fragment"])
+  let sections = root.query("section")
+  assert_eq(sections.length(), 1)
+  assert_true(sections[0].attrs().get("data-root") is Some(Some("1")))
+}
+
+///|
+test "edit invokes callback for matching elements" {
+  let seen : Array[String] = []
+  let p = @html_parser.element("p")
+  let span = @html_parser.element("span")
+  let root = @html_parser.fragment(children=[p, span])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::edit("p", fn(node) {
+        seen.push(node.name())
+        node.append_child(
+          @html_parser.element("b", attrs={ "class": Some("from-edit") }),
+        )
+      }),
+      @html_parser.TransformSpec::set_attrs("b.from-edit", {
+        "data-seen": Some("yes"),
+      }),
+    ]),
+  )
+  assert_eq(seen, ["p"])
+  assert_eq(p.query("b").length(), 1)
+  assert_eq(span.query("b").length(), 0)
+  assert_true(p.query("b")[0].attrs().get("data-seen") is Some(Some("yes")))
+}
+
+///|
+test "edit_attrs replaces attrs and treats None as unchanged" {
+  let first = @html_parser.element("p", attrs={
+    "id": Some("first"),
+    "old": Some("x"),
+  })
+  let skip = @html_parser.element("p", attrs={
+    "id": Some("skip"),
+    "old": Some("y"),
+  })
+  let root = @html_parser.fragment(children=[first, skip])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::edit_attrs("p", fn(node) {
+        if node.attrs().get("id") is Some(Some("skip")) {
+          None
+        } else {
+          Some({ "class": Some("edited"), "disabled": None })
+        }
+      }),
+    ]),
+  )
+  let first_attrs = first.attrs()
+  assert_true(first_attrs.get("id") is None)
+  assert_true(first_attrs.get("old") is None)
+  assert_true(first_attrs.get("class") is Some(Some("edited")))
+  assert_true(first_attrs.get("disabled") is Some(None))
+  assert_true(skip.attrs().get("old") is Some(Some("y")))
+}
+
+///|
+test "edit_attrs changes are visible to later transforms" {
+  let node = @html_parser.element("p", attrs={ "id": Some("x") })
+  let root = @html_parser.fragment(children=[node])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::edit_attrs("p", fn(_node) {
+        Some({ "class": Some("one") })
+      }),
+      @html_parser.TransformSpec::edit_attrs("p.one", fn(_node) {
+        Some({ "class": Some("two") })
+      }),
+    ]),
+  )
+  assert_true(node.attrs().get("class") is Some(Some("two")))
+}
+
+///|
 test "drop_url_attrs validates URL attrs and normalizes mixed-case names" {
   let trusted_rule = @html_parser.UrlRule::new(
     allowed_schemes=["https"],

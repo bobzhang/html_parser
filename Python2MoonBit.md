@@ -330,6 +330,15 @@ JustHTML from Python to MoonBit.
   `clear`, `remove`, and index assignment. This matches the current node model
   better than making the whole field mutable just to port Python's
   `node.attrs = new_attrs` callback style.
+- Public `Node::attrs()` returns a copy, so port Python `EditAttrs` as a
+  callback returning `Map[String, String?]?` and perform the replacement inside
+  the library where private node fields are accessible. `None` remains the
+  direct MoonBit equivalent of Python's "leave attributes unchanged" return.
+- Function values do not fit well in derived debug output for public specs.
+  Store transform callbacks behind private wrapper structs with opaque `Debug`
+  implementations, then let public constructors accept ordinary function
+  values. This keeps `TransformSpec` debuggable without exposing callback
+  internals.
 - Some Python transforms are mostly in-place but can still replace the root
   object for standalone nodes. Keep a `current` root when applying a transform
   sequence and return the latest root; otherwise a sanitizer that drops a
