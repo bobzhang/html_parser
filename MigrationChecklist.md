@@ -345,6 +345,8 @@ reference implementation in `.repos/justhtml`.
       copied JustHTML and linkify fixture files.
 - [x] Added fixture-sync script smoke coverage for absent-reference and
       bad-argument paths.
+- [x] Generalized generated-interface validation to discover all tracked
+      `pkg.generated.mbti` files instead of hard-coding package paths.
 
 ## Working Rule
 
