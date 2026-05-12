@@ -688,6 +688,31 @@ test "selector transforms fail closed for nonmatching contextual selectors" {
 }
 
 ///|
+test "selector transforms fail closed for malformed selectors" {
+  let doc = @html_parser.parse_fragment("<p id='x'></p><a href='#'>x</a>")
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::set_attrs("p[", {
+        "data-miss": Some("unclosed-attribute"),
+      }),
+      @html_parser.TransformSpec::set_attrs("p, a[", {
+        "data-miss": Some("bad-list"),
+      }),
+      @html_parser.TransformSpec::set_attrs("> p", {
+        "data-miss": Some("bad-combinator"),
+      }),
+      @html_parser.TransformSpec::set_attrs(", p", {
+        "data-miss": Some("empty-leading-list"),
+      }),
+    ]),
+  )
+  assert_eq(
+    doc.root.to_html(pretty=false),
+    "<p id=\"x\"></p><a href=\"#\">x</a>",
+  )
+}
+
+///|
 test "prune_empty drops empty elements with post-order semantics" {
   let doc = @html_parser.parse_fragment(
     "<div><p></p></div><p><img></p><p><!--x--></p><p>   </p><span> </span>",

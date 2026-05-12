@@ -1063,6 +1063,10 @@ JustHTML from Python to MoonBit.
   selectors. A positive `em + span` case does not prove the fail-closed paths
   for missing ancestors, wrong immediate parents, absent adjacent siblings, or
   missing general siblings.
+- Keep malformed selector behavior consistent between `query()` and transform
+  selectors. Since the MoonBit API is non-throwing for selector syntax, invalid
+  pieces such as `p[`, `p, a[`, `> p`, and leading empty lists should simply
+  skip mutation.
 - Pseudo-class parsing starts as another simple-selector marker. For
   `:first-child` and `:last-child`, scan only element children under the parent;
   whitespace text nodes and comments must not affect child positions. Direct

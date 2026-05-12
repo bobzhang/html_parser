@@ -181,7 +181,7 @@ reference implementation in `.repos/justhtml`.
       count, compound simple-selector count, negative byte budgets, and
       `:contains(...)` text byte accounting.
 - [x] Added selector-transform no-match regressions for descendant, child,
-      adjacent-sibling, general-sibling, class, and ID selectors.
+      adjacent-sibling, general-sibling, class, ID, and malformed selectors.
 - [x] Added transform no-op regressions for empty attribute patterns,
       empty-attribute nodes, blank attribute names, boolean merge attributes,
       root text/comment leaves, and root preformatted text skips.
