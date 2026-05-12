@@ -369,21 +369,16 @@ fn Parser::clean_foreign_content_text(
   start : Int,
 ) -> String {
   let out = StringBuilder::new(size_hint=raw.length())
-  let mut pos = 0
-  while pos < raw.length() {
-    match raw.get_char(pos) {
-      Some('\u{0000}') => {
-        self.error_at("unexpected-null-character", start + pos)
-        self.error_at("invalid-codepoint-in-foreign-content", start + pos)
-        out.write_char('\u{FFFD}')
-        pos += 1
-      }
-      Some(ch) => {
-        out.write_char(ch)
-        pos += ch.utf16_len()
-      }
-      None => break
+  let mut offset = 0
+  for ch in raw {
+    if ch == '\u{0000}' {
+      self.error_at("unexpected-null-character", start + offset)
+      self.error_at("invalid-codepoint-in-foreign-content", start + offset)
+      out.write_char('\u{FFFD}')
+    } else {
+      out.write_char(ch)
     }
+    offset += ch.utf16_len()
   }
   out.to_string()
 }
@@ -430,10 +425,7 @@ fn Parser::handle_foreign_content_start_tag(
     return false
   }
   let current = self.current_node()
-  let ns = match current.ns {
-    Some(ns) => ns
-    None => "html"
-  }
+  let ns = current.ns.unwrap()
   let adjusted_name = adjusted_start_tag_name_for_namespace(ns, name)
   let adjusted_attrs = prepare_foreign_attrs(ns, attrs)
   let node = self.node_with_origin(

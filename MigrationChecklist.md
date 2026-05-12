@@ -258,6 +258,8 @@ reference implementation in `.repos/justhtml`.
       whitebox coverage for no-path read plans.
 - [x] Refactored deep DOM clone traversal to unwrap stack pops after the
       non-empty loop guard.
+- [x] Refactored foreign-content text cleanup to iterate by `Char` with UTF-16
+      offsets and unwrap namespace after the foreign-start guard.
 
 ## Working Rule
 
