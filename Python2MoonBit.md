@@ -420,6 +420,11 @@ JustHTML from Python to MoonBit.
   whether replacement children can be seen by the current spec, by later specs,
   or only by later stages; tests such as `Drop("a"), Linkify()` versus
   `Linkify(), Drop("a")` catch accidental order changes.
+- `Decide("*", ...)` is not an element selector shortcut in Python. It calls
+  the callback for every node type reached by the walker, including comments,
+  text, doctypes, and nested document/fragment containers. Other selectors only
+  invoke the callback for element nodes. Hook/report callbacks fire only for
+  non-`KEEP` decisions, before the structural action is applied.
 - `PruneEmpty` is a post-order transform, not a normal pre-order selector
   rewrite. Recurse into children first, then remove matching elements that have
   no element children and no content text; comments and doctypes do not count as

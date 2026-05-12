@@ -45,7 +45,7 @@ reference implementation in `.repos/justhtml`.
 - [ ] General transform pipeline
   - [x] Public `TransformSpec` and `apply_transforms` API shell
   - [x] Structural transform specs: `Drop`, `Unwrap`, `Escape`, `Empty`
-  - [x] Callback transform specs: `Edit`, `EditDocument`
+  - [x] Callback transform specs: `Edit`, `EditDocument`, `Decide`
   - [x] Attribute transforms: `SetAttrs`, `DropAttrs`, `AllowlistAttrs`, `MergeAttrs`
   - [x] Callback attribute transform: `EditAttrs`
   - [x] Utility transforms: `CollapseWhitespace`, `DropComments`, `DropDoctype`

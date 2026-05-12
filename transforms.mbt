@@ -11,6 +11,7 @@ priv enum TransformKind {
   EditElement
   EditDocumentRoot
   EditAttributes
+  DecideNode
   SanitizeTree
   DropUrlAttributes
   AllowStyleAttributes
@@ -21,6 +22,15 @@ priv enum TransformKind {
   LinkifyTextNodes
   StageGroup
 } derive(Debug)
+
+///|
+pub(all) enum DecideAction {
+  Keep
+  Drop
+  Unwrap
+  Empty
+  Escape
+} derive(Eq, Debug)
 
 ///|
 priv struct TransformNodeCallback {
@@ -40,6 +50,16 @@ priv struct TransformAttrsCallback {
 ///|
 impl Debug for TransformAttrsCallback with to_repr(_) {
   Repr::opaque_("TransformAttrsCallback", Repr::unit())
+}
+
+///|
+priv struct TransformDecideCallback {
+  callback : (Node) -> DecideAction
+}
+
+///|
+impl Debug for TransformDecideCallback with to_repr(_) {
+  Repr::opaque_("TransformDecideCallback", Repr::unit())
 }
 
 ///|
@@ -71,6 +91,7 @@ pub struct TransformSpec {
   priv sanitize_policy : SanitizationPolicy?
   priv node_callback : TransformNodeCallback?
   priv attrs_callback : TransformAttrsCallback?
+  priv decide_callback : TransformDecideCallback?
   priv node_hook : TransformNodeCallback?
   priv report_callback : TransformReportCallback?
   priv skip_tags : Array[String]
@@ -94,6 +115,7 @@ fn make_transform_spec(
   sanitize_policy? : SanitizationPolicy,
   node_callback? : TransformNodeCallback,
   attrs_callback? : TransformAttrsCallback,
+  decide_callback? : TransformDecideCallback,
   node_hook? : TransformNodeCallback,
   report_callback? : TransformReportCallback,
   skip_tags? : Array[String] = [],
@@ -115,6 +137,7 @@ fn make_transform_spec(
     sanitize_policy,
     node_callback,
     attrs_callback,
+    decide_callback,
     node_hook,
     report_callback,
     skip_tags: skip_tags.copy(),
@@ -164,6 +187,7 @@ fn with_transform_hooks(
     sanitize_policy: spec.sanitize_policy,
     node_callback: spec.node_callback,
     attrs_callback: spec.attrs_callback,
+    decide_callback: spec.decide_callback,
     node_hook: wrap_transform_node_callback(hook),
     report_callback: wrap_transform_report_callback(report),
     skip_tags: spec.skip_tags.copy(),
@@ -245,6 +269,24 @@ pub fn TransformSpec::edit(
 ) -> TransformSpec {
   with_transform_hooks(
     make_transform_spec(EditElement, enabled~, selector=selector.to_owned(), node_callback={
+      callback,
+    }),
+    hook,
+    report,
+  )
+}
+
+///|
+/// Build a transform that chooses a structural action for matching nodes.
+pub fn TransformSpec::decide(
+  selector : StringView,
+  callback : (Node) -> DecideAction,
+  enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
+) -> TransformSpec {
+  with_transform_hooks(
+    make_transform_spec(DecideNode, enabled~, selector=selector.to_owned(), decide_callback={
       callback,
     }),
     hook,
@@ -705,6 +747,10 @@ fn apply_transform(
       apply_selector_transform(node, transform)
       node
     }
+    DecideNode => {
+      apply_decide_transform(node, transform)
+      node
+    }
     SanitizeTree =>
       sanitize_dom_with_observer(
         node,
@@ -955,6 +1001,124 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
     } else {
       match child.kind {
         Document | Fragment | Element => transform_children(child, transform)
+        _ => ()
+      }
+      index += 1
+    }
+  }
+}
+
+///|
+fn apply_decide_transform(root : Node, transform : TransformSpec) -> Unit {
+  match root.kind {
+    Document | Fragment | Element => decide_transform_children(root, transform)
+    _ => ()
+  }
+}
+
+///|
+fn decide_transform_all_nodes(transform : TransformSpec) -> Bool {
+  transform.selector[:].trim() == "*"
+}
+
+///|
+fn decide_action_label(action : DecideAction) -> String {
+  match action {
+    Keep => "keep"
+    Drop => "drop"
+    Unwrap => "unwrap"
+    Empty => "empty"
+    Escape => "escape"
+  }
+}
+
+///|
+fn decide_node_label(node : Node) -> String {
+  if node.name.has_prefix("#") || node.name == "!doctype" {
+    node.name
+  } else {
+    lower_ascii(node.name)
+  }
+}
+
+///|
+fn decide_transform_matches_node(
+  node : Node,
+  transform : TransformSpec,
+  all_nodes : Bool,
+) -> Bool {
+  if all_nodes {
+    true
+  } else {
+    node.kind == Element && transform_matches_element(node, transform)
+  }
+}
+
+///|
+fn decide_transform_action(
+  node : Node,
+  transform : TransformSpec,
+) -> DecideAction {
+  match transform.decide_callback {
+    Some(callback) => {
+      let action = (callback.callback)(node)
+      if action != Keep {
+        transform_call_hook(node, transform)
+        transform_report(
+          transform,
+          "Decide -> " +
+          decide_action_label(action) +
+          " '" +
+          decide_node_label(node) +
+          "' (matched selector '" +
+          transform.selector +
+          "')",
+          Some(node),
+        )
+      }
+      action
+    }
+    None => Keep
+  }
+}
+
+///|
+fn decide_escape_child_at(parent : Node, index : Int) -> Unit {
+  match parent.children[index].kind {
+    Element => ignore(escape_transform_child_at(parent, index))
+    Document | Fragment => ignore(unwrap_child_at(parent, index))
+    Text | Comment | Doctype => remove_child_at(parent, index)
+  }
+}
+
+///|
+fn decide_transform_children(parent : Node, transform : TransformSpec) -> Unit {
+  let all_nodes = decide_transform_all_nodes(transform)
+  let mut index = 0
+  while index < parent.children.length() {
+    let child = parent.children[index]
+    if decide_transform_matches_node(child, transform, all_nodes) {
+      match decide_transform_action(child, transform) {
+        Keep => {
+          match child.kind {
+            Document | Fragment | Element =>
+              decide_transform_children(child, transform)
+            _ => ()
+          }
+          index += 1
+        }
+        Empty => {
+          ignore(empty_transform_node(child))
+          index += 1
+        }
+        Drop => remove_child_at(parent, index)
+        Unwrap => ignore(unwrap_child_at(parent, index))
+        Escape => decide_escape_child_at(parent, index)
+      }
+    } else {
+      match child.kind {
+        Document | Fragment | Element =>
+          decide_transform_children(child, transform)
         _ => ()
       }
       index += 1

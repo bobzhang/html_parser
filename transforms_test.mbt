@@ -39,6 +39,126 @@ test "apply_transforms drops unwraps escapes and empties selected elements" {
 }
 
 ///|
+test "decide star can act on comments while selectors only visit elements" {
+  let seen_all : Array[String] = []
+  let keep_seen : (@html_parser.Node) -> @html_parser.DecideAction = fn(node) {
+    seen_all.push(node.name())
+    Keep
+  }
+  let all_nodes = @html_parser.parse_fragment("<p>y</p>")
+  ignore(
+    @html_parser.apply_transforms(all_nodes.root, [
+      @html_parser.TransformSpec::decide("*", keep_seen),
+    ]),
+  )
+  assert_eq(seen_all, ["p", "#text"])
+
+  let decide_comment : (@html_parser.Node) -> @html_parser.DecideAction = fn(
+    node,
+  ) {
+    if node.name() == "#comment" {
+      Drop
+    } else {
+      Keep
+    }
+  }
+  let doc = @html_parser.parse_fragment("<!--x--><p>y</p>")
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::decide("*", decide_comment),
+    ]),
+  )
+  assert_eq(doc.root.to_html(pretty=false), "<p>y</p>")
+
+  let seen : Array[String] = []
+  let decide_p : (@html_parser.Node) -> @html_parser.DecideAction = fn(node) {
+    seen.push(node.name())
+    Drop
+  }
+  let selected = @html_parser.parse_fragment("<!--x--><p>y</p>")
+  ignore(
+    @html_parser.apply_transforms(selected.root, [
+      @html_parser.TransformSpec::decide("p", decide_p),
+    ]),
+  )
+  assert_eq(selected.root.to_html(pretty=false), "<!--x-->")
+  assert_eq(seen, ["p"])
+}
+
+///|
+test "decide applies empty unwrap and escape structural actions" {
+  let empty_div : (@html_parser.Node) -> @html_parser.DecideAction = fn(_) {
+    Empty
+  }
+  let emptied = @html_parser.parse_fragment("<div><span>x</span>y</div>")
+  ignore(
+    @html_parser.apply_transforms(emptied.root, [
+      @html_parser.TransformSpec::decide("div", empty_div),
+    ]),
+  )
+  assert_eq(emptied.root.to_html(pretty=false), "<div></div>")
+
+  let unwrap_node : (@html_parser.Node) -> @html_parser.DecideAction = fn(_) {
+    Unwrap
+  }
+  let unwrapped = @html_parser.parse_fragment(
+    "<div><template><b>x</b></template><span><i>y</i></span></div>",
+  )
+  ignore(
+    @html_parser.apply_transforms(unwrapped.root, [
+      @html_parser.TransformSpec::decide("template, span", unwrap_node),
+    ]),
+  )
+  assert_eq(unwrapped.root.to_html(pretty=false), "<div><b>x</b><i>y</i></div>")
+
+  let escape_div : (@html_parser.Node) -> @html_parser.DecideAction = fn(_) {
+    Escape
+  }
+  let escaped = @html_parser.parse_fragment("<div><span>child</span></div>")
+  ignore(
+    @html_parser.apply_transforms(escaped.root, [
+      @html_parser.TransformSpec::decide("div", escape_div),
+    ]),
+  )
+  assert_eq(
+    escaped.root.to_html(pretty=false),
+    "&lt;div&gt;<span>child</span>&lt;/div&gt;",
+  )
+}
+
+///|
+test "decide reports non-keep actions exactly" {
+  let events : Array[String] = []
+  let decide : (@html_parser.Node) -> @html_parser.DecideAction = fn(node) {
+    if node.name() == "p" {
+      Drop
+    } else {
+      Keep
+    }
+  }
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let doc = @html_parser.parse_fragment("<p>y</p><span>z</span>")
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::decide("*", decide, hook~, report~),
+    ]),
+  )
+  assert_eq(doc.root.to_html(pretty=false), "<span>z</span>")
+  assert_eq(events, [
+    "hook:p", "report:Decide -> drop 'p' (matched selector '*')", "node:p",
+  ])
+}
+
+///|
 test "apply_transforms drops comments doctypes and collapses whitespace" {
   let root = @html_parser.document(children=[
     @html_parser.doctype(),
