@@ -70,6 +70,62 @@ test "unwrap skips direct moved children but walks their descendants" {
 }
 
 ///|
+test "compiled walk marker edge cases stay order preserving" {
+  let escape_all = @html_parser.parse_fragment(
+    "<div><span><b>x</b></span></div>",
+  )
+  ignore(
+    @html_parser.apply_transforms(escape_all.root, [
+      @html_parser.TransformSpec::escape("*"),
+    ]),
+  )
+  assert_eq(
+    escape_all.root.to_html(pretty=false),
+    "&lt;div&gt;&lt;span&gt;&lt;b&gt;x&lt;/b&gt;&lt;/span&gt;&lt;/div&gt;",
+  )
+
+  let escape_then_drop = @html_parser.parse_fragment(
+    "<div><span><b>x</b></span></div>",
+  )
+  ignore(
+    @html_parser.apply_transforms(escape_then_drop.root, [
+      @html_parser.TransformSpec::escape("span"),
+      @html_parser.TransformSpec::drop("b"),
+    ]),
+  )
+  assert_eq(
+    escape_then_drop.root.to_html(pretty=false),
+    "<div>&lt;span&gt;&lt;/span&gt;</div>",
+  )
+
+  let decide_unwrap : (@html_parser.Node) -> @html_parser.DecideAction = fn(
+    node,
+  ) {
+    match node.name() {
+      "span" => Unwrap
+      "b" => Drop
+      _ => Keep
+    }
+  }
+  let decided = @html_parser.parse_fragment("<div><span><b>x</b></span></div>")
+  ignore(
+    @html_parser.apply_transforms(decided.root, [
+      @html_parser.TransformSpec::decide("*", decide_unwrap),
+    ]),
+  )
+  assert_eq(decided.root.to_html(pretty=false), "<div></div>")
+
+  let linkify_then_drop = @html_parser.parse_fragment("<p>example.com</p>")
+  ignore(
+    @html_parser.apply_transforms(linkify_then_drop.root, [
+      @html_parser.TransformSpec::linkify(),
+      @html_parser.TransformSpec::drop("a"),
+    ]),
+  )
+  assert_eq(linkify_then_drop.root.to_html(pretty=false), "<p></p>")
+}
+
+///|
 test "decide star can act on comments while selectors only visit elements" {
   let seen_all : Array[String] = []
   let keep_seen : (@html_parser.Node) -> @html_parser.DecideAction = fn(node) {

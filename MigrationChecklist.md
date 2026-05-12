@@ -42,7 +42,7 @@ reference implementation in `.repos/justhtml`.
   - [x] Wrap text-node matches in `<a href=...>`
   - [x] Skip existing anchors and preformatted text by default
   - [x] Preserve template content behavior
-- [ ] General transform pipeline
+- [x] General transform pipeline
   - [x] Public `TransformSpec` and `apply_transforms` API shell
   - [x] Structural transform specs: `Drop`, `Unwrap`, `Escape`, `Empty`
   - [x] Callback transform specs: `Edit`, `EditDocument`, `Decide`
@@ -70,7 +70,7 @@ reference implementation in `.repos/justhtml`.
   - [x] Sanitizer policy selector `max_length` and `max_match_bytes`
         transform coverage
   - [x] Selector parse-depth, match-depth, and step-budget transform coverage
-  - [ ] Remaining compiled-walk marker edge cases
+  - [x] Remaining compiled-walk marker edge cases
 - [x] Streaming API
   - [x] Public string `stream` event API
   - [x] String tests ported from `tests/test_stream.py`

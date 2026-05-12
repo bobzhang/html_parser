@@ -424,7 +424,11 @@ JustHTML from Python to MoonBit.
   `Linkify(), Drop("a")` catch accidental order changes. Selector `Unwrap` is
   especially subtle: direct children hoisted by the unwrap skip that same
   selector transform, but their descendants are still walked, and later
-  transforms can see the direct children.
+  transforms can see the direct children. Other walker mutations differ:
+  `Escape("*")` recursively escapes hoisted element children in the same
+  transform, `Linkify()` marks generated links for later transforms only, and
+  `Decide("*", ...)` can act again on hoisted nodes during the same decision
+  pass.
 - Python chooses selector resource limits for a compiled transform list from
   the last enabled `Sanitize` transform. Mirror that at `apply_transforms` time
   in MoonBit so an earlier selector transform can still use a later sanitizer
