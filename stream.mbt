@@ -1,10 +1,15 @@
 ///|
+/// Start-tag event emitted by the streaming tokenizer facade.
+///
+/// `name` is the normalized tag name and `attrs` contains the decoded
+/// attributes for the tag.
 pub(all) struct StreamStartEvent {
   name : String
   attrs : Map[String, String?]
 } derive(Debug, Eq)
 
 ///|
+/// Doctype event emitted by the streaming tokenizer facade.
 pub(all) struct StreamDoctypeEvent {
   name : String
   public_id : String?
@@ -12,6 +17,10 @@ pub(all) struct StreamDoctypeEvent {
 } derive(Debug, Eq)
 
 ///|
+/// Token-level streaming event.
+///
+/// The stream API does not build a DOM tree. It forwards start tags, end tags,
+/// text, comments, and doctypes in tokenizer order, coalescing adjacent text.
 pub(all) enum StreamEvent {
   StreamStart(StreamStartEvent)
   StreamText(String)
@@ -21,12 +30,14 @@ pub(all) enum StreamEvent {
 } derive(Debug, Eq)
 
 ///|
+/// Mutable sink that converts tokenizer tokens into coalesced stream events.
 pub struct StreamSink {
   priv events : Array[StreamEvent]
   priv text_parts : Array[String]
 } derive(Debug)
 
 ///|
+/// Create an empty stream sink.
 pub fn StreamSink::new() -> StreamSink {
   { events: [], text_parts: [] }
 }
@@ -40,11 +51,16 @@ fn StreamSink::flush_text(self : StreamSink) -> Unit {
 }
 
 ///|
+/// Buffer character data until the next structural token or drain.
 pub fn StreamSink::process_characters(self : StreamSink, data : String) -> Unit {
   self.text_parts.push(data)
 }
 
 ///|
+/// Process one tokenizer token into this sink.
+///
+/// Character tokens are buffered and adjacent text is emitted as a single
+/// `StreamText` event. Non-text tokens flush pending text first.
 pub fn StreamSink::process_token(self : StreamSink, token : HtmlToken) -> Unit {
   match token {
     Characters(data) => self.process_characters(data)
@@ -77,6 +93,7 @@ pub fn StreamSink::process_token(self : StreamSink, token : HtmlToken) -> Unit {
 }
 
 ///|
+/// Parse an HTML string into streaming events.
 pub fn stream(html : StringView) -> Array[StreamEvent] {
   let events : Array[StreamEvent] = []
   stream_each(html, fn(event) { events.push(event) })
@@ -84,6 +101,10 @@ pub fn stream(html : StringView) -> Array[StreamEvent] {
 }
 
 ///|
+/// Drain buffered events from this sink.
+///
+/// Pending character data is flushed before the returned array is copied, and
+/// the sink is empty afterward.
 pub fn StreamSink::drain(self : StreamSink) -> Array[StreamEvent] {
   self.flush_text()
   let out = self.events.copy()
@@ -92,6 +113,9 @@ pub fn StreamSink::drain(self : StreamSink) -> Array[StreamEvent] {
 }
 
 ///|
+/// Drain buffered events by invoking `emit` for each event.
+///
+/// Pending character data is flushed first, and the sink is empty afterward.
 pub fn StreamSink::drain_each(
   self : StreamSink,
   emit : (StreamEvent) -> Unit,
@@ -104,6 +128,7 @@ pub fn StreamSink::drain_each(
 }
 
 ///|
+/// Parse an HTML string and emit streaming events incrementally.
 pub fn stream_each(html : StringView, emit : (StreamEvent) -> Unit) -> Unit {
   let tokenizer = SourceTokenizer::new(
     html,
@@ -123,6 +148,10 @@ pub fn stream_each(html : StringView, emit : (StreamEvent) -> Unit) -> Unit {
 }
 
 ///|
+/// Decode HTML bytes and return streaming events.
+///
+/// When `encoding` is omitted, the same byte-sniffing path used by
+/// `parse_bytes` chooses the input encoding.
 pub fn stream_bytes(
   input : BytesView,
   encoding? : String,
@@ -134,6 +163,10 @@ pub fn stream_bytes(
 }
 
 ///|
+/// Decode HTML bytes and emit streaming events incrementally.
+///
+/// When `encoding` is omitted, the same byte-sniffing path used by
+/// `parse_bytes` chooses the input encoding.
 pub fn stream_bytes_each(
   input : BytesView,
   emit : (StreamEvent) -> Unit,
