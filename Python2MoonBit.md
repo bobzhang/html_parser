@@ -370,6 +370,11 @@ JustHTML from Python to MoonBit.
   `MergeAttrs`, Python reports `Merged tokens into attribute 'rel' on <a>`,
   not a selector-qualified "merged attributes" action. Keep those messages near
   the transform implementation so tests can pin exact callback text.
+- Rewrite-attribute transforms can have report-before-hook ordering. For
+  `DropAttrs`, Python reports each unsafe attribute and only then runs the hook
+  before installing the rewritten attribute map. Do not reuse selector-level
+  action reports for these transforms; the dropped attribute name and matched
+  pattern are part of the observable behavior.
 - Python models `Stage` as a separate union member, but MoonBit can keep the
   public pipeline homogeneous by making stages a recursive `TransformSpec`
   variant that stores `Array[TransformSpec]`. Top-level stage handling can

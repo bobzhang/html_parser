@@ -595,13 +595,55 @@ test "transform hooks and reports run for changed transforms" {
     ]),
   )
   assert_eq(events, [
-    "hook:p", "report:Set attributes on <p> (matched selector 'p')", "node:p", "hook:p",
-    "report:Dropped attributes on <p> (matched selector 'p')", "node:p", "hook:script",
-    "report:Dropped <script> (matched selector 'script')", "node:script", "hook:#comment",
-    "report:Dropped comment", "node:#comment", "hook:#doctype", "report:Dropped doctype",
-    "node:#doctype",
+    "hook:p", "report:Set attributes on <p> (matched selector 'p')", "node:p", "report:Unsafe attribute 'onclick' (matched forbidden pattern 'on*')",
+    "node:p", "hook:p", "hook:script", "report:Dropped <script> (matched selector 'script')",
+    "node:script", "hook:#comment", "report:Dropped comment", "node:#comment", "hook:#doctype",
+    "report:Dropped doctype", "node:#doctype",
   ])
   assert_eq(doc.to_html(pretty=false), "<p data-x=\"1\"></p>")
+}
+
+///|
+test "drop_attrs reports exact forbidden patterns before hook" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let root = @html_parser.fragment(children=[
+    @html_parser.element("div", attrs={
+      "OnClick": Some("run()"),
+      "Data-X": Some("1"),
+    }),
+    @html_parser.element("div", attrs={ "xml:lang": Some("sv") }),
+    @html_parser.element("div", attrs={ "SrcDoc": Some("<p>x</p>") }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::drop_attrs(
+        "*",
+        ["on*", "*:*", "srcdoc"],
+        hook~,
+        report~,
+      ),
+    ]),
+  )
+  assert_eq(events, [
+    "report:Unsafe attribute 'onclick' (matched forbidden pattern 'on*')", "node:div",
+    "hook:div", "report:Unsafe attribute 'xml:lang' (matched forbidden pattern '*:*')",
+    "node:div", "hook:div", "report:Unsafe attribute 'srcdoc' (matched forbidden pattern 'srcdoc')",
+    "node:div", "hook:div",
+  ])
+  assert_eq(
+    root.to_html(pretty=false),
+    "<div Data-X=\"1\"></div><div></div><div></div>",
+  )
 }
 
 ///|

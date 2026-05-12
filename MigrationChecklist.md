@@ -58,8 +58,8 @@ reference implementation in `.repos/justhtml`.
   - [x] Hook/report forwarding for `Linkify` and `CollapseWhitespace`
   - [x] Hook/report forwarding for `Sanitize`
   - [x] Hook/report forwarding for stage-level transforms
-  - [ ] Python-exact detailed report messages for attribute, URL/style, and
-        sanitizer transforms
+  - [ ] Python-exact detailed report messages for `AllowlistAttrs`, URL/style,
+        and sanitizer transforms
   - [ ] Compiled stages, selector limits, and deterministic application order
 - [ ] Streaming API
   - [ ] `StreamSink` equivalent

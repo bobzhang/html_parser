@@ -831,11 +831,7 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
           index += 1
         }
         DropAttributes => {
-          if apply_drop_attrs_transform(child, transform) {
-            transform_report_node_action(
-              child, transform, "Dropped attributes on",
-            )
-          }
+          ignore(apply_drop_attrs_transform(child, transform))
           transform_children(child, transform)
           index += 1
         }
@@ -1069,6 +1065,58 @@ fn attr_matches_any_pattern(
 }
 
 ///|
+fn string_view_contains_char(value : StringView, target : Char) -> Bool {
+  for ch in value {
+    if ch == target {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn drop_attrs_report_pattern(
+  name : StringView,
+  patterns : Array[String],
+  hot_path : Bool,
+) -> String {
+  if hot_path {
+    if name == "srcdoc" {
+      "srcdoc"
+    } else if string_view_contains_char(name, ':') {
+      "*:*"
+    } else {
+      "on*"
+    }
+  } else {
+    for pattern in patterns {
+      if transform_glob_match(pattern, name) {
+        return pattern
+      }
+    }
+    "?"
+  }
+}
+
+///|
+fn report_dropped_attr_pattern(
+  node : Node,
+  transform : TransformSpec,
+  name : StringView,
+  pattern : String,
+) -> Unit {
+  transform_report(
+    transform,
+    "Unsafe attribute '" +
+    name.to_owned() +
+    "' (matched forbidden pattern '" +
+    pattern +
+    "')",
+    Some(node),
+  )
+}
+
+///|
 fn transform_drop_attrs_hot_path(patterns : Array[String]) -> Bool {
   patterns.length() == 3 &&
   patterns.contains("*:*") &&
@@ -1098,7 +1146,18 @@ fn apply_drop_attrs_transform(node : Node, transform : TransformSpec) -> Bool {
   let out : Map[String, String?] = {}
   for raw_name, value in node.attrs {
     let name = lower_ascii(raw_name[:].trim())
-    if name != "" && !attr_matches_any_pattern(name, transform.attr_patterns) {
+    if name != "" && attr_matches_any_pattern(name, transform.attr_patterns) {
+      report_dropped_attr_pattern(
+        node,
+        transform,
+        name,
+        drop_attrs_report_pattern(
+          name,
+          transform.attr_patterns,
+          preserve_safe_key_case,
+        ),
+      )
+    } else if name != "" {
       if preserve_safe_key_case {
         out[raw_name] = value
       } else {
@@ -1106,6 +1165,7 @@ fn apply_drop_attrs_transform(node : Node, transform : TransformSpec) -> Bool {
       }
     }
   }
+  transform_call_hook(node, transform)
   attrs_replace_with(node, out)
   true
 }
