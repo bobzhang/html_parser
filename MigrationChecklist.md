@@ -324,6 +324,8 @@ reference implementation in `.repos/justhtml`.
       that also handles already-published versions.
 - [x] Moved native CLI release smoke coverage into a reusable local script and
       kept CI calling it.
+- [x] Moved the full-coverage gate into a reusable local script and kept CI
+      calling it.
 
 ## Working Rule
 

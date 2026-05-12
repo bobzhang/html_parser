@@ -56,10 +56,7 @@ jobs:
         run: moon test --target native
 
       - name: Analyze coverage
-        run: |
-          coverage="$(moon coverage analyze)"
-          printf '%s\n' "$coverage"
-          printf '%s\n' "$coverage" | grep -F "All source files are fully covered"
+        run: bash scripts/check_coverage.sh
 
       - name: Build and smoke test native CLI
         run: bash scripts/smoke_native_cli.sh
