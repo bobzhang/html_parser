@@ -113,6 +113,7 @@ reference implementation in `.repos/justhtml`.
     - [x] `foreign_content.mbt` view conversions
     - [x] `tokens.mbt` XML coercion view conversions
     - [x] `transforms.mbt` transform helper view conversions
+    - [x] `serialize.mbt` serializer and selector view conversions
   - [ ] Qualify README checked examples for warning 25
 
 ## Working Rule

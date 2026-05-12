@@ -463,7 +463,7 @@ fn compact_pretty_text_children(
     for child in node.children {
       raw.write_string(child.data)
     }
-    out.write_string(escape_text(collapse_html_whitespace(raw.to_string()[:])))
+    out.write_string(escape_text(collapse_html_whitespace(raw.to_string())))
   }
   out.to_string()
 }
@@ -689,7 +689,7 @@ fn element_has_comment_child(node : Node) -> Bool {
 fn node_is_pretty_formatting_separator(node : Node) -> Bool {
   node.kind == Text &&
   !text_has_visible_char(node.data) &&
-  compact_pretty_whitespace_separator(node.data[:])
+  compact_pretty_whitespace_separator(node.data)
 }
 
 ///|
@@ -828,7 +828,7 @@ fn node_to_html_pretty_child_line(
 ) -> String? raise HtmlError {
   match node.kind {
     Text => {
-      let normalized = normalize_formatting_whitespace(node.data[:])
+      let normalized = normalize_formatting_whitespace(node.data)
       let trimmed = normalized[:].trim()
       if trimmed.is_empty() {
         None
@@ -868,7 +868,7 @@ fn node_to_html_pretty(
       parts.join("\n")
     }
     Text => {
-      let normalized = normalize_formatting_whitespace(node.data[:])
+      let normalized = normalize_formatting_whitespace(node.data)
       let trimmed = normalized[:].trim()
       if trimmed.is_empty() {
         ""
@@ -1249,7 +1249,7 @@ fn class_selector_matches(node : Node, class_name : StringView) -> Bool {
 fn attribute_value_by_name(node : Node, attr_name : StringView) -> String? {
   let wanted = lower_ascii(attr_name)
   for name, value in node.attrs {
-    if lower_ascii(name[:]) == wanted {
+    if lower_ascii(name) == wanted {
       return Some(
         match value {
           Some(text) => text
@@ -1447,8 +1447,7 @@ fn attribute_selector_matches(node : Node, selector : StringView) -> Bool {
         return false
       }
       match attribute_value_by_name(node, name) {
-        Some(actual) =>
-          attribute_value_matches(actual[:], operator, expected[:])
+        Some(actual) => attribute_value_matches(actual, operator, expected)
         None => false
       }
     }
@@ -1866,7 +1865,7 @@ fn contains_text(node : Node, arg : StringView) -> Bool {
     return true
   }
   let text = selector_text_content(node)
-  string_view_contains(text[:], needle[:])
+  string_view_contains(text, needle)
 }
 
 ///|
@@ -2642,7 +2641,7 @@ fn selector_validate_limits(
 ///|
 fn selector_uses_byte_scanned_match(selector : StringView) -> Bool {
   string_view_contains(selector, "*=") ||
-  string_view_contains(lower_ascii(selector)[:], ":contains")
+  string_view_contains(lower_ascii(selector), ":contains")
 }
 
 ///|
@@ -2670,10 +2669,7 @@ fn selector_check_match_budget(
     raise SelectorError("Selector match byte budget exceeded")
   }
   if selector_uses_byte_scanned_match(selector) {
-    let include_text = string_view_contains(
-      lower_ascii(selector)[:],
-      ":contains",
-    )
+    let include_text = string_view_contains(lower_ascii(selector), ":contains")
     if selector_match_byte_cost(node, include_text) > limits.max_match_bytes {
       raise SelectorError("Selector match byte budget exceeded")
     }
@@ -3187,9 +3183,9 @@ fn test_format_attr_less(
   let (left_name, left_value) = left
   let (right_name, right_value) = right
   if left_name != right_name {
-    return test_format_string_less(left_name[:], right_name[:])
+    return test_format_string_less(left_name, right_name)
   }
-  test_format_string_less(left_value[:], right_value[:])
+  test_format_string_less(left_value, right_value)
 }
 
 ///|
@@ -3213,7 +3209,7 @@ fn write_test_format_attributes(
 ) -> Unit {
   let attrs : Array[(String, String)] = []
   for name, value in node.attrs {
-    let display_name = test_format_attribute_name(node, name[:])
+    let display_name = test_format_attribute_name(node, name)
     let value = match value {
       Some(value) => value
       None => ""
