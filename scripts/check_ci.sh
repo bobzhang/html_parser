@@ -47,6 +47,9 @@ step() {
 step "Check release version consistency"
 python3 scripts/check_release_version.py
 
+step "Check package metadata"
+python3 scripts/check_package_metadata.py
+
 step "Check formatting"
 moon fmt --check
 

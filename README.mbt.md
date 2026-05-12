@@ -149,5 +149,6 @@ bash scripts/check_ci.sh --skip-without-credentials
 
 Drop `--skip-without-credentials` when logged in locally and checking the full
 Mooncakes dry-run path. The script checks release-version consistency,
-formatting, generated interfaces, all supported targets, default/JS/native
-tests, coverage, native CLI smoke behavior, and Mooncakes package validation.
+package metadata, formatting, generated interfaces, all supported targets,
+default/JS/native tests, coverage, native CLI smoke behavior, and Mooncakes
+package validation.

@@ -332,6 +332,9 @@ reference implementation in `.repos/justhtml`.
       gates and made GitHub Actions call it.
 - [x] Added GitHub Actions log grouping to the local CI entrypoint so hosted
       failures remain easy to inspect.
+- [x] Added a package metadata consistency check for Mooncakes fields and README
+      install/import snippets.
+- [x] Ignored Python bytecode directories produced by local validation helpers.
 
 ## Working Rule
 
