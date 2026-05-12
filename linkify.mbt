@@ -137,12 +137,11 @@ fn linkify_broad_candidate_start(text : StringView, pos : Int) -> Bool {
 ///|
 fn linkify_candidate_end(text : StringView, start : Int) -> Int {
   let mut pos = start
-  while pos < text.length() {
-    match text.get_char(pos) {
-      Some(ch) if linkify_candidate_delimiter(ch) => return pos
-      Some(ch) => pos += ch.utf16_len()
-      None => break
+  for ch in text[start:text.length()] {
+    if linkify_candidate_delimiter(ch) {
+      return pos
     }
+    pos += ch.utf16_len()
   }
   text.length()
 }
@@ -150,16 +149,15 @@ fn linkify_candidate_end(text : StringView, start : Int) -> Int {
 ///|
 fn linkify_fuzzy_candidate_end(text : StringView, start : Int) -> Int {
   let mut pos = start
-  while pos < text.length() {
-    match text.get_char(pos) {
-      Some(ch) if linkify_candidate_delimiter(ch) ||
-        ch == '(' ||
-        ch == ')' ||
-        ch == '[' ||
-        ch == ']' => return pos
-      Some(ch) => pos += ch.utf16_len()
-      None => break
+  for ch in text[start:text.length()] {
+    if linkify_candidate_delimiter(ch) ||
+      ch == '(' ||
+      ch == ')' ||
+      ch == '[' ||
+      ch == ']' {
+      return pos
     }
+    pos += ch.utf16_len()
   }
   text.length()
 }
