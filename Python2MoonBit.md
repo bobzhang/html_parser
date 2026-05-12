@@ -366,6 +366,10 @@ JustHTML from Python to MoonBit.
   sanitizer code. That avoids hidden callback calls and avoids sanitizer
   side-effects from disabled specs while keeping constructor normalization
   simple.
+- Some report messages are transform-specific rather than action-generic. For
+  `MergeAttrs`, Python reports `Merged tokens into attribute 'rel' on <a>`,
+  not a selector-qualified "merged attributes" action. Keep those messages near
+  the transform implementation so tests can pin exact callback text.
 - Python models `Stage` as a separate union member, but MoonBit can keep the
   public pipeline homogeneous by making stages a recursive `TransformSpec`
   variant that stores `Array[TransformSpec]`. Top-level stage handling can

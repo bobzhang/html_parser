@@ -850,8 +850,15 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
         }
         MergeAttributeTokens => {
           if apply_merge_attrs_transform(child, transform) {
-            transform_report_node_action(
-              child, transform, "Merged attributes on",
+            transform_call_hook(child, transform)
+            transform_report(
+              transform,
+              "Merged tokens into attribute '" +
+              transform.merge_attr +
+              "' on <" +
+              transform.merge_tag +
+              ">",
+              Some(child),
             )
           }
           transform_children(child, transform)

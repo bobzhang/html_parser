@@ -692,6 +692,41 @@ test "edit hooks and reports follow Python callback ordering" {
 }
 
 ///|
+test "merge_attrs hook report matches Python message" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let root = @html_parser.fragment(children=[
+    @html_parser.element("a", attrs={ "rel": Some("noreferrer") }, children=[
+      @html_parser.text("x"),
+    ]),
+  ])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::merge_attrs(
+        "a",
+        attr="rel",
+        tokens=["noopener"],
+        hook~,
+        report~,
+      ),
+    ]),
+  )
+  assert_eq(events, [
+    "hook:a", "report:Merged tokens into attribute 'rel' on <a>", "node:a",
+  ])
+  assert_eq(root.to_html(pretty=false), "<a rel=\"noreferrer noopener\">x</a>")
+}
+
+///|
 test "text transform hooks and reports run before text replacement" {
   let events : Array[String] = []
   let hook : (@html_parser.Node) -> Unit = fn(node) {
