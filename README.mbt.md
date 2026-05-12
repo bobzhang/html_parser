@@ -150,7 +150,8 @@ bash scripts/check_ci.sh --skip-without-credentials
 Drop `--skip-without-credentials` when logged in locally and checking the full
 Mooncakes dry-run path. The script checks release-version consistency,
 validation-script syntax, GitHub workflow drift, source layout, migration docs,
-vendored fixture sync when `.repos/justhtml` is present, package metadata,
-formatting, generated interfaces, all supported targets, default/JS/native tests
-with a count floor, coverage, native CLI smoke behavior,
-Mooncakes package validation, and Mooncakes archive-content checks.
+vendored fixture sync when `.repos/justhtml` is present, vendored fixture
+manifest hashes, package metadata, formatting, generated interfaces, all
+supported targets, default/JS/native tests with a count floor, coverage,
+native CLI smoke behavior, Mooncakes package validation, and
+Mooncakes archive-content checks.
