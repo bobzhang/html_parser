@@ -7160,6 +7160,12 @@ fn digit_value(ch : Char) -> Int {
 }
 
 ///|
+/// Parse a full HTML document from a string.
+///
+/// The returned root is a document node with the usual `html`, `head`, and
+/// `body` scaffolding. Set `sanitize=true` to apply the default document
+/// sanitizer after parsing, `collect_errors=true` to keep parse diagnostics, and
+/// `strict=true` to raise `HtmlError::StrictMode` on the first parse error.
 pub fn parse(
   html : StringView,
   sanitize? : Bool = false,
@@ -7742,6 +7748,12 @@ fn append_post_body_html_children(root : Node, children : Array[Node]) -> Unit {
 }
 
 ///|
+/// Parse an HTML fragment from a string.
+///
+/// `context` controls the fragment context element used by the tree builder.
+/// Without a context, the fragment is parsed into a generic fragment root.
+/// `sanitize`, `collect_errors`, `strict`, `scripting_enabled`, `xml_coercion`,
+/// and `track_node_locations` have the same meaning as in `parse`.
 pub fn parse_fragment(
   html : StringView,
   context? : FragmentContext,
@@ -8428,6 +8440,11 @@ fn decode_html_bytes(input : BytesView, encoding : String?) -> (String, String) 
 }
 
 ///|
+/// Decode and parse an HTML byte stream.
+///
+/// When `encoding` is absent, BOMs and `<meta charset>` declarations are
+/// sniffed before falling back to Windows-1252. The detected or requested
+/// encoding is stored in `ParsedHtml.encoding`.
 pub fn parse_bytes(
   input : BytesView,
   encoding? : String,
@@ -8456,6 +8473,9 @@ pub fn parse_bytes(
 }
 
 ///|
+/// Serialize the parsed root node back to HTML.
+///
+/// This forwards to `Node::to_html` on `self.root`.
 pub fn ParsedHtml::to_html(
   self : ParsedHtml,
   pretty? : Bool = true,
@@ -8467,6 +8487,9 @@ pub fn ParsedHtml::to_html(
 }
 
 ///|
+/// Extract text from the parsed root node.
+///
+/// This forwards to `Node::to_text` on `self.root`.
 pub fn ParsedHtml::to_text(
   self : ParsedHtml,
   separator? : String = " ",
@@ -8477,6 +8500,7 @@ pub fn ParsedHtml::to_text(
 }
 
 ///|
+/// Return all descendants of the parsed root that match a CSS selector.
 pub fn ParsedHtml::query(
   self : ParsedHtml,
   selector : StringView,
@@ -8485,6 +8509,7 @@ pub fn ParsedHtml::query(
 }
 
 ///|
+/// Return the first descendant of the parsed root that matches a CSS selector.
 pub fn ParsedHtml::query_one(self : ParsedHtml, selector : StringView) -> Node? {
   self.root.query_one(selector)
 }
