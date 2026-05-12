@@ -112,6 +112,7 @@ reference implementation in `.repos/justhtml`.
   - [ ] Remove unnecessary view conversions for warning 75
     - [x] `foreign_content.mbt` view conversions
     - [x] `tokens.mbt` XML coercion view conversions
+    - [x] `transforms.mbt` transform helper view conversions
   - [ ] Qualify README checked examples for warning 25
 
 ## Working Rule

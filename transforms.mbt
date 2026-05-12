@@ -942,7 +942,7 @@ fn transform_report_node_action(
   action : StringView,
 ) -> Unit {
   transform_call_hook(node, transform)
-  let tag = lower_ascii(node.name[:])
+  let tag = lower_ascii(node.name)
   transform_report(
     transform,
     action.to_owned() +
@@ -1600,7 +1600,7 @@ fn apply_merge_attrs_transform(node : Node, transform : TransformSpec) -> Bool {
 ///|
 fn find_attr_key_case_insensitive(node : Node, target : String) -> String? {
   for key, _ in node.attrs {
-    if lower_ascii(key[:]) == target {
+    if lower_ascii(key) == target {
       return Some(key)
     }
   }
@@ -1664,7 +1664,7 @@ fn apply_drop_url_attrs_transform(
   }
   let to_drop : Array[String] = []
   let to_set : Map[String, String?] = {}
-  let tag_name = lower_ascii(node.name[:])
+  let tag_name = lower_ascii(node.name)
   match
     (
       find_attr_key_case_insensitive(node, "http-equiv"),
@@ -1690,7 +1690,7 @@ fn apply_drop_url_attrs_transform(
   let effectively_foreign = node_is_effectively_foreign(node)
   let keys = node.attrs.keys().to_array()
   for key in keys {
-    let attr_name = lower_ascii(key[:])
+    let attr_name = lower_ascii(key)
     let current_value = match node.attrs.get(key) {
       Some(value) => value
       None => None
@@ -1773,7 +1773,7 @@ fn apply_allow_style_attrs_transform(
   guard find_attr_key_case_insensitive(node, "style") is Some(style_key) else {
     return false
   }
-  let tag_name = lower_ascii(node.name[:])
+  let tag_name = lower_ascii(node.name)
   match node.attrs.get(style_key) {
     Some(Some(raw_value)) =>
       match sanitize_inline_style_value(policy, tag_name, raw_value) {
