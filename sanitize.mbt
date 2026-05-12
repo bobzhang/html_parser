@@ -1897,6 +1897,30 @@ fn sanitize_element_attributes(
 ) -> Unit raise HtmlError {
   let tag_name = sanitize_node_name(node)
   let effectively_foreign = node_is_effectively_foreign(node)
+  if policy.strip_invisible_unicode {
+    let stripped_attr_names : Array[String] = []
+    for key in node.attrs.keys() {
+      match node.attrs.get(key) {
+        Some(Some(raw_value)) => {
+          let stripped = strip_invisible_unicode(raw_value)
+          if stripped != raw_value {
+            node.attrs[key] = Some(stripped)
+            stripped_attr_names.push(key)
+          }
+        }
+        _ => ()
+      }
+    }
+    if !stripped_attr_names.is_empty() {
+      sanitize_report_unsafe(
+        policy,
+        observer,
+        "Stripped invisible Unicode from attribute(s): " +
+        stripped_attr_names.join(", "),
+        Some(node),
+      )
+    }
+  }
   let keys = node.attrs.keys().to_array()
   for key in keys {
     let attr_name = lower_ascii(key[:])
@@ -1928,11 +1952,7 @@ fn sanitize_element_attributes(
     } else {
       match node.attrs.get(key) {
         Some(Some(raw_value)) => {
-          let value = if policy.strip_invisible_unicode {
-            strip_invisible_unicode(raw_value)
-          } else {
-            raw_value
-          }
+          let value = raw_value
           match
             sanitize_attribute_value(
               policy,

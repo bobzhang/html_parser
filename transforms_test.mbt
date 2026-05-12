@@ -431,6 +431,37 @@ test "sanitize transform comment and doctype drops are structural reports" {
 }
 
 ///|
+test "sanitize transform reports invisible Unicode attribute stripping" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let policy = @html_parser.SanitizationPolicy::new(["p"], allowed_attributes={
+    "p": ["title"],
+  })
+  let doc = @html_parser.parse_fragment(
+    "<p title='a\u{200B}b'>ok</p>",
+    sanitize=false,
+  )
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::sanitize(policy~, hook~, report~),
+    ]),
+  )
+  assert_eq(events, [
+    "hook:p", "report:Stripped invisible Unicode from attribute(s): title", "node:p",
+  ])
+  assert_eq(doc.root.to_html(pretty=false), "<p title=\"ab\">ok</p>")
+}
+
+///|
 test "unchanged sanitize transform does not call hooks" {
   let events : Array[String] = []
   let hook : (@html_parser.Node) -> Unit = fn(node) {

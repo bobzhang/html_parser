@@ -397,6 +397,10 @@ JustHTML from Python to MoonBit.
   `DropComments`/`DropDoctype` transforms. They report `Dropped comment` and
   `Dropped doctype`, but they do not call the sanitizer unsafe handler; do not
   make `unsafe_handling=Raise` fail on those removals.
+- Python strips invisible Unicode from attribute values in a sanitizer stage
+  before URL/style/allowlist rewriting. The report is per node, with all
+  changed attributes joined as `Stripped invisible Unicode from attribute(s):
+  title, href`, and it goes through the unsafe handler.
 - Python models `Stage` as a separate union member, but MoonBit can keep the
   public pipeline homogeneous by making stages a recursive `TransformSpec`
   variant that stores `Array[TransformSpec]`. Top-level stage handling can
