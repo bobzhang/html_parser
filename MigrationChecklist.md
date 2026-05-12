@@ -101,6 +101,7 @@ reference implementation in `.repos/justhtml`.
   - [ ] Regression harness for JustHTML-specific `.dat` and `.test` files
 - [ ] Documentation and warning cleanup
   - [ ] Public API docs for warning 74
+    - [x] `tokens.mbt` tokenizer API docs
   - [x] Remove unnecessary annotations for warning 73
     - [x] `comment_scan.mbt` constructor annotations
     - [x] `script_text.mbt` constructor annotations
