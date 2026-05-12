@@ -207,3 +207,80 @@ test "merge_attrs normalizes duplicate tokens and mixed-case keys" {
   )
   assert_eq(mixed.to_html(pretty=false), "<a rel=\"noreferrer noopener\"></a>")
 }
+
+///|
+test "sanitize transform runs in order and can resanitize later mutations" {
+  let first = @html_parser.parse_fragment("<p><a href='javascript:x'>x</a></p>")
+  ignore(
+    @html_parser.apply_transforms(first.root, [
+      @html_parser.TransformSpec::sanitize(),
+      @html_parser.TransformSpec::set_attrs("a", {
+        "href": Some("javascript:y"),
+        "onclick": Some("run()"),
+      }),
+    ]),
+  )
+  assert_eq(
+    first.root.to_html(pretty=false),
+    "<p><a href=\"javascript:y\" onclick=\"run()\">x</a></p>",
+  )
+
+  let second = @html_parser.parse_fragment(
+    "<p><a href='javascript:x'>x</a></p>",
+  )
+  ignore(
+    @html_parser.apply_transforms(second.root, [
+      @html_parser.TransformSpec::sanitize(),
+      @html_parser.TransformSpec::set_attrs("a", {
+        "href": Some("javascript:y"),
+        "onclick": Some("run()"),
+      }),
+      @html_parser.TransformSpec::sanitize(),
+    ]),
+  )
+  assert_eq(second.root.to_html(pretty=false), "<p><a>x</a></p>")
+}
+
+///|
+test "sanitize transform accepts custom policy and can replace standalone root" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "*": ["id"] },
+    drop_comments=false,
+  )
+  let custom = @html_parser.parse_fragment(
+    "<!--c--><p id='ok' class='bad'>x</p><span>y</span>",
+  )
+  ignore(
+    @html_parser.apply_transforms(custom.root, [
+      @html_parser.TransformSpec::sanitize(policy~),
+    ]),
+  )
+  assert_eq(custom.root.to_html(pretty=false), "<!--c--><p id=\"ok\">x</p>y")
+
+  let script = @html_parser.element("script", children=[@html_parser.text("x")])
+  let clean = @html_parser.apply_transforms(script, [
+    @html_parser.TransformSpec::sanitize(),
+  ])
+  assert_eq(clean.to_html(pretty=false), "")
+}
+
+///|
+test "sanitize transform propagates unsafe raise policy errors" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": [] },
+    unsafe_handling=Raise,
+  )
+  let doc = @html_parser.parse_fragment("<p foo='1'>safe</p>")
+  let result = try? @html_parser.apply_transforms(doc.root, [
+    @html_parser.TransformSpec::sanitize(policy~),
+  ])
+  match result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(
+        message, "Unsafe attribute 'foo' on <p> was dropped because it is not allowed",
+      )
+    _ => fail("expected sanitize transform to raise UnsafeHtml")
+  }
+}

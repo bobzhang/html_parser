@@ -330,6 +330,15 @@ JustHTML from Python to MoonBit.
   `clear`, `remove`, and index assignment. This matches the current node model
   better than making the whole field mutable just to port Python's
   `node.attrs = new_attrs` callback style.
+- Some Python transforms are mostly in-place but can still replace the root
+  object for standalone nodes. Keep a `current` root when applying a transform
+  sequence and return the latest root; otherwise a sanitizer that drops a
+  standalone `<script>` would return the stale original element instead of the
+  replacement fragment.
+- If a new transform delegates to a raising helper such as `sanitize_dom`, let
+  the transform application API propagate `raise HtmlError` instead of hiding
+  policy errors. Existing tests can still call the function directly and let the
+  test body propagate the error.
 - Python transform walkers mark newly inserted nodes so earlier transforms do
   not run on them again. When porting stage/order behavior, decide explicitly
   whether replacement children can be seen by the current spec, by later specs,

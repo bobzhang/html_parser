@@ -8,6 +8,7 @@ priv enum TransformKind {
   DropAttributes
   AllowlistAttributes
   MergeAttributeTokens
+  SanitizeTree
   DropCommentNodes
   DropDoctypeNodes
   CollapseTextWhitespace
@@ -17,8 +18,9 @@ priv enum TransformKind {
 ///|
 /// A DOM transform specification for `apply_transforms`.
 ///
-/// The current port covers deterministic structural transforms and utility
-/// transforms. Callback-based Python specs will be added as separate slices.
+/// The current port covers deterministic structural, attribute, utility, and
+/// sanitizer transforms. Callback-based Python specs will be added as separate
+/// slices.
 pub struct TransformSpec {
   priv kind : TransformKind
   priv selector : String
@@ -28,6 +30,7 @@ pub struct TransformSpec {
   priv merge_tag : String
   priv merge_attr : String
   priv merge_tokens : Array[String]
+  priv sanitize_policy : SanitizationPolicy?
   priv skip_tags : Array[String]
   priv linkify_config : LinkifyConfig?
   priv linkify_skip_tags : Array[String]
@@ -43,6 +46,7 @@ fn make_transform_spec(
   merge_tag? : String = "",
   merge_attr? : String = "",
   merge_tokens? : Array[String] = [],
+  sanitize_policy? : SanitizationPolicy,
   skip_tags? : Array[String] = [],
   linkify_config? : LinkifyConfig,
   linkify_skip_tags? : Array[String] = [],
@@ -56,6 +60,7 @@ fn make_transform_spec(
     merge_tag,
     merge_attr,
     merge_tokens: merge_tokens.copy(),
+    sanitize_policy,
     skip_tags: skip_tags.copy(),
     linkify_config,
     linkify_skip_tags: linkify_skip_tags.copy(),
@@ -144,6 +149,15 @@ pub fn TransformSpec::merge_attrs(
 }
 
 ///|
+/// Build a transform that sanitizes the DOM tree with an optional policy.
+pub fn TransformSpec::sanitize(policy? : SanitizationPolicy) -> TransformSpec {
+  match policy {
+    Some(policy) => make_transform_spec(SanitizeTree, sanitize_policy=policy)
+    None => make_transform_spec(SanitizeTree)
+  }
+}
+
+///|
 /// Build a transform that removes comment nodes.
 pub fn TransformSpec::drop_comments() -> TransformSpec {
   make_transform_spec(DropCommentNodes)
@@ -189,18 +203,25 @@ pub fn TransformSpec::linkify(
 ///|
 /// Apply DOM transforms in order.
 ///
-/// The transform mutates and returns `node`. Selector transforms process the
+/// The transform mutates and returns the current root. Selector transforms process the
 /// children of the supplied root, matching the Python constructor-time pipeline
 /// where the root is normally a document or document fragment container.
-pub fn apply_transforms(node : Node, transforms : Array[TransformSpec]) -> Node {
+pub fn apply_transforms(
+  node : Node,
+  transforms : Array[TransformSpec],
+) -> Node raise HtmlError {
+  let mut current = node
   for transform in transforms {
-    apply_transform(node, transform)
+    current = apply_transform(current, transform)
   }
-  node
+  current
 }
 
 ///|
-fn apply_transform(node : Node, transform : TransformSpec) -> Unit {
+fn apply_transform(
+  node : Node,
+  transform : TransformSpec,
+) -> Node raise HtmlError {
   match transform.kind {
     DropElements
     | UnwrapElements
@@ -209,18 +230,35 @@ fn apply_transform(node : Node, transform : TransformSpec) -> Unit {
     | SetAttributes
     | DropAttributes
     | AllowlistAttributes
-    | MergeAttributeTokens => apply_selector_transform(node, transform)
-    DropCommentNodes => apply_drop_kind_transform(node, Comment)
-    DropDoctypeNodes => apply_drop_kind_transform(node, Doctype)
-    CollapseTextWhitespace =>
+    | MergeAttributeTokens => {
+      apply_selector_transform(node, transform)
+      node
+    }
+    SanitizeTree =>
+      match transform.sanitize_policy {
+        Some(policy) => sanitize_dom(node, policy~)
+        None => sanitize_dom(node)
+      }
+    DropCommentNodes => {
+      apply_drop_kind_transform(node, Comment)
+      node
+    }
+    DropDoctypeNodes => {
+      apply_drop_kind_transform(node, Doctype)
+      node
+    }
+    CollapseTextWhitespace => {
       apply_collapse_whitespace_transform(
         node,
         transform_skip_tag_set(transform.skip_tags),
       )
+      node
+    }
     LinkifyTextNodes => {
       let config = transform.linkify_config.unwrap_or(LinkifyConfig::new())
       let skip_tags = transform.linkify_skip_tags.copy()
       ignore(linkify_dom(node, config~, skip_tags~))
+      node
     }
   }
 }
