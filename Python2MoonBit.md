@@ -326,7 +326,9 @@ JustHTML from Python to MoonBit.
   outputs against the Python reference, and run the RFC 3492 Punycode loop over
   Unicode code points from `for ch in label`; do not feed UTF-16 code units from
   `s[i]` into the algorithm. If IDNA mapping leaves a label entirely ASCII,
-  return that mapped label directly instead of adding an `xn--` prefix.
+  return that mapped label directly instead of adding an `xn--` prefix. Private
+  helper tests should still cover passthrough branches like `mailto:` and IPv6
+  hosts because public linkification may bypass punycoding for those forms.
 - DOM transforms that replace one text node with several nodes need to work on
   the package-private `children` array, because `Node::children()` returns a
   copy for callers. Always reset the removed node's parent and assign the

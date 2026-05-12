@@ -192,6 +192,8 @@ reference implementation in `.repos/justhtml`.
       empty protocol-relative hosts, and punycode TLDs.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
       UTF-16 boundary fallback paths in internal text splicing.
+- [x] Added punycode whitebox regressions for private href passthrough,
+      prefixless Unicode hosts, IPv6 passthrough, and all-ASCII IDNA mappings.
 
 ## Working Rule
 
