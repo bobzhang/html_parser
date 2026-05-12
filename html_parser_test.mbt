@@ -3686,6 +3686,28 @@ test "to_markdown handles direct nodes comments doctypes and empty inline nodes"
 }
 
 ///|
+test "to_markdown covers builder whitespace and raw newline branches" {
+  assert_eq(@html_parser.text("   a").to_markdown(), "a")
+  let pre = @html_parser.element("pre", children=[@html_parser.text("a\nb")])
+  assert_eq(pre.to_markdown(), "```\na\nb\n```")
+  let pending_raw = @html_parser.element("p", children=[
+    @html_parser.text("a "),
+    @html_parser.element("strong", children=[@html_parser.text("b")]),
+  ])
+  assert_eq(pending_raw.to_markdown(), "a **b**")
+  let raw_newline = @html_parser.element("div", children=[
+    @html_parser.text("a "),
+    @html_parser.element("style", children=[
+      @html_parser.text("\nbody { color: red; }"),
+    ]),
+  ])
+  assert_eq(
+    raw_newline.to_markdown(html_passthrough=true),
+    "a\n\n<style>\nbody { color: red; }</style>",
+  )
+}
+
+///|
 test "to_markdown preserves table image HTML and title text parity" {
   let doc = @html_parser.parse_fragment(
     "<p>Hi<img src=x alt=y>there</p><table><tr><td>A</td></tr></table>",

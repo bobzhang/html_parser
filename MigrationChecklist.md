@@ -92,12 +92,14 @@ reference implementation in `.repos/justhtml`.
     - [x] Newline-only `<pre>` code block parity
     - [x] Line-start non-trigger and spaced thematic marker coverage
     - [x] List non-`li` child skipping parity
+    - [x] Builder leading-whitespace and raw-newline accounting coverage
   - [ ] Tests ported from Python Markdown coverage
     - [x] Deep programmatic tree, document-container, and builder edge tests
     - [x] Raw-text passthrough, empty `<br>`, and unknown-container tests
     - [x] Sanitized `<textarea>` Markdown passthrough breakout regression
     - [x] Explicit `Sanitize` transform boundary Markdown regression
     - [x] Foreign-namespace mXSS Markdown passthrough regression
+    - [x] Public-API regressions for private Markdown builder branch tests
 - [x] Full conformance harness
   - [x] Import or translate tokenizer fixtures
     - [x] `coverage_gaps.test`, `entities.test`, and

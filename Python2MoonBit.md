@@ -710,6 +710,12 @@ JustHTML from Python to MoonBit.
   whitebox tests for helper-level cases such as `#heading` versus `# heading`,
   thematic breaks, ordered-list starts, empty link destinations, and raw
   builder newline accounting.
+- Python tests may exercise private `_MarkdownBuilder` branches directly. In
+  MoonBit, prefer pinning those branches through public `Node::to_markdown`
+  behavior when possible: direct leading whitespace should trim at output start,
+  `<pre>` content should preserve interior newlines, inline raw markers should
+  receive a pending text space, and raw HTML beginning with a newline must not
+  receive an extra inserted space.
 - Link text uses a distinct Markdown traversal. The reference flattens
   paragraphs, lists, blockquotes, and `<br>` inside `<a>` into spaces so the
   generated `[text](href)` does not contain block Markdown or blank lines.
