@@ -1,16 +1,17 @@
 # bobzhang/html_parser
 
-MoonBit port of the JustHTML parser. This is being ported incrementally from
-the Python reference implementation in `.repos/justhtml`.
+MoonBit port of the JustHTML parser, ported from the Python reference
+implementation in `.repos/justhtml`.
 
-The current slice provides:
+The port currently provides:
 
 - Public DOM node builders.
 - Compact and simple pretty HTML serialization.
 - Text extraction.
-- A tolerant parser for basic documents/fragments.
-- Basic document-mode scaffolding with `html/head/body`.
-- Stable token data structures for early tokenizer harness work.
+- Tokenization, document parsing, fragment parsing, and HTML5-style recovery
+  coverage from vendored tokenizer/tree-builder fixtures.
+- Document-mode scaffolding with `html/head/body`, table/foreign-content
+  recovery, template handling, source locations, and strict-mode errors.
 - CSS-style DOM queries for tag, class, id, attributes, combinators, selector
   lists, and common pseudo selectors.
 - Byte input parsing with supported transport labels, BOM sniffing, and
@@ -32,10 +33,12 @@ The current slice provides:
   attributes, simple `srcset`/`imagesrcset` candidate lists,
   `ping`/`attributionsrc` URL-token lists, and plain CSS `url(...)` values on
   allowlisted inline-style properties. Use
-  `css_preset_text()` for the
-  conservative text-style property allowlist from the reference sanitizer.
-- Initial Markdown conversion for text, paragraphs, headings, inline
-  formatting, links, code, lists, blockquotes, and raw HTML passthrough.
+  `css_preset_text()` for the conservative text-style property allowlist from
+  the reference sanitizer.
+- Transform helpers for sanitize, drop/unwrap/escape, pruning, linkification,
+  attribute edits, and transform observers.
+- Linkify, streaming parse events, Markdown conversion, and an embeddable CLI
+  runner plus native CLI wrapper.
 
 ```mbt check
 ///|
@@ -85,6 +88,18 @@ test "readme sanitize dom example" {
 }
 ```
 
-Full HTML5 tree construction, full sanitizer transform parity, linkify,
-streaming, full Markdown parity, and CLI compatibility are planned as separate
-passing slices.
+```mbt check
+///|
+test "readme CLI reader example" {
+  let paths : Array[String] = []
+  let result = @html_parser.run_cli_with_reader(["-", "--format", "text"], fn(
+    path,
+  ) {
+    paths.push(path)
+    @utf8.encode("<p>Hello <b>MoonBit</b></p>")
+  })
+  assert_eq(paths, ["-"])
+  assert_eq(result.exit_code, 0)
+  assert_eq(result.stdout, "Hello MoonBit\n")
+}
+```
