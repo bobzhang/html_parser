@@ -295,6 +295,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Refactored parser tag/attribute, special-text, doctype, line/column, and
       entity scanner loops around local cursor invariants, with newline and
       bogus-comment Unicode regressions.
+- [x] Covered final parser defensive branches for omitted template end-tag
+      sources and empty private attribute parses.
 
 ## Working Rule
 

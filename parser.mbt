@@ -482,9 +482,6 @@ fn Parser::foster_parent_template_table_text(
     return false
   }
   let template_index = self.last_open_template_index()
-  if template_index < 0 {
-    return false
-  }
   ignore(self.report_foster_parenting_character_errors(cleaned, start))
   self.stack[template_index].append_child(
     self.text_at(decode_entities(cleaned, in_attribute=false), start),
@@ -3321,11 +3318,7 @@ fn Parser::adoption_agency(
     self.active_formatting.insert(bookmark, replacement_entry)
     ignore(self.remove_open_node(formatting_element))
     let furthest_index = self.stack_index_by_node(furthest_block)
-    if furthest_index >= 0 {
-      self.stack.insert(furthest_index + 1, new_formatting_element)
-    } else {
-      self.stack.push(new_formatting_element)
-    }
+    self.stack.insert(furthest_index + 1, new_formatting_element)
   }
 }
 
@@ -3349,10 +3342,6 @@ fn Parser::reconstruct_active_formatting_elements(self : Parser) -> Unit {
   }
   while index < self.active_formatting.length() {
     let entry = self.active_formatting[index]
-    if entry.marker {
-      index += 1
-      continue
-    }
     let node = element(entry.name, attrs=entry.attrs.copy(), ns=entry.ns)
     node.copy_origin_from(entry.node)
     self.current_node().append_child(node)
@@ -7492,11 +7481,7 @@ fn scaffold_existing_html_element(html : Node) -> Unit {
       body_started = true
       append_body_node_contents(child, child, body_children)
     } else if child.kind == Element && child.name == "body" {
-      match body {
-        Some(body_node) =>
-          append_body_node_contents(body_node, child, body_children)
-        None => body_children.push(child)
-      }
+      append_body_node_contents(body.unwrap(), child, body_children)
       body_started = true
     } else if child.kind == Element &&
       child.name == "frameset" &&
@@ -7532,19 +7517,13 @@ fn scaffold_existing_html_element(html : Node) -> Unit {
           Some(node) => head_children.push(node)
           None => ()
         }
-        match rest {
-          Some(node) => {
-            body_started = true
-            body_children.push(node)
-          }
-          None => ()
-        }
+        body_started = true
+        body_children.push(rest.unwrap())
       } else if head is None {
         body_started = true
-        match text_node_without_leading_ascii_whitespace(child) {
-          Some(stripped) => body_children.push(stripped)
-          None => ()
-        }
+        body_children.push(
+          text_node_without_leading_ascii_whitespace(child).unwrap(),
+        )
       } else {
         body_started = true
         body_children.push(child)
@@ -7605,11 +7584,7 @@ fn scaffold_document(root : Node) -> Unit {
       body_started = true
       append_body_node_contents(child, child, body_children)
     } else if child.kind == Element && child.name == "body" {
-      match body {
-        Some(body_node) =>
-          append_body_node_contents(body_node, child, body_children)
-        None => body_children.push(child)
-      }
+      append_body_node_contents(body.unwrap(), child, body_children)
       body_started = true
     } else if child.kind == Element &&
       child.name == "frameset" &&
@@ -7649,19 +7624,13 @@ fn scaffold_document(root : Node) -> Unit {
           Some(node) => head_children.push(node)
           None => ()
         }
-        match rest {
-          Some(node) => {
-            body_started = true
-            body_children.push(node)
-          }
-          None => ()
-        }
+        body_started = true
+        body_children.push(rest.unwrap())
       } else if head is None {
         body_started = true
-        match text_node_without_leading_ascii_whitespace(child) {
-          Some(stripped) => body_children.push(stripped)
-          None => ()
-        }
+        body_children.push(
+          text_node_without_leading_ascii_whitespace(child).unwrap(),
+        )
       } else {
         body_started = true
         body_children.push(child)
