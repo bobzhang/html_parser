@@ -316,6 +316,8 @@ reference implementation in `.repos/justhtml`.
       after package validation reports the expected duplicate-version response.
 - [x] Prepared `0.1.2` so the published package includes the post-release CI
       and README installation-documentation updates.
+- [x] Added a CI release-version consistency check tying `moon.mod.json`,
+      CLI `--version`, and the exact CLI version test together.
 
 ## Working Rule
 
