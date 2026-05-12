@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+usage() {
+  echo "usage: bash scripts/smoke_native_cli.sh" >&2
+}
+
+if [[ "$#" -ne 0 ]]; then
+  usage
+  exit 2
+fi
+
 moon run --target native --release --build-only cmd/main
 
 cli="_build/native/release/build/cmd/main/main.exe"

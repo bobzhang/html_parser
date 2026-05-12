@@ -39,7 +39,11 @@ def require_text(text: str, needle: str, label: str) -> bool:
     return True
 
 
-def main() -> int:
+def main(argv: list[str]) -> int:
+    if argv:
+        error("usage: python3 scripts/check_package_metadata.py")
+        return 2
+
     metadata = json.loads((ROOT / "moon.mod.json").read_text())
     ok = True
 
@@ -162,4 +166,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))

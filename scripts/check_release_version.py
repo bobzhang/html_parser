@@ -12,7 +12,11 @@ import sys
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 
-def main() -> int:
+def main(argv: list[str]) -> int:
+    if argv:
+        print("usage: python3 scripts/check_release_version.py", file=sys.stderr)
+        return 2
+
     version = json.loads((ROOT / "moon.mod.json").read_text())["version"]
     cli = (ROOT / "cli.mbt").read_text()
     cli_test = (ROOT / "cli_test.mbt").read_text()
@@ -45,4 +49,4 @@ def main() -> int:
 
 
 if __name__ == "__main__":
-    raise SystemExit(main())
+    raise SystemExit(main(sys.argv[1:]))

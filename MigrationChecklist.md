@@ -365,6 +365,8 @@ reference implementation in `.repos/justhtml`.
       and added a guard to keep hook documentation and behavior aligned.
 - [x] Added a MoonBit block-style guard and brought the placeholder root source
       file under the project-wide `///|` separator convention.
+- [x] Standardized argument validation across local validation helpers and
+      extended script smoke coverage for their bad-option paths.
 
 ## Working Rule
 

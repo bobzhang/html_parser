@@ -1,6 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+usage() {
+  echo "usage: bash scripts/check_interfaces.sh" >&2
+}
+
+if [[ "$#" -ne 0 ]]; then
+  usage
+  exit 2
+fi
+
 moon info
 
 interface_files=()
