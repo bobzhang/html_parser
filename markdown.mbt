@@ -293,7 +293,7 @@ fn markdown_collect_text(node : Node) -> String {
 ///|
 fn markdown_collect_text_into(node : Node, parts : Array[String]) -> Unit {
   match node.kind {
-    Text => parts.push(node.data)
+    Text => if !node.sanitize_escape_only { parts.push(node.data) }
     Comment | Doctype => ()
     _ =>
       for child in node.children {
@@ -541,7 +541,10 @@ fn markdown_walk_link_text(
   html_passthrough : Bool,
 ) -> Unit raise HtmlError {
   match node.kind {
-    Text => builder.text(markdown_escape_text(node.data))
+    Text =>
+      if !node.sanitize_escape_only {
+        builder.text(markdown_escape_text(node.data))
+      }
     Comment | Doctype => ()
     Document | Fragment =>
       for child in node.children {
@@ -686,7 +689,10 @@ fn markdown_walk(
   list_depth : Int,
 ) -> Unit raise HtmlError {
   match node.kind {
-    Text => builder.text(markdown_escape_text(node.data))
+    Text =>
+      if !node.sanitize_escape_only {
+        builder.text(markdown_escape_text(node.data))
+      }
     Comment | Doctype => ()
     Document | Fragment =>
       markdown_render_children(node, builder, html_passthrough, list_depth)

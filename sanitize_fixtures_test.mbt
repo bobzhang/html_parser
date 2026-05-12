@@ -160,6 +160,18 @@ fn sanitize_fixture_div_style_policy(
 }
 
 ///|
+fn sanitize_fixture_escape_policy(
+  allowed_tags : Array[String],
+) -> @html_parser.SanitizationPolicy {
+  @html_parser.SanitizationPolicy::new(
+    allowed_tags,
+    allowed_attributes={ "*": [], "b": [], "p": [] },
+    url_policy=sanitize_fixture_empty_url_policy(),
+    disallowed_tag_handling=Escape,
+  )
+}
+
+///|
 fn sanitize_fixture_structural_style_cases() -> Array[SanitizeFixtureCase] {
   [
     {
@@ -277,6 +289,194 @@ fn sanitize_fixture_structural_style_cases() -> Array[SanitizeFixtureCase] {
         ]),
         force_link_rel=["noopener", "noreferrer"],
       ),
+    },
+  ]
+}
+
+///|
+fn sanitize_fixture_escape_cases() -> Array[SanitizeFixtureCase] {
+  [
+    {
+      index: 3,
+      name: "disallowed_tag_escape_preserves_tokens",
+      input_html: "<b>Hello <sarcasm>world</sarcasm></b>",
+      expected_html: "<b>Hello &lt;sarcasm&gt;world&lt;/sarcasm&gt;</b>",
+      policy: sanitize_fixture_escape_policy(["b"]),
+    },
+    {
+      index: 4,
+      name: "disallowed_tag_escape_self_closing",
+      input_html: "<p>yeah right<sarcasm/></p>",
+      expected_html: "<p>yeah right&lt;sarcasm/&gt;</p>",
+      policy: sanitize_fixture_escape_policy(["p"]),
+    },
+    {
+      index: 5,
+      name: "disallowed_tag_escape_missing_end_tag",
+      input_html: "<b>Hello <sarcasm>world</b>",
+      expected_html: "<b>Hello &lt;sarcasm&gt;world</b>",
+      policy: sanitize_fixture_escape_policy(["b"]),
+    },
+    {
+      index: 6,
+      name: "disallowed_tag_escape_with_allowed_children",
+      input_html: "<sarcasm class='x'><b>world</b></sarcasm>",
+      expected_html: "&lt;sarcasm class='x'&gt;<b>world</b>&lt;/sarcasm&gt;",
+      policy: sanitize_fixture_escape_policy(["b"]),
+    },
+    {
+      index: 7,
+      name: "disallowed_tag_escape_less_than_text",
+      input_html: "only good when x<y.",
+      expected_html: "only good when x&lt;y.",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 8,
+      name: "disallowed_tag_escape_less_than_and_greater_than_text",
+      input_html: "only good when x<y and y > z",
+      expected_html: "only good when x&lt;y and y &gt; z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 9,
+      name: "disallowed_tag_escape_two_less_than_text",
+      input_html: "only good when x<y and y<z",
+      expected_html: "only good when x&lt;y and y&lt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 10,
+      name: "disallowed_tag_escape_end_tag_like_text",
+      input_html: "only good when x</y and y>z",
+      expected_html: "only good when x&lt;/y and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 11,
+      name: "disallowed_tag_escape_markup_decl_text",
+      input_html: "only good when x<! and y>z",
+      expected_html: "only good when x&lt;! and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 12,
+      name: "disallowed_tag_escape_processing_instruction_text",
+      input_html: "only good when x<? and y>z",
+      expected_html: "only good when x&lt;? and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 13,
+      name: "disallowed_tag_escape_end_tag_open_text",
+      input_html: "only good when x</ and y>z",
+      expected_html: "only good when x&lt;/ and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 14,
+      name: "disallowed_tag_escape_end_tag_open_eof_text",
+      input_html: "only good when x</",
+      expected_html: "only good when x&lt;/",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 15,
+      name: "disallowed_tag_escape_end_tag_empty_text",
+      input_html: "only good when x</>",
+      expected_html: "only good when x&lt;/&gt;",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 16,
+      name: "disallowed_tag_escape_end_tag_attrs_text",
+      input_html: "only good when x</foo bar>y",
+      expected_html: "only good when x&lt;/foo bar&gt;y",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 17,
+      name: "disallowed_tag_escape_end_tag_self_closing_long_text",
+      input_html: "only good when x</foo/>y",
+      expected_html: "only good when x&lt;/foo/&gt;y",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 18,
+      name: "disallowed_tag_escape_end_tag_self_closing_short_text",
+      input_html: "only good when x</a/>y",
+      expected_html: "only good when x&lt;/a/&gt;y",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 19,
+      name: "disallowed_tag_escape_end_tag_attrs_eof_text",
+      input_html: "only good when x</foo bar",
+      expected_html: "only good when x&lt;/foo bar",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 20,
+      name: "disallowed_tag_escape_self_closing_like_text",
+      input_html: "only good when x<y/ and y>z",
+      expected_html: "only good when x&lt;y/ and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 21,
+      name: "disallowed_tag_escape_comment_text",
+      input_html: "only good when x<!-- and y>z",
+      expected_html: "only good when x&lt;!-- and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 22,
+      name: "disallowed_tag_escape_comment_open_dash_text",
+      input_html: "only good when x<!- and y>z",
+      expected_html: "only good when x&lt;!- and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 23,
+      name: "disallowed_tag_escape_doctype_text",
+      input_html: "only good when x<!DOCTYPE and y>z",
+      expected_html: "only good when x&lt;!DOCTYPE and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 24,
+      name: "disallowed_tag_escape_character_reference_text",
+      input_html: "only good when x<&y and y>z",
+      expected_html: "only good when x&lt;&amp;y and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 25,
+      name: "disallowed_tag_escape_invalid_tag_name_text",
+      input_html: "only good when x<0y and y>z",
+      expected_html: "only good when x&lt;0y and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 26,
+      name: "disallowed_tag_escape_double_less_than_text",
+      input_html: "only good when x<<y and y>z",
+      expected_html: "only good when x&lt;&lt;y and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 27,
+      name: "disallowed_tag_escape_balanced_angle_text",
+      input_html: "only good when x<y> and y > z",
+      expected_html: "only good when x&lt;y&gt; and y &gt; z",
+      policy: sanitize_fixture_escape_policy([]),
+    },
+    {
+      index: 28,
+      name: "disallowed_tag_escape_cdata_text",
+      input_html: "only good when x<![CDATA[ and y>z",
+      expected_html: "only good when x&lt;![CDATA[ and y&gt;z",
+      policy: sanitize_fixture_escape_policy([]),
     },
   ]
 }
@@ -537,6 +737,13 @@ test "sanitizer matches vendored structural and style fixture rows" {
 }
 
 ///|
+test "sanitizer matches vendored escaped disallowed-tag fixture rows" {
+  for case in sanitize_fixture_escape_cases() {
+    assert_sanitize_fixture(case)
+  }
+}
+
+///|
 test "sanitizer matches vendored URL and template fixture rows" {
   for case in sanitize_fixture_url_template_cases() {
     assert_sanitize_fixture(case)
@@ -553,6 +760,7 @@ test "sanitizer matches vendored attribute and namespace fixture rows" {
 ///|
 test "sanitizer fixture table covers translated URL and template rows" {
   assert_eq(sanitize_fixture_structural_style_cases().length(), 10)
+  assert_eq(sanitize_fixture_escape_cases().length(), 26)
   assert_eq(sanitize_fixture_url_template_cases().length(), 13)
   assert_eq(sanitize_fixture_attribute_namespace_cases().length(), 10)
 }

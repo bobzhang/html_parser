@@ -176,6 +176,9 @@ pub struct Node {
   priv system_id : String?
   priv force_quirks : Bool
   priv mut parsed_from_source : Bool
+  priv mut source_start_tag : String?
+  priv mut source_end_tag : String?
+  priv mut sanitize_escape_only : Bool
   priv mut origin_offset : Int?
   priv mut origin_line : Int?
   priv mut origin_col : Int?

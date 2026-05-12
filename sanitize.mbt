@@ -486,6 +486,24 @@ fn escaped_end_tag_for(node : Node) -> String? {
 }
 
 ///|
+fn sanitizer_escaped_end_tag_for(node : Node) -> String? {
+  match node.source_end_tag {
+    Some(raw) => Some(raw)
+    None =>
+      if node.parsed_from_source || is_void_element(node.name) {
+        None
+      } else {
+        Some("</" + node.name + ">")
+      }
+  }
+}
+
+///|
+fn sanitizer_escaped_start_tag_for(node : Node) -> String {
+  node.source_start_tag.unwrap_or(serialize_start_tag_unchecked(node, '"'))
+}
+
+///|
 fn insert_sanitized_escape_text(
   parent : Node,
   index : Int,
@@ -504,8 +522,8 @@ fn escape_child_at(
   observer : SanitizeTransformObserver?,
 ) -> Int raise HtmlError {
   let child = parent.children[index]
-  let start_tag = serialize_start_tag_unchecked(child, '"')
-  let end_tag = escaped_end_tag_for(child)
+  let start_tag = sanitizer_escaped_start_tag_for(child)
+  let end_tag = sanitizer_escaped_end_tag_for(child)
   sanitize_container_children(child, policy, observer)
   ignore(parent.children.remove(index))
   if child.parent is Some(current_parent) &&
@@ -2259,6 +2277,13 @@ fn sanitize_container_children(
   while index < parent.children.length() {
     let child = parent.children[index]
     match child.kind {
+      Text if child.sanitize_escape_only =>
+        if policy.disallowed_tag_handling == Escape {
+          child.clear_sanitize_escape_only()
+          index += 1
+        } else {
+          remove_child_at(parent, index)
+        }
       Text => {
         match sanitized_text_node_data(child, policy) {
           Some(stripped) => {

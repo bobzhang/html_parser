@@ -344,6 +344,7 @@ fn serialize_start_tag(node : Node, quote : Char) -> String raise HtmlError {
 ///|
 fn node_to_html_compact(node : Node, quote : Char) -> String raise HtmlError {
   match node.kind {
+    Text if node.sanitize_escape_only => ""
     Document | Fragment => {
       let out = StringBuilder::new()
       for child in node.children {
@@ -701,6 +702,9 @@ fn pretty_inline_run_to_html(
   for child in run {
     match child.kind {
       Text => {
+        if child.sanitize_escape_only {
+          continue
+        }
         let data = child.data[:]
         if text_has_visible_char(data) {
           out.write_string(escape_text(normalize_formatting_whitespace(data)))
@@ -796,6 +800,9 @@ fn node_to_html_pretty_compact_children(
     let child = node.children[index]
     match child.kind {
       Text => {
+        if child.sanitize_escape_only {
+          continue
+        }
         let data = child.data[:]
         let has_visible = text_has_visible_char(data)
         if !has_visible && (index == 0 || index + 1 == child_count) {
@@ -828,6 +835,9 @@ fn node_to_html_pretty_child_line(
 ) -> String? raise HtmlError {
   match node.kind {
     Text => {
+      if node.sanitize_escape_only {
+        return None
+      }
       let normalized = normalize_formatting_whitespace(node.data)
       let trimmed = normalized[:].trim()
       if trimmed.is_empty() {
@@ -867,15 +877,18 @@ fn node_to_html_pretty(
       }
       parts.join("\n")
     }
-    Text => {
-      let normalized = normalize_formatting_whitespace(node.data)
-      let trimmed = normalized[:].trim()
-      if trimmed.is_empty() {
+    Text =>
+      if node.sanitize_escape_only {
         ""
       } else {
-        " ".repeat(indent) + escape_text(trimmed)
+        let normalized = normalize_formatting_whitespace(node.data)
+        let trimmed = normalized[:].trim()
+        if trimmed.is_empty() {
+          ""
+        } else {
+          " ".repeat(indent) + escape_text(trimmed)
+        }
       }
-    }
     Comment | Doctype => " ".repeat(indent) + node_to_html_compact(node, quote)
     Element =>
       if node.children.is_empty() || is_void_element(node.name) {
@@ -988,6 +1001,9 @@ pub fn to_html(
 fn collect_text(node : Node, parts : Array[String], strip : Bool) -> Unit {
   match node.kind {
     Text => {
+      if node.sanitize_escape_only {
+        return
+      }
       let value = if strip { node.data[:].trim().to_owned() } else { node.data }
       if value != "" {
         parts.push(value)
@@ -1074,6 +1090,9 @@ fn collect_text_block_chunks(
 ) -> Unit {
   match node.kind {
     Text => {
+      if node.sanitize_escape_only {
+        return
+      }
       let value = if strip { node.data[:].trim().to_owned() } else { node.data }
       if value != "" {
         current_text_chunk(chunks).push(value)
@@ -3279,7 +3298,10 @@ fn write_test_format(node : Node, out : Array[String], indent : Int) -> Unit {
       )
       write_test_format_attributes(node, out, indent)
     }
-    Text => out.push(test_format_line(indent, "\"" + node.data + "\""))
+    Text =>
+      if !node.sanitize_escape_only {
+        out.push(test_format_line(indent, "\"" + node.data + "\""))
+      }
     Comment => out.push(test_format_line(indent, "<!-- " + node.data + " -->"))
     Doctype => out.push(doctype_test_format(node))
   }

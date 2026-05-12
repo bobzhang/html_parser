@@ -163,6 +163,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Translated sanitizer JSON fixture rows for default document sanitization,
       subtree dropping, unsafe attribute filtering, inline style filtering, and
       default forced-link `rel` behavior.
+- [x] Translated sanitizer JSON escaped-token fixture rows, including raw source
+      spelling for disallowed start/end tags and malformed tag-like text.
 
 ## Working Rule
 

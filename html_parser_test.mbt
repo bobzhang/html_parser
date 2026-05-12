@@ -948,7 +948,7 @@ test "sanitize_dom escape handling emits disallowed tags as text" {
   )
   assert_eq(
     @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<b>Hello &lt;sarcasm title=\"tone\" onclick=\"x\"&gt;<i>world</i>&lt;/sarcasm&gt;</b>",
+    "<b>Hello &lt;sarcasm title='tone' onclick=x&gt;<i>world</i>&lt;/sarcasm&gt;</b>",
   )
 }
 

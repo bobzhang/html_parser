@@ -113,6 +113,51 @@ fn Parser::node_with_origin(self : Parser, node : Node, offset : Int) -> Node {
 }
 
 ///|
+fn Parser::source_tag_slice(
+  self : Parser,
+  start : Int,
+  tag_close_pos : Int,
+) -> String? {
+  self.input
+  .get_view(start~, end=tag_close_pos + 1)
+  .map(fn(view) { view.to_owned() })
+}
+
+///|
+fn Parser::node_with_start_tag_source(
+  self : Parser,
+  node : Node,
+  offset : Int,
+  tag_close_pos : Int,
+) -> Node {
+  let node = self.node_with_origin(node, offset)
+  match self.source_tag_slice(offset, tag_close_pos) {
+    Some(raw) => node.set_source_start_tag(raw)
+    None => ()
+  }
+  node
+}
+
+///|
+fn Parser::append_sanitize_escape_source_text(
+  self : Parser,
+  start : Int,
+  end : Int,
+) -> Unit {
+  if self.root.kind != Fragment {
+    return
+  }
+  match self.input.get_view(start~, end~) {
+    Some(view) => {
+      let node = self.text_at(view, start)
+      node.mark_sanitize_escape_only()
+      self.current_node().append_child(node)
+    }
+    None => ()
+  }
+}
+
+///|
 fn Parser::text_at(self : Parser, data : StringView, offset : Int) -> Node {
   self.node_with_origin(text(data), offset)
 }
@@ -1761,6 +1806,7 @@ fn Parser::handle_template_end_tag(
   self : Parser,
   name : String,
   error_pos : Int,
+  source_end_tag? : String,
 ) -> Bool {
   if name != "template" {
     return false
@@ -1771,6 +1817,10 @@ fn Parser::handle_template_end_tag(
     return true
   }
   let template = self.stack[template_index]
+  match source_end_tag {
+    Some(raw) => template.set_source_end_tag(raw)
+    None => ()
+  }
   self.disable_template_column_group_mode_for_node(template)
   self.disable_template_table_context_mode_for_node(template)
   self.template_detached_column_group_mode = false
@@ -2197,6 +2247,9 @@ fn Parser::parse_comment(self : Parser) -> Unit {
     self.error_at(error.code, error.offset)
   }
   self.pos = scan.end
+  if scan.eof {
+    self.append_sanitize_escape_source_text(comment_start, self.pos)
+  }
   let data = if self.xml_coercion {
     coerce_comment_for_xml(scan.data)
   } else {
@@ -2242,6 +2295,7 @@ fn Parser::parse_markup_declaration(self : Parser) -> Unit {
     self.error_at("incorrectly-opened-comment", self.pos - 1)
   }
   self.parse_bogus_comment(origin_start)
+  self.append_sanitize_escape_source_text(origin_start, self.pos)
 }
 
 ///|
@@ -2346,6 +2400,7 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
   }
   if self.root.kind == Fragment {
     self.error_at("unexpected-doctype", error_pos)
+    self.append_sanitize_escape_source_text(doctype_start, self.pos)
     return
   }
   if !self.document_doctype_is_initial() {
@@ -2381,11 +2436,13 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     Some('>') => {
       self.error_at("empty-end-tag", self.pos)
       ignore(self.advance_char())
+      self.append_sanitize_escape_source_text(start, self.pos)
       return
     }
     Some(ch) if !is_tag_name_start(ch) => {
       self.error_at("invalid-first-character-of-tag-name", self.pos)
       self.parse_bogus_comment(start)
+      self.append_sanitize_escape_source_text(start, self.pos)
       return
     }
     None => {
@@ -2417,6 +2474,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.error_at("missing-end-tag-name", start)
   }
   let attrs : Map[String, String?] = {}
+  let mut noncanonical_end_tag = false
   let mut closed = false
   while !self.is_eof() {
     self.skip_ascii_whitespace()
@@ -2428,6 +2486,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
       }
       Some('/') => {
         ignore(self.advance_char())
+        noncanonical_end_tag = true
         if self.current() == Some('>') {
           ignore(self.advance_char())
           closed = true
@@ -2436,15 +2495,24 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
           self.error_at("unexpected-character-after-solidus-in-tag", self.pos)
         }
       }
-      Some(_) => self.parse_attribute(attrs)
+      Some(_) => {
+        noncanonical_end_tag = true
+        self.parse_attribute(attrs)
+      }
       None => ()
     }
   }
   if !closed {
     self.error_at_eof("eof-in-tag")
+    if noncanonical_end_tag || name == "" {
+      self.append_sanitize_escape_source_text(start, self.pos)
+    }
     return
   }
   let tag_close_pos = self.pos - 1
+  if noncanonical_end_tag {
+    self.append_sanitize_escape_source_text(start, self.pos)
+  }
   self.flush_deferred_initial_doctype_error()
   if self.handle_before_html_end_tag(name, start, self.pos - 1) {
     return
@@ -2535,7 +2603,13 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_applet_like_end_tag(name, tag_close_pos) {
     return
   }
-  if self.handle_template_end_tag(name, tag_close_pos) {
+  if self.handle_template_end_tag(
+      name,
+      tag_close_pos,
+      source_end_tag=self
+        .source_tag_slice(start, tag_close_pos)
+        .unwrap_or("</" + name + ">"),
+    ) {
     return
   }
   if self.fragment_end_tag_is_ignored(name) {
@@ -2552,7 +2626,13 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   if name != "" {
-    self.pop_until(name, tag_close_pos)
+    self.pop_until(
+      name,
+      tag_close_pos,
+      source_end_tag=self
+        .source_tag_slice(start, tag_close_pos)
+        .unwrap_or("</" + name + ">"),
+    )
   }
 }
 
@@ -2712,7 +2792,12 @@ fn Parser::handle_document_frameset_end_tag(
 }
 
 ///|
-fn Parser::pop_until(self : Parser, name : String, pos : Int) -> Unit {
+fn Parser::pop_until(
+  self : Parser,
+  name : String,
+  pos : Int,
+  source_end_tag? : String,
+) -> Unit {
   let mut found = false
   for node in self.stack {
     if node.kind == Element && names_match_end_tag(node, name) {
@@ -2737,8 +2822,13 @@ fn Parser::pop_until(self : Parser, name : String, pos : Int) -> Unit {
   }
   while self.stack.length() > 1 {
     match self.stack.pop() {
-      Some(node) if node.kind == Element && names_match_end_tag(node, name) =>
+      Some(node) if node.kind == Element && names_match_end_tag(node, name) => {
+        match source_end_tag {
+          Some(raw) => node.set_source_end_tag(raw)
+          None => ()
+        }
         break
+      }
       Some(_) => ()
       None => break
     }
@@ -4992,6 +5082,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       }
       if !closed {
         self.error_at_eof("eof-in-tag")
+        self.append_sanitize_escape_source_text(start, self.pos)
         return
       }
       let tag_close_pos = self.pos - 1
@@ -5185,9 +5276,10 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       } else {
         prepare_foreign_attrs(node_ns, attrs)
       }
-      let node = self.node_with_origin(
+      let node = self.node_with_start_tag_source(
         element(adjusted_name, attrs=adjusted_attrs, ns=node_ns),
         start,
+        tag_close_pos,
       )
       if adjusted_name == "form" {
         self.form_element = Some(node)
@@ -5239,6 +5331,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       } else if self.current() == Some('?') {
         self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)
         self.parse_bogus_comment(start)
+        self.append_sanitize_escape_source_text(start, self.pos)
       } else {
         self.report_current_noncharacter()
         self.parse_invalid_tag_open_as_text(start)

@@ -838,6 +838,14 @@ JustHTML from Python to MoonBit.
   In MoonBit, `sanitize_dom(document)` without an explicit policy uses the
   document-preserving policy, so exact fixture ports should pass
   `default_sanitization_policy()` when they expect document shell unwrapping.
+- Python escape-mode sanitization preserves raw source spelling for disallowed
+  tag tokens where possible. Reconstructing from the DOM changes observable
+  output: quote style, unquoted attributes, self-closing syntax, malformed end
+  tags, and incomplete tag-like text can all differ. In MoonBit, keep this as
+  private parser metadata (`source_start_tag`/`source_end_tag`) plus hidden
+  escape-only text fragments for malformed source that normal `to_html()` must
+  still ignore. Only materialize those hidden fragments when sanitizer
+  `disallowed_tag_handling=Escape` is active.
 - Sanitizer policies contain mutable lookup tables in MoonBit (`Set`/`Map`), so
   default policy helpers should return fresh policy values rather than sharing
   one global object across tests. URL checks should reject decoded C0 controls
