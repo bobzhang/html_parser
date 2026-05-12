@@ -107,6 +107,13 @@ test "linkify handles unicode tlds as utf16 offsets" {
 
 ///|
 test "linkify punycodes unicode URL hosts in hrefs" {
+  let mailto = @html_parser.find_links("mailto:foo@bar")
+  assert_eq(mailto.length(), 1)
+  assert_eq(mailto[0].href, "mailto:foo@bar")
+  assert_eq(mailto[0].kind, "email")
+  let ipv6 = @html_parser.find_links("http://[::1]/")
+  assert_eq(ipv6.length(), 1)
+  assert_eq(ipv6[0].href, "http://[::1]/")
   let german = @html_parser.find_links(
     "Visit http://www.bürgerentscheid-krankenhäuser.de now",
   )
@@ -145,6 +152,15 @@ test "linkify punycodes unicode URL hosts in hrefs" {
     arabic[0].href,
     "http://xn--4gbrim.xn----ymcbaaajlc6dj7bxne2c.xn--wgbh1c/",
   )
+  let sharp_s = @html_parser.find_links("http://Straße.de/")
+  assert_eq(sharp_s.length(), 1)
+  assert_eq(sharp_s[0].href, "http://strasse.de/")
+  let uppercase = @html_parser.find_links("http://BÜRGER.de/")
+  assert_eq(uppercase.length(), 1)
+  assert_eq(uppercase[0].href, "http://xn--brger-kva.de/")
+  let high_codepoint = @html_parser.find_links("http://a𠀀.ws/")
+  assert_eq(high_codepoint.length(), 1)
+  assert_eq(high_codepoint[0].href, "http://xn--a-t17s.ws/")
 }
 
 ///|

@@ -317,7 +317,8 @@ JustHTML from Python to MoonBit.
   without a standard IDNA library, keep the encoder private, test `href`
   outputs against the Python reference, and run the RFC 3492 Punycode loop over
   Unicode code points from `for ch in label`; do not feed UTF-16 code units from
-  `s[i]` into the algorithm.
+  `s[i]` into the algorithm. If IDNA mapping leaves a label entirely ASCII,
+  return that mapped label directly instead of adding an `xn--` prefix.
 - DOM transforms that replace one text node with several nodes need to work on
   the package-private `children` array, because `Node::children()` returns a
   copy for callers. Always reset the removed node's parent and assign the

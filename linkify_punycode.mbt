@@ -132,9 +132,21 @@ fn linkify_punycode_label(label : StringView) -> String? {
   let encoded = linkify_punycode_encode(codepoints)
   if encoded == "" {
     None
+  } else if linkify_codepoints_all_basic(codepoints) {
+    Some(encoded)
   } else {
     Some("xn--" + encoded)
   }
+}
+
+///|
+fn linkify_codepoints_all_basic(input : Array[Int]) -> Bool {
+  for code in input {
+    if code >= 0x80 {
+      return false
+    }
+  }
+  true
 }
 
 ///|
