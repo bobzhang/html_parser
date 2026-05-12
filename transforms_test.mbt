@@ -381,6 +381,57 @@ test "edit_attrs changes are visible to later transforms" {
 }
 
 ///|
+test "disabled transforms are skipped" {
+  let calls : Array[String] = []
+  let doc = @html_parser.parse_fragment(
+    "<p onclick='x'>example.com<script>x</script><!--c--></p>",
+  )
+  let policy = @html_parser.SanitizationPolicy::new(["p"], allowed_attributes={
+    "p": [],
+  })
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::drop("script", enabled=false),
+      @html_parser.TransformSpec::drop_comments(enabled=false),
+      @html_parser.TransformSpec::edit_document(
+        fn(root) {
+          calls.push("document")
+          root.append_child(@html_parser.element("section"))
+        },
+        enabled=false,
+      ),
+      @html_parser.TransformSpec::edit(
+        "p",
+        fn(node) {
+          calls.push("element")
+          node.append_child(@html_parser.element("b"))
+        },
+        enabled=false,
+      ),
+      @html_parser.TransformSpec::edit_attrs(
+        "p",
+        fn(_node) {
+          calls.push("attrs")
+          Some({ "id": Some("changed") })
+        },
+        enabled=false,
+      ),
+      @html_parser.TransformSpec::linkify(enabled=false),
+      @html_parser.TransformSpec::sanitize(policy~, enabled=false),
+    ]),
+  )
+  assert_eq(calls.length(), 0)
+  assert_eq(doc.root.query("script").length(), 1)
+  assert_eq(doc.root.query(":comment").length(), 1)
+  assert_eq(doc.root.query("section").length(), 0)
+  assert_eq(doc.root.query("b").length(), 0)
+  assert_eq(doc.root.query("a").length(), 0)
+  let paragraphs = doc.root.query("p")
+  assert_eq(paragraphs.length(), 1)
+  assert_true(paragraphs[0].attrs().get("onclick") is Some(Some("x")))
+}
+
+///|
 test "drop_url_attrs validates URL attrs and normalizes mixed-case names" {
   let trusted_rule = @html_parser.UrlRule::new(
     allowed_schemes=["https"],

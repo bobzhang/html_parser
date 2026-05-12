@@ -48,6 +48,7 @@ impl Debug for TransformAttrsCallback with to_repr(_) {
 /// added as separate slices.
 pub struct TransformSpec {
   priv kind : TransformKind
+  priv enabled : Bool
   priv selector : String
   priv attr_patch : Map[String, String?]?
   priv attr_patterns : Array[String]
@@ -66,6 +67,7 @@ pub struct TransformSpec {
 ///|
 fn make_transform_spec(
   kind : TransformKind,
+  enabled? : Bool = true,
   selector? : String = "",
   attr_patch? : Map[String, String?],
   attr_patterns? : Array[String] = [],
@@ -82,6 +84,7 @@ fn make_transform_spec(
 ) -> TransformSpec {
   {
     kind,
+    enabled,
     selector,
     attr_patch: attr_patch.map(fn(attrs) { attrs.copy() }),
     attr_patterns: attr_patterns.copy(),
@@ -100,26 +103,38 @@ fn make_transform_spec(
 
 ///|
 /// Build a transform that removes elements matching `selector`.
-pub fn TransformSpec::drop(selector : StringView) -> TransformSpec {
-  make_transform_spec(DropElements, selector=selector.to_owned())
+pub fn TransformSpec::drop(
+  selector : StringView,
+  enabled? : Bool = true,
+) -> TransformSpec {
+  make_transform_spec(DropElements, enabled~, selector=selector.to_owned())
 }
 
 ///|
 /// Build a transform that replaces matching elements with their children.
-pub fn TransformSpec::unwrap(selector : StringView) -> TransformSpec {
-  make_transform_spec(UnwrapElements, selector=selector.to_owned())
+pub fn TransformSpec::unwrap(
+  selector : StringView,
+  enabled? : Bool = true,
+) -> TransformSpec {
+  make_transform_spec(UnwrapElements, enabled~, selector=selector.to_owned())
 }
 
 ///|
 /// Build a transform that emits matching element tags as text and keeps children.
-pub fn TransformSpec::escape(selector : StringView) -> TransformSpec {
-  make_transform_spec(EscapeElements, selector=selector.to_owned())
+pub fn TransformSpec::escape(
+  selector : StringView,
+  enabled? : Bool = true,
+) -> TransformSpec {
+  make_transform_spec(EscapeElements, enabled~, selector=selector.to_owned())
 }
 
 ///|
 /// Build a transform that removes all children from matching elements.
-pub fn TransformSpec::empty(selector : StringView) -> TransformSpec {
-  make_transform_spec(EmptyElements, selector=selector.to_owned())
+pub fn TransformSpec::empty(
+  selector : StringView,
+  enabled? : Bool = true,
+) -> TransformSpec {
+  make_transform_spec(EmptyElements, enabled~, selector=selector.to_owned())
 }
 
 ///|
@@ -127,16 +142,20 @@ pub fn TransformSpec::empty(selector : StringView) -> TransformSpec {
 pub fn TransformSpec::edit(
   selector : StringView,
   callback : (Node) -> Unit,
+  enabled? : Bool = true,
 ) -> TransformSpec {
-  make_transform_spec(EditElement, selector=selector.to_owned(), node_callback={
+  make_transform_spec(EditElement, enabled~, selector=selector.to_owned(), node_callback={
     callback,
   })
 }
 
 ///|
 /// Build a transform that invokes `callback` once on the supplied root.
-pub fn TransformSpec::edit_document(callback : (Node) -> Unit) -> TransformSpec {
-  make_transform_spec(EditDocumentRoot, node_callback={ callback, })
+pub fn TransformSpec::edit_document(
+  callback : (Node) -> Unit,
+  enabled? : Bool = true,
+) -> TransformSpec {
+  make_transform_spec(EditDocumentRoot, enabled~, node_callback={ callback, })
 }
 
 ///|
@@ -144,9 +163,11 @@ pub fn TransformSpec::edit_document(callback : (Node) -> Unit) -> TransformSpec 
 pub fn TransformSpec::set_attrs(
   selector : StringView,
   attrs : Map[String, String?],
+  enabled? : Bool = true,
 ) -> TransformSpec {
   make_transform_spec(
     SetAttributes,
+    enabled~,
     selector=selector.to_owned(),
     attr_patch=attrs,
   )
@@ -157,9 +178,11 @@ pub fn TransformSpec::set_attrs(
 pub fn TransformSpec::drop_attrs(
   selector : StringView,
   patterns : Array[String],
+  enabled? : Bool = true,
 ) -> TransformSpec {
   make_transform_spec(
     DropAttributes,
+    enabled~,
     selector=selector.to_owned(),
     attr_patterns=normalize_transform_strings(patterns),
   )
@@ -170,9 +193,11 @@ pub fn TransformSpec::drop_attrs(
 pub fn TransformSpec::allowlist_attrs(
   selector : StringView,
   allowed_attributes : Map[String, Array[String]],
+  enabled? : Bool = true,
 ) -> TransformSpec {
   make_transform_spec(
     AllowlistAttributes,
+    enabled~,
     selector=selector.to_owned(),
     allowed_attrs=normalize_allowed_attrs_map(allowed_attributes),
   )
@@ -184,8 +209,9 @@ pub fn TransformSpec::allowlist_attrs(
 pub fn TransformSpec::edit_attrs(
   selector : StringView,
   callback : (Node) -> Map[String, String?]?,
+  enabled? : Bool = true,
 ) -> TransformSpec {
-  make_transform_spec(EditAttributes, selector=selector.to_owned(), attrs_callback={
+  make_transform_spec(EditAttributes, enabled~, selector=selector.to_owned(), attrs_callback={
     callback,
   })
 }
@@ -196,11 +222,13 @@ pub fn TransformSpec::merge_attrs(
   tag : StringView,
   attr~ : StringView,
   tokens~ : Array[String],
+  enabled? : Bool = true,
 ) -> TransformSpec {
   let tag = lower_ascii(tag.trim())
   let attr = lower_ascii(attr.trim())
   make_transform_spec(
     MergeAttributeTokens,
+    enabled~,
     selector=tag,
     merge_tag=tag,
     merge_attr=attr,
@@ -213,9 +241,11 @@ pub fn TransformSpec::merge_attrs(
 pub fn TransformSpec::drop_url_attrs(
   selector : StringView,
   url_policy~ : UrlPolicy,
+  enabled? : Bool = true,
 ) -> TransformSpec {
   make_transform_spec(
     DropUrlAttributes,
+    enabled~,
     selector=selector.to_owned(),
     sanitize_policy=SanitizationPolicy::new([], url_policy~),
   )
@@ -226,9 +256,11 @@ pub fn TransformSpec::drop_url_attrs(
 pub fn TransformSpec::allow_style_attrs(
   selector : StringView,
   allowed_css_properties~ : Array[String],
+  enabled? : Bool = true,
 ) -> TransformSpec {
   make_transform_spec(
     AllowStyleAttributes,
+    enabled~,
     selector=selector.to_owned(),
     sanitize_policy=SanitizationPolicy::new(
       [],
@@ -239,23 +271,27 @@ pub fn TransformSpec::allow_style_attrs(
 
 ///|
 /// Build a transform that sanitizes the DOM tree with an optional policy.
-pub fn TransformSpec::sanitize(policy? : SanitizationPolicy) -> TransformSpec {
+pub fn TransformSpec::sanitize(
+  policy? : SanitizationPolicy,
+  enabled? : Bool = true,
+) -> TransformSpec {
   match policy {
-    Some(policy) => make_transform_spec(SanitizeTree, sanitize_policy=policy)
-    None => make_transform_spec(SanitizeTree)
+    Some(policy) =>
+      make_transform_spec(SanitizeTree, enabled~, sanitize_policy=policy)
+    None => make_transform_spec(SanitizeTree, enabled~)
   }
 }
 
 ///|
 /// Build a transform that removes comment nodes.
-pub fn TransformSpec::drop_comments() -> TransformSpec {
-  make_transform_spec(DropCommentNodes)
+pub fn TransformSpec::drop_comments(enabled? : Bool = true) -> TransformSpec {
+  make_transform_spec(DropCommentNodes, enabled~)
 }
 
 ///|
 /// Build a transform that removes doctype nodes.
-pub fn TransformSpec::drop_doctype() -> TransformSpec {
-  make_transform_spec(DropDoctypeNodes)
+pub fn TransformSpec::drop_doctype(enabled? : Bool = true) -> TransformSpec {
+  make_transform_spec(DropDoctypeNodes, enabled~)
 }
 
 ///|
@@ -267,9 +303,11 @@ fn default_collapse_whitespace_skip_tags() -> Array[String] {
 /// Build a transform that collapses runs of HTML whitespace in text nodes.
 pub fn TransformSpec::collapse_whitespace(
   skip_tags? : Array[String],
+  enabled? : Bool = true,
 ) -> TransformSpec {
   make_transform_spec(
     CollapseTextWhitespace,
+    enabled~,
     skip_tags=skip_tags.unwrap_or(default_collapse_whitespace_skip_tags()),
   )
 }
@@ -279,11 +317,13 @@ pub fn TransformSpec::collapse_whitespace(
 pub fn TransformSpec::linkify(
   config? : LinkifyConfig,
   skip_tags? : Array[String],
+  enabled? : Bool = true,
 ) -> TransformSpec {
   let config = config.unwrap_or(LinkifyConfig::new())
   let skip_tags = skip_tags.unwrap_or(linkify_default_dom_skip_tags())
   make_transform_spec(
     LinkifyTextNodes,
+    enabled~,
     linkify_config=config,
     linkify_skip_tags=skip_tags,
   )
@@ -301,7 +341,9 @@ pub fn apply_transforms(
 ) -> Node raise HtmlError {
   let mut current = node
   for transform in transforms {
-    current = apply_transform(current, transform)
+    if transform.enabled {
+      current = apply_transform(current, transform)
+    }
   }
   current
 }

@@ -22,8 +22,8 @@ reference implementation in `.repos/justhtml`.
 
 ## Migration Roadmap
 
-1. Finish the general transform pipeline: enabled flags, callback/report hooks,
-   explicit stages, selector limits, and remaining transform edge-case tests.
+1. Finish the general transform pipeline: callback/report hooks, explicit
+   stages, selector limits, and remaining transform edge-case tests.
 2. Port the streaming API and `tests/test_stream.py` behavior.
 3. Port CLI compatibility and `tests/test_cli.py` behavior.
 4. Sweep Markdown parity against the remaining Python tests.
@@ -52,7 +52,8 @@ reference implementation in `.repos/justhtml`.
   - [x] Linkify transform integration and order-sensitive smoke tests
   - [x] `Sanitize` transform integration and order-sensitive smoke tests
   - [x] URL/style transform specs: `DropUrlAttrs`, `AllowStyleAttrs`
-  - [ ] Transform enabled flags plus callback/report hooks
+  - [x] Transform enabled flags
+  - [ ] Callback/report hooks
   - [ ] Compiled stages, selector limits, and deterministic application order
 - [ ] Streaming API
   - [ ] `StreamSink` equivalent

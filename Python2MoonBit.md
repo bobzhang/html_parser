@@ -339,6 +339,12 @@ JustHTML from Python to MoonBit.
   implementations, then let public constructors accept ordinary function
   values. This keeps `TransformSpec` debuggable without exposing callback
   internals.
+- Python transform specs carry an `enabled` flag on every constructor. In
+  MoonBit, store it once on `TransformSpec` and skip disabled entries in the
+  outer `apply_transforms` loop before dispatching to selector, callback, or
+  sanitizer code. That avoids hidden callback calls and avoids sanitizer
+  side-effects from disabled specs while keeping constructor normalization
+  simple.
 - Some Python transforms are mostly in-place but can still replace the root
   object for standalone nodes. Keep a `current` root when applying a transform
   sequence and return the latest root; otherwise a sanitizer that drops a
