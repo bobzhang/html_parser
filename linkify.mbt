@@ -490,11 +490,7 @@ fn linkify_host_without_userinfo_port(hostport : StringView) -> StringView {
 ///|
 fn linkify_strip_userinfo(hostport : StringView) -> StringView {
   match linkify_last_char_index(hostport, '@') {
-    Some(at) =>
-      match hostport.get_view(start=at + 1, end=hostport.length()) {
-        Some(host) => host
-        None => hostport
-      }
+    Some(at) => hostport[at + 1:hostport.length()]
     None => hostport
   }
 }
@@ -506,17 +502,7 @@ fn linkify_split_host_port(hostport : StringView) -> (StringView, String) {
   }
   match linkify_last_char_index(hostport, ':') {
     Some(colon) =>
-      match hostport.get_view(start=0, end=colon) {
-        Some(host) => {
-          let port = match
-            hostport.get_view(start=colon + 1, end=hostport.length()) {
-            Some(view) => view.to_owned()
-            None => ""
-          }
-          (host, port)
-        }
-        None => (hostport, "")
-      }
+      (hostport[0:colon], hostport[colon + 1:hostport.length()].to_owned())
     None => (hostport, "")
   }
 }
@@ -546,12 +532,8 @@ fn linkify_split_domain_for_tld(host : StringView) -> (String, String)? {
   }
   match linkify_last_char_index(stripped, '.') {
     Some(dot) => {
-      guard stripped.get_view(start=0, end=dot) is Some(base) else {
-        return None
-      }
-      guard stripped.get_view(start=dot + 1, end=stripped.length()) is Some(tld) else {
-        return None
-      }
+      let base = stripped[0:dot]
+      let tld = stripped[dot + 1:stripped.length()]
       if base.is_empty() || tld.is_empty() {
         None
       } else {
@@ -572,10 +554,7 @@ fn linkify_strip_edge_dots(value : StringView) -> StringView {
   while end > start && value.get_char(end - 1) is Some('.') {
     end -= 1
   }
-  match value.get_view(start~, end~) {
-    Some(view) => view
-    None => value
-  }
+  value[start:end]
 }
 
 ///|

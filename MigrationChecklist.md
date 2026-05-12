@@ -238,6 +238,8 @@ reference implementation in `.repos/justhtml`.
       `StringView` iteration while retaining fixed-width `get_view` checks.
 - [x] Refactored linkify embedded-scheme recovery scanning to iterate over
       scanner-bounded `StringView` slices.
+- [x] Refactored linkify host/userinfo/domain helpers to use direct
+      boundary-safe `StringView` slices after offsets produced by internal scans.
 - [x] Refactored linkify punycode host/tail splitting to use Unicode-safe
       `StringView` iteration before slicing at URL delimiters.
 - [x] Refactored linkify punycode label splitting to use Unicode-safe
