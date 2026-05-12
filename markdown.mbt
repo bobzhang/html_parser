@@ -798,6 +798,11 @@ fn markdown_node_inside_fragment(node : Node) -> Bool {
 }
 
 ///|
+/// Render this DOM node and its descendants as Markdown.
+///
+/// The converter handles common block and inline HTML elements and escapes
+/// Markdown-sensitive text. Set `html_passthrough=true` to preserve unsupported
+/// element nodes as raw HTML instead of flattening their textual content.
 pub fn Node::to_markdown(
   self : Node,
   html_passthrough? : Bool = false,
@@ -808,6 +813,9 @@ pub fn Node::to_markdown(
 }
 
 ///|
+/// Render the parsed document or fragment root as Markdown.
+///
+/// This is equivalent to calling `to_markdown` on `self.root`.
 pub fn ParsedHtml::to_markdown(
   self : ParsedHtml,
   html_passthrough? : Bool = false,

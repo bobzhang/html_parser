@@ -103,6 +103,7 @@ reference implementation in `.repos/justhtml`.
   - [ ] Public API docs for warning 74
     - [x] `tokens.mbt` tokenizer API docs
     - [x] `transforms.mbt` decide action docs
+    - [x] `markdown.mbt` Markdown conversion docs
   - [x] Remove unnecessary annotations for warning 73
     - [x] `comment_scan.mbt` constructor annotations
     - [x] `script_text.mbt` constructor annotations
