@@ -71,7 +71,42 @@ test "linkify_dom handles standalone text nodes and empty text nodes" {
     linked.to_html(pretty=false),
     "Go <a href=\"http://example.com\">example.com</a> now",
   )
+  let plain = @html_parser.linkify_dom(@html_parser.text("plain text"))
+  assert_eq(plain.to_html(pretty=false), "plain text")
   let div = @html_parser.element("div", children=[@html_parser.text("")])
   ignore(@html_parser.linkify_dom(div))
   assert_eq(div.to_html(pretty=false), "<div></div>")
+}
+
+///|
+test "linkify_dom keeps no-link text and exact text matches stable" {
+  let no_link = @html_parser.element("p", children=[
+    @html_parser.text("plain text"),
+  ])
+  ignore(@html_parser.linkify_dom(no_link))
+  assert_eq(no_link.to_html(pretty=false), "<p>plain text</p>")
+  let exact = @html_parser.element("p", children=[
+    @html_parser.text("example.com"),
+  ])
+  ignore(@html_parser.linkify_dom(exact))
+  assert_eq(
+    exact.to_html(pretty=false),
+    "<p><a href=\"http://example.com\">example.com</a></p>",
+  )
+}
+
+///|
+test "linkify_dom recurses through fragment children and leaves leaf nodes alone" {
+  let nested = @html_parser.fragment(children=[
+    @html_parser.fragment(children=[@html_parser.text("example.com")]),
+  ])
+  ignore(@html_parser.linkify_dom(nested))
+  assert_eq(
+    nested.to_html(pretty=false),
+    "<a href=\"http://example.com\">example.com</a>",
+  )
+  let comment = @html_parser.linkify_dom(@html_parser.comment("example.com"))
+  assert_eq(comment.to_html(pretty=false), "<!--example.com-->")
+  let doctype = @html_parser.linkify_dom(@html_parser.doctype())
+  assert_eq(doctype.to_html(pretty=false), "<!DOCTYPE html>")
 }

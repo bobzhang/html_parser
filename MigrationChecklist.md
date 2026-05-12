@@ -43,6 +43,7 @@ reference implementation in `.repos/justhtml`.
   - [x] Wrap text-node matches in `<a href=...>`
   - [x] Skip existing anchors and preformatted text by default
   - [x] Preserve template content behavior
+  - [x] Standalone text, exact-match text, no-link text, and leaf-node no-op behavior
 - [x] General transform pipeline
   - [x] Public `TransformSpec` and `apply_transforms` API shell
   - [x] Structural transform specs: `Drop`, `Unwrap`, `Escape`, `Empty`

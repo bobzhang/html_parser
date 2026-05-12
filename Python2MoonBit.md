@@ -323,6 +323,10 @@ JustHTML from Python to MoonBit.
   copy for callers. Always reset the removed node's parent and assign the
   replacement nodes' parent pointers before inserting them; serialization and
   later DOM queries rely on those links staying coherent.
+- When porting Python DOM-transform tests, include both split-replacement
+  cases and exact whole-text matches. Exact matches are easy to miss in MoonBit
+  because the prefix and tail `StringView` branches are intentionally skipped,
+  while no-link text nodes must still advance the child scan.
 - Ported Python transforms often mutate node fields directly. In MoonBit,
   private record fields are still immutable unless declared `mut`; this port
   keeps `Node.data` immutable, so text transforms such as whitespace collapse
