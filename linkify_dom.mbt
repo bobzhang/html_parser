@@ -104,6 +104,19 @@ fn linkify_text_child_at(
   if matches.is_empty() {
     return 0
   }
+  linkify_text_child_at_matches(parent, index, child, matches)
+}
+
+///|
+fn linkify_text_child_at_matches(
+  parent : Node,
+  index : Int,
+  child : Node,
+  matches : Array[LinkMatch],
+) -> Int {
+  if matches.is_empty() {
+    return 0
+  }
   let replacements : Array[Node] = []
   let mut cursor = 0
   for m in matches {

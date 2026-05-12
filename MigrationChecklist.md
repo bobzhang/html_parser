@@ -55,10 +55,10 @@ reference implementation in `.repos/justhtml`.
   - [x] Transform enabled flags
   - [x] Basic callback/report hooks for selector, edit, attribute, URL/style,
         comment, and doctype transforms
-  - [ ] Hook/report forwarding for `Sanitize`, `Linkify`,
-        `CollapseWhitespace`, and stage-level transforms
+  - [x] Hook/report forwarding for `Linkify` and `CollapseWhitespace`
+  - [ ] Hook/report forwarding for `Sanitize` and stage-level transforms
   - [ ] Python-exact detailed report messages for attribute, URL/style, merge,
-        text, sanitizer, and stage transforms
+        sanitizer, and stage transforms
   - [ ] Compiled stages, selector limits, and deterministic application order
 - [ ] Streaming API
   - [ ] `StreamSink` equivalent

@@ -466,11 +466,17 @@ fn default_collapse_whitespace_skip_tags() -> Array[String] {
 pub fn TransformSpec::collapse_whitespace(
   skip_tags? : Array[String],
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  make_transform_spec(
-    CollapseTextWhitespace,
-    enabled~,
-    skip_tags=skip_tags.unwrap_or(default_collapse_whitespace_skip_tags()),
+  with_transform_hooks(
+    make_transform_spec(
+      CollapseTextWhitespace,
+      enabled~,
+      skip_tags=skip_tags.unwrap_or(default_collapse_whitespace_skip_tags()),
+    ),
+    hook,
+    report,
   )
 }
 
@@ -480,14 +486,20 @@ pub fn TransformSpec::linkify(
   config? : LinkifyConfig,
   skip_tags? : Array[String],
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
   let config = config.unwrap_or(LinkifyConfig::new())
   let skip_tags = skip_tags.unwrap_or(linkify_default_dom_skip_tags())
-  make_transform_spec(
-    LinkifyTextNodes,
-    enabled~,
-    linkify_config=config,
-    linkify_skip_tags=skip_tags,
+  with_transform_hooks(
+    make_transform_spec(
+      LinkifyTextNodes,
+      enabled~,
+      linkify_config=config,
+      linkify_skip_tags=skip_tags,
+    ),
+    hook,
+    report,
   )
 }
 
@@ -552,14 +564,18 @@ fn apply_transform(
       apply_collapse_whitespace_transform(
         node,
         transform_skip_tag_set(transform.skip_tags),
+        transform,
       )
       node
     }
     LinkifyTextNodes => {
       let config = transform.linkify_config.unwrap_or(LinkifyConfig::new())
-      let skip_tags = transform.linkify_skip_tags.copy()
-      ignore(linkify_dom(node, config~, skip_tags~))
-      node
+      apply_linkify_transform(
+        node,
+        config,
+        transform_skip_tag_set(transform.linkify_skip_tags),
+        transform,
+      )
     }
   }
 }
@@ -1298,14 +1314,17 @@ fn collapse_transform_html_space(value : StringView) -> String {
 fn apply_collapse_whitespace_transform(
   root : Node,
   skip_tags : Set[String],
+  transform : TransformSpec,
 ) -> Unit {
   match root.kind {
-    Document | Fragment => collapse_whitespace_children(root, skip_tags, false)
+    Document | Fragment =>
+      collapse_whitespace_children(root, skip_tags, false, transform)
     Element =>
       collapse_whitespace_children(
         root,
         skip_tags,
         skip_tags.contains(lower_ascii(root.name)),
+        transform,
       )
     _ => ()
   }
@@ -1316,6 +1335,7 @@ fn collapse_whitespace_children(
   parent : Node,
   skip_tags : Set[String],
   skip : Bool,
+  transform : TransformSpec,
 ) -> Unit {
   let mut index = 0
   while index < parent.children.length() {
@@ -1324,6 +1344,12 @@ fn collapse_whitespace_children(
       Text if !skip && child.data != "" => {
         let collapsed = collapse_transform_html_space(child.data)
         if collapsed != child.data {
+          transform_call_hook(child, transform)
+          transform_report(
+            transform,
+            "Collapsed whitespace in text node",
+            Some(child),
+          )
           let replacement = text(collapsed)
           replacement.parent = Some(parent)
           parent.children[index] = replacement
@@ -1334,13 +1360,97 @@ fn collapse_whitespace_children(
         }
       }
       Document | Fragment =>
-        collapse_whitespace_children(child, skip_tags, skip)
+        collapse_whitespace_children(child, skip_tags, skip, transform)
       Element => {
         let child_skip = skip || skip_tags.contains(lower_ascii(child.name))
-        collapse_whitespace_children(child, skip_tags, child_skip)
+        collapse_whitespace_children(child, skip_tags, child_skip, transform)
       }
       _ => ()
     }
     index += 1
+  }
+}
+
+///|
+fn apply_linkify_transform(
+  root : Node,
+  config : LinkifyConfig,
+  skip_tags : Set[String],
+  transform : TransformSpec,
+) -> Node {
+  match root.kind {
+    Text => {
+      let wrapper = fragment(children=[root])
+      linkify_transform_children(wrapper, config, skip_tags, false, transform)
+      if wrapper.children.length() == 1 {
+        let only = wrapper.children[0]
+        ignore(wrapper.children.remove(0))
+        only.parent = None
+        only
+      } else {
+        wrapper
+      }
+    }
+    Document | Fragment | Element => {
+      let skip = root.kind == Element &&
+        skip_tags.contains(lower_ascii(root.name))
+      linkify_transform_children(root, config, skip_tags, skip, transform)
+      root
+    }
+    Comment | Doctype => root
+  }
+}
+
+///|
+fn linkify_transform_children(
+  parent : Node,
+  config : LinkifyConfig,
+  skip_tags : Set[String],
+  skip_linkify : Bool,
+  transform : TransformSpec,
+) -> Unit {
+  let mut index = 0
+  while index < parent.children.length() {
+    let child = parent.children[index]
+    match child.kind {
+      Text if !skip_linkify && child.data != "" => {
+        let matches = find_links_with_config(child.data, config)
+        if matches.is_empty() {
+          index += 1
+        } else {
+          transform_call_hook(child, transform)
+          transform_report(
+            transform,
+            "Linkified " +
+            matches.length().to_string() +
+            " link(s) in text node",
+            Some(child),
+          )
+          let inserted = linkify_text_child_at_matches(
+            parent, index, child, matches,
+          )
+          if inserted > 0 {
+            index += inserted
+          } else {
+            index += 1
+          }
+        }
+      }
+      Document | Fragment => {
+        linkify_transform_children(
+          child, config, skip_tags, skip_linkify, transform,
+        )
+        index += 1
+      }
+      Element => {
+        let child_skip = skip_linkify ||
+          skip_tags.contains(lower_ascii(child.name))
+        linkify_transform_children(
+          child, config, skip_tags, child_skip, transform,
+        )
+        index += 1
+      }
+      _ => index += 1
+    }
   }
 }

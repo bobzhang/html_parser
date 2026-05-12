@@ -562,6 +562,79 @@ test "edit hooks and reports follow Python callback ordering" {
 }
 
 ///|
+test "text transform hooks and reports run before text replacement" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name() + ":" + node.data())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name() + ":" + hit.data())
+      None => events.push("node:none")
+    }
+  }
+  let root = @html_parser.parse_fragment(
+      "<p>visit example.com  now</p><pre>x  y</pre>",
+    ).root
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::collapse_whitespace(hook~, report~),
+      @html_parser.TransformSpec::linkify(hook~, report~),
+    ]),
+  )
+  assert_eq(events, [
+    "hook:#text:visit example.com  now", "report:Collapsed whitespace in text node",
+    "node:#text:visit example.com  now", "hook:#text:visit example.com now", "report:Linkified 1 link(s) in text node",
+    "node:#text:visit example.com now",
+  ])
+  assert_eq(
+    root.to_html(pretty=false),
+    "<p>visit <a href=\"http://example.com\">example.com</a> now</p><pre>x  y</pre>",
+  )
+}
+
+///|
+test "unchanged text transforms do not call hooks" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, _node) {
+    events.push("report:" + message)
+  }
+  let root = @html_parser.parse_fragment("<p>plain</p><a>example.com</a>").root
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::collapse_whitespace(hook~, report~),
+      @html_parser.TransformSpec::linkify(hook~, report~),
+    ]),
+  )
+  assert_eq(events, [])
+  assert_eq(root.to_html(pretty=false), "<p>plain</p><a>example.com</a>")
+}
+
+///|
+test "linkify transform can replace standalone text root" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, _node) {
+    events.push("report:" + message)
+  }
+  let root = @html_parser.apply_transforms(
+    @html_parser.text("Go example.com"),
+    [@html_parser.TransformSpec::linkify(hook~, report~)],
+  )
+  assert_eq(
+    root.to_html(pretty=false),
+    "Go <a href=\"http://example.com\">example.com</a>",
+  )
+  assert_eq(events, ["hook:#text", "report:Linkified 1 link(s) in text node"])
+}
+
+///|
 test "drop_url_attrs validates URL attrs and normalizes mixed-case names" {
   let trusted_rule = @html_parser.UrlRule::new(
     allowed_schemes=["https"],

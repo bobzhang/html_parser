@@ -350,6 +350,11 @@ JustHTML from Python to MoonBit.
   `EditAttrs` calls its rewrite function first and only runs hook/report when
   the returned map is `Some`. Attribute setters likewise run hook/report only
   when a real mutation happened.
+- Text transforms that replace nodes should report before detaching the
+  original text node. Python mutates text data in place for whitespace
+  collapse, but this MoonBit DOM keeps text data immutable and replaces the
+  node; call hooks/reports against the original node before installing the
+  replacement so callback observations stay close to Python.
 - Python transform specs carry an `enabled` flag on every constructor. In
   MoonBit, store it once on `TransformSpec` and skip disabled entries in the
   outer `apply_transforms` loop before dispatching to selector, callback, or
