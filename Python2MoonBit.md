@@ -898,12 +898,12 @@ JustHTML from Python to MoonBit.
   then flip the default only after raw parser tests consistently pass
   `sanitize=false`.
 - Python's sanitizer can escape disallowed tags using original token spans.
-  Until the MoonBit parser stores source-tag metadata, escape handling must
-  reconstruct tag text from the normalized DOM. That keeps output safe and
-  deterministic, but it cannot preserve source spelling details such as single
-  quotes, self-closing slashes on non-void HTML elements, or missing end tags.
-  The escaped start/end text wraps sanitized surviving children; do not drop
-  children just because the disallowed element is `template`.
+  Store private source-tag metadata in MoonBit too; reconstructing from the
+  normalized DOM changes observable output for single quotes, unquoted attrs,
+  self-closing slashes on non-void HTML elements, malformed end tags, and
+  missing end tags. The escaped start/end text wraps sanitized surviving
+  children; do not drop children just because the disallowed element is
+  `template`.
 - `force_link_rel` is both an attribute-allowlist rule and a rewrite rule in
   the Python sanitizer. If it is non-empty, `rel` must be kept on `<a>` even
   when `allowed_attributes["a"]` does not include it, then existing rel tokens
@@ -911,8 +911,11 @@ JustHTML from Python to MoonBit.
   with the forced tokens.
 - Inline `style` sanitization is a second allowlist after attribute
   allowlisting. A policy that allows the `style` attribute but leaves
-  `allowed_css_properties` empty should still drop `style`; only declarations
-  with valid, explicitly allowed ASCII property names survive. Empty property
+  `allowed_css_properties` empty should still drop `style`; the Python fixture
+  suite raises at policy construction for this configuration, but the MoonBit
+  constructor is intentionally non-raising, so pin the safe runtime result
+  instead: the attribute is removed. Only declarations with valid, explicitly
+  allowed ASCII property names survive. Empty property
   names such as `: red` are just invalid declarations; later valid declarations
   in the same style attribute should still be considered. Values that may load
   resources need a second URL-policy decision. Plain `url(...)` can

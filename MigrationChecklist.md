@@ -165,6 +165,8 @@ reference implementation in `.repos/justhtml`.
       default forced-link `rel` behavior.
 - [x] Translated sanitizer JSON escaped-token fixture rows, including raw source
       spelling for disallowed start/end tags and malformed tag-like text.
+- [x] Accounted for the sanitizer JSON `style`-with-empty-CSS-allowlist error
+      row with MoonBit's non-raising constructor and safe style-drop behavior.
 
 ## Working Rule
 

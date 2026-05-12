@@ -737,6 +737,20 @@ test "sanitizer matches vendored structural and style fixture rows" {
 }
 
 ///|
+test "sanitizer documents MoonBit behavior for vendored empty-style error row" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["div"],
+    allowed_attributes={ "*": [], "div": ["style"] },
+    url_policy=sanitize_fixture_empty_url_policy(),
+    allowed_css_properties=[],
+  )
+  assert_eq(
+    sanitize_fixture_output("<div style='color: red'></div>", policy),
+    "<div></div>",
+  )
+}
+
+///|
 test "sanitizer matches vendored escaped disallowed-tag fixture rows" {
   for case in sanitize_fixture_escape_cases() {
     assert_sanitize_fixture(case)
