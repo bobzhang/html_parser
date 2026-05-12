@@ -375,6 +375,8 @@ reference implementation in `.repos/justhtml`.
       any tracked validation helper missing from the inventory.
 - [x] Added validation-helper convention checks for tracked `scripts/*`
       suffixes and interpreter shebangs.
+- [x] Extended GitHub workflow validation to inventory every tracked workflow
+      and guard the Copilot MoonBit setup workflow.
 
 ## Working Rule
 
