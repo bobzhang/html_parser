@@ -178,6 +178,9 @@ reference implementation in `.repos/justhtml`.
 - [x] Added selector-limit regressions for list size, complex selector part
       count, compound simple-selector count, negative byte budgets, and
       `:contains(...)` text byte accounting.
+- [x] Added transform no-op regressions for empty attribute patterns,
+      empty-attribute nodes, blank attribute names, boolean merge attributes,
+      root text/comment leaves, and root preformatted text skips.
 
 ## Working Rule
 

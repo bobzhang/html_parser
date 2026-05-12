@@ -847,6 +847,84 @@ test "allowlist_attrs keeps global and tag-specific attributes" {
 }
 
 ///|
+test "attribute transforms cover no-op and boolean attribute branches" {
+  let drop_empty = @html_parser.fragment(children=[
+    @html_parser.element("div", attrs={ "onclick": Some("run()") }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(drop_empty, [
+      @html_parser.TransformSpec::drop_attrs("*", []),
+    ]),
+  )
+  assert_eq(drop_empty.to_html(pretty=false), "<div onclick=\"run()\"></div>")
+
+  let url_policy = @html_parser.UrlPolicy::new()
+  let no_attrs = @html_parser.fragment(children=[@html_parser.element("div")])
+  ignore(
+    @html_parser.apply_transforms(no_attrs, [
+      @html_parser.TransformSpec::allowlist_attrs("*", { "*": ["id"] }),
+      @html_parser.TransformSpec::drop_url_attrs("*", url_policy~),
+      @html_parser.TransformSpec::allow_style_attrs("*", allowed_css_properties=[
+        "color",
+      ]),
+    ]),
+  )
+  assert_eq(no_attrs.to_html(pretty=false), "<div></div>")
+
+  let blank_attr = @html_parser.fragment(children=[
+    @html_parser.element("div", attrs={
+      "": Some("blank"),
+      "BAD": Some("x"),
+      "id": Some("ok"),
+    }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(blank_attr, [
+      @html_parser.TransformSpec::allowlist_attrs("*", { "*": ["id"] }),
+    ]),
+  )
+  assert_eq(blank_attr.to_html(pretty=false), "<div id=\"ok\"></div>")
+
+  let meta_none = @html_parser.fragment(children=[
+    @html_parser.element("meta", attrs={
+      "http-equiv": None,
+      "content": Some("0;url=https://evil.example/"),
+    }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(meta_none, [
+      @html_parser.TransformSpec::drop_url_attrs("*", url_policy~),
+    ]),
+  )
+  assert_eq(
+    meta_none.to_html(pretty=false),
+    "<meta http-equiv content=\"0;url=https://evil.example/\">",
+  )
+
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) { events.push(node.name()) }
+  let merged = @html_parser.fragment(children=[
+    @html_parser.element("a", attrs={ "rel": None }),
+    @html_parser.element("a", attrs={ "rel": Some("noopener") }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(merged, [
+      @html_parser.TransformSpec::merge_attrs(
+        "a",
+        attr="rel",
+        tokens=["noopener"],
+        hook~,
+      ),
+    ]),
+  )
+  assert_eq(
+    merged.to_html(pretty=false),
+    "<a rel=\"noopener\"></a><a rel=\"noopener\"></a>",
+  )
+  assert_eq(events, ["a"])
+}
+
+///|
 test "merge_attrs normalizes duplicate tokens and mixed-case keys" {
   let root = @html_parser.parse_fragment(
       "<a></a><a rel='NoOpEnEr noopener'></a><a rel='noreferrer'></a>",
@@ -1556,6 +1634,40 @@ test "linkify transform can replace standalone text root" {
     "Go <a href=\"http://example.com\">example.com</a>",
   )
   assert_eq(events, ["hook:#text", "report:Linkified 1 link(s) in text node"])
+}
+
+///|
+test "root text and leaf transforms no-op when kind cannot apply" {
+  let text_root = @html_parser.apply_transforms(
+    @html_parser.text("plain text"),
+    [
+      @html_parser.TransformSpec::drop("p"),
+      @html_parser.TransformSpec::collapse_whitespace(),
+      @html_parser.TransformSpec::linkify(),
+    ],
+  )
+  assert_eq(text_root.to_html(pretty=false), "plain text")
+
+  let comment_root = @html_parser.apply_transforms(
+    @html_parser.comment("example.com"),
+    [
+      @html_parser.TransformSpec::drop_comments(),
+      @html_parser.TransformSpec::collapse_whitespace(),
+      @html_parser.TransformSpec::linkify(),
+    ],
+  )
+  assert_eq(comment_root.to_html(pretty=false), "<!--example.com-->")
+
+  let pre_root = @html_parser.element("pre", children=[
+    @html_parser.text("example.com  x"),
+  ])
+  ignore(
+    @html_parser.apply_transforms(pre_root, [
+      @html_parser.TransformSpec::collapse_whitespace(),
+      @html_parser.TransformSpec::linkify(),
+    ]),
+  )
+  assert_eq(pre_root.to_html(pretty=false), "<pre>example.com  x</pre>")
 }
 
 ///|

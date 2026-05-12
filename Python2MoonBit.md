@@ -349,6 +349,10 @@ JustHTML from Python to MoonBit.
   list length, complex-part count, compound-simple count, step budget, byte
   budget, and text-materializing `:contains(...)` paths all exercise the same
   production matcher.
+- Port transform no-op tests explicitly. MoonBit callbacks are value wrappers,
+  so unchanged operations such as empty `DropAttrs` patterns, already-normalized
+  `MergeAttrs`, missing `style`/URL attributes, and root leaf nodes should
+  assert both stable output and absent hooks.
 - Required labeled arguments use the `name~ : Type` parameter form. Without
   that tilde in the declaration, black-box callers cannot write labels such as
   `attr="rel"` or `tokens=[...]`, even though optional arguments are labeled
