@@ -99,6 +99,37 @@ fn sanitize_fixture_template_policy(
 }
 
 ///|
+fn sanitize_fixture_rel_policy() -> @html_parser.SanitizationPolicy {
+  @html_parser.SanitizationPolicy::new(
+    ["a"],
+    allowed_attributes={ "*": [], "a": ["rel"] },
+    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    force_link_rel=["noopener"],
+  )
+}
+
+///|
+fn sanitize_fixture_boolean_attribute_policy() -> @html_parser.SanitizationPolicy {
+  @html_parser.SanitizationPolicy::new(
+    ["div"],
+    allowed_attributes={ "*": [], "div": ["disabled"] },
+    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+  )
+}
+
+///|
+fn sanitize_fixture_foreign_namespace_policy(
+  drop_foreign_namespaces : Bool,
+) -> @html_parser.SanitizationPolicy {
+  @html_parser.SanitizationPolicy::new(
+    ["svg"],
+    allowed_attributes={ "*": [], "svg": [] },
+    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    drop_foreign_namespaces~,
+  )
+}
+
+///|
 fn sanitize_fixture_url_template_cases() -> Array[SanitizeFixtureCase] {
   [
     {
@@ -220,6 +251,108 @@ fn sanitize_fixture_url_template_cases() -> Array[SanitizeFixtureCase] {
 }
 
 ///|
+fn sanitize_fixture_attribute_namespace_cases() -> Array[SanitizeFixtureCase] {
+  [
+    {
+      index: 44,
+      name: "rel_deduplicates_tokens",
+      input_html: "<a rel='noopener noopener'></a>",
+      expected_html: "<a rel=\"noopener\"></a>",
+      policy: sanitize_fixture_rel_policy(),
+    },
+    {
+      index: 45,
+      name: "url_rules_disallow_fragment_and_relative",
+      input_html: "<a href='#frag'></a><a href='/rel'></a><a href='https://ok'></a>",
+      expected_html: "<a></a><a></a><a href=\"https://ok\"></a>",
+      policy: sanitize_fixture_anchor_policy(
+        @html_parser.UrlRule::new(
+          allowed_schemes=["https"],
+          allow_fragment=false,
+          allow_relative=false,
+        ),
+      ),
+    },
+    {
+      index: 46,
+      name: "empty_url_value_dropped_when_allow_relative_false",
+      input_html: "<a href=' \t\n'></a>",
+      expected_html: "<a></a>",
+      policy: sanitize_fixture_anchor_policy(
+        @html_parser.UrlRule::new(
+          allowed_schemes=["https"],
+          allow_relative=false,
+        ),
+      ),
+    },
+    {
+      index: 49,
+      name: "protocol_relative_allowed_when_allowed_hosts_null",
+      input_html: "<a href='//any.example/path'></a>",
+      expected_html: "<a href=\"https://any.example/path\"></a>",
+      policy: sanitize_fixture_anchor_policy(
+        @html_parser.UrlRule::new(allowed_schemes=["https"]),
+      ),
+    },
+    {
+      index: 50,
+      name: "protocol_relative_resolved_scheme_mismatch",
+      input_html: "<a href='//example.com'></a>",
+      expected_html: "<a></a>",
+      policy: sanitize_fixture_anchor_policy(
+        @html_parser.UrlRule::new(
+          allowed_schemes=["http"],
+          resolve_protocol_relative=Some("https"),
+        ),
+      ),
+    },
+    {
+      index: 51,
+      name: "absolute_allowed_hosts_allows",
+      input_html: "<a href='https://example.com/x'></a>",
+      expected_html: "<a href=\"https://example.com/x\"></a>",
+      policy: sanitize_fixture_anchor_policy(
+        @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+          "example.com",
+        ]),
+      ),
+    },
+    {
+      index: 52,
+      name: "absolute_allowed_hosts_blocks",
+      input_html: "<a href='https://evil.com'></a>",
+      expected_html: "<a></a>",
+      policy: sanitize_fixture_anchor_policy(
+        @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+          "example.com",
+        ]),
+      ),
+    },
+    {
+      index: 57,
+      name: "boolean_attribute_value_none_is_preserved_when_allowed",
+      input_html: "<div disabled></div>",
+      expected_html: "<div disabled></div>",
+      policy: sanitize_fixture_boolean_attribute_policy(),
+    },
+    {
+      index: 58,
+      name: "foreign_namespace_element_dropped_when_enabled",
+      input_html: "<svg></svg>",
+      expected_html: "",
+      policy: sanitize_fixture_foreign_namespace_policy(true),
+    },
+    {
+      index: 59,
+      name: "foreign_namespace_element_kept_when_disabled",
+      input_html: "<svg></svg>",
+      expected_html: "<svg></svg>",
+      policy: sanitize_fixture_foreign_namespace_policy(false),
+    },
+  ]
+}
+
+///|
 test "sanitizer matches vendored URL and template fixture rows" {
   for case in sanitize_fixture_url_template_cases() {
     assert_sanitize_fixture(case)
@@ -227,6 +360,14 @@ test "sanitizer matches vendored URL and template fixture rows" {
 }
 
 ///|
+test "sanitizer matches vendored attribute and namespace fixture rows" {
+  for case in sanitize_fixture_attribute_namespace_cases() {
+    assert_sanitize_fixture(case)
+  }
+}
+
+///|
 test "sanitizer fixture table covers translated URL and template rows" {
   assert_eq(sanitize_fixture_url_template_cases().length(), 13)
+  assert_eq(sanitize_fixture_attribute_namespace_cases().length(), 10)
 }

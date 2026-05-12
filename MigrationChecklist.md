@@ -157,6 +157,9 @@ reference implementation in `.repos/justhtml`.
 - [x] Translated focused sanitizer JSON fixture rows for URL proxy handling,
       URL filters, protocol-relative URL validation, malformed scheme
       normalization, and template-content sanitization.
+- [x] Translated sanitizer JSON fixture rows for forced `rel` deduplication,
+      fragment/relative URL blocking, host allowlist checks, boolean attribute
+      preservation, and foreign-namespace policy toggles.
 
 ## Working Rule
 
