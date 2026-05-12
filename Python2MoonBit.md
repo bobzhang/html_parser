@@ -383,6 +383,9 @@ JustHTML from Python to MoonBit.
 - `AllowStyleAttrs` has the same reporting rule: removing an unsafe or empty
   inline style reports `Unsafe inline style in attribute 'style'`, but casing
   normalization and partial property filtering are hook-only changes.
+- Sanitizer-internal URL checks should share the same callback text as
+  `DropUrlAttrs`; for example meta refresh content reports `Unsafe URL in
+  attribute 'content' (meta refresh)`.
 - Python models `Stage` as a separate union member, but MoonBit can keep the
   public pipeline homogeneous by making stages a recursive `TransformSpec`
   variant that stores `Array[TransformSpec]`. Top-level stage handling can

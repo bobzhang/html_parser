@@ -1818,7 +1818,7 @@ fn sanitize_meta_refresh_content(
       sanitize_report_unsafe(
         policy,
         observer,
-        "Unsafe URL in attribute 'content' on <meta> refresh was dropped",
+        "Unsafe URL in attribute 'content' (meta refresh)",
         Some(node),
       )
       node.attrs.remove("content")

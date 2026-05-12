@@ -1189,9 +1189,7 @@ test "sanitize_dom raise mode reports dangerous attributes and urls" {
   )
   match meta_result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(
-        message, "Unsafe URL in attribute 'content' on <meta> refresh was dropped",
-      )
+      assert_eq(message, "Unsafe URL in attribute 'content' (meta refresh)")
     _ => fail("expected meta refresh content to raise UnsafeHtml")
   }
 }
