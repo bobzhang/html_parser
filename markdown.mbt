@@ -708,7 +708,7 @@ fn markdown_walk(
             markdown_render_children(
               node, builder, html_passthrough, list_depth,
             )
-          "head" => ()
+          "head" | "title" => ()
           "p" => {
             builder.ensure_newlines(2)
             markdown_render_children(

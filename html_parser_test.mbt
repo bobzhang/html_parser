@@ -3637,7 +3637,7 @@ test "to_markdown handles direct nodes comments doctypes and empty inline nodes"
 }
 
 ///|
-test "to_markdown preserves table and image HTML and escapes title text" {
+test "to_markdown preserves table and image HTML and skips title text" {
   let doc = @html_parser.parse_fragment(
     "<p>Hi<img src=x alt=y>there</p><table><tr><td>A</td></tr></table>",
   )
@@ -3648,7 +3648,15 @@ test "to_markdown preserves table and image HTML and escapes title text" {
   let title = @html_parser.parse_fragment(
     "<title><script>alert(1)</script></title>",
   )
-  assert_eq(title.to_markdown(), "&lt;script>alert(1)&lt;/script>")
+  assert_eq(title.to_markdown(), "")
+  let direct_title = @html_parser.element("title", children=[
+    @html_parser.text("T"),
+  ])
+  assert_eq(direct_title.to_markdown(), "")
+  let direct_head = @html_parser.element("head", children=[
+    @html_parser.element("title", children=[@html_parser.text("T")]),
+  ])
+  assert_eq(direct_head.to_markdown(), "")
 }
 
 ///|

@@ -84,6 +84,7 @@ reference implementation in `.repos/justhtml`.
 - [ ] Markdown parity sweep
   - [ ] Remaining escaping, code span, fence, list, and block edge cases
     - [x] Orphan `li` block handling and link-text flattening
+    - [x] `title` element skip behavior
   - [ ] Tests ported from Python Markdown coverage
 - [ ] Full conformance harness
   - [ ] Import or translate tokenizer fixtures
