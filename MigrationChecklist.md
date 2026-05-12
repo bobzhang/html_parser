@@ -108,7 +108,8 @@ reference implementation in `.repos/justhtml`.
     - [x] `treebuilder_coverage.dat` tree rows
     - [x] `branch_coverage.dat` tree rows
     - [x] `empty_stack_edge_cases.dat` tree rows
-  - [ ] Import or translate encoding fixtures
+  - [x] Import or translate encoding fixtures
+    - [x] Reference `test_encoding.py` byte decode and meta-prescan cases
   - [ ] Regression harness for JustHTML-specific `.dat` and `.test` files
 - [x] Documentation and warning cleanup
   - [x] Public API docs for warning 74

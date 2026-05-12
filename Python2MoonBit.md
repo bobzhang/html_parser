@@ -111,6 +111,10 @@ JustHTML from Python to MoonBit.
   quotes so malformed sniff-only markup does not change the selected encoding.
   A `<` inside a meta tag and EOF after `charset=` both make that sniff
   candidate fail.
+- The Python encoding tests exercise private helpers directly. In MoonBit,
+  keep those helpers private and port the cases through `parse_bytes` whenever
+  possible, checking both `ParsedHtml.encoding` and the decoded text so label
+  normalization and byte decoding stay tied together.
 - When the Python reference separates tokenizer and tree-builder states, a
   combined MoonBit parser still needs to preserve their error ordering. Initial
   doctype recovery after bogus markup is one example: tokenizer errors for the
