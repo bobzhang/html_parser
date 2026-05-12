@@ -33,7 +33,7 @@ pub fn ParseError::new(
   category? : String = "parse",
   message? : String,
 ) -> ParseError {
-  ParseError::{ code, line, column, category, message: message.unwrap_or(code) }
+  { code, line, column, category, message: message.unwrap_or(code) }
 }
 
 ///|
@@ -172,7 +172,7 @@ pub fn FragmentContext::new(
   tag_name : StringView,
   ns? : String,
 ) -> FragmentContext {
-  FragmentContext::{ tag_name: tag_name.to_lower().to_owned(), ns }
+  { tag_name: tag_name.to_lower().to_owned(), ns }
 }
 
 ///|
