@@ -44,7 +44,7 @@ pub fn tokenize(
   let tokenizer = SourceTokenizer::new(html, collect_errors~, xml_coercion~)
   tokenizer.run()
   tokenizer.tokens.push(Eof)
-  TokenizedHtml::{ tokens: tokenizer.tokens, errors: tokenizer.errors }
+  { tokens: tokenizer.tokens, errors: tokenizer.errors }
 }
 
 ///|
@@ -64,14 +64,7 @@ fn SourceTokenizer::new(
   xml_coercion~ : Bool,
 ) -> SourceTokenizer {
   let input = strip_leading_bom(input)
-  SourceTokenizer::{
-    input,
-    collect_errors,
-    xml_coercion,
-    pos: 0,
-    tokens: [],
-    errors: [],
-  }
+  { input, collect_errors, xml_coercion, pos: 0, tokens: [], errors: [] }
 }
 
 ///|
@@ -270,12 +263,7 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   let external = match self.input.get_view(start=ids_start, end=self.pos) {
     Some(view) => parse_doctype_external(view, self.starts_with(">"))
     None =>
-      DoctypeExternalParse::{
-        public_id: None,
-        system_id: None,
-        errors: [],
-        force_quirks: false,
-      }
+      { public_id: None, system_id: None, errors: [], force_quirks: false }
   }
   let public_id = external.public_id
   let system_id = external.system_id
@@ -306,9 +294,7 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
     self.pos += 1
   }
   let force_quirks = name == "" || external.force_quirks || eof_doctype
-  self.tokens.push(
-    DoctypeToken(DoctypeInfo::{ name, public_id, system_id, force_quirks }),
-  )
+  self.tokens.push(DoctypeToken({ name, public_id, system_id, force_quirks }))
 }
 
 ///|
@@ -385,7 +371,7 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
     return
   }
   if name != "" {
-    self.tokens.push(Tag(TagToken::{ kind: EndTag, name, attrs, self_closing }))
+    self.tokens.push(Tag({ kind: EndTag, name, attrs, self_closing }))
   }
 }
 
@@ -443,9 +429,7 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
         self.error_at_eof("eof-in-tag")
         return
       }
-      self.tokens.push(
-        Tag(TagToken::{ kind: StartTag, name, attrs, self_closing }),
-      )
+      self.tokens.push(Tag({ kind: StartTag, name, attrs, self_closing }))
       if !self_closing && is_special_text_element(name) {
         self.consume_special_text_tokens(name)
       }

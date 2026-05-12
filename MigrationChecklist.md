@@ -104,6 +104,7 @@ reference implementation in `.repos/justhtml`.
   - [ ] Remove unnecessary annotations for warning 73
     - [x] `comment_scan.mbt` constructor annotations
     - [x] `script_text.mbt` constructor annotations
+    - [x] `tokens.mbt` constructor annotations
   - [ ] Remove unnecessary view conversions for warning 75
   - [ ] Qualify README checked examples for warning 25
 
