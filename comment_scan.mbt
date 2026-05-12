@@ -18,7 +18,7 @@ fn push_comment_scan_error(
   code : String,
   offset : Int,
 ) -> Unit {
-  errors.push(CommentScanError::{ code, offset })
+  errors.push({ code, offset })
 }
 
 ///|
@@ -55,11 +55,11 @@ fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
   let errors : Array[CommentScanError] = []
   if start >= input.length() {
     push_comment_scan_error(errors, "eof-in-comment", eof_error_pos(input))
-    return CommentScan::{ data: "", end: input.length(), eof: true, errors }
+    return { data: "", end: input.length(), eof: true, errors }
   }
   if input.get_char(start) is Some('>') {
     push_comment_scan_error(errors, "abrupt-closing-of-empty-comment", start)
-    return CommentScan::{ data: "", end: start + 1, eof: false, errors }
+    return { data: "", end: start + 1, eof: false, errors }
   }
   if view_starts_with_at(input, start, "->") {
     push_comment_scan_error(
@@ -67,7 +67,7 @@ fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
       "abrupt-closing-of-empty-comment",
       start + 1,
     )
-    return CommentScan::{ data: "", end: start + 2, eof: false, errors }
+    return { data: "", end: start + 2, eof: false, errors }
   }
   let mut pos = start
   while pos < input.length() {
@@ -82,12 +82,7 @@ fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
           match input.get_char(pos) {
             Some('>') => {
               write_comment_hyphens(out, dash_count - 2)
-              return CommentScan::{
-                data: out.to_string(),
-                end: pos + 1,
-                eof: false,
-                errors,
-              }
+              return { data: out.to_string(), end: pos + 1, eof: false, errors }
             }
             Some('!') =>
               match input.get_char(pos + 1) {
@@ -98,7 +93,7 @@ fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
                     "incorrectly-closed-comment",
                     pos + 1,
                   )
-                  return CommentScan::{
+                  return {
                     data: out.to_string(),
                     end: pos + 2,
                     eof: false,
@@ -128,7 +123,7 @@ fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
                     "eof-in-comment",
                     eof_error_pos(input),
                   )
-                  return CommentScan::{
+                  return {
                     data: out.to_string(),
                     end: input.length(),
                     eof: true,
@@ -156,7 +151,7 @@ fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
                 "eof-in-comment",
                 eof_error_pos(input),
               )
-              return CommentScan::{
+              return {
                 data: out.to_string(),
                 end: input.length(),
                 eof: true,
@@ -178,5 +173,5 @@ fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
     }
   }
   push_comment_scan_error(errors, "eof-in-comment", eof_error_pos(input))
-  CommentScan::{ data: out.to_string(), end: input.length(), eof: true, errors }
+  { data: out.to_string(), end: input.length(), eof: true, errors }
 }

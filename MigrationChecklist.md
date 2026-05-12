@@ -102,6 +102,7 @@ reference implementation in `.repos/justhtml`.
 - [ ] Documentation and warning cleanup
   - [ ] Public API docs for warning 74
   - [ ] Remove unnecessary annotations for warning 73
+    - [x] `comment_scan.mbt` constructor annotations
   - [ ] Remove unnecessary view conversions for warning 75
   - [ ] Qualify README checked examples for warning 25
 
