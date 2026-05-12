@@ -365,8 +365,9 @@ JustHTML from Python to MoonBit.
   budget, and text-materializing `:contains(...)` paths all exercise the same
   production matcher. Keep one small whitebox parity test for the limited
   matcher as well: it is a separate context-aware path from public `query()`,
-  and it still needs `:comment`, `:nth-of-type(...)`, unknown functional
-  pseudos, and valueless attribute byte-cost behavior.
+  and it still needs structural element pseudos, `:comment`, `*.class`,
+  `:nth-of-type(...)`, unknown functional pseudos, and valueless attribute
+  byte-cost behavior.
 - Port transform no-op tests explicitly. MoonBit callbacks are value wrappers,
   so unchanged operations such as empty `DropAttrs` patterns, already-normalized
   `MergeAttrs`, empty merge attribute/token configs, missing `style`/URL

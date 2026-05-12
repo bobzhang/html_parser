@@ -185,8 +185,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Added selector-transform no-match regressions for descendant, child,
       adjacent-sibling, general-sibling, class, ID, and malformed selectors.
 - [x] Added limited selector matcher regressions for transform `nth-of-type`
-      parity, comment pseudos, unknown functional pseudos, and valueless
-      attributes in byte-budget accounting.
+      parity, element/comment pseudos, `*.class`, unknown functional pseudos,
+      and valueless attributes in byte-budget accounting.
 - [x] Added transform no-op regressions for empty attribute patterns,
       empty-attribute nodes, blank attribute names, boolean merge attributes,
       empty merge configs, root text/comment leaves, and root preformatted

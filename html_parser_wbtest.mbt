@@ -856,6 +856,8 @@ test "limited selector matcher keeps pseudo parity" {
   ])
   let note = root.children[0]
   let section = root.children[1]
+  let heading = section.children[0]
+  let first = section.children[1]
   let second = section.children[2]
   let limits = default_selector_limits()
   assert_true(matches_selector_list_with_limits(note, ":comment", limits))
@@ -864,6 +866,23 @@ test "limited selector matcher keeps pseudo parity" {
     matches_selector_list_with_limits(note, ":not(:comment)", limits),
     false,
   )
+  assert_true(
+    matches_selector_list_with_limits(heading, "h1:first-child", limits),
+  )
+  assert_true(matches_selector_list_with_limits(second, "p:last-child", limits))
+  assert_eq(
+    matches_selector_list_with_limits(first, "p:first-child", limits),
+    false,
+  )
+  assert_eq(
+    matches_selector_list_with_limits(second, "p:only-child", limits),
+    false,
+  )
+  assert_true(matches_selector_list_with_limits(second, "*.second", limits))
+  assert_true(
+    matches_selector_list_with_limits(second, "p.second[disabled]", limits),
+  )
+  assert_eq(matches_selector_list_with_limits(second, "*foo", limits), false)
   assert_true(
     matches_selector_list_with_limits(
       second, "section > p:nth-of-type(2)", limits,
@@ -880,6 +899,10 @@ test "limited selector matcher keeps pseudo parity" {
   context.tick(steps=0)
   assert_eq(
     pseudo_selector_matches_with_context(second, "hover(2)", context, 0),
+    false,
+  )
+  assert_eq(
+    pseudo_selector_matches_with_context(second, "hover", context, 0),
     false,
   )
 }
