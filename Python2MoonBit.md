@@ -1107,9 +1107,9 @@ JustHTML from Python to MoonBit.
   root does.
 - The limited matcher used by transform and sanitizer selector limits should
   preserve the same pseudo semantics as public `matches()`, but keep its own
-  fail-closed checks for malformed simple selectors, detached sibling lookups,
-  and match-depth budget errors. Public `query()` coverage does not exercise
-  all of those guarded branches.
+  fail-closed checks for structural/type-position pseudos, malformed simple
+  selectors, detached sibling lookups, and match-depth budget errors. Public
+  `query()` coverage does not exercise all of those guarded branches.
 - Type-position pseudo-classes such as `:first-of-type` and `:last-of-type`
   use the node's normalized element name and ignore non-element siblings.
 - `:only-of-type` should be implemented from the same type-filtered sibling

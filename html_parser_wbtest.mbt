@@ -899,6 +899,19 @@ test "limited selector matcher keeps pseudo parity" {
     matches_selector_list_with_limits(second, "p:only-child", limits),
     false,
   )
+  assert_true(
+    matches_selector_list_with_limits(first, "p:first-of-type", limits),
+  )
+  assert_true(
+    matches_selector_list_with_limits(second, "p:last-of-type", limits),
+  )
+  assert_true(
+    matches_selector_list_with_limits(heading, "h1:only-of-type", limits),
+  )
+  assert_eq(
+    matches_selector_list_with_limits(first, "p:only-of-type", limits),
+    false,
+  )
   assert_true(matches_selector_list_with_limits(second, "*.second", limits))
   assert_true(
     matches_selector_list_with_limits(second, "p.second[disabled]", limits),
