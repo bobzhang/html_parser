@@ -307,6 +307,11 @@ JustHTML from Python to MoonBit.
   same branches: protocol-relative host validation, invalid fuzzy-email TLDs,
   uppercase extra-TLD normalization, bad URL ports, quoted candidates, and long
   punctuation runs that would expose quadratic trimming.
+- Some scanner helper contracts are still worth whitebox coverage because the
+  public scanner may pre-trim or skip the edge before it reaches the helper.
+  Keep direct tests for fail-closed broken-scheme contexts, trailing bracket
+  trimming, edge-dot domain splitting, unsupported schemes, and empty numeric
+  host fragments.
 - Keep the linkify port intentionally aligned with Python's quirks. Non-numeric
   or too-large ports are rejected, but an empty port marker before a path is
   accepted by the reference. Leading-dot email domains such as `user@.com`

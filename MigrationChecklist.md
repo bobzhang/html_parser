@@ -196,6 +196,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
+- [x] Added linkify helper whitebox regressions for trailing bracket trimming,
+      broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
       UTF-16 boundary fallback paths in internal text splicing.
 - [x] Added punycode whitebox regressions for private href passthrough,
