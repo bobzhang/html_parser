@@ -882,9 +882,7 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
           index += 1
         }
         AllowStyleAttributes => {
-          if apply_allow_style_attrs_transform(child, transform) {
-            transform_report_node_action(child, transform, "Sanitized style on")
-          }
+          ignore(apply_allow_style_attrs_transform(child, transform))
           transform_children(child, transform)
           index += 1
         }
@@ -1445,6 +1443,7 @@ fn apply_allow_style_attrs_transform(
       match sanitize_inline_style_value(policy, tag_name, raw_value) {
         Some(cleaned) =>
           if cleaned != raw_value || style_key != "style" {
+            transform_call_hook(node, transform)
             node.attrs.remove(style_key)
             node.attrs["style"] = Some(cleaned)
             true
@@ -1452,11 +1451,23 @@ fn apply_allow_style_attrs_transform(
             false
           }
         None => {
+          transform_report(
+            transform,
+            "Unsafe inline style in attribute 'style'",
+            Some(node),
+          )
+          transform_call_hook(node, transform)
           node.attrs.remove(style_key)
           true
         }
       }
     Some(None) => {
+      transform_report(
+        transform,
+        "Unsafe inline style in attribute 'style'",
+        Some(node),
+      )
+      transform_call_hook(node, transform)
       node.attrs.remove(style_key)
       true
     }

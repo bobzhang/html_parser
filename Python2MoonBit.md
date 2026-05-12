@@ -380,6 +380,9 @@ JustHTML from Python to MoonBit.
   are reported. Normalization and proxy rewrites still call the hook when they
   change attributes, but they do not emit a report. Keep the URL reason suffixes
   exact: `(meta refresh)`, `(base tag)`, and `(no rule)`.
+- `AllowStyleAttrs` has the same reporting rule: removing an unsafe or empty
+  inline style reports `Unsafe inline style in attribute 'style'`, but casing
+  normalization and partial property filtering are hook-only changes.
 - Python models `Stage` as a separate union member, but MoonBit can keep the
   public pipeline homogeneous by making stages a recursive `TransformSpec`
   variant that stores `Array[TransformSpec]`. Top-level stage handling can

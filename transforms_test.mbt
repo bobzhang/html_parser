@@ -1058,3 +1058,44 @@ test "allow_style_attrs sanitizes mixed-case style attributes" {
   assert_true(url_style.attrs().get("style") is Some(Some("color: blue")))
   assert_true(untouched.attrs().get("Style") is Some(Some("position: fixed")))
 }
+
+///|
+test "allow_style_attrs reports unsafe inline style before hook" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let root = @html_parser.fragment(children=[
+    @html_parser.element("span", attrs={ "style": None }),
+    @html_parser.element("span", attrs={ "style": Some("position: fixed") }),
+    @html_parser.element("span", attrs={
+      "Style": Some("color: red; position: fixed"),
+    }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::allow_style_attrs(
+        "span",
+        allowed_css_properties=["color"],
+        hook~,
+        report~,
+      ),
+    ]),
+  )
+  assert_eq(events, [
+    "report:Unsafe inline style in attribute 'style'", "node:span", "hook:span",
+    "report:Unsafe inline style in attribute 'style'", "node:span", "hook:span",
+    "hook:span",
+  ])
+  assert_eq(
+    root.to_html(pretty=false),
+    "<span></span><span></span><span style=\"color: red\"></span>",
+  )
+}
