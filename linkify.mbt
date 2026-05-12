@@ -309,9 +309,7 @@ fn linkify_validate_candidate(
   let is_proto_rel = starts_with_case_insensitive(candidate, 0, "//")
   let has_at = string_view_contains(candidate, "@")
   if starts_with_case_insensitive(candidate, 0, "mailto:") {
-    guard candidate.get_view(start=7, end=candidate.length()) is Some(address) else {
-      return false
-    }
+    let address = candidate[7:candidate.length()]
     return linkify_validate_email_address(address, config, true)
   }
   if !is_scheme && !is_proto_rel && !is_www && !has_at {
@@ -378,9 +376,7 @@ fn linkify_validate_email_address(
   if at == 0 || at + 1 >= address.length() {
     return false
   }
-  guard address.get_view(start=at + 1, end=address.length()) is Some(domain) else {
-    return false
-  }
+  let domain = address[at + 1:address.length()]
   guard linkify_host_view(domain) is Some(host) else { return false }
   if string_view_contains(host, "_") {
     return false
@@ -420,9 +416,7 @@ fn linkify_validate_protocol_relative(
       _ => ()
     }
   }
-  guard candidate.get_view(start=2, end=candidate.length()) is Some(after) else {
-    return false
-  }
+  let after = candidate[2:candidate.length()]
   guard linkify_host_view(after) is Some(hostport) else { return false }
   if hostport.is_empty() || hostport.has_prefix("[") {
     return false
@@ -534,11 +528,7 @@ fn linkify_split_domain_for_tld(host : StringView) -> (String, String)? {
     Some(dot) => {
       let base = stripped[0:dot]
       let tld = stripped[dot + 1:stripped.length()]
-      if base.is_empty() || tld.is_empty() {
-        None
-      } else {
-        Some((base.to_owned(), tld.to_lower().to_owned()))
-      }
+      Some((base.to_owned(), tld.to_lower().to_owned()))
     }
     None => None
   }
