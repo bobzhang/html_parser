@@ -388,10 +388,46 @@ test "sanitize transform hooks and reports unsafe mutations" {
   assert_eq(events, [
     "hook:p", "report:Unsafe attribute 'onclick' (matched forbidden pattern 'on*')",
     "node:p", "hook:#text", "report:Stripped invisible Unicode from text node", "node:#text",
-    "hook:#comment", "report:Unsafe comment was dropped", "node:#comment", "hook:script",
-    "report:Unsafe tag 'script' (dropped content)", "node:script",
+    "hook:#comment", "report:Dropped comment", "node:#comment", "hook:script", "report:Unsafe tag 'script' (dropped content)",
+    "node:script",
   ])
   assert_eq(doc.root.to_html(pretty=false), "<p>x</p>")
+}
+
+///|
+test "sanitize transform comment and doctype drops are structural reports" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": [] },
+    unsafe_handling=Raise,
+  )
+  let doc = @html_parser.document(children=[
+    @html_parser.doctype(),
+    @html_parser.comment("c"),
+    @html_parser.element("p", children=[@html_parser.text("ok")]),
+  ])
+  let result = try? @html_parser.apply_transforms(doc, [
+    @html_parser.TransformSpec::sanitize(policy~, hook~, report~),
+  ])
+  match result {
+    Ok(clean) => assert_eq(clean.to_html(pretty=false), "<p>ok</p>")
+    Err(_) => fail("comment and doctype drops should not use unsafe handling")
+  }
+  assert_eq(events, [
+    "hook:#doctype", "report:Dropped doctype", "node:#doctype", "hook:#comment",
+    "report:Dropped comment", "node:#comment",
+  ])
 }
 
 ///|

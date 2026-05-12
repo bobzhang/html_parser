@@ -59,6 +59,9 @@ reference implementation in `.repos/justhtml`.
   - [x] Hook/report forwarding for `Sanitize`
   - [x] Hook/report forwarding for stage-level transforms
   - [ ] Python-exact detailed report messages for sanitizer transforms
+    - [x] Tag, attribute, URL, style, and meta-refresh sanitizer reports
+    - [x] Comment and doctype drops as structural reports, not unsafe findings
+    - [ ] Invisible-Unicode attribute reports and unsafe-handling behavior
   - [ ] Compiled stages, selector limits, and deterministic application order
 - [ ] Streaming API
   - [ ] `StreamSink` equivalent

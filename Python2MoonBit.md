@@ -393,6 +393,10 @@ JustHTML from Python to MoonBit.
   taxonomy as the transform pipeline: forbidden attribute pattern, allowlist
   failure, URL failure, base-href special case, no-rule URL, or inline-style
   failure.
+- `Sanitize` compiles comment and doctype removal as structural
+  `DropComments`/`DropDoctype` transforms. They report `Dropped comment` and
+  `Dropped doctype`, but they do not call the sanitizer unsafe handler; do not
+  make `unsafe_handling=Raise` fail on those removals.
 - Python models `Stage` as a separate union member, but MoonBit can keep the
   public pipeline homogeneous by making stages a recursive `TransformSpec`
   variant that stores `Array[TransformSpec]`. Top-level stage handling can

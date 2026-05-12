@@ -846,6 +846,27 @@ test "sanitize_dom handles standalone text comment and doctype roots" {
     @html_parser.sanitize_dom(@html_parser.doctype()).to_html(pretty=false),
     "",
   )
+  let raise_policy = @html_parser.SanitizationPolicy::new(
+    [],
+    allowed_attributes={},
+    unsafe_handling=Raise,
+  )
+  let comment_result = try? @html_parser.sanitize_dom(
+    @html_parser.comment("x"),
+    policy=raise_policy,
+  )
+  match comment_result {
+    Ok(clean) => assert_eq(clean.to_html(pretty=false), "")
+    Err(_) => fail("dropped comments should not use unsafe raise handling")
+  }
+  let doctype_result = try? @html_parser.sanitize_dom(
+    @html_parser.doctype(),
+    policy=raise_policy,
+  )
+  match doctype_result {
+    Ok(clean) => assert_eq(clean.to_html(pretty=false), "")
+    Err(_) => fail("dropped doctypes should not use unsafe raise handling")
+  }
 }
 
 ///|
@@ -1095,9 +1116,12 @@ test "sanitize_dom can collect and raise unsafe findings" {
     "<p>safe<a>bad</a></p>",
   )
   let errors = collect_policy.collected_security_errors()
-  assert_eq(errors.length(), 4)
+  assert_eq(errors.length(), 3)
   assert_eq(errors[0].code, "unsafe-html")
   assert_eq(errors[0].category, "security")
+  assert_eq(errors[0].message, "Unsafe attribute 'foo' (not allowed)")
+  assert_eq(errors[1].message, "Unsafe tag 'script' (dropped content)")
+  assert_eq(errors[2].message, "Unsafe URL in attribute 'href'")
   collect_policy.reset_collected_security_errors()
   assert_eq(collect_policy.collected_security_errors().length(), 0)
 

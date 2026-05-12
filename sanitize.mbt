@@ -2203,24 +2203,14 @@ fn sanitize_container_children(
       }
       Comment =>
         if policy.drop_comments {
-          sanitize_report_unsafe(
-            policy,
-            observer,
-            "Unsafe comment was dropped",
-            Some(child),
-          )
+          sanitize_observer_event(observer, "Dropped comment", Some(child))
           remove_child_at(parent, index)
         } else {
           index += 1
         }
       Doctype =>
         if policy.drop_doctype {
-          sanitize_report_unsafe(
-            policy,
-            observer,
-            "Unsafe doctype was dropped",
-            Some(child),
-          )
+          sanitize_observer_event(observer, "Dropped doctype", Some(child))
           remove_child_at(parent, index)
         } else {
           index += 1
