@@ -343,6 +343,12 @@ JustHTML from Python to MoonBit.
   as `node_hook? : TransformNodeCallback`; either pass the callback payload only
   in the `Some` branch or build the base spec first and copy it with wrapped
   hook/report fields.
+- Selector limits are enforced both while parsing selector shape and while
+  matching transform candidates. Port Python security tests through public
+  transform calls with a sanitizer policy carrying custom `SelectorLimits`, so
+  list length, complex-part count, compound-simple count, step budget, byte
+  budget, and text-materializing `:contains(...)` paths all exercise the same
+  production matcher.
 - Required labeled arguments use the `name~ : Type` parameter form. Without
   that tilde in the declaration, black-box callers cannot write labels such as
   `attr="rel"` or `tokens=[...]`, even though optional arguments are labeled

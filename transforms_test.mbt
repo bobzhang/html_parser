@@ -481,6 +481,142 @@ test "sanitize policy selector limits apply to transform selectors" {
       assert_eq(message, "Selector match budget exceeded")
     _ => fail("expected selector step budget error")
   }
+
+  let list_policy = @html_parser.SanitizationPolicy::new(
+    ["p", "div", "span"],
+    selector_limits=@html_parser.SelectorLimits::new(max_list_items=2),
+  )
+  let list_limited = @html_parser.parse_fragment("<p>x</p>")
+  let list_result = try? @html_parser.apply_transforms(list_limited.root, [
+    @html_parser.TransformSpec::drop("p, div, span"),
+    @html_parser.TransformSpec::sanitize(policy=list_policy),
+  ])
+  match list_result {
+    Err(SelectorError(message)) =>
+      assert_eq(message, "Selector list has too many items")
+    _ => fail("expected selector list limit error")
+  }
+
+  let complex_policy = @html_parser.SanitizationPolicy::new(
+    ["article", "div", "p"],
+    selector_limits=@html_parser.SelectorLimits::new(
+      max_complex_selector_parts=2,
+    ),
+  )
+  let complex_limited = @html_parser.parse_fragment(
+    "<article><div><p>x</p></div></article>",
+  )
+  let complex_result = try? @html_parser.apply_transforms(
+    complex_limited.root,
+    [
+      @html_parser.TransformSpec::drop("article > div > p"),
+      @html_parser.TransformSpec::sanitize(policy=complex_policy),
+    ],
+  )
+  match complex_result {
+    Err(SelectorError(message)) =>
+      assert_eq(message, "Selector has too many complex parts")
+    _ => fail("expected complex selector part limit error")
+  }
+
+  let compound_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "*": ["class", "id"] },
+    selector_limits=@html_parser.SelectorLimits::new(
+      max_compound_simple_selectors=2,
+    ),
+  )
+  let compound_limited = @html_parser.parse_fragment(
+    "<p class=\"a\" id=\"b\">x</p>",
+  )
+  let compound_result = try? @html_parser.apply_transforms(
+    compound_limited.root,
+    [
+      @html_parser.TransformSpec::drop("p.a#b"),
+      @html_parser.TransformSpec::sanitize(policy=compound_policy),
+    ],
+  )
+  match compound_result {
+    Err(SelectorError(message)) =>
+      assert_eq(message, "Selector has too many simple selectors")
+    _ => fail("expected compound selector limit error")
+  }
+
+  let negative_byte_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    selector_limits=@html_parser.SelectorLimits::new(max_match_bytes=-1),
+  )
+  let negative_byte = @html_parser.parse_fragment("<p>x</p>")
+  let negative_result = try? @html_parser.apply_transforms(negative_byte.root, [
+    @html_parser.TransformSpec::drop("p"),
+    @html_parser.TransformSpec::sanitize(policy=negative_byte_policy),
+  ])
+  match negative_result {
+    Err(SelectorError(message)) =>
+      assert_eq(message, "Selector match byte budget exceeded")
+    _ => fail("expected negative byte budget error")
+  }
+
+  let contains_byte_policy = @html_parser.SanitizationPolicy::new(
+    ["div"],
+    selector_limits=@html_parser.SelectorLimits::new(max_match_bytes=4),
+  )
+  let contains_byte = @html_parser.parse_fragment("<div>needle</div>")
+  let contains_result = try? @html_parser.apply_transforms(contains_byte.root, [
+    @html_parser.TransformSpec::drop("div:contains(needle)"),
+    @html_parser.TransformSpec::sanitize(policy=contains_byte_policy),
+  ])
+  match contains_result {
+    Err(SelectorError(message)) =>
+      assert_eq(message, "Selector match byte budget exceeded")
+    _ => fail("expected contains text byte budget error")
+  }
+}
+
+///|
+test "selector transforms cover contextual combinators and pseudos" {
+  let siblings = @html_parser.parse_fragment(
+    "<div><em></em><span id=\"first\"></span><i></i><span id=\"second\"></span></div>",
+  )
+  ignore(
+    @html_parser.apply_transforms(siblings.root, [
+      @html_parser.TransformSpec::set_attrs("em + span", {
+        "data-adjacent": Some("yes"),
+      }),
+      @html_parser.TransformSpec::set_attrs("em ~ span", {
+        "data-general": Some("yes"),
+      }),
+    ]),
+  )
+  let spans = siblings.root.query("span")
+  assert_eq(spans.length(), 2)
+  assert_true(spans[0].attrs().get("data-adjacent") is Some(Some("yes")))
+  assert_true(spans[0].attrs().get("data-general") is Some(Some("yes")))
+  assert_true(!spans[1].attrs().contains("data-adjacent"))
+  assert_true(spans[1].attrs().get("data-general") is Some(Some("yes")))
+
+  let nested = @html_parser.parse_fragment(
+    "<section><ul><li>one</li><li>two</li><li>three</li></ul><p>needle</p></section>",
+  )
+  ignore(
+    @html_parser.apply_transforms(nested.root, [
+      @html_parser.TransformSpec::set_attrs("section > ul li:nth-child(odd)", {
+        "data-odd": Some("yes"),
+      }),
+      @html_parser.TransformSpec::set_attrs("section p:contains(needle)", {
+        "data-found": Some("yes"),
+      }),
+    ]),
+  )
+  let items = nested.root.query("li")
+  assert_eq(items.length(), 3)
+  assert_true(items[0].attrs().get("data-odd") is Some(Some("yes")))
+  assert_true(!items[1].attrs().contains("data-odd"))
+  assert_true(items[2].attrs().get("data-odd") is Some(Some("yes")))
+  guard nested.root.query_one("p") is Some(paragraph) else {
+    fail("expected paragraph")
+  }
+  assert_true(paragraph.attrs().get("data-found") is Some(Some("yes")))
 }
 
 ///|

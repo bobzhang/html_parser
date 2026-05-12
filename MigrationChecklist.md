@@ -175,6 +175,9 @@ reference implementation in `.repos/justhtml`.
       duplicate input paths, and strict valid input.
 - [x] Added CLI regressions for no-path option parsing, empty equals-form
       selectors, and custom fragment cleanup policy handling.
+- [x] Added selector-limit regressions for list size, complex selector part
+      count, compound simple-selector count, negative byte budgets, and
+      `:contains(...)` text byte accounting.
 
 ## Working Rule
 
