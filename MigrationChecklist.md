@@ -256,6 +256,8 @@ reference implementation in `.repos/justhtml`.
       `StringView` slices after local scans produce valid offsets.
 - [x] Refactored CLI equals-form option parsing to use direct slices and added
       whitebox coverage for no-path read plans.
+- [x] Refactored deep DOM clone traversal to unwrap stack pops after the
+      non-empty loop guard.
 
 ## Working Rule
 

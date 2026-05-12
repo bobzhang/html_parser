@@ -412,14 +412,11 @@ pub fn Node::clone_node(
   if deep {
     let stack : Array[(Node, Node)] = [(self, cloned)]
     while !stack.is_empty() {
-      match stack.pop() {
-        Some((source, target)) =>
-          for child in source.children {
-            let child_clone = child.clone_node(deep=false)
-            target.append_child(child_clone)
-            stack.push((child, child_clone))
-          }
-        None => ()
+      let (source, target) = stack.pop().unwrap()
+      for child in source.children {
+        let child_clone = child.clone_node(deep=false)
+        target.append_child(child_clone)
+        stack.push((child, child_clone))
       }
     }
   }
