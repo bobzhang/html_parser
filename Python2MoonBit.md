@@ -665,6 +665,11 @@ JustHTML from Python to MoonBit.
 - `script`, `style`, and `textarea` are block-like in Markdown output even when
   their content is dropped by default. Preserve surrounding text separation, and
   only emit the raw HTML itself when `html_passthrough` is enabled.
+- For sanitized raw-text Markdown passthrough, assert both the emitted Markdown
+  source and a reparse of that source. Python's regression tests catch cases
+  where a sanitized `textarea` contains an escaped closing tag; the Markdown
+  string must keep `&lt;/textarea&gt;` escaped so reparsing does not create a
+  sibling element such as an injected `img`.
 - Python Markdown skips actual `head` and `title` nodes, but Python fragment
   parsing turns `<head>`/`<title>` wrappers into text output instead of keeping
   those elements. MoonBit currently retains parsed fragment elements there, so

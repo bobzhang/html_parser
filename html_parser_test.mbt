@@ -2268,6 +2268,25 @@ test "sanitize_dom hardens allowed rawtext element contents" {
 }
 
 ///|
+test "sanitize_dom textarea markdown passthrough cannot break out" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["textarea", "img"],
+    allowed_attributes={ "*": [], "img": ["src", "alt"] },
+    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    drop_content_tags=[],
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<textarea>&lt;/textarea&gt;&lt;img src=x onerror=alert(1)&gt;</textarea>",
+    sanitize=false,
+  )
+  let clean = @html_parser.sanitize_dom(fragment.root, policy~)
+  let markdown = clean.to_markdown(html_passthrough=true)
+  assert_true(markdown.contains("&lt;/textarea&gt;"))
+  let reparsed = @html_parser.parse_fragment(markdown, sanitize=false)
+  assert_eq(reparsed.query("img").length(), 0)
+}
+
+///|
 test "sanitize_dom preserves empty rawtext and disabled invisible stripping" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["div", "style", "script"],
