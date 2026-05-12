@@ -177,6 +177,42 @@ test "apply_transforms drops comments doctypes and collapses whitespace" {
 }
 
 ///|
+test "drop_foreign_namespaces drops only non-html elements" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let root = @html_parser.fragment(children=[
+    @html_parser.comment("x"),
+    @html_parser.doctype(),
+    @html_parser.element("svg", ns="svg"),
+    @html_parser.element("math", ns="math"),
+    @html_parser.element("p", children=[@html_parser.text("ok")]),
+  ])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::drop_foreign_namespaces(hook~, report~),
+    ]),
+  )
+  let names : Array[String] = []
+  for child in root.children() {
+    names.push(child.name())
+  }
+  assert_eq(names, ["#comment", "#doctype", "p"])
+  assert_eq(events, [
+    "hook:svg", "report:Unsafe tag 'svg' (foreign namespace)", "node:svg", "hook:math",
+    "report:Unsafe tag 'math' (foreign namespace)", "node:math",
+  ])
+}
+
+///|
 test "collapse_whitespace preserves edge spaces and supports custom skip tags" {
   let edge = @html_parser.parse_fragment("<p> a \n\t b </p><span>a  b</span>")
   ignore(

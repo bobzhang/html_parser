@@ -17,6 +17,7 @@ priv enum TransformKind {
   AllowStyleAttributes
   DropCommentNodes
   DropDoctypeNodes
+  DropForeignNamespaceNodes
   CollapseTextWhitespace
   PruneEmptyElements
   LinkifyTextNodes
@@ -528,6 +529,20 @@ pub fn TransformSpec::drop_doctype(
 }
 
 ///|
+/// Build a transform that removes elements outside the HTML namespace.
+pub fn TransformSpec::drop_foreign_namespaces(
+  enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
+) -> TransformSpec {
+  with_transform_hooks(
+    make_transform_spec(DropForeignNamespaceNodes, enabled~),
+    hook,
+    report,
+  )
+}
+
+///|
 fn default_collapse_whitespace_skip_tags() -> Array[String] {
   ["code", "pre", "script", "style", "textarea", "title"]
 }
@@ -763,6 +778,10 @@ fn apply_transform(
     }
     DropDoctypeNodes => {
       apply_drop_kind_transform(node, Doctype, transform)
+      node
+    }
+    DropForeignNamespaceNodes => {
+      apply_drop_foreign_namespaces_transform(node, transform)
       node
     }
     CollapseTextWhitespace => {
@@ -1759,6 +1778,42 @@ fn apply_drop_kind_transform(
           remove_child_at(root, index)
         } else {
           apply_drop_kind_transform(child, kind, transform)
+          index += 1
+        }
+      }
+    }
+    _ => ()
+  }
+}
+
+///|
+fn node_has_foreign_namespace(node : Node) -> Bool {
+  match node.ns {
+    Some(ns) => ns != "html"
+    None => false
+  }
+}
+
+///|
+fn apply_drop_foreign_namespaces_transform(
+  root : Node,
+  transform : TransformSpec,
+) -> Unit {
+  match root.kind {
+    Document | Fragment | Element => {
+      let mut index = 0
+      while index < root.children.length() {
+        let child = root.children[index]
+        if child.kind == Element && node_has_foreign_namespace(child) {
+          transform_call_hook(child, transform)
+          transform_report(
+            transform,
+            "Unsafe tag '" + lower_ascii(child.name) + "' (foreign namespace)",
+            Some(child),
+          )
+          remove_child_at(root, index)
+        } else {
+          apply_drop_foreign_namespaces_transform(child, transform)
           index += 1
         }
       }

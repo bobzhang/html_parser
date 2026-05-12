@@ -205,6 +205,7 @@ pub fn TransformSpec::drop(StringView, enabled? : Bool, hook? : (Node) -> Unit, 
 pub fn TransformSpec::drop_attrs(StringView, Array[String], enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::drop_comments(enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::drop_doctype(enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
+pub fn TransformSpec::drop_foreign_namespaces(enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::drop_url_attrs(StringView, url_policy~ : UrlPolicy, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::edit(StringView, (Node) -> Unit, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self
 pub fn TransformSpec::edit_attrs(StringView, (Node) -> Map[String, String?]?, enabled? : Bool, hook? : (Node) -> Unit, report? : (String, Node?) -> Unit) -> Self

@@ -425,6 +425,10 @@ JustHTML from Python to MoonBit.
   text, doctypes, and nested document/fragment containers. Other selectors only
   invoke the callback for element nodes. Hook/report callbacks fire only for
   non-`KEEP` decisions, before the structural action is applied.
+- Python's standalone `DropForeignNamespaces` checks the node's direct
+  namespace (`None` and `"html"` are kept) and skips comments/doctypes. Do not
+  reuse the sanitizer's "effectively foreign" helper there; that helper also
+  considers HTML descendants under foreign ancestors for mXSS hardening.
 - `PruneEmpty` is a post-order transform, not a normal pre-order selector
   rewrite. Recurse into children first, then remove matching elements that have
   no element children and no content text; comments and doctypes do not count as
