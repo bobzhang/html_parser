@@ -56,6 +56,47 @@ test "linkify validates protocol relative and invalid fuzzy tlds" {
 }
 
 ///|
+test "linkify matches upstream internal validation regressions" {
+  assert_eq(@html_parser.find_links("").length(), 0)
+  let no_links : Array[String] = [
+    "hppt://example.com", "//[::1]", "//a_b.com", "a@b_c.com", "a@b.example", "http://example.com:99999",
+    "http://exa_mple.com", "http://999.999.999.999", "abc://example.com", "nodot",
+    "a@nodot",
+  ]
+  for text in no_links {
+    guard @html_parser.find_links(text).length() == 0 else {
+      fail("expected no link for " + text)
+    }
+  }
+  let custom = @html_parser.find_links_with_config(
+    "a@b.example",
+    @html_parser.LinkifyConfig::with_extra_tlds(["EXAMPLE"]),
+  )
+  assert_eq(custom.length(), 1)
+  assert_eq(custom[0].href, "mailto:a@b.example")
+  let proto_with_userinfo = @html_parser.find_links("See //user@a.com:8080/x")
+  assert_eq(proto_with_userinfo.length(), 1)
+  assert_eq(proto_with_userinfo[0].href, "//user@a.com:8080/x")
+  let quoted = @html_parser.find_links("'example.com")
+  assert_eq(quoted.length(), 1)
+  assert_eq(quoted[0].text, "example.com")
+}
+
+///|
+test "linkify handles long punctuation runs without widening matches" {
+  for ch in ["\"", "-", ".", "!"] {
+    assert_eq(@html_parser.find_links(ch.repeat(2000)).length(), 0)
+  }
+  for ch in [")", "]", "}", ">"] {
+    let matches = @html_parser.find_links(
+      "http://example.com/" + ch.repeat(2000),
+    )
+    assert_eq(matches.length(), 1)
+    assert_eq(matches[0].text, "http://example.com/")
+  }
+}
+
+///|
 test "linkify handles unicode tlds as utf16 offsets" {
   let matches = @html_parser.find_links("См пример.рф!")
   assert_eq(matches.length(), 1)

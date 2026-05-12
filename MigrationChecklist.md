@@ -38,6 +38,7 @@ reference implementation in `.repos/justhtml`.
   - [x] Representative `linkify-it` fixture smoke tests
   - [x] Full `linkify-it` fixture coverage
   - [x] IDNA/punycode handling parity
+  - [x] Internal validation and punctuation-run regression parity
 - [x] Linkify DOM transform
   - [x] Wrap text-node matches in `<a href=...>`
   - [x] Skip existing anchors and preformatted text by default

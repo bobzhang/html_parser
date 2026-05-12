@@ -298,6 +298,11 @@ JustHTML from Python to MoonBit.
   `mailto:` when one appears inside the rejected span. Keep the opposite guard
   for broken schemes such as `hppt://example.com`, where the inner fuzzy
   domain must stay rejected.
+- Python internal-helper tests do not require public MoonBit helper exports.
+  Prefer public `find_links`/`find_links_with_config` fixtures that hit the
+  same branches: protocol-relative host validation, invalid fuzzy-email TLDs,
+  uppercase extra-TLD normalization, bad URL ports, quoted candidates, and long
+  punctuation runs that would expose quadratic trimming.
 - Linkify's explicit `mailto:` path is more permissive than fuzzy email
   detection: `mailto:foo@bar` is valid, while bare `foo@bar` is not. Pass that
   policy difference into a shared email validator instead of duplicating the
