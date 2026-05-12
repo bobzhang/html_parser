@@ -62,35 +62,7 @@ jobs:
           printf '%s\n' "$coverage" | grep -F "All source files are fully covered"
 
       - name: Build and smoke test native CLI
-        run: |
-          moon run --target native --release --build-only cmd/main
-          CLI="_build/native/release/build/cmd/main/main.exe"
-          printf '<article><p>Hi <b>there</b></p><p>Bye</p></article>' \
-            | "$CLI" - --selector p --format text > /tmp/html_parser_cli_text.txt
-          diff -u <(printf 'Hi there\nBye\n') /tmp/html_parser_cli_text.txt
-          set +e
-          printf '<p>Hello</p>' | "$CLI" - --selector '.does-not-exist' > /tmp/html_parser_cli_empty.txt
-          code=$?
-          set -e
-          test "$code" -eq 1
-          test ! -s /tmp/html_parser_cli_empty.txt
-          "$CLI" tests/fixtures/justhtml/data/wikipedia.html --format markdown > /tmp/html_parser_wikipedia.md
-          first_line="$(grep -m1 -v '^[[:space:]]*$' /tmp/html_parser_wikipedia.md)"
-          case "$first_line" in
-            \<img*) ;;
-            *)
-              echo "Expected Wikipedia Markdown to start with body image, got: $first_line" >&2
-              exit 1
-              ;;
-          esac
-          grep -F 'The Free Encyclopedia' /tmp/html_parser_wikipedia.md
-          grep -F '(https://en.wikipedia.org/)' /tmp/html_parser_wikipedia.md
-          grep -F '[Wikiquote Free quote compendium](https://www.wikiquote.org/)' /tmp/html_parser_wikipedia.md
-          grep -F '[MediaWiki Free &amp; open wiki software](https://www.mediawiki.org/)' /tmp/html_parser_wikipedia.md
-          grep -F '[Wikisource Free content library](https://www.wikisource.org/)' /tmp/html_parser_wikipedia.md
-          grep -F '[Wikispecies Free species directory](https://species.wikimedia.org/)' /tmp/html_parser_wikipedia.md
-          grep -F '[Wikifunctions Free function library](https://www.wikifunctions.org/)' /tmp/html_parser_wikipedia.md
-          grep -F '[Meta-Wiki Community coordination &amp; documentation](https://meta.wikimedia.org/)' /tmp/html_parser_wikipedia.md
+        run: bash scripts/smoke_native_cli.sh
 
       - name: Verify Mooncakes package
         run: bash scripts/verify_mooncakes_package.sh --skip-without-credentials

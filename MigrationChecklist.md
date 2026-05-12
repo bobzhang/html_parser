@@ -322,6 +322,8 @@ reference implementation in `.repos/justhtml`.
       and kept CI calling that single source of truth.
 - [x] Moved Mooncakes package dry-run verification into a reusable local script
       that also handles already-published versions.
+- [x] Moved native CLI release smoke coverage into a reusable local script and
+      kept CI calling it.
 
 ## Working Rule
 
