@@ -33,9 +33,7 @@ jobs:
         run: moon fmt --check
 
       - name: Check interfaces
-        run: |
-          moon info
-          git diff --exit-code -- pkg.generated.mbti cmd/main/pkg.generated.mbti
+        run: bash scripts/check_interfaces.sh
 
       - name: Type check
         run: moon check --warn-list +73

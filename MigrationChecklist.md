@@ -326,6 +326,8 @@ reference implementation in `.repos/justhtml`.
       kept CI calling it.
 - [x] Moved the full-coverage gate into a reusable local script and kept CI
       calling it.
+- [x] Moved generated-interface validation into a reusable local script and
+      kept CI calling it.
 
 ## Working Rule
 
