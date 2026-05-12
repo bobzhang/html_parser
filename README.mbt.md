@@ -40,6 +40,24 @@ The port currently provides:
 - Linkify, streaming parse events, Markdown conversion, and an embeddable CLI
   runner plus native CLI wrapper.
 
+## Install
+
+```sh
+moon add bobzhang/html_parser
+```
+
+Then import the package from the `moon.pkg` that uses it:
+
+```moonbit nocheck
+import {
+  "bobzhang/html_parser"
+}
+```
+
+## Library Examples
+
+The examples below are `mbt check` doctests and are run by `moon test`.
+
 ```mbt check
 ///|
 test "readme parse fragment example" {
@@ -102,4 +120,21 @@ test "readme CLI reader example" {
   assert_eq(result.exit_code, 0)
   assert_eq(result.stdout, "Hello MoonBit\n")
 }
+```
+
+## Native CLI
+
+The native CLI wrapper lives in `cmd/main` and uses a small C stub for raw
+stdin/file IO. Build it from this repository with:
+
+```sh
+moon run --target native --release --build-only cmd/main
+```
+
+The executable is written to `_build/native/release/build/cmd/main/main.exe`.
+For example:
+
+```sh
+printf '<p>Hello <b>MoonBit</b></p>' \
+  | _build/native/release/build/cmd/main/main.exe - --format text
 ```
