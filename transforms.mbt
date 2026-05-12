@@ -999,10 +999,7 @@ fn transform_children(
         }
         EscapeElements => {
           transform_report_node_action(child, transform, "Escaped")
-          let inserted = escape_transform_child_at(parent, index)
-          if inserted == 0 {
-            ()
-          }
+          ignore(escape_transform_child_at(parent, index))
         }
         EmptyElements => {
           if empty_transform_node(child) {
@@ -2140,11 +2137,7 @@ fn linkify_transform_children(
           let inserted = linkify_text_child_at_matches(
             parent, index, child, matches,
           )
-          if inserted > 0 {
-            index += inserted
-          } else {
-            index += 1
-          }
+          index += inserted
         }
       }
       Document | Fragment => {

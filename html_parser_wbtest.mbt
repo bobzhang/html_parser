@@ -1064,6 +1064,20 @@ test "serializer hex digit helper keeps defensive fallback" {
 }
 
 ///|
+test "transform private helpers keep defensive no-op behavior" {
+  assert_eq(decide_action_label(Keep), "keep")
+  assert_eq(node_has_foreign_namespace(element("p")), false)
+  assert_eq(prune_empty_node_is_effectively_empty(text("x"), true), false)
+  let text_root = text("x")
+  apply_prune_empty_transform(
+    text_root,
+    TransformSpec::prune_empty("*"),
+    default_selector_limits(),
+  )
+  assert_eq(text_root.data, "x")
+}
+
+///|
 test "selector helper fragments fail closed on malformed syntax" {
   let node = element("div", attrs={
     "class": Some("alpha beta"),

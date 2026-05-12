@@ -284,6 +284,8 @@ reference implementation in `.repos/justhtml`.
       total for defensive private calls.
 - [x] Refactored transform glob and URL/style attribute scans around local
       UTF-16 cursor and map-key invariants.
+- [x] Removed impossible transform escape/linkify inserted-count fallbacks and
+      added whitebox coverage for defensive transform helper no-ops.
 
 ## Working Rule
 
