@@ -228,6 +228,8 @@ reference implementation in `.repos/justhtml`.
       attribute helper parsing.
 - [x] Refactored linkify's last-character scan to use Unicode-safe
       `StringView` iteration while retaining UTF-16 result offsets.
+- [x] Refactored linkify host-prefix scanning to use Unicode-safe
+      `StringView` iteration before slicing at URL delimiters.
 
 ## Working Rule
 

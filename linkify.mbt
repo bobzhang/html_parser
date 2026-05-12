@@ -486,12 +486,10 @@ fn linkify_validate_scheme_url(candidate : StringView) -> Bool {
 ///|
 fn linkify_host_view(value : StringView) -> StringView? {
   let mut pos = 0
-  while pos < value.length() {
-    match value.get_char(pos) {
-      Some('/') | Some('?') | Some('#') =>
-        return value.get_view(start=0, end=pos)
-      Some(ch) => pos += ch.utf16_len()
-      None => break
+  for ch in value {
+    match ch {
+      '/' | '?' | '#' => return value.get_view(start=0, end=pos)
+      _ => pos += ch.utf16_len()
     }
   }
   value.get_view(start=0, end=value.length())
