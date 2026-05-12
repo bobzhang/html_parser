@@ -67,6 +67,13 @@ test "tree builder matches vendored coverage fixtures" {
 }
 
 ///|
+test "tree builder matches vendored branch coverage fixtures" {
+  for case in branch_coverage_fixture_cases() {
+    assert_tree_fixture(case)
+  }
+}
+
+///|
 fn iframe_srcdoc_tree_fixture_cases() -> Array[TreeFixtureCase] {
   [
     {
@@ -76,6 +83,175 @@ fn iframe_srcdoc_tree_fixture_cases() -> Array[TreeFixtureCase] {
       xml_coercion: false,
       expected_tree: "| <!DOCTYPE foo>\n| <html>\n|   <head>\n|   <body>\n|     <p>\n|     <table>",
       error_codes: ["unknown-doctype"],
+    },
+  ]
+}
+
+///|
+fn branch_coverage_fixture_cases() -> Array[TreeFixtureCase] {
+  [
+    {
+      line: 3,
+      input: "<math><mi>\u{0000}</mi></math>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math mi>",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-null-character",
+      ],
+    },
+    {
+      line: 15,
+      input: "<math><mi>\u{0000}\u{000C}</mi></math>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math mi>\n|         \" \"",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-null-character",
+      ],
+    },
+    {
+      line: 28,
+      input: "<math><mi>   </mi></math>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math mi>\n|         \"   \"",
+      error_codes: ["expected-doctype-but-got-start-tag"],
+    },
+    {
+      line: 41,
+      input: "</template>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>",
+      error_codes: [
+        "expected-doctype-but-got-end-tag", "unexpected-end-tag-before-html",
+      ],
+    },
+    {
+      line: 53,
+      input: "<body><input type=\"hidden\">",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <input>\n|       type=\"hidden\"",
+      error_codes: ["expected-doctype-but-got-start-tag"],
+    },
+    {
+      line: 66,
+      input: "<html><body><html attr=\"test\">",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   attr=\"test\"\n|   <head>\n|   <body>",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-start-tag",
+      ],
+    },
+    {
+      line: 79,
+      input: "<select><optgroup><option>1</option></optgroup></select>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       <optgroup>\n|         <option>\n|           \"1\"",
+      error_codes: ["expected-doctype-but-got-start-tag"],
+    },
+    {
+      line: 94,
+      input: "<select><option>1</option></optgroup></select>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       <option>\n|         \"1\"",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-end-tag-in-select",
+      ],
+    },
+    {
+      line: 108,
+      input: "<!DOCTYPE html><html><head></head><frameset></frameset>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <!DOCTYPE html>\n| <html>\n|   <head>\n|   <frameset>",
+      error_codes: [],
+    },
+    {
+      line: 119,
+      input: "<!DOCTYPE html><html><head></head><frameset></frameset>abc",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <!DOCTYPE html>\n| <html>\n|   <head>\n|   <frameset>",
+      error_codes: ["unexpected-token-after-frameset"],
+    },
+    {
+      line: 131,
+      input: "<table><input id=\"x\" class=\"y\" type=\"hidden\"></table>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <table>\n|       <input>\n|         class=\"y\"\n|         id=\"x\"\n|         type=\"hidden\"",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-hidden-input-in-table",
+      ],
+    },
+    {
+      line: 148,
+      input: "<math><annotation-xml encoding=\"text/plain\"><div></div></annotation-xml></math>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math annotation-xml>\n|         encoding=\"text/plain\"\n|     <div>",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-html-element-in-foreign-content",
+        "unexpected-end-tag", "unexpected-end-tag",
+      ],
+    },
+    {
+      line: 164,
+      input: "<math><annotation-xml><div></div></annotation-xml></math>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math annotation-xml>\n|     <div>",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-html-element-in-foreign-content",
+        "unexpected-end-tag", "unexpected-end-tag",
+      ],
+    },
+    {
+      line: 179,
+      input: "<svg><font color=\"red\">text</font></svg>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <svg svg>\n|     <font>\n|       color=\"red\"\n|       \"text\"",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-html-element-in-foreign-content",
+        "unexpected-end-tag",
+      ],
+    },
+    {
+      line: 194,
+      input: "<select><selectedcontent></selectedcontent><option>A</option><option selected>B</option></select>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       <selectedcontent>\n|         \"B\"\n|       <option>\n|         \"A\"\n|       <option>\n|         selected=\"\"\n|         \"B\"",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-start-tag-in-select", "unexpected-end-tag-in-select",
+      ],
+    },
+    {
+      line: 214,
+      input: "<select><selectedcontent></selectedcontent><option>A</option><option>B</option></select>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       <selectedcontent>\n|         \"A\"\n|       <option>\n|         \"A\"\n|       <option>\n|         \"B\"",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-start-tag-in-select", "unexpected-end-tag-in-select",
+      ],
+    },
+    {
+      line: 233,
+      input: "<b><select></b></select>",
+      scripting_enabled: true,
+      xml_coercion: false,
+      expected_tree: "| <html>\n|   <head>\n|   <body>\n|     <b>\n|       <select>",
+      error_codes: [
+        "expected-doctype-but-got-start-tag", "unexpected-end-tag-in-select", "expected-closing-tag-but-got-eof",
+      ],
     },
   ]
 }
