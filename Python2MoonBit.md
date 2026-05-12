@@ -344,6 +344,14 @@ JustHTML from Python to MoonBit.
   whether replacement children can be seen by the current spec, by later specs,
   or only by later stages; tests such as `Drop("a"), Linkify()` versus
   `Linkify(), Drop("a")` catch accidental order changes.
+- Standalone URL/style transforms share sanitizer primitives but not the whole
+  sanitizer wrapper. For Python specs such as `DropUrlAttrs` and
+  `AllowStyleAttrs`, call the low-level URL and inline-style sanitizers on the
+  matching attributes only; routing through full `sanitize_dom` would also apply
+  tag allowlists, unsafe handling, comment/doctype policy, and forced attrs.
+  Keep mixed-case raw keys in tests, because programmatic MoonBit DOM trees can
+  bypass parser normalization just like Python nodes can be constructed
+  directly.
 - Python accepts a raw callable as `UrlPolicy.url_filter`; in MoonBit, wrap the
   callback with `UrlFilter::new` so `UrlPolicy` can still derive `Debug`.
   Its debug representation should stay opaque: assert the wrapper type label,

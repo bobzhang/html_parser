@@ -9,6 +9,8 @@ priv enum TransformKind {
   AllowlistAttributes
   MergeAttributeTokens
   SanitizeTree
+  DropUrlAttributes
+  AllowStyleAttributes
   DropCommentNodes
   DropDoctypeNodes
   CollapseTextWhitespace
@@ -18,9 +20,9 @@ priv enum TransformKind {
 ///|
 /// A DOM transform specification for `apply_transforms`.
 ///
-/// The current port covers deterministic structural, attribute, utility, and
-/// sanitizer transforms. Callback-based Python specs will be added as separate
-/// slices.
+/// The current port covers deterministic structural, attribute, URL/style,
+/// utility, and sanitizer transforms. Callback-based Python specs will be added
+/// as separate slices.
 pub struct TransformSpec {
   priv kind : TransformKind
   priv selector : String
@@ -149,6 +151,35 @@ pub fn TransformSpec::merge_attrs(
 }
 
 ///|
+/// Build a transform that validates URL-valued attributes with `url_policy`.
+pub fn TransformSpec::drop_url_attrs(
+  selector : StringView,
+  url_policy~ : UrlPolicy,
+) -> TransformSpec {
+  make_transform_spec(
+    DropUrlAttributes,
+    selector=selector.to_owned(),
+    sanitize_policy=SanitizationPolicy::new([], url_policy~),
+  )
+}
+
+///|
+/// Build a transform that sanitizes inline `style` attributes.
+pub fn TransformSpec::allow_style_attrs(
+  selector : StringView,
+  allowed_css_properties~ : Array[String],
+) -> TransformSpec {
+  make_transform_spec(
+    AllowStyleAttributes,
+    selector=selector.to_owned(),
+    sanitize_policy=SanitizationPolicy::new(
+      [],
+      allowed_css_properties=normalize_transform_strings(allowed_css_properties),
+    ),
+  )
+}
+
+///|
 /// Build a transform that sanitizes the DOM tree with an optional policy.
 pub fn TransformSpec::sanitize(policy? : SanitizationPolicy) -> TransformSpec {
   match policy {
@@ -231,6 +262,10 @@ fn apply_transform(
     | DropAttributes
     | AllowlistAttributes
     | MergeAttributeTokens => {
+      apply_selector_transform(node, transform)
+      node
+    }
+    DropUrlAttributes | AllowStyleAttributes => {
       apply_selector_transform(node, transform)
       node
     }
@@ -362,6 +397,16 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
         }
         MergeAttributeTokens => {
           apply_merge_attrs_transform(child, transform)
+          transform_children(child, transform)
+          index += 1
+        }
+        DropUrlAttributes => {
+          apply_drop_url_attrs_transform(child, transform)
+          transform_children(child, transform)
+          index += 1
+        }
+        AllowStyleAttributes => {
+          apply_allow_style_attrs_transform(child, transform)
           transform_children(child, transform)
           index += 1
         }
@@ -613,6 +658,131 @@ fn apply_merge_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
       node.attrs.remove(key)
     }
     node.attrs[transform.merge_attr] = Some(normalized)
+  }
+}
+
+///|
+fn find_attr_key_case_insensitive(node : Node, target : String) -> String? {
+  for key, _ in node.attrs {
+    if lower_ascii(key[:]) == target {
+      return Some(key)
+    }
+  }
+  None
+}
+
+///|
+fn attr_value_is_refresh(value : String?) -> Bool {
+  match value {
+    Some(raw) => lower_ascii(raw[:].trim()) == "refresh"
+    None => false
+  }
+}
+
+///|
+fn transform_attr_is_url_like(
+  attr_name : String,
+  raw_value : String?,
+  effectively_foreign : Bool,
+) -> Bool {
+  let foreign_url_function_loads = match raw_value {
+    Some(value) => css_value_may_load_external_resource(value)
+    None => false
+  }
+  is_single_url_like_attr(attr_name) ||
+  is_srcset_like_attr(attr_name) ||
+  is_space_separated_url_list_attr(attr_name) ||
+  (
+    effectively_foreign &&
+    is_foreign_url_function_like_attr(attr_name) &&
+    foreign_url_function_loads
+  )
+}
+
+///|
+fn apply_drop_url_attrs_transform(
+  node : Node,
+  transform : TransformSpec,
+) -> Unit {
+  guard transform.sanitize_policy is Some(policy) else { return }
+  if node.attrs.length() == 0 {
+    return
+  }
+  let tag_name = lower_ascii(node.name[:])
+  match
+    (
+      find_attr_key_case_insensitive(node, "http-equiv"),
+      find_attr_key_case_insensitive(node, "content"),
+    ) {
+    (Some(http_equiv_key), Some(content_key)) => {
+      let http_equiv_value = match node.attrs.get(http_equiv_key) {
+        Some(value) => value
+        None => None
+      }
+      if attr_value_is_refresh(http_equiv_value) {
+        node.attrs.remove(content_key)
+      }
+    }
+    _ => ()
+  }
+  let effectively_foreign = node_is_effectively_foreign(node)
+  let keys = node.attrs.keys().to_array()
+  for key in keys {
+    guard node.attrs.contains(key) else { continue }
+    let attr_name = lower_ascii(key[:])
+    let current_value = match node.attrs.get(key) {
+      Some(value) => value
+      None => None
+    }
+    if !transform_attr_is_url_like(
+        attr_name, current_value, effectively_foreign,
+      ) {
+      continue
+    }
+    match current_value {
+      Some(raw_value) =>
+        match
+          sanitize_attribute_value(
+            policy,
+            tag_name,
+            attr_name,
+            raw_value,
+            effectively_foreign~,
+          ) {
+          Some(cleaned) =>
+            if cleaned != raw_value || attr_name != key {
+              node.attrs.remove(key)
+              node.attrs[attr_name] = Some(cleaned)
+            }
+          None => node.attrs.remove(key)
+        }
+      None => node.attrs.remove(key)
+    }
+  }
+}
+
+///|
+fn apply_allow_style_attrs_transform(
+  node : Node,
+  transform : TransformSpec,
+) -> Unit {
+  guard transform.sanitize_policy is Some(policy) else { return }
+  guard find_attr_key_case_insensitive(node, "style") is Some(style_key) else {
+    return
+  }
+  let tag_name = lower_ascii(node.name[:])
+  match node.attrs.get(style_key) {
+    Some(Some(raw_value)) =>
+      match sanitize_inline_style_value(policy, tag_name, raw_value) {
+        Some(cleaned) =>
+          if cleaned != raw_value || style_key != "style" {
+            node.attrs.remove(style_key)
+            node.attrs["style"] = Some(cleaned)
+          }
+        None => node.attrs.remove(style_key)
+      }
+    Some(None) => node.attrs.remove(style_key)
+    None => ()
   }
 }
 

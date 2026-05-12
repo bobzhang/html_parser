@@ -284,3 +284,123 @@ test "sanitize transform propagates unsafe raise policy errors" {
     _ => fail("expected sanitize transform to raise UnsafeHtml")
   }
 }
+
+///|
+test "drop_url_attrs validates URL attrs and normalizes mixed-case names" {
+  let trusted_rule = @html_parser.UrlRule::new(
+    allowed_schemes=["https"],
+    allowed_hosts=["trusted.example"],
+    allow_relative=false,
+  )
+  let url_policy = @html_parser.UrlPolicy::new(default_allow_relative=false, allow_rules=[
+    @html_parser.UrlPolicyRule::new("a", "href", trusted_rule),
+    @html_parser.UrlPolicyRule::new("a", "ping", trusted_rule),
+    @html_parser.UrlPolicyRule::new("img", "srcset", trusted_rule),
+    @html_parser.UrlPolicyRule::new("base", "href", trusted_rule),
+  ])
+  let a = @html_parser.element("a", attrs={
+    "Href": Some(" https://trusted.example/x "),
+    "Ping": Some("https://trusted.example/p https://evil.example/p"),
+    "data-ok": Some("1"),
+  })
+  let img = @html_parser.element("img", attrs={
+    "SrcSet": Some("https://trusted.example/a 1x, https://evil.example/b 2x"),
+  })
+  let refresh = @html_parser.element("meta", attrs={
+    "Http-Equiv": Some("refresh"),
+    "Content": Some("0;url=https://evil.example/"),
+  })
+  let charset = @html_parser.element("meta", attrs={
+    "http-equiv": Some("content-type"),
+    "content": Some("text/html; charset=utf-8"),
+  })
+  let base = @html_parser.element("base", attrs={
+    "Href": Some("https://trusted.example/assets/"),
+  })
+  let root = @html_parser.fragment(children=[a, img, refresh, charset, base])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::drop_url_attrs("*", url_policy~),
+    ]),
+  )
+
+  let a_attrs = a.attrs()
+  assert_true(a_attrs.get("href") is Some(Some("https://trusted.example/x")))
+  assert_true(a_attrs.get("Href") is None)
+  assert_true(a_attrs.get("Ping") is None)
+  assert_true(a_attrs.get("data-ok") is Some(Some("1")))
+  assert_true(img.attrs().get("SrcSet") is None)
+  assert_true(img.attrs().get("srcset") is None)
+  assert_true(refresh.attrs().get("Http-Equiv") is Some(Some("refresh")))
+  assert_true(refresh.attrs().get("Content") is None)
+  assert_true(
+    charset.attrs().get("content") is Some(Some("text/html; charset=utf-8")),
+  )
+  assert_eq(base.attrs().length(), 0)
+}
+
+///|
+test "drop_url_attrs sanitizes foreign URL function attributes" {
+  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
+    @html_parser.UrlPolicyRule::new(
+      "rect",
+      "fill",
+      @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+        "trusted.example",
+      ]),
+    ),
+  ])
+  let rect = @html_parser.element("rect", ns="svg", attrs={
+    "fill": Some("url(https://trusted.example/fill.svg#x) red"),
+    "filter": Some("url(https://evil.example/filter.svg#f)"),
+    "width": Some("10"),
+  })
+  let root = @html_parser.fragment(children=[rect])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::drop_url_attrs("*", url_policy~),
+    ]),
+  )
+  let attrs = rect.attrs()
+  assert_true(
+    attrs.get("fill")
+    is Some(Some("url('https://trusted.example/fill.svg#x') red")),
+  )
+  assert_true(attrs.get("filter") is None)
+  assert_true(attrs.get("width") is Some(Some("10")))
+}
+
+///|
+test "allow_style_attrs sanitizes mixed-case style attributes" {
+  let none = @html_parser.element("span", attrs={ "style": None })
+  let bad = @html_parser.element("span", attrs={
+    "style": Some("position: fixed"),
+  })
+  let mixed = @html_parser.element("span", attrs={
+    "title": Some("x"),
+    "Style": Some("color: red; position: fixed"),
+  })
+  let url_style = @html_parser.element("span", attrs={
+    "Style": Some("background-image: url('/x.png'); color: blue"),
+  })
+  let untouched = @html_parser.element("p", attrs={
+    "Style": Some("position: fixed"),
+  })
+  let root = @html_parser.fragment(children=[
+    none, bad, mixed, url_style, untouched,
+  ])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::allow_style_attrs("span", allowed_css_properties=[
+        "background-image", "color",
+      ]),
+    ]),
+  )
+  assert_true(none.attrs().get("style") is None)
+  assert_true(bad.attrs().get("style") is None)
+  assert_true(mixed.attrs().get("Style") is None)
+  assert_true(mixed.attrs().get("style") is Some(Some("color: red")))
+  assert_true(mixed.attrs().get("title") is Some(Some("x")))
+  assert_true(url_style.attrs().get("style") is Some(Some("color: blue")))
+  assert_true(untouched.attrs().get("Style") is Some(Some("position: fixed")))
+}

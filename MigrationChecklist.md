@@ -18,13 +18,12 @@ reference implementation in `.repos/justhtml`.
 - [x] Initial Markdown conversion
 - [x] Mooncakes package metadata, GitHub repository, and CI
 - [x] Initial public transform pipeline shell with structural, utility, and
-      deterministic attribute DOM transforms plus `Sanitize` integration
+      deterministic attribute, URL/style, and `Sanitize` DOM transforms
 
 ## Migration Roadmap
 
-1. Finish the general transform pipeline: callbacks, sanitizer-backed URL/style
-   transform specs, explicit stages, selector limits, and remaining transform
-   edge-case tests.
+1. Finish the general transform pipeline: callbacks, explicit stages, selector
+   limits, and remaining transform edge-case tests.
 2. Port the streaming API and `tests/test_stream.py` behavior.
 3. Port CLI compatibility and `tests/test_cli.py` behavior.
 4. Sweep Markdown parity against the remaining Python tests.
@@ -52,7 +51,7 @@ reference implementation in `.repos/justhtml`.
   - [x] Utility transforms: `CollapseWhitespace`, `DropComments`, `DropDoctype`
   - [x] Linkify transform integration and order-sensitive smoke tests
   - [x] `Sanitize` transform integration and order-sensitive smoke tests
-  - [ ] URL/style transform specs: `DropUrlAttrs`, `AllowStyleAttrs`
+  - [x] URL/style transform specs: `DropUrlAttrs`, `AllowStyleAttrs`
   - [ ] Compiled stages, selector limits, and deterministic application order
 - [ ] Streaming API
   - [ ] `StreamSink` equivalent
