@@ -109,13 +109,14 @@ reference implementation in `.repos/justhtml`.
     - [x] `markdown.mbt` constructor annotation
     - [x] `parser.mbt` helper constructor annotations
     - [x] `html_parser_test.mbt` enum constructor annotations
-  - [ ] Remove unnecessary view conversions for warning 75
+  - [x] Remove unnecessary view conversions for warning 75
     - [x] `foreign_content.mbt` view conversions
     - [x] `tokens.mbt` XML coercion view conversions
     - [x] `transforms.mbt` transform helper view conversions
     - [x] `serialize.mbt` serializer and selector view conversions
     - [x] `html_parser_wbtest.mbt` whitebox helper view conversions
     - [x] `parser.mbt` tree-builder helper view conversions
+    - [x] `sanitize.mbt` sanitizer policy view conversions
   - [ ] Qualify README checked examples for warning 25
 
 ## Working Rule

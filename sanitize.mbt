@@ -482,7 +482,7 @@ fn escape_child_at(
 
 ///|
 fn sanitize_node_name(node : Node) -> String {
-  lower_ascii(node.name[:])
+  lower_ascii(node.name)
 }
 
 ///|
@@ -817,7 +817,7 @@ fn url_rule_allows_host(rule : UrlRule, value : String) -> Bool {
   if rule.allowed_hosts.is_empty() {
     true
   } else {
-    match extract_absolute_url_host(value[:]) {
+    match extract_absolute_url_host(value) {
       Some(host) => rule.allowed_hosts.contains(host)
       None => false
     }
@@ -864,13 +864,13 @@ fn proxy_url_value(proxy : UrlProxy, value : String) -> String? {
   if proxy.url == "" {
     None
   } else {
-    let sep = if string_view_contains(proxy.url[:], "?") { "&" } else { "?" }
+    let sep = if string_view_contains(proxy.url, "?") { "&" } else { "?" }
     Some(
       proxy.url +
       sep +
       proxy.param +
       "=" +
-      percent_encode_url_proxy_param(value[:]),
+      percent_encode_url_proxy_param(value),
     )
   }
 }
@@ -938,7 +938,7 @@ fn sanitize_url_attribute_value_with_rule(
   } else if string_contains_forbidden_url_char(trimmed) {
     return None
   } else {
-    let normalized = normalize_url_for_checking(trimmed[:])
+    let normalized = normalize_url_for_checking(trimmed)
     if normalized == "" {
       return None
     }
@@ -952,8 +952,7 @@ fn sanitize_url_attribute_value_with_rule(
       } else {
         None
       }
-    } else if handling == UrlProxy &&
-      has_invalid_scheme_like_prefix(normalized[:]) {
+    } else if handling == UrlProxy && has_invalid_scheme_like_prefix(normalized) {
       None
     } else if normalized.has_prefix("//") {
       match rule.resolve_protocol_relative {
@@ -968,7 +967,7 @@ fn sanitize_url_attribute_value_with_rule(
         _ => None
       }
     } else {
-      match extract_url_scheme(normalized[:]) {
+      match extract_url_scheme(normalized) {
         Some(scheme) =>
           if rule.allowed_schemes.contains(scheme) &&
             url_rule_allows_host(rule, normalized) {
@@ -1021,14 +1020,14 @@ fn split_srcset_candidate(candidate : StringView) -> (StringView, StringView) {
         let descriptor = candidate
           .get_view(start=pos, end=candidate.length())
           .map(fn(view) { view.trim() })
-          .unwrap_or(""[:])
+          .unwrap_or("")
         return (url, descriptor)
       }
       Some(ch) => pos += ch.utf16_len()
       None => break
     }
   }
-  (candidate, ""[:])
+  (candidate, "")
 }
 
 ///|
@@ -1381,14 +1380,14 @@ fn css_value_may_load_external_resource(value : StringView) -> Bool {
   match css_safety_normalize(value) {
     None => true
     Some(normalized) =>
-      string_view_contains(normalized[:], "@import") ||
-      string_view_contains(normalized[:], "url(") ||
-      string_view_contains(normalized[:], "image-set(") ||
-      string_view_contains(normalized[:], "expression(") ||
-      string_view_contains(normalized[:], "progid:") ||
-      string_view_contains(normalized[:], "alphaimageloader") ||
-      string_view_contains(normalized[:], "behavior:") ||
-      string_view_contains(normalized[:], "-moz-binding")
+      string_view_contains(normalized, "@import") ||
+      string_view_contains(normalized, "url(") ||
+      string_view_contains(normalized, "image-set(") ||
+      string_view_contains(normalized, "expression(") ||
+      string_view_contains(normalized, "progid:") ||
+      string_view_contains(normalized, "alphaimageloader") ||
+      string_view_contains(normalized, "behavior:") ||
+      string_view_contains(normalized, "-moz-binding")
   }
 }
 
@@ -1397,13 +1396,13 @@ fn css_value_has_disallowed_resource_functions(value : StringView) -> Bool {
   match css_safety_normalize(value) {
     None => true
     Some(normalized) =>
-      string_view_contains(normalized[:], "@import") ||
-      string_view_contains(normalized[:], "image-set(") ||
-      string_view_contains(normalized[:], "expression(") ||
-      string_view_contains(normalized[:], "progid:") ||
-      string_view_contains(normalized[:], "alphaimageloader") ||
-      string_view_contains(normalized[:], "behavior:") ||
-      string_view_contains(normalized[:], "-moz-binding")
+      string_view_contains(normalized, "@import") ||
+      string_view_contains(normalized, "image-set(") ||
+      string_view_contains(normalized, "expression(") ||
+      string_view_contains(normalized, "progid:") ||
+      string_view_contains(normalized, "alphaimageloader") ||
+      string_view_contains(normalized, "behavior:") ||
+      string_view_contains(normalized, "-moz-binding")
   }
 }
 
@@ -1513,7 +1512,7 @@ fn sanitize_url_function_value(
   value : StringView,
 ) -> String? {
   if css_value_has_disallowed_resource_functions(value) ||
-    string_view_contains(value, "/*"[:]) {
+    string_view_contains(value, "/*") {
     return None
   }
   let out = StringBuilder::new(size_hint=value.length())
@@ -1577,9 +1576,7 @@ fn sanitize_url_function_value(
             attr_name,
             url_raw.to_owned(),
           ) {
-          Some(sanitized_url) if css_url_value_is_safe_to_quote(
-              sanitized_url[:],
-            ) => {
+          Some(sanitized_url) if css_url_value_is_safe_to_quote(sanitized_url) => {
             out.write_string("url('")
             out.write_string(sanitized_url)
             out.write_string("')")
@@ -1619,7 +1616,7 @@ fn sanitize_foreign_url_function_attribute_value(
         rule,
         tag_name,
         attr_name,
-        value[:],
+        value,
       )
     None => None
   }
@@ -1834,7 +1831,7 @@ fn sanitize_meta_refresh_content(
 fn sanitize_forbidden_attr_pattern(attr_name : String) -> String? {
   if attr_name == "srcdoc" {
     Some("srcdoc")
-  } else if string_view_contains_char(attr_name[:], ':') {
+  } else if string_view_contains_char(attr_name, ':') {
     Some("*:*")
   } else if attr_name.has_prefix("on") {
     Some("on*")
@@ -1926,7 +1923,7 @@ fn sanitize_element_attributes(
   }
   let keys = node.attrs.keys().to_array()
   for key in keys {
-    let attr_name = lower_ascii(key[:])
+    let attr_name = lower_ascii(key)
     match sanitize_forbidden_attr_pattern(attr_name) {
       Some(pattern) => {
         sanitize_report_unsafe(
