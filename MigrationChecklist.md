@@ -103,6 +103,7 @@ reference implementation in `.repos/justhtml`.
   - [ ] Public API docs for warning 74
   - [ ] Remove unnecessary annotations for warning 73
     - [x] `comment_scan.mbt` constructor annotations
+    - [x] `script_text.mbt` constructor annotations
   - [ ] Remove unnecessary view conversions for warning 75
   - [ ] Qualify README checked examples for warning 25
 

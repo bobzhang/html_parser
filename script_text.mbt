@@ -37,11 +37,7 @@ fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
     match state {
       ScriptRawText =>
         if script_end_tag_at(input, pos) {
-          return ScriptTextScan::{
-            data: out.to_string(),
-            end_start: Some(pos),
-            errors,
-          }
+          return { data: out.to_string(), end_start: Some(pos), errors }
         } else if view_starts_with_at(input, pos, "<!--") {
           out.write_string("<!--")
           pos += 4
@@ -106,11 +102,7 @@ fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
         match input.get_char(pos) {
           Some('/') =>
             if script_end_tag_at(input, pos - 1) {
-              return ScriptTextScan::{
-                data: out.to_string(),
-                end_start: Some(pos - 1),
-                errors,
-              }
+              return { data: out.to_string(), end_start: Some(pos - 1), errors }
             } else {
               out.write_string("</")
               pos += 1
@@ -234,7 +226,7 @@ fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
   if state is ScriptEscapedLessThan {
     out.write_char('<')
   }
-  ScriptTextScan::{ data: out.to_string(), end_start: None, errors }
+  { data: out.to_string(), end_start: None, errors }
 }
 
 ///|
@@ -246,10 +238,7 @@ fn write_script_text_char(
 ) -> Int {
   match input.get_char(pos) {
     Some('\u{0000}') => {
-      errors.push(SpecialTextError::{
-        code: "unexpected-null-character",
-        offset: pos,
-      })
+      errors.push({ code: "unexpected-null-character", offset: pos })
       out.write_char('\u{FFFD}')
       pos + 1
     }
