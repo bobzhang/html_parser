@@ -432,7 +432,9 @@ JustHTML from Python to MoonBit.
 - Python's streaming API is a generator of `(kind, data)` tuples. MoonBit does
   not need to mimic tuple-shaped dynamic values; prefer a typed `StreamEvent`
   enum with small event structs, and coalesce adjacent `Characters` tokens into
-  one `StreamText` event to preserve the Python-observable behavior.
+  one `StreamText` event to preserve the Python-observable behavior. For byte
+  input, reuse the same `decode_html_bytes` helper as `parse_bytes`; otherwise
+  stream and parser entry points drift on BOM and meta-charset handling.
 - `Decide("*", ...)` is not an element selector shortcut in Python. It calls
   the callback for every node type reached by the walker, including comments,
   text, doctypes, and nested document/fragment containers. Other selectors only

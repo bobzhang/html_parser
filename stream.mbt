@@ -68,3 +68,12 @@ pub fn stream(html : StringView) -> Array[StreamEvent] {
   }
   events
 }
+
+///|
+pub fn stream_bytes(
+  input : BytesView,
+  encoding? : String,
+) -> Array[StreamEvent] {
+  let (decoded, _) = decode_html_bytes(input, encoding)
+  stream(decoded)
+}

@@ -47,3 +47,24 @@ test "stream coalesces text and preserves script raw text" {
     ],
   )
 }
+
+///|
+test "stream_bytes decodes transport and sniffed encodings" {
+  assert_true(
+    @html_parser.stream_bytes(b"<p>\x80</p>") ==
+    [
+      StreamStart({ name: "p", attrs: {} }),
+      StreamText("\u{20AC}"),
+      StreamEnd("p"),
+    ],
+  )
+  assert_true(
+    @html_parser.stream_bytes(b"<meta charset=utf-8><p>\xe2\x82\xac</p>") ==
+    [
+      StreamStart({ name: "meta", attrs: { "charset": Some("utf-8") } }),
+      StreamStart({ name: "p", attrs: {} }),
+      StreamText("\u{20AC}"),
+      StreamEnd("p"),
+    ],
+  )
+}

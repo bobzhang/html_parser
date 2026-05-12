@@ -44,6 +44,8 @@ pub fn sanitize_dom(Node, policy? : SanitizationPolicy) -> Node raise HtmlError
 
 pub fn stream(StringView) -> Array[StreamEvent]
 
+pub fn stream_bytes(BytesView, encoding? : String) -> Array[StreamEvent]
+
 pub fn text(StringView) -> Node
 
 pub fn to_html(Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String raise HtmlError

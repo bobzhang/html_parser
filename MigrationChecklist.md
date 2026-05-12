@@ -73,7 +73,7 @@ reference implementation in `.repos/justhtml`.
 - [ ] Streaming API
   - [x] Public string `stream` event API
   - [x] String tests ported from `tests/test_stream.py`
-  - [ ] Byte input stream decoding
+  - [x] Byte input stream decoding
   - [ ] Incremental `StreamSink` equivalent
 - [ ] CLI parity
   - [ ] Argument compatibility with Python `justhtml`
