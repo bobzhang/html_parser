@@ -1341,8 +1341,8 @@ fn transform_glob_match_at(
   if pattern_pos >= pattern.length() {
     return value_pos >= value.length()
   }
-  match pattern.get_char(pattern_pos) {
-    Some('*') => {
+  match pattern.get_char(pattern_pos).unwrap() {
+    '*' => {
       let mut next_pattern_pos = pattern_pos + 1
       while next_pattern_pos < pattern.length() &&
             pattern.get_char(next_pattern_pos) is Some('*') {
@@ -1359,14 +1359,11 @@ fn transform_glob_match_at(
         if scan >= value.length() {
           break
         }
-        match value.get_char(scan) {
-          Some(ch) => scan += ch.utf16_len()
-          None => break
-        }
+        scan += value.get_char(scan).unwrap().utf16_len()
       }
       false
     }
-    Some(pattern_ch) =>
+    pattern_ch =>
       match value.get_char(value_pos) {
         Some(value_ch) if value_ch == pattern_ch =>
           transform_glob_match_at(
@@ -1377,7 +1374,6 @@ fn transform_glob_match_at(
           )
         _ => false
       }
-    None => false
   }
 }
 
@@ -1675,10 +1671,7 @@ fn apply_drop_url_attrs_transform(
       find_attr_key_case_insensitive(node, "content"),
     ) {
     (Some(http_equiv_key), Some(content_key)) => {
-      let http_equiv_value = match node.attrs.get(http_equiv_key) {
-        Some(value) => value
-        None => None
-      }
+      let http_equiv_value = node.attrs.get(http_equiv_key).unwrap()
       if attr_value_is_refresh(http_equiv_value) {
         transform_report_unsafe_url_attr(
           node,
@@ -1695,10 +1688,7 @@ fn apply_drop_url_attrs_transform(
   let keys = node.attrs.keys().to_array()
   for key in keys {
     let attr_name = lower_ascii(key)
-    let current_value = match node.attrs.get(key) {
-      Some(value) => value
-      None => None
-    }
+    let current_value = node.attrs.get(key).unwrap()
     if !transform_attr_is_url_like(
         attr_name, current_value, effectively_foreign,
       ) {
@@ -1778,8 +1768,8 @@ fn apply_allow_style_attrs_transform(
     return false
   }
   let tag_name = lower_ascii(node.name)
-  match node.attrs.get(style_key) {
-    Some(Some(raw_value)) =>
+  match node.attrs.get(style_key).unwrap() {
+    Some(raw_value) =>
       match sanitize_inline_style_value(policy, tag_name, raw_value) {
         Some(cleaned) =>
           if cleaned != raw_value || style_key != "style" {
@@ -1801,7 +1791,7 @@ fn apply_allow_style_attrs_transform(
           true
         }
       }
-    Some(None) => {
+    None => {
       transform_report(
         transform,
         "Unsafe inline style in attribute 'style'",
@@ -1811,7 +1801,6 @@ fn apply_allow_style_attrs_transform(
       node.attrs.remove(style_key)
       true
     }
-    None => false
   }
 }
 

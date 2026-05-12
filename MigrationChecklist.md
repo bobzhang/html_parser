@@ -282,6 +282,8 @@ reference implementation in `.repos/justhtml`.
       selectors, parentless child combinators, and cyclic ancestor walks.
 - [x] Covered the serializer percent-encoding hex fallback to keep the helper
       total for defensive private calls.
+- [x] Refactored transform glob and URL/style attribute scans around local
+      UTF-16 cursor and map-key invariants.
 
 ## Working Rule
 
