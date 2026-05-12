@@ -177,6 +177,8 @@ reference implementation in `.repos/justhtml`.
       selectors, and custom fragment cleanup policy handling.
 - [x] Added CLI rendering regression for unsafe recovered tag names that parse
       successfully but fail serializer validation.
+- [x] Added CLI whitebox error formatter regression for sanitizer, selector,
+      and serialization error message preservation.
 - [x] Added selector-limit regressions for list size, complex selector part
       count, compound simple-selector count, negative byte budgets, and
       `:contains(...)` text byte accounting.

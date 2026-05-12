@@ -1888,7 +1888,9 @@ JustHTML from Python to MoonBit.
   2 parse/render errors. Inputs with recovered unsafe tag names can parse
   successfully in `--unsafe` fragment mode but still raise
   `InvalidSerialization` during HTML rendering; surface that message through
-  `stderr` instead of crashing or silently dropping it.
+  `stderr` instead of crashing or silently dropping it. Keep the shared error
+  formatter tested for sanitizer and selector errors too, even if a given CLI
+  option set rarely exposes those variants directly.
 - `@env.args()` includes the executable name on native builds. Slice it with
   `all_args[1:]` before passing user arguments to parser logic. The slice is an
   `ArrayView[String]`, so helpers should accept `ArrayView[String]` instead of
