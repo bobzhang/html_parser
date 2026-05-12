@@ -26,3 +26,48 @@ test "CLI option helpers cover equals and no-path plans" {
   assert_eq(result.exit_code, 1)
   assert_true(result.stderr.contains("usage: justhtml"))
 }
+
+///|
+test "CLI sanitize and cleanup error paths report transform errors" {
+  let raising_policy = SanitizationPolicy::new(["p"], unsafe_handling=Raise)
+  guard cli_sanitize_or_error(
+      fragment(children=[element("script", children=[text("bad")])]),
+      Some(raising_policy),
+    )
+    is Some(sanitize_result) else {
+    fail("expected sanitize helper to catch unsafe HTML")
+  }
+  assert_eq(sanitize_result.exit_code, 2)
+  assert_true(sanitize_result.stderr.contains("Unsafe tag 'script'"))
+  guard cli_apply_cleanup_or_error(
+      fragment(children=[element("script", children=[text("bad")])]),
+      true,
+      Some(raising_policy),
+    )
+    is Some(cleanup_result) else {
+    fail("expected cleanup helper to catch unsafe HTML")
+  }
+  assert_eq(cleanup_result.exit_code, 2)
+  assert_true(cleanup_result.stderr.contains("Unsafe tag 'script'"))
+  let sanitize_options = cli_default_options()
+  sanitize_options.path = Some("-")
+  let sanitize_pipeline = cli_run_parsed(
+    fragment(children=[element("script", children=[text("bad")])]),
+    sanitize_options,
+    true,
+    Some(raising_policy),
+  )
+  assert_eq(sanitize_pipeline.exit_code, 2)
+  assert_true(sanitize_pipeline.stderr.contains("Unsafe tag 'script'"))
+  let cleanup_options = cli_default_options()
+  cleanup_options.path = Some("-")
+  cleanup_options.cleanup = true
+  let cleanup_pipeline = cli_run_parsed(
+    fragment(children=[element("script", children=[text("bad")])]),
+    cleanup_options,
+    true,
+    Some(raising_policy),
+  )
+  assert_eq(cleanup_pipeline.exit_code, 2)
+  assert_true(cleanup_pipeline.stderr.contains("Unsafe tag 'script'"))
+}

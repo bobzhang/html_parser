@@ -425,6 +425,60 @@ fn cli_parse_document(
 }
 
 ///|
+fn cli_apply_cleanup_or_error(
+  root : Node,
+  safe : Bool,
+  policy : SanitizationPolicy?,
+) -> CliResult? {
+  ignore(apply_transforms(root, cli_cleanup_transforms(safe, policy))) catch {
+    error => return Some(cli_parse_error(cli_html_error_message(error)))
+  }
+  None
+}
+
+///|
+fn cli_sanitize_or_error(
+  root : Node,
+  policy : SanitizationPolicy?,
+) -> CliResult? {
+  cli_sanitize(root, policy) catch {
+    error => return Some(cli_parse_error(cli_html_error_message(error)))
+  }
+  None
+}
+
+///|
+fn cli_run_parsed(
+  root : Node,
+  options : CliOptions,
+  safe : Bool,
+  policy : SanitizationPolicy?,
+) -> CliResult {
+  if options.cleanup {
+    match cli_apply_cleanup_or_error(root, safe, policy) {
+      Some(result) => return result
+      None => ()
+    }
+  } else if safe {
+    match cli_sanitize_or_error(root, policy) {
+      Some(result) => return result
+      None => ()
+    }
+  }
+  let nodes = match cli_selected_nodes(root, options) {
+    Some(nodes) => nodes
+    None => return cli_parse_error("Invalid selector")
+  }
+  if nodes.is_empty() {
+    return cli_exit(1)
+  }
+  let content = cli_render_nodes(nodes, options) catch {
+    error => return cli_parse_error(cli_html_error_message(error))
+  }
+  cli_output_result(content, options)
+}
+
+///|
 fn cli_selector_is_valid(selector : StringView) -> Bool {
   guard selector_list_parts(selector) is Some(parts) && !parts.is_empty() else {
     false
@@ -523,24 +577,5 @@ pub fn run_cli_bytes(args : ArrayView[String], input : BytesView) -> CliResult {
   let parsed = cli_parse_document(input, options) catch {
     error => return cli_parse_error(cli_html_error_message(error))
   }
-  if options.cleanup {
-    ignore(apply_transforms(parsed.root, cli_cleanup_transforms(safe, policy))) catch {
-      error => return cli_parse_error(cli_html_error_message(error))
-    }
-  } else if safe {
-    cli_sanitize(parsed.root, policy) catch {
-      error => return cli_parse_error(cli_html_error_message(error))
-    }
-  }
-  let nodes = match cli_selected_nodes(parsed.root, options) {
-    Some(nodes) => nodes
-    None => return cli_parse_error("Invalid selector")
-  }
-  if nodes.is_empty() {
-    return cli_exit(1)
-  }
-  let content = cli_render_nodes(nodes, options) catch {
-    error => return cli_parse_error(cli_html_error_message(error))
-  }
-  cli_output_result(content, options)
+  cli_run_parsed(parsed.root, options, safe, policy)
 }

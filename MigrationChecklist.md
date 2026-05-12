@@ -299,6 +299,10 @@ reference implementation in `.repos/justhtml`.
       sources and empty private attribute parses.
 - [x] Cleared sanitizer, transform, serializer, and parser package coverage;
       remaining uncovered lines are CLI integration error/entrypoint branches.
+- [x] Refactored the CLI post-parse pipeline for injectable sanitizer policy
+      tests and covered the safe sanitize/cleanup error return paths.
+- [x] Cleared root CLI package coverage; the only remaining uncovered line is
+      the native `cmd/main` immediate-exit entrypoint branch.
 
 ## Working Rule
 
