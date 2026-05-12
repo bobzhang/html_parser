@@ -96,10 +96,7 @@ pub fn find_links_with_config(
           }
       }
     }
-    match text.get_char(pos) {
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
+    pos += text.get_char(pos).unwrap().utf16_len()
   }
   out
 }
@@ -118,10 +115,7 @@ fn linkify_left_boundary(text : StringView, pos : Int) -> Bool {
 ///|
 fn linkify_candidate_can_start(text : StringView, pos : Int) -> Bool {
   linkify_broad_candidate_start(text, pos) ||
-  (match text.get_char(pos) {
-    Some(ch) => linkify_fuzzy_start_char(ch)
-    None => false
-  })
+  linkify_fuzzy_start_char(text.get_char(pos).unwrap())
 }
 
 ///|
@@ -181,12 +175,8 @@ fn linkify_match_candidate(
   guard text.get_view(start~, end~) is Some(candidate) else { return None }
   if linkify_is_scheme_url(candidate) {
     match linkify_find_substring(candidate, ")[") {
-      Some(offset) => {
+      Some(offset) =>
         end = linkify_trim_trailing_end(text, start, start + offset)
-        if end <= start {
-          return None
-        }
-      }
       None => ()
     }
   }

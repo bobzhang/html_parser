@@ -262,6 +262,8 @@ reference implementation in `.repos/justhtml`.
       offsets and unwrap namespace after the foreign-start guard.
 - [x] Refactored covered script-text scanner states to unwrap characters after
       the loop/boundary invariant instead of carrying repeated `None` arms.
+- [x] Refactored linkify current-position checks to use scanner boundary
+      invariants while keeping the astral-safe previous-boundary fallback.
 
 ## Working Rule
 
