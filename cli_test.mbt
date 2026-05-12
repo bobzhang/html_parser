@@ -4,6 +4,15 @@ fn cli_run(args : Array[String], html : String) -> @html_parser.CliResult {
 }
 
 ///|
+fn assert_cli_arg_error(args : Array[String], message : String) -> Unit raise {
+  let result = @html_parser.run_cli_bytes(args, b"")
+  assert_eq(result.exit_code, 2)
+  assert_eq(result.stdout, "")
+  assert_true(result.stderr.contains("error: " + message))
+  assert_true(result.stderr.contains("usage: justhtml"))
+}
+
+///|
 test "CLI help version and read plan" {
   let help = @html_parser.run_cli_bytes(["--help"], b"")
   assert_eq(help.exit_code, 0)
@@ -20,6 +29,61 @@ test "CLI help version and read plan" {
     is CliReadPath("-") else {
     fail("expected CLI to ask for stdin input")
   }
+}
+
+///|
+test "CLI argument errors are reported with usage" {
+  assert_cli_arg_error(
+    ["-", "--format", "xml"],
+    "--format must be one of: html, text, markdown",
+  )
+  assert_cli_arg_error(["-", "--format"], "--format requires a value")
+  assert_cli_arg_error(["-", "--output"], "--output requires a value")
+  assert_cli_arg_error(["-", "--selector"], "--selector requires a value")
+  assert_cli_arg_error(["-", "--allow-tags"], "--allow-tags requires a value")
+  assert_cli_arg_error(["-", "--separator"], "--separator requires a value")
+  assert_cli_arg_error(
+    ["-", "--strip", "--no-strip"],
+    "--no-strip conflicts with --strip",
+  )
+  assert_cli_arg_error(
+    ["-", "--no-strip", "--strip"],
+    "--strip conflicts with --no-strip",
+  )
+  assert_cli_arg_error(["-", "--bogus"], "unknown option: --bogus")
+  assert_cli_arg_error(
+    ["first.html", "second.html"],
+    "only one input path is supported",
+  )
+}
+
+///|
+test "CLI accepts equals-form options and strict valid input" {
+  let text = cli_run(["--format=text", "--selector=p", "-"], "<p>Hello</p>")
+  assert_eq(text.exit_code, 0)
+  assert_eq(text.stdout, "Hello\n")
+  assert_eq(text.stderr, "")
+
+  let output = cli_run(
+    ["--format=text", "--output=out.txt", "--separator=|", "-"],
+    "<p>Hello <b>world</b></p>",
+  )
+  assert_eq(output.exit_code, 0)
+  assert_eq(output.stdout, "")
+  guard output.file_output_path is Some("out.txt") else {
+    fail("expected equals output path")
+  }
+  guard output.file_output_content is Some("Hello|world\n") else {
+    fail("expected equals output content")
+  }
+
+  let strict = cli_run(
+    ["-", "--strict"],
+    "<!DOCTYPE html><html><head></head><body><p>Hello</p></body></html>",
+  )
+  assert_eq(strict.exit_code, 0)
+  assert_true(strict.stdout.contains("<p>"))
+  assert_eq(strict.stderr, "")
 }
 
 ///|

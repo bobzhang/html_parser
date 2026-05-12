@@ -167,6 +167,9 @@ reference implementation in `.repos/justhtml`.
       spelling for disallowed start/end tags and malformed tag-like text.
 - [x] Accounted for the sanitizer JSON `style`-with-empty-CSS-allowlist error
       row with MoonBit's non-raising constructor and safe style-drop behavior.
+- [x] Added CLI parser regressions for equals-form options, missing option
+      values, invalid formats, strip/no-strip conflicts, unknown options,
+      duplicate input paths, and strict valid input.
 
 ## Working Rule
 

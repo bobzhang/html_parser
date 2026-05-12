@@ -1817,6 +1817,11 @@ JustHTML from Python to MoonBit.
   `all_args[1:]` before passing user arguments to parser logic. The slice is an
   `ArrayView[String]`, so helpers should accept `ArrayView[String]` instead of
   forcing an allocation.
+- Python's `argparse` handles `--option value`, `--option=value`, missing value
+  errors, and usage-prefixed diagnostics automatically. The MoonBit CLI parser
+  is hand-written, so test each option shape explicitly, including conflict
+  pairs such as `--strip` and `--no-strip`, unknown options, and duplicate
+  positional paths.
 - Avoid adding a MoonBit dependency just for CLI I/O unless it is published in
   the registry used by CI and Mooncakes. A tiny executable-local C stub listed
   in `cmd/main/moon.pkg` with `"native-stub": [ "cli_io.c" ]` keeps the library
