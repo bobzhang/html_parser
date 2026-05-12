@@ -383,6 +383,8 @@ reference implementation in `.repos/justhtml`.
       summary covers the newer inventory and convention guards.
 - [x] Added Git hook inventory checks so tracked hook files stay covered by the
       local hook validation guard.
+- [x] Extended source-layout validation to cover all root implementation
+      modules split out during the port.
 
 ## Working Rule
 

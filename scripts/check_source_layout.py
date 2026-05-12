@@ -50,20 +50,25 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_root_modules = {
+        "comment_scan.mbt",
         "html_parser.mbt",
         "parser.mbt",
         "tokens.mbt",
         "dom.mbt",
+        "foreign_content.mbt",
         "serialize.mbt",
         "sanitize.mbt",
+        "script_text.mbt",
         "transforms.mbt",
         "markdown.mbt",
+        "table_normalize.mbt",
         "linkify.mbt",
         "linkify_dom.mbt",
         "linkify_punycode.mbt",
         "stream.mbt",
         "cli.mbt",
         "types.mbt",
+        "xml_coercion.mbt",
     }
     for path in sorted(required_root_modules):
         if path not in tracked:
