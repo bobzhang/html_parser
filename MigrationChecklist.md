@@ -320,6 +320,8 @@ reference implementation in `.repos/justhtml`.
       CLI `--version`, and the exact CLI version test together.
 - [x] Moved the release-version consistency check into a reusable local script
       and kept CI calling that single source of truth.
+- [x] Moved Mooncakes package dry-run verification into a reusable local script
+      that also handles already-published versions.
 
 ## Working Rule
 

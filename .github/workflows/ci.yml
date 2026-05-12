@@ -93,17 +93,4 @@ jobs:
           grep -F '[Meta-Wiki Community coordination &amp; documentation](https://meta.wikimedia.org/)' /tmp/html_parser_wikipedia.md
 
       - name: Verify Mooncakes package
-        run: |
-          if [ ! -f "$HOME/.moon/credentials.json" ]; then
-            echo "Skipping Mooncakes dry-run because this runner is not logged in."
-            exit 0
-          fi
-          set +e
-          output="$(moon publish --dry-run 2>&1)"
-          exit_code=$?
-          printf '%s\n' "$output"
-          if [ "$exit_code" -ne 0 ] \
-            && ! printf '%s\n' "$output" | grep -q "Dry run completed successfully" \
-            && ! printf '%s\n' "$output" | grep -q "duplicated with an existing version"; then
-            exit "$exit_code"
-          fi
+        run: bash scripts/verify_mooncakes_package.sh --skip-without-credentials
