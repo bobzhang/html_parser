@@ -355,6 +355,11 @@ JustHTML from Python to MoonBit.
   collapse, but this MoonBit DOM keeps text data immutable and replaces the
   node; call hooks/reports against the original node before installing the
   replacement so callback observations stay close to Python.
+- When a public helper such as `sanitize_dom` is also used by a transform,
+  keep the public path callback-free and add a private observer path for the
+  transform. That avoids changing standalone sanitizer semantics while still
+  letting `TransformSpec::sanitize` report the exact node being mutated or
+  dropped.
 - Python transform specs carry an `enabled` flag on every constructor. In
   MoonBit, store it once on `TransformSpec` and skip disabled entries in the
   outer `apply_transforms` loop before dispatching to selector, callback, or

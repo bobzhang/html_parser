@@ -420,12 +420,15 @@ pub fn TransformSpec::allow_style_attrs(
 pub fn TransformSpec::sanitize(
   policy? : SanitizationPolicy,
   enabled? : Bool = true,
+  hook? : (Node) -> Unit,
+  report? : (String, Node?) -> Unit,
 ) -> TransformSpec {
-  match policy {
+  let spec = match policy {
     Some(policy) =>
       make_transform_spec(SanitizeTree, enabled~, sanitize_policy=policy)
     None => make_transform_spec(SanitizeTree, enabled~)
   }
+  with_transform_hooks(spec, hook, report)
 }
 
 ///|
@@ -548,10 +551,11 @@ fn apply_transform(
       node
     }
     SanitizeTree =>
-      match transform.sanitize_policy {
-        Some(policy) => sanitize_dom(node, policy~)
-        None => sanitize_dom(node)
-      }
+      sanitize_dom_with_observer(
+        node,
+        transform.sanitize_policy,
+        sanitize_transform_observer(transform),
+      )
     DropCommentNodes => {
       apply_drop_kind_transform(node, Comment, transform)
       node
@@ -635,6 +639,20 @@ fn transform_call_hook(node : Node, transform : TransformSpec) -> Unit {
   match transform.node_hook {
     Some(hook) => (hook.callback)(node)
     None => ()
+  }
+}
+
+///|
+fn sanitize_transform_observer(
+  transform : TransformSpec,
+) -> SanitizeTransformObserver? {
+  match (transform.node_hook, transform.report_callback) {
+    (None, None) => None
+    _ =>
+      Some({
+        hook: transform.node_hook,
+        report_callback: transform.report_callback,
+      })
   }
 }
 

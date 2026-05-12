@@ -286,6 +286,60 @@ test "sanitize transform propagates unsafe raise policy errors" {
 }
 
 ///|
+test "sanitize transform hooks and reports unsafe mutations" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": [] },
+    strip_invisible_unicode=true,
+  )
+  let doc = @html_parser.parse_fragment(
+    "<p onclick='x'>x\u{200B}</p><!--c--><script>alert(1)</script>",
+  )
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::sanitize(policy~, hook~, report~),
+    ]),
+  )
+  assert_eq(events, [
+    "hook:p", "report:Unsafe attribute 'onclick' on <p> was dropped because it is not allowed",
+    "node:p", "hook:#text", "report:Stripped invisible Unicode from text node", "node:#text",
+    "hook:#comment", "report:Unsafe comment was dropped", "node:#comment", "hook:script",
+    "report:Unsafe tag 'script' was dropped with its content", "node:script",
+  ])
+  assert_eq(doc.root.to_html(pretty=false), "<p>x</p>")
+}
+
+///|
+test "unchanged sanitize transform does not call hooks" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, _node) {
+    events.push("report:" + message)
+  }
+  let doc = @html_parser.parse_fragment("<p id='x'>safe</p>")
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::sanitize(hook~, report~),
+    ]),
+  )
+  assert_eq(events, [])
+  assert_eq(doc.root.to_html(pretty=false), "<p id=\"x\">safe</p>")
+}
+
+///|
 test "edit_document invokes callback once on root" {
   let seen : Array[String] = []
   let root = @html_parser.fragment(children=[

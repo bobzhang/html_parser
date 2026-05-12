@@ -56,7 +56,8 @@ reference implementation in `.repos/justhtml`.
   - [x] Basic callback/report hooks for selector, edit, attribute, URL/style,
         comment, and doctype transforms
   - [x] Hook/report forwarding for `Linkify` and `CollapseWhitespace`
-  - [ ] Hook/report forwarding for `Sanitize` and stage-level transforms
+  - [x] Hook/report forwarding for `Sanitize`
+  - [ ] Hook/report forwarding for stage-level transforms
   - [ ] Python-exact detailed report messages for attribute, URL/style, merge,
         sanitizer, and stage transforms
   - [ ] Compiled stages, selector limits, and deterministic application order
