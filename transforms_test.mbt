@@ -631,12 +631,15 @@ test "selector transforms cover contextual combinators and pseudos" {
   assert_true(spans[1].attrs().get("data-general") is Some(Some("yes")))
 
   let nested = @html_parser.parse_fragment(
-    "<section><ul><li>one</li><li>two</li><li>three</li></ul><p>needle</p></section>",
+    "<section><ul><li>one</li><li>two</li><li>three</li></ul><p>before</p><p>needle</p></section>",
   )
   ignore(
     @html_parser.apply_transforms(nested.root, [
       @html_parser.TransformSpec::set_attrs("section > ul li:nth-child(odd)", {
         "data-odd": Some("yes"),
+      }),
+      @html_parser.TransformSpec::set_attrs("section > p:nth-of-type(2)", {
+        "data-second-type": Some("yes"),
       }),
       @html_parser.TransformSpec::set_attrs("section p:contains(needle)", {
         "data-found": Some("yes"),
@@ -648,10 +651,14 @@ test "selector transforms cover contextual combinators and pseudos" {
   assert_true(items[0].attrs().get("data-odd") is Some(Some("yes")))
   assert_true(!items[1].attrs().contains("data-odd"))
   assert_true(items[2].attrs().get("data-odd") is Some(Some("yes")))
-  guard nested.root.query_one("p") is Some(paragraph) else {
-    fail("expected paragraph")
-  }
-  assert_true(paragraph.attrs().get("data-found") is Some(Some("yes")))
+  let paragraphs = nested.root.query("p")
+  assert_eq(paragraphs.length(), 2)
+  assert_true(!paragraphs[0].attrs().contains("data-second-type"))
+  assert_true(!paragraphs[0].attrs().contains("data-found"))
+  assert_true(
+    paragraphs[1].attrs().get("data-second-type") is Some(Some("yes")),
+  )
+  assert_true(paragraphs[1].attrs().get("data-found") is Some(Some("yes")))
 }
 
 ///|

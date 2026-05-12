@@ -843,6 +843,48 @@ test "pseudo matcher rejects unknown and blank contains pseudos" {
 }
 
 ///|
+test "limited selector matcher keeps pseudo parity" {
+  let root = fragment(children=[
+    comment("note"),
+    element("section", children=[
+      element("h1", children=[text("Title")]),
+      element("p", attrs={ "class": Some("first") }, children=[text("alpha")]),
+      element("p", attrs={ "class": Some("second"), "disabled": None }, children=[
+        text("needle"),
+      ]),
+    ]),
+  ])
+  let note = root.children[0]
+  let section = root.children[1]
+  let second = section.children[2]
+  let limits = default_selector_limits()
+  assert_true(matches_selector_list_with_limits(note, ":comment", limits))
+  assert_true(matches_selector_list_with_limits(note, ":comment(any)", limits))
+  assert_eq(
+    matches_selector_list_with_limits(note, ":not(:comment)", limits),
+    false,
+  )
+  assert_true(
+    matches_selector_list_with_limits(
+      second, "section > p:nth-of-type(2)", limits,
+    ),
+  )
+  assert_true(
+    matches_selector_list_with_limits(
+      second,
+      "p:contains(needle)",
+      SelectorLimits::new(max_match_bytes=1000),
+    ),
+  )
+  let context = SelectorMatchContext::new(limits)
+  context.tick(steps=0)
+  assert_eq(
+    pseudo_selector_matches_with_context(second, "hover(2)", context, 0),
+    false,
+  )
+}
+
+///|
 test "nth selector helpers reject empty signed integer fragments" {
   assert_true(parse_signed_int_view("") is None)
   guard parse_signed_int_view("+12") is Some(positive) else {

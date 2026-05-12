@@ -182,6 +182,9 @@ reference implementation in `.repos/justhtml`.
       `:contains(...)` text byte accounting.
 - [x] Added selector-transform no-match regressions for descendant, child,
       adjacent-sibling, general-sibling, class, ID, and malformed selectors.
+- [x] Added limited selector matcher regressions for transform `nth-of-type`
+      parity, comment pseudos, unknown functional pseudos, and valueless
+      attributes in byte-budget accounting.
 - [x] Added transform no-op regressions for empty attribute patterns,
       empty-attribute nodes, blank attribute names, boolean merge attributes,
       root text/comment leaves, and root preformatted text skips.

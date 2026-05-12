@@ -363,7 +363,10 @@ JustHTML from Python to MoonBit.
   transform calls with a sanitizer policy carrying custom `SelectorLimits`, so
   list length, complex-part count, compound-simple count, step budget, byte
   budget, and text-materializing `:contains(...)` paths all exercise the same
-  production matcher.
+  production matcher. Keep one small whitebox parity test for the limited
+  matcher as well: it is a separate context-aware path from public `query()`,
+  and it still needs `:comment`, `:nth-of-type(...)`, unknown functional
+  pseudos, and valueless attribute byte-cost behavior.
 - Port transform no-op tests explicitly. MoonBit callbacks are value wrappers,
   so unchanged operations such as empty `DropAttrs` patterns, already-normalized
   `MergeAttrs`, missing `style`/URL attributes, and root leaf nodes should
