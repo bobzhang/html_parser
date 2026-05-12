@@ -85,6 +85,7 @@ reference implementation in `.repos/justhtml`.
   - [ ] Remaining escaping, code span, fence, list, and block edge cases
     - [x] Orphan `li` block handling and link-text flattening
     - [x] `title` element skip behavior
+    - [x] Link destination wrap triggers and control-character coverage
   - [ ] Tests ported from Python Markdown coverage
 - [ ] Full conformance harness
   - [ ] Import or translate tokenizer fixtures

@@ -409,15 +409,19 @@ fn markdown_link_destination(value : StringView) -> String {
 ///|
 fn markdown_link_destination_needs_wrap(value : StringView) -> Bool {
   for ch in value {
-    if markdown_whitespace_char(ch) ||
-      ch == '(' ||
-      ch == ')' ||
-      ch == '<' ||
-      ch == '>' {
+    if markdown_link_destination_wrap_trigger(ch) {
       return true
     }
   }
   false
+}
+
+///|
+fn markdown_link_destination_wrap_trigger(ch : Char) -> Bool {
+  match ch {
+    ' ' | '\t' | '\n' | '\r' | '(' | ')' | '<' | '>' => true
+    _ => false
+  }
 }
 
 ///|

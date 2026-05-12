@@ -3679,6 +3679,35 @@ test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
     encoded.to_markdown(),
     "[x](<https://e.com/a%20%3Cb%3E%22q%22%5Cx>)",
   )
+  let control_destinations = @html_parser.element("p", children=[
+    @html_parser.element("a", attrs={ "href": Some("https://e.com/a\tb") }, children=[
+      @html_parser.text("tab"),
+    ]),
+    @html_parser.text(" "),
+    @html_parser.element("a", attrs={ "href": Some("https://e.com/a\nb") }, children=[
+      @html_parser.text("lf"),
+    ]),
+    @html_parser.text(" "),
+    @html_parser.element("a", attrs={ "href": Some("https://e.com/a\rb") }, children=[
+      @html_parser.text("cr"),
+    ]),
+    @html_parser.text(" "),
+    @html_parser.element(
+      "a",
+      attrs={ "href": Some("https://e.com/a\u{000C}b") },
+      children=[@html_parser.text("ff")],
+    ),
+    @html_parser.text(" "),
+    @html_parser.element(
+      "a",
+      attrs={ "href": Some("https://e.com/a\u{000B}b") },
+      children=[@html_parser.text("vt")],
+    ),
+  ])
+  assert_eq(
+    control_destinations.to_markdown(),
+    "[tab](<https://e.com/a%09b>) [lf](<https://e.com/a%0Ab>) [cr](<https://e.com/a%0Db>) [ff](https://e.com/a\u{000C}b) [vt](https://e.com/a\u{000B}b)",
+  )
   let script = @html_parser.element("div", children=[
     @html_parser.element("script", attrs={ "data-x": Some("1&2") }),
   ])

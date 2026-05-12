@@ -1298,6 +1298,26 @@ test "markdown helper edge cases match reference" {
     "<https://e.com/a%20b>",
   )
   assert_eq(
+    markdown_link_destination("https://e.com/a\tb"),
+    "<https://e.com/a%09b>",
+  )
+  assert_eq(
+    markdown_link_destination("https://e.com/a\nb"),
+    "<https://e.com/a%0Ab>",
+  )
+  assert_eq(
+    markdown_link_destination("https://e.com/a\rb"),
+    "<https://e.com/a%0Db>",
+  )
+  assert_eq(
+    markdown_link_destination("https://e.com/a\u{000C}b"),
+    "https://e.com/a\u{000C}b",
+  )
+  assert_eq(
+    markdown_link_destination("https://e.com/a\u{000B}b"),
+    "https://e.com/a\u{000B}b",
+  )
+  assert_eq(
     markdown_collect_text(
       element("code", children=[comment("skip"), text("x"), doctype()]),
     ),

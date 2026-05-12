@@ -685,6 +685,9 @@ JustHTML from Python to MoonBit.
 - Markdown link destinations use Python `quote(..., safe=...)` semantics only
   after wrapping is required. Keep the safe-byte set explicit; printable bytes
   such as quotes and backslashes still need percent-encoding inside `<...>`.
+  The wrapping trigger set is also narrower than generic Markdown whitespace:
+  Python checks only space, tab, LF, CR, parentheses, and angle brackets, so
+  form feed and vertical tab inside a programmatic `href` remain unwrapped.
 - Attribute serialization has policy baked into the Python helper: `None`,
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids
