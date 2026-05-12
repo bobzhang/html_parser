@@ -3626,6 +3626,12 @@ test "to_markdown handles direct nodes comments doctypes and empty inline nodes"
   assert_eq(@html_parser.text("a*b").to_markdown(), "a\\*b")
   assert_eq(@html_parser.text("a < b & c").to_markdown(), "a &lt; b &amp; c")
   assert_eq(@html_parser.text("").to_markdown(), "")
+  let document_text = @html_parser.document(children=[@html_parser.text("Hi")])
+  assert_eq(document_text.to_markdown(), "Hi")
+  let document_empty = @html_parser.document(children=[
+    @html_parser.element("p"),
+  ])
+  assert_eq(document_empty.to_markdown(), "")
   let root = @html_parser.element("div", children=[
     @html_parser.comment("nope"),
     @html_parser.doctype(),
@@ -3864,6 +3870,19 @@ test "to_markdown keeps inline and raw variants inside links" {
     children=[@html_parser.document(children=[@html_parser.text("Doc")])],
   )
   assert_eq(document_child.to_markdown(), "[Doc](https://e.com)")
+}
+
+///|
+test "to_markdown handles deeply nested programmatic trees" {
+  let root = @html_parser.element("div")
+  let mut parent = root
+  for _ in 0..<1200 {
+    let child = @html_parser.element("div")
+    parent.append_child(child)
+    parent = child
+  }
+  parent.append_child(@html_parser.text("x"))
+  assert_eq(root.to_markdown(), "x")
 }
 
 ///|
