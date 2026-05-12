@@ -638,6 +638,10 @@ JustHTML from Python to MoonBit.
   following newline; trimming spaces before writing the body loses the blank
   code line for whitespace-only `<pre>` content. Choose a fence longer than any
   backtick run inside the code.
+- Python decides whether to emit the interior fenced-code line from the
+  original collected `<pre>` text, not from the stripped body. A body that
+  becomes empty after `rstrip("\n")`, such as parsed `<pre>\n\n</pre>`, still
+  produces a blank code line.
 - Inline code spans use the same longest-backtick-run rule, but CommonMark also
   needs a single padding space when the code content starts or ends with a
   backtick. Keep separate tests for leading and trailing backticks.

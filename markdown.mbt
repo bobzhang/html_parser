@@ -607,7 +607,7 @@ fn markdown_walk_pre(node : Node, builder : MarkdownBuilder) -> Unit {
   builder.ensure_newlines(2)
   builder.raw(fence)
   builder.newline(1)
-  if body != "" {
+  if code != "" {
     builder.raw(body)
     builder.newline(1)
   }
