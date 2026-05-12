@@ -269,6 +269,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Added tokenizer EOF-after-whitespace tag regressions and refactored
       character/invalid-open/comment text extraction to direct `StringView`
       slices.
+- [x] Refactored tokenizer attribute value slices and special-text null cleanup
+      to rely on scanner-owned UTF-16 boundaries and Unicode-safe iteration.
 
 ## Working Rule
 

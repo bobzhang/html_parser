@@ -516,17 +516,14 @@ fn SourceTokenizer::parse_attribute(
     ignore(self.advance_char())
   }
   while !self.is_eof() {
-    match self.current() {
-      Some(ch) if ch.is_ascii_whitespace() ||
-        ch == '=' ||
-        ch == '/' ||
-        ch == '>' => break
-      Some('<') | Some('"') | Some('\'') => {
+    match self.current().unwrap() {
+      ch if ch.is_ascii_whitespace() || ch == '=' || ch == '/' || ch == '>' =>
+        break
+      '<' | '"' | '\'' => {
         self.error_at("unexpected-character-in-attribute-name", self.pos)
         ignore(self.advance_char())
       }
-      Some(_) => ignore(self.advance_char())
-      None => ()
+      _ => ignore(self.advance_char())
     }
   }
   let (name, name_errors) = parse_lower_name_value_replacing_nulls(
@@ -571,33 +568,28 @@ fn SourceTokenizer::parse_attribute_value(self : SourceTokenizer) -> String {
     _ => {
       let start = self.pos
       while !self.is_eof() {
-        match self.current() {
-          Some(ch) if ch.is_ascii_whitespace() || ch == '>' => break
-          Some('\u{0000}') => {
+        match self.current().unwrap() {
+          ch if ch.is_ascii_whitespace() || ch == '>' => break
+          '\u{0000}' => {
             self.error_at("unexpected-null-character", self.pos)
             ignore(self.advance_char())
           }
-          Some('"') | Some('\'') | Some('<') | Some('=') | Some('`') => {
+          '"' | '\'' | '<' | '=' | '`' => {
             self.error_at(
               "unexpected-character-in-unquoted-attribute-value",
               self.pos,
             )
             ignore(self.advance_char())
           }
-          Some(_) => ignore(self.advance_char())
-          None => ()
+          _ => ignore(self.advance_char())
         }
       }
-      match self.input.get_view(start~, end=self.pos) {
-        Some(view) => {
-          let decoded = decode_attribute_value_with_errors(view)
-          for error in decoded.errors {
-            self.error_at(error.code, self.pos)
-          }
-          decoded.data
-        }
-        None => ""
+      let view = self.input[start:self.pos]
+      let decoded = decode_attribute_value_with_errors(view)
+      for error in decoded.errors {
+        self.error_at(error.code, self.pos)
       }
+      decoded.data
     }
   }
 }
@@ -615,7 +607,7 @@ fn SourceTokenizer::parse_quoted_attribute_value(
     }
     ignore(self.advance_char())
   }
-  let raw = self.input.get_view(start~, end=self.pos)
+  let raw = self.input[start:self.pos]
   if self.current() == Some(quote) {
     ignore(self.advance_char())
     match self.current() {
@@ -624,16 +616,11 @@ fn SourceTokenizer::parse_quoted_attribute_value(
       _ => ()
     }
   }
-  match raw {
-    Some(view) => {
-      let decoded = decode_attribute_value_with_errors(view)
-      for error in decoded.errors {
-        self.error_at(error.code, self.pos)
-      }
-      decoded.data
-    }
-    None => ""
+  let decoded = decode_attribute_value_with_errors(raw)
+  for error in decoded.errors {
+    self.error_at(error.code, self.pos)
   }
+  decoded.data
 }
 
 ///|
@@ -669,19 +656,14 @@ fn SourceTokenizer::replace_special_text_nulls(
 ) -> String {
   let out = StringBuilder::new(size_hint=raw.length())
   let mut pos = 0
-  while pos < raw.length() {
-    match raw.get_char(pos) {
-      Some('\u{0000}') => {
-        self.error_at("unexpected-null-character", start + pos)
-        out.write_char('\u{FFFD}')
-        pos += 1
-      }
-      Some(ch) => {
-        out.write_char(ch)
-        pos += ch.utf16_len()
-      }
-      None => break
+  for ch in raw {
+    if ch == '\u{0000}' {
+      self.error_at("unexpected-null-character", start + pos)
+      out.write_char('\u{FFFD}')
+    } else {
+      out.write_char(ch)
     }
+    pos += ch.utf16_len()
   }
   out.to_string()
 }
