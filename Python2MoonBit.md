@@ -585,6 +585,10 @@ JustHTML from Python to MoonBit.
 - The JustHTML tree fixture harness checks diagnostic code sequences, not
   source locations. Keep broad `.dat` table tests aligned with that behavior,
   then add focused parser tests for line/column parity when a location matters.
+- MoonBit black-box tests run on non-native targets too, so do not rely on
+  filesystem reads for fixture coverage unless the package is already
+  target-gated. Static fixture tables with row-count guards are a practical
+  substitute for Python's file-reading harness.
 - Known-doctype checks are intentionally exact. Legacy doctypes such as HTML
   4.01 Transitional with the loose DTD still produce a doctype node, but they
   report `unknown-doctype`; do not collapse them into the accepted strict/legacy

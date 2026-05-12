@@ -98,7 +98,7 @@ reference implementation in `.repos/justhtml`.
     - [x] Sanitized `<textarea>` Markdown passthrough breakout regression
     - [x] Explicit `Sanitize` transform boundary Markdown regression
     - [x] Foreign-namespace mXSS Markdown passthrough regression
-- [ ] Full conformance harness
+- [x] Full conformance harness
   - [x] Import or translate tokenizer fixtures
     - [x] `coverage_gaps.test`, `entities.test`, and
       `xml_coercion_coverage.test` token fixture rows
@@ -110,7 +110,9 @@ reference implementation in `.repos/justhtml`.
     - [x] `empty_stack_edge_cases.dat` tree rows
   - [x] Import or translate encoding fixtures
     - [x] Reference `test_encoding.py` byte decode and meta-prescan cases
-  - [ ] Regression harness for JustHTML-specific `.dat` and `.test` files
+  - [x] Regression harness for JustHTML-specific `.dat` and `.test` files
+    - [x] Static tokenizer, tree-builder, and encoding fixture table runners
+    - [x] Fixture row-count guards for translated vendored rows
 - [x] Documentation and warning cleanup
   - [x] Public API docs for warning 74
     - [x] `tokens.mbt` tokenizer API docs

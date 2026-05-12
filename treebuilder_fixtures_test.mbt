@@ -81,6 +81,15 @@ test "tree builder matches vendored empty stack edge fixtures" {
 }
 
 ///|
+test "tree fixture tables cover vendored JustHTML dat rows" {
+  assert_eq(iframe_srcdoc_tree_fixture_cases().length(), 1)
+  assert_eq(xml_coercion_tree_fixture_cases().length(), 4)
+  assert_eq(treebuilder_coverage_fixture_cases().length(), 18)
+  assert_eq(branch_coverage_fixture_cases().length(), 17)
+  assert_eq(empty_stack_edge_fixture_cases().length(), 3)
+}
+
+///|
 fn iframe_srcdoc_tree_fixture_cases() -> Array[TreeFixtureCase] {
   [
     {

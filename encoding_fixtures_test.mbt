@@ -44,6 +44,11 @@ test "parse_bytes matches reference encoding fixtures" {
 }
 
 ///|
+test "encoding fixture table covers translated reference rows" {
+  assert_eq(encoding_fixture_cases().length(), 17)
+}
+
+///|
 fn encoding_fixture_cases() -> Array[EncodingFixtureCase] {
   [
     {

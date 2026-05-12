@@ -131,6 +131,14 @@ test "tokenizer matches vendored XML coercion fixture tokens" {
 }
 
 ///|
+test "tokenizer fixture tables cover vendored JustHTML rows" {
+  assert_eq(tokenizer_coverage_gap_fixture_cases().length(), 9)
+  assert_eq(tokenizer_entity_fixture_cases().length(), 8)
+  assert_eq(tokenizer_edge_case_fixture_cases().length(), 38)
+  assert_eq(tokenizer_xml_coercion_fixture_cases().length(), 2)
+}
+
+///|
 fn tokenizer_coverage_gap_fixture_cases() -> Array[TokenizerFixtureCase] {
   [
     {
