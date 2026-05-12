@@ -110,6 +110,7 @@ reference implementation in `.repos/justhtml`.
     - [x] `parser.mbt` helper constructor annotations
     - [x] `html_parser_test.mbt` enum constructor annotations
   - [ ] Remove unnecessary view conversions for warning 75
+    - [x] `foreign_content.mbt` view conversions
   - [ ] Qualify README checked examples for warning 25
 
 ## Working Rule

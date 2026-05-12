@@ -7,7 +7,7 @@ fn is_foreign_namespace(ns : StringView) -> Bool {
 fn node_attribute_value_ignore_case(node : Node, name : StringView) -> String? {
   let wanted = lower_ascii(name)
   for attr_name, attr_value in node.attrs {
-    if lower_ascii(attr_name[:]) == wanted {
+    if lower_ascii(attr_name) == wanted {
       return Some(
         match attr_value {
           Some(value) => value
@@ -234,15 +234,13 @@ fn prepare_foreign_attrs(
   let adjusted : Map[String, String?] = {}
   for name, value in attrs {
     let namespace_adjusted = if ns == "math" {
-      adjusted_mathml_attribute_name(name[:])
+      adjusted_mathml_attribute_name(name)
     } else if ns == "svg" {
-      adjusted_svg_attribute_name(name[:])
+      adjusted_svg_attribute_name(name)
     } else {
       name
     }
-    let foreign_adjusted = adjusted_foreign_attribute_name(
-      namespace_adjusted[:],
-    )
+    let foreign_adjusted = adjusted_foreign_attribute_name(namespace_adjusted)
     adjusted[foreign_adjusted] = value
   }
   adjusted
@@ -516,6 +514,6 @@ fn names_match_end_tag(node : Node, name : StringView) -> Bool {
   (
     node.kind == Element &&
     !(node.ns is Some("html")) &&
-    lower_ascii(node.name[:]) == name.to_owned()
+    lower_ascii(node.name) == name.to_owned()
   )
 }
