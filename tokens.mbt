@@ -213,21 +213,15 @@ fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
     }
     ignore(self.advance_char())
   }
-  match self.input.get_view(start~, end=self.pos) {
-    Some(view) if !view.is_empty() => {
-      let decoded = decode_entities_with_errors(view, in_attribute=false)
-      for error in decoded.errors {
-        self.error_at(error.code, start + error.offset)
-      }
-      let data = decoded.data
-      let data = if self.xml_coercion {
-        coerce_text_for_xml(data)
-      } else {
-        data
-      }
-      self.tokens.push(Characters(data))
+  let view = self.input[start:self.pos]
+  if !view.is_empty() {
+    let decoded = decode_entities_with_errors(view, in_attribute=false)
+    for error in decoded.errors {
+      self.error_at(error.code, start + error.offset)
     }
-    _ => ()
+    let data = decoded.data
+    let data = if self.xml_coercion { coerce_text_for_xml(data) } else { data }
+    self.tokens.push(Characters(data))
   }
 }
 
@@ -485,21 +479,15 @@ fn SourceTokenizer::parse_invalid_tag_open_as_text(
     }
     ignore(self.advance_char())
   }
-  match self.input.get_view(start~, end=self.pos) {
-    Some(view) if !view.is_empty() => {
-      let decoded = decode_entities_with_errors(view, in_attribute=false)
-      for error in decoded.errors {
-        self.error_at(error.code, start + error.offset)
-      }
-      let data = decoded.data
-      let data = if self.xml_coercion {
-        coerce_text_for_xml(data)
-      } else {
-        data
-      }
-      self.tokens.push(Characters(data))
+  let view = self.input[start:self.pos]
+  if !view.is_empty() {
+    let decoded = decode_entities_with_errors(view, in_attribute=false)
+    for error in decoded.errors {
+      self.error_at(error.code, start + error.offset)
     }
-    _ => ()
+    let data = decoded.data
+    let data = if self.xml_coercion { coerce_text_for_xml(data) } else { data }
+    self.tokens.push(Characters(data))
   }
 }
 
@@ -509,10 +497,7 @@ fn SourceTokenizer::parse_bogus_comment(self : SourceTokenizer) -> Unit {
   while !self.is_eof() && self.current() != Some('>') {
     ignore(self.advance_char())
   }
-  let data = match self.input.get_view(start=data_start, end=self.pos) {
-    Some(view) => normalize_bogus_comment_data(view)
-    None => ""
-  }
+  let data = normalize_bogus_comment_data(self.input[data_start:self.pos])
   let data = if self.xml_coercion { coerce_comment_for_xml(data) } else { data }
   if self.current() == Some('>') {
     ignore(self.advance_char())

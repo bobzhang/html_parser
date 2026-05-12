@@ -13579,6 +13579,26 @@ test "tokenize reports selected EOF and null fixture errors" {
   guard unfinished_end.errors[0].column is Some(6) else {
     fail("expected incomplete end tag EOF at final name character")
   }
+  let unfinished_start_spaces = @html_parser.tokenize(
+    "<div   ",
+    collect_errors=true,
+  )
+  assert_eq(unfinished_start_spaces.tokens.length(), 1)
+  guard unfinished_start_spaces.tokens[0] is Eof else {
+    fail("expected only EOF token for start tag ending after whitespace")
+  }
+  assert_eq(unfinished_start_spaces.errors.length(), 1)
+  assert_eq(unfinished_start_spaces.errors[0].code, "eof-in-tag")
+  let unfinished_end_spaces = @html_parser.tokenize(
+    "</span   ",
+    collect_errors=true,
+  )
+  assert_eq(unfinished_end_spaces.tokens.length(), 1)
+  guard unfinished_end_spaces.tokens[0] is Eof else {
+    fail("expected only EOF token for end tag ending after whitespace")
+  }
+  assert_eq(unfinished_end_spaces.errors.length(), 1)
+  assert_eq(unfinished_end_spaces.errors[0].code, "eof-in-tag")
   let unfinished_comment = @html_parser.tokenize("<!--x", collect_errors=true)
   assert_eq(unfinished_comment.tokens.length(), 2)
   guard unfinished_comment.tokens[0] is CommentToken("x") else {

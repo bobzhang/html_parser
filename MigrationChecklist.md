@@ -266,6 +266,9 @@ reference implementation in `.repos/justhtml`.
       invariants while keeping the astral-safe previous-boundary fallback.
 - [x] Refactored tokenizer doctype/start/end tag cursor loops to use scanner
       boundary invariants and direct `StringView` slices.
+- [x] Added tokenizer EOF-after-whitespace tag regressions and refactored
+      character/invalid-open/comment text extraction to direct `StringView`
+      slices.
 
 ## Working Rule
 
