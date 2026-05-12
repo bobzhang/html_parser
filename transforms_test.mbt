@@ -90,3 +90,120 @@ test "apply_transforms runs linkify and selector transforms in order" {
   )
   assert_eq(linkify_first.root.to_html(pretty=false), "<p></p>")
 }
+
+///|
+test "apply_transforms sets and drops attributes by selector" {
+  let doc = @html_parser.parse_fragment(
+    "<p>Hello</p><div onclick='x' xml:lang='sv' srcdoc='x' data-ok='1'></div>",
+  )
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::set_attrs("p", {
+        "id": Some("intro"),
+        "data-empty": None,
+      }),
+      @html_parser.TransformSpec::drop_attrs("*", ["on*", "*:*", "srcdoc"]),
+    ]),
+  )
+  assert_eq(
+    doc.root.to_html(pretty=false),
+    "<p id=\"intro\" data-empty>Hello</p><div data-ok=\"1\"></div>",
+  )
+}
+
+///|
+test "drop_attrs lowercases rewritten safe attributes and noops without match" {
+  let div = @html_parser.element("div", attrs={
+    "Data-X": Some("1"),
+    "OnClick": Some("run()"),
+  })
+  let root = @html_parser.fragment(children=[div])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::drop_attrs("div", ["on*"]),
+    ]),
+  )
+  assert_eq(root.to_html(pretty=false), "<div data-x=\"1\"></div>")
+
+  let no_match = @html_parser.element("div", attrs={ "Data-X": Some("1") })
+  let wrapper = @html_parser.fragment(children=[no_match])
+  ignore(
+    @html_parser.apply_transforms(wrapper, [
+      @html_parser.TransformSpec::drop_attrs("div", ["srcdoc"]),
+    ]),
+  )
+  assert_eq(wrapper.to_html(pretty=false), "<div Data-X=\"1\"></div>")
+
+  let hot_path = @html_parser.fragment(children=[
+    @html_parser.element("div", attrs={
+      "Data-X": Some("1"),
+      "OnClick": Some("run()"),
+      "SrcDoc": Some("x"),
+    }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(hot_path, [
+      @html_parser.TransformSpec::drop_attrs("*", ["on*", "*:*", "srcdoc"]),
+    ]),
+  )
+  assert_eq(hot_path.to_html(pretty=false), "<div Data-X=\"1\"></div>")
+}
+
+///|
+test "allowlist_attrs keeps global and tag-specific attributes" {
+  let root = @html_parser.fragment(children=[
+    @html_parser.element(
+      "a",
+      attrs={
+        "HREF": Some("https://example.com"),
+        "Rel": Some("noreferrer"),
+        "BAD": Some("x"),
+        "id": Some("link"),
+      },
+      children=[@html_parser.text("x")],
+    ),
+    @html_parser.element("span", attrs={ "id": Some("s"), "href": Some("nope") }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::allowlist_attrs("*", {
+        "*": ["id"],
+        "a": ["href", "rel"],
+      }),
+    ]),
+  )
+  assert_eq(
+    root.to_html(pretty=false),
+    "<a href=\"https://example.com\" rel=\"noreferrer\" id=\"link\">x</a><span id=\"s\"></span>",
+  )
+}
+
+///|
+test "merge_attrs normalizes duplicate tokens and mixed-case keys" {
+  let root = @html_parser.parse_fragment(
+      "<a></a><a rel='NoOpEnEr noopener'></a><a rel='noreferrer'></a>",
+    ).root
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::merge_attrs("a", attr="rel", tokens=[
+        "noopener",
+      ]),
+    ]),
+  )
+  assert_eq(
+    root.to_html(pretty=false),
+    "<a rel=\"noopener\"></a><a rel=\"noopener\"></a><a rel=\"noreferrer noopener\"></a>",
+  )
+
+  let mixed = @html_parser.fragment(children=[
+    @html_parser.element("a", attrs={ "Rel": Some("noreferrer") }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(mixed, [
+      @html_parser.TransformSpec::merge_attrs("a", attr="rel", tokens=[
+        "noopener",
+      ]),
+    ]),
+  )
+  assert_eq(mixed.to_html(pretty=false), "<a rel=\"noreferrer noopener\"></a>")
+}

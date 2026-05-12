@@ -321,6 +321,15 @@ JustHTML from Python to MoonBit.
   A helper with `config? : LinkifyConfig` may store a `LinkifyConfig?`
   internally, but callers still write `config=config`, not
   `config=Some(config)`.
+- Required labeled arguments use the `name~ : Type` parameter form. Without
+  that tilde in the declaration, black-box callers cannot write labels such as
+  `attr="rel"` or `tokens=[...]`, even though optional arguments are labeled
+  automatically.
+- Immutable record fields can still contain mutable values. `Node.attrs` is not
+  reassigned in the port, but the underlying `Map` is mutated in place with
+  `clear`, `remove`, and index assignment. This matches the current node model
+  better than making the whole field mutable just to port Python's
+  `node.attrs = new_attrs` callback style.
 - Python transform walkers mark newly inserted nodes so earlier transforms do
   not run on them again. When porting stage/order behavior, decide explicitly
   whether replacement children can be seen by the current spec, by later specs,

@@ -4,6 +4,10 @@ priv enum TransformKind {
   UnwrapElements
   EscapeElements
   EmptyElements
+  SetAttributes
+  DropAttributes
+  AllowlistAttributes
+  MergeAttributeTokens
   DropCommentNodes
   DropDoctypeNodes
   CollapseTextWhitespace
@@ -18,6 +22,12 @@ priv enum TransformKind {
 pub struct TransformSpec {
   priv kind : TransformKind
   priv selector : String
+  priv attr_patch : Map[String, String?]?
+  priv attr_patterns : Array[String]
+  priv allowed_attrs : Map[String, Array[String]]?
+  priv merge_tag : String
+  priv merge_attr : String
+  priv merge_tokens : Array[String]
   priv skip_tags : Array[String]
   priv linkify_config : LinkifyConfig?
   priv linkify_skip_tags : Array[String]
@@ -27,6 +37,12 @@ pub struct TransformSpec {
 fn make_transform_spec(
   kind : TransformKind,
   selector? : String = "",
+  attr_patch? : Map[String, String?],
+  attr_patterns? : Array[String] = [],
+  allowed_attrs? : Map[String, Array[String]],
+  merge_tag? : String = "",
+  merge_attr? : String = "",
+  merge_tokens? : Array[String] = [],
   skip_tags? : Array[String] = [],
   linkify_config? : LinkifyConfig,
   linkify_skip_tags? : Array[String] = [],
@@ -34,6 +50,12 @@ fn make_transform_spec(
   {
     kind,
     selector,
+    attr_patch: attr_patch.map(fn(attrs) { attrs.copy() }),
+    attr_patterns: attr_patterns.copy(),
+    allowed_attrs: allowed_attrs.map(copy_allowed_attrs_map),
+    merge_tag,
+    merge_attr,
+    merge_tokens: merge_tokens.copy(),
     skip_tags: skip_tags.copy(),
     linkify_config,
     linkify_skip_tags: linkify_skip_tags.copy(),
@@ -62,6 +84,63 @@ pub fn TransformSpec::escape(selector : StringView) -> TransformSpec {
 /// Build a transform that removes all children from matching elements.
 pub fn TransformSpec::empty(selector : StringView) -> TransformSpec {
   make_transform_spec(EmptyElements, selector=selector.to_owned())
+}
+
+///|
+/// Build a transform that sets or adds attributes on matching elements.
+pub fn TransformSpec::set_attrs(
+  selector : StringView,
+  attrs : Map[String, String?],
+) -> TransformSpec {
+  make_transform_spec(
+    SetAttributes,
+    selector=selector.to_owned(),
+    attr_patch=attrs,
+  )
+}
+
+///|
+/// Build a transform that removes matching attributes from matching elements.
+pub fn TransformSpec::drop_attrs(
+  selector : StringView,
+  patterns : Array[String],
+) -> TransformSpec {
+  make_transform_spec(
+    DropAttributes,
+    selector=selector.to_owned(),
+    attr_patterns=normalize_transform_strings(patterns),
+  )
+}
+
+///|
+/// Build a transform that keeps only allowed attributes on matching elements.
+pub fn TransformSpec::allowlist_attrs(
+  selector : StringView,
+  allowed_attributes : Map[String, Array[String]],
+) -> TransformSpec {
+  make_transform_spec(
+    AllowlistAttributes,
+    selector=selector.to_owned(),
+    allowed_attrs=normalize_allowed_attrs_map(allowed_attributes),
+  )
+}
+
+///|
+/// Build a transform that merges tokens into a whitespace-delimited attribute.
+pub fn TransformSpec::merge_attrs(
+  tag : StringView,
+  attr~ : StringView,
+  tokens~ : Array[String],
+) -> TransformSpec {
+  let tag = lower_ascii(tag.trim())
+  let attr = lower_ascii(attr.trim())
+  make_transform_spec(
+    MergeAttributeTokens,
+    selector=tag,
+    merge_tag=tag,
+    merge_attr=attr,
+    merge_tokens=normalize_transform_strings(tokens),
+  )
 }
 
 ///|
@@ -123,8 +202,14 @@ pub fn apply_transforms(node : Node, transforms : Array[TransformSpec]) -> Node 
 ///|
 fn apply_transform(node : Node, transform : TransformSpec) -> Unit {
   match transform.kind {
-    DropElements | UnwrapElements | EscapeElements | EmptyElements =>
-      apply_selector_transform(node, transform)
+    DropElements
+    | UnwrapElements
+    | EscapeElements
+    | EmptyElements
+    | SetAttributes
+    | DropAttributes
+    | AllowlistAttributes
+    | MergeAttributeTokens => apply_selector_transform(node, transform)
     DropCommentNodes => apply_drop_kind_transform(node, Comment)
     DropDoctypeNodes => apply_drop_kind_transform(node, Doctype)
     CollapseTextWhitespace =>
@@ -153,6 +238,44 @@ fn transform_skip_tag_set(tags : Array[String]) -> Set[String] {
 }
 
 ///|
+fn normalize_transform_strings(values : Array[String]) -> Array[String] {
+  let out : Array[String] = []
+  for value in values {
+    let normalized = lower_ascii(value.trim())
+    if normalized != "" && !out.contains(normalized) {
+      out.push(normalized)
+    }
+  }
+  out.sort()
+  out
+}
+
+///|
+fn copy_allowed_attrs_map(
+  allowed : Map[String, Array[String]],
+) -> Map[String, Array[String]] {
+  let out : Map[String, Array[String]] = {}
+  for tag, attrs in allowed {
+    out[tag] = attrs.copy()
+  }
+  out
+}
+
+///|
+fn normalize_allowed_attrs_map(
+  allowed : Map[String, Array[String]],
+) -> Map[String, Array[String]] {
+  let out : Map[String, Array[String]] = {}
+  for tag, attrs in allowed {
+    let normalized_tag = lower_ascii(tag[:].trim())
+    if normalized_tag != "" {
+      out[normalized_tag] = normalize_transform_strings(attrs)
+    }
+  }
+  out
+}
+
+///|
 fn apply_selector_transform(root : Node, transform : TransformSpec) -> Unit {
   match root.kind {
     Document | Fragment | Element => transform_children(root, transform)
@@ -165,7 +288,7 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
   let mut index = 0
   while index < parent.children.length() {
     let child = parent.children[index]
-    if child.kind == Element && matches(child, transform.selector) {
+    if child.kind == Element && transform_matches_element(child, transform) {
       match transform.kind {
         DropElements => remove_child_at(parent, index)
         UnwrapElements => {
@@ -184,6 +307,26 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
           empty_transform_node(child)
           index += 1
         }
+        SetAttributes => {
+          apply_set_attrs_transform(child, transform)
+          transform_children(child, transform)
+          index += 1
+        }
+        DropAttributes => {
+          apply_drop_attrs_transform(child, transform)
+          transform_children(child, transform)
+          index += 1
+        }
+        AllowlistAttributes => {
+          apply_allowlist_attrs_transform(child, transform)
+          transform_children(child, transform)
+          index += 1
+        }
+        MergeAttributeTokens => {
+          apply_merge_attrs_transform(child, transform)
+          transform_children(child, transform)
+          index += 1
+        }
         _ => index += 1
       }
     } else {
@@ -197,6 +340,14 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
 }
 
 ///|
+fn transform_matches_element(node : Node, transform : TransformSpec) -> Bool {
+  match transform.kind {
+    MergeAttributeTokens => lower_ascii(node.name) == transform.merge_tag
+    _ => matches(node, transform.selector)
+  }
+}
+
+///|
 fn empty_transform_node(node : Node) -> Unit {
   while !node.children.is_empty() {
     let child = node.children[0]
@@ -205,6 +356,225 @@ fn empty_transform_node(node : Node) -> Unit {
       physical_equal(current_parent, node) {
       child.parent = None
     }
+  }
+}
+
+///|
+fn apply_set_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
+  match transform.attr_patch {
+    Some(attrs) =>
+      for name, value in attrs {
+        node.attrs[name] = value
+      }
+    None => ()
+  }
+}
+
+///|
+fn attrs_replace_with(node : Node, attrs : Map[String, String?]) -> Unit {
+  node.attrs.clear()
+  for name, value in attrs {
+    node.attrs[name] = value
+  }
+}
+
+///|
+fn transform_glob_match(pattern : StringView, value : StringView) -> Bool {
+  transform_glob_match_at(pattern, 0, value, 0)
+}
+
+///|
+fn transform_glob_match_at(
+  pattern : StringView,
+  pattern_pos : Int,
+  value : StringView,
+  value_pos : Int,
+) -> Bool {
+  if pattern_pos >= pattern.length() {
+    return value_pos >= value.length()
+  }
+  match pattern.get_char(pattern_pos) {
+    Some('*') => {
+      let mut next_pattern_pos = pattern_pos + 1
+      while next_pattern_pos < pattern.length() &&
+            pattern.get_char(next_pattern_pos) is Some('*') {
+        next_pattern_pos += 1
+      }
+      if next_pattern_pos >= pattern.length() {
+        return true
+      }
+      let mut scan = value_pos
+      while scan <= value.length() {
+        if transform_glob_match_at(pattern, next_pattern_pos, value, scan) {
+          return true
+        }
+        if scan >= value.length() {
+          break
+        }
+        match value.get_char(scan) {
+          Some(ch) => scan += ch.utf16_len()
+          None => break
+        }
+      }
+      false
+    }
+    Some(pattern_ch) =>
+      match value.get_char(value_pos) {
+        Some(value_ch) if value_ch == pattern_ch =>
+          transform_glob_match_at(
+            pattern,
+            pattern_pos + pattern_ch.utf16_len(),
+            value,
+            value_pos + value_ch.utf16_len(),
+          )
+        _ => false
+      }
+    None => false
+  }
+}
+
+///|
+fn attr_matches_any_pattern(
+  name : StringView,
+  patterns : Array[String],
+) -> Bool {
+  for pattern in patterns {
+    if transform_glob_match(pattern, name) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn transform_drop_attrs_hot_path(patterns : Array[String]) -> Bool {
+  patterns.length() == 3 &&
+  patterns.contains("*:*") &&
+  patterns.contains("on*") &&
+  patterns.contains("srcdoc")
+}
+
+///|
+fn apply_drop_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
+  if transform.attr_patterns.is_empty() || node.attrs.length() == 0 {
+    return
+  }
+  let preserve_safe_key_case = transform_drop_attrs_hot_path(
+    transform.attr_patterns,
+  )
+  let mut found = false
+  for raw_name, _ in node.attrs {
+    let name = lower_ascii(raw_name[:].trim())
+    if name != "" && attr_matches_any_pattern(name, transform.attr_patterns) {
+      found = true
+      break
+    }
+  }
+  if !found {
+    return
+  }
+  let out : Map[String, String?] = {}
+  for raw_name, value in node.attrs {
+    let name = lower_ascii(raw_name[:].trim())
+    if name != "" && !attr_matches_any_pattern(name, transform.attr_patterns) {
+      if preserve_safe_key_case {
+        out[raw_name] = value
+      } else {
+        out[name] = value
+      }
+    }
+  }
+  attrs_replace_with(node, out)
+}
+
+///|
+fn allowed_attrs_for_node(
+  node : Node,
+  allowed : Map[String, Array[String]],
+) -> Array[String] {
+  let tag = lower_ascii(node.name)
+  let global = allowed.get("*").unwrap_or([])
+  match allowed.get(tag) {
+    Some(tag_attrs) => {
+      let out = global.copy()
+      for attr in tag_attrs {
+        if !out.contains(attr) {
+          out.push(attr)
+        }
+      }
+      out
+    }
+    None => global.copy()
+  }
+}
+
+///|
+fn apply_allowlist_attrs_transform(
+  node : Node,
+  transform : TransformSpec,
+) -> Unit {
+  guard transform.allowed_attrs is Some(allowed) else { return }
+  if node.attrs.length() == 0 {
+    return
+  }
+  let allowed_for_node = allowed_attrs_for_node(node, allowed)
+  let out : Map[String, String?] = {}
+  let mut changed = false
+  for raw_name, value in node.attrs {
+    let trimmed = raw_name[:].trim()
+    if trimmed.is_empty() {
+      changed = true
+      continue
+    }
+    if allowed_for_node.contains(raw_name) {
+      out[raw_name] = value
+    } else {
+      let normalized = lower_ascii(trimmed)
+      if allowed_for_node.contains(normalized) {
+        out[normalized] = value
+        if normalized != raw_name {
+          changed = true
+        }
+      } else {
+        changed = true
+      }
+    }
+  }
+  if changed {
+    attrs_replace_with(node, out)
+  }
+}
+
+///|
+fn apply_merge_attrs_transform(node : Node, transform : TransformSpec) -> Unit {
+  if transform.merge_attr == "" || transform.merge_tokens.is_empty() {
+    return
+  }
+  let matched_keys : Array[String] = []
+  let existing : Array[String] = []
+  for raw_name, value in node.attrs {
+    if lower_ascii(raw_name[:].trim()) == transform.merge_attr {
+      matched_keys.push(raw_name)
+      match value {
+        Some(raw_value) => push_html_whitespace_tokens(existing, raw_value)
+        None => ()
+      }
+    }
+  }
+  let had_exact_key = matched_keys.length() == 1 &&
+    matched_keys[0] == transform.merge_attr
+  let original_value = node.attrs.get(transform.merge_attr)
+  for token in transform.merge_tokens {
+    if !existing.contains(token) {
+      existing.push(token)
+    }
+  }
+  let normalized = existing.join(" ")
+  if !had_exact_key || original_value != Some(Some(normalized)) {
+    for key in matched_keys {
+      node.attrs.remove(key)
+    }
+    node.attrs[transform.merge_attr] = Some(normalized)
   }
 }
 

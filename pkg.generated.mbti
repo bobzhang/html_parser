@@ -189,13 +189,17 @@ pub(all) struct TokenizedHtml {
 pub struct TransformSpec {
   // private fields
 } derive(@debug.Debug)
+pub fn TransformSpec::allowlist_attrs(StringView, Map[String, Array[String]]) -> Self
 pub fn TransformSpec::collapse_whitespace(skip_tags? : Array[String]) -> Self
 pub fn TransformSpec::drop(StringView) -> Self
+pub fn TransformSpec::drop_attrs(StringView, Array[String]) -> Self
 pub fn TransformSpec::drop_comments() -> Self
 pub fn TransformSpec::drop_doctype() -> Self
 pub fn TransformSpec::empty(StringView) -> Self
 pub fn TransformSpec::escape(StringView) -> Self
 pub fn TransformSpec::linkify(config? : LinkifyConfig, skip_tags? : Array[String]) -> Self
+pub fn TransformSpec::merge_attrs(StringView, attr~ : StringView, tokens~ : Array[String]) -> Self
+pub fn TransformSpec::set_attrs(StringView, Map[String, String?]) -> Self
 pub fn TransformSpec::unwrap(StringView) -> Self
 
 pub(all) enum UnsafeHandling {
