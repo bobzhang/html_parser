@@ -3,12 +3,16 @@
 
 from __future__ import annotations
 
+import os
 import pathlib
 import sys
 
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
-REFERENCE_ROOT = ROOT / ".repos" / "justhtml"
+DEFAULT_REFERENCE_ROOT = ROOT / ".repos" / "justhtml"
+REFERENCE_ROOT = pathlib.Path(
+    os.environ.get("JUSTHTML_REFERENCE_ROOT", str(DEFAULT_REFERENCE_ROOT)),
+)
 VENDORED_ROOT = ROOT / "tests" / "fixtures" / "justhtml"
 
 FIXTURE_PAIRS = [
@@ -68,7 +72,10 @@ def main() -> int:
         require_reference = True
 
     if not REFERENCE_ROOT.is_dir():
-        message = "Skipping fixture sync check because .repos/justhtml is absent."
+        message = (
+            "Skipping fixture sync check because reference checkout is absent: "
+            f"{REFERENCE_ROOT}"
+        )
         if require_reference:
             print(message, file=sys.stderr)
             return 1

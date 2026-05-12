@@ -343,6 +343,8 @@ reference implementation in `.repos/justhtml`.
       syntax, and fast argument smoke paths.
 - [x] Added a vendored fixture sync check against `.repos/justhtml` for the
       copied JustHTML and linkify fixture files.
+- [x] Added fixture-sync script smoke coverage for absent-reference and
+      bad-argument paths.
 
 ## Working Rule
 
