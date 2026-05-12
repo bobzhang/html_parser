@@ -27,27 +27,7 @@ jobs:
         run: moon version --all
 
       - name: Check release version consistency
-        run: |
-          python3 - <<'PY'
-          import json
-          import pathlib
-          import re
-          import sys
-
-          version = json.loads(pathlib.Path("moon.mod.json").read_text())["version"]
-          cli = pathlib.Path("cli.mbt").read_text()
-          test = pathlib.Path("cli_test.mbt").read_text()
-
-          cli_match = re.search(r'fn cli_version\(\) -> String \{\s*"([^"]+)"\s*\}', cli)
-          if cli_match is None:
-            sys.exit("could not find cli_version()")
-          if cli_match.group(1) != version:
-            sys.exit(f"cli_version {cli_match.group(1)!r} != module version {version!r}")
-
-          expected_test = f'assert_eq(version.stdout, "justhtml {version}\\n")'
-          if expected_test not in test:
-            sys.exit("CLI --version test does not assert the module version")
-          PY
+        run: python3 scripts/check_release_version.py
 
       - name: Check formatting
         run: moon fmt --check

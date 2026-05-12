@@ -318,6 +318,8 @@ reference implementation in `.repos/justhtml`.
       and README installation-documentation updates.
 - [x] Added a CI release-version consistency check tying `moon.mod.json`,
       CLI `--version`, and the exact CLI version test together.
+- [x] Moved the release-version consistency check into a reusable local script
+      and kept CI calling that single source of truth.
 
 ## Working Rule
 
