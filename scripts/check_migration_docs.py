@@ -52,9 +52,14 @@ def main(argv: list[str]) -> int:
         ],
         ROOT / "README.mbt.md": [
             "bash scripts/check_ci.sh --skip-without-credentials",
+            "GitHub workflow drift",
+            "source layout",
+            "migration docs",
             "vendored fixture sync",
+            "tests\nwith a count floor",
             "native CLI smoke behavior",
             "Mooncakes package validation",
+            "Mooncakes archive-content checks",
         ],
     }
 
