@@ -649,6 +649,10 @@ JustHTML from Python to MoonBit.
   children and render each `li` into the active builder. Rendering each list
   item through a separate string loses indentation, hides empty markers, and
   changes Python's blank-line behavior around paragraph children.
+- Python also treats orphan `li` elements as block containers when they are not
+  owned by a `ul`/`ol`. In normal Markdown output adjacent orphan list items
+  need blank-line separation, while link-text traversal flattens them to a
+  single space between items.
 - Match the Python builder's `_rstrip_last_segment()` behavior before emitting
   a newline. Without this, list markers before block children render as `- `
   followed by a blank line instead of the reference `-` marker line.

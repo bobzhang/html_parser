@@ -369,7 +369,8 @@ fn markdown_block_container_name(name : StringView) -> Bool {
     | "footer"
     | "main"
     | "nav"
-    | "aside" => true
+    | "aside"
+    | "li" => true
     _ => false
   }
 }

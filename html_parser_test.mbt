@@ -3566,6 +3566,24 @@ test "to_markdown indents nested lists like reference" {
 }
 
 ///|
+test "to_markdown treats orphan list items as block content" {
+  let orphan = @html_parser.parse_fragment("<li>One</li><li>Two</li>")
+  assert_eq(orphan.to_markdown(), "One\n\nTwo")
+  let menu = @html_parser.parse_fragment(
+    "<menu><li>One</li><li>Two</li></menu>",
+  )
+  assert_eq(menu.to_markdown(), "One\n\nTwo")
+  let link = @html_parser.parse_fragment(
+    "<a href='https://e.com'><li>One</li><li>Two</li></a>",
+  )
+  assert_eq(link.to_markdown(), "[One Two](https://e.com)")
+  let link_menu = @html_parser.parse_fragment(
+    "<a href='https://e.com'><menu><li>One</li><li>Two</li></menu></a>",
+  )
+  assert_eq(link_menu.to_markdown(), "[One Two](https://e.com)")
+}
+
+///|
 test "to_markdown separates generic block containers" {
   let doc = @html_parser.parse_fragment(
     "<div>A</div><section><span>B</span></section><aside>C</aside>",
