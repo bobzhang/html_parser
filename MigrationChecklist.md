@@ -22,13 +22,13 @@ reference implementation in `.repos/justhtml`.
 
 ## Migration Roadmap
 
-1. Finish the general transform pipeline: callback/report hooks, explicit
+1. [x] Finish the general transform pipeline: callback/report hooks, explicit
    stages, selector limits, and remaining transform edge-case tests.
-2. Port the streaming API and `tests/test_stream.py` behavior.
-3. Port CLI compatibility and `tests/test_cli.py` behavior.
-4. Sweep Markdown parity against the remaining Python tests.
-5. Add broader html5lib/JustHTML conformance fixture harnesses.
-6. Clean up public docs and warning baselines.
+2. [x] Port the streaming API and `tests/test_stream.py` behavior.
+3. [x] Port CLI compatibility and `tests/test_cli.py` behavior.
+4. [x] Sweep Markdown parity against the remaining Python tests.
+5. [x] Add broader html5lib/JustHTML conformance fixture harnesses.
+6. [x] Clean up public docs and warning baselines.
 
 ## Remaining Feature Work
 
@@ -81,8 +81,8 @@ reference implementation in `.repos/justhtml`.
   - [x] HTML, text, Markdown, sanitizer, and cleanup transform output modes
   - [x] File, stdin, and output-file handling
   - [x] Tests ported from `tests/test_cli.py`
-- [ ] Markdown parity sweep
-  - [ ] Remaining escaping, code span, fence, list, and block edge cases
+- [x] Markdown parity sweep
+  - [x] Remaining escaping, code span, fence, list, and block edge cases
     - [x] Orphan `li` block handling and link-text flattening
     - [x] Fragment `head`/`title` Markdown parity
     - [x] Link destination wrap triggers and control-character coverage
@@ -95,13 +95,15 @@ reference implementation in `.repos/justhtml`.
     - [x] Builder leading-whitespace and raw-newline accounting coverage
     - [x] Public blockquote marker, multi-digit ordered marker, and two-item
           list parity
-  - [ ] Tests ported from Python Markdown coverage
+  - [x] Tests ported from Python Markdown coverage
     - [x] Deep programmatic tree, document-container, and builder edge tests
     - [x] Raw-text passthrough, empty `<br>`, and unknown-container tests
     - [x] Sanitized `<textarea>` Markdown passthrough breakout regression
     - [x] Explicit `Sanitize` transform boundary Markdown regression
     - [x] Foreign-namespace mXSS Markdown passthrough regression
     - [x] Public-API regressions for private Markdown builder branch tests
+    - [x] Final audit against `.repos/justhtml/tests/test_node.py` Markdown
+          tests
 - [x] Full conformance harness
   - [x] Import or translate tokenizer fixtures
     - [x] `coverage_gaps.test`, `entities.test`, and
