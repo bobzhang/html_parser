@@ -289,6 +289,9 @@ reference implementation in `.repos/justhtml`.
 - [x] Refactored sanitizer URL, CSS, srcset, style, and token-list scanners to
       use direct `StringView` slices and guarded UTF-16 cursor unwraps, with
       astral-character boundary coverage for URL/style/token splitting.
+- [x] Refactored parser source-slice, text-cleanup, entity, scaffold, and
+      charset helper scans around scanner-owned UTF-16 boundaries, with
+      astral-character whitebox coverage for the touched text helpers.
 
 ## Working Rule
 

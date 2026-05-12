@@ -117,10 +117,8 @@ fn Parser::source_tag_slice(
   self : Parser,
   start : Int,
   tag_close_pos : Int,
-) -> String? {
-  self.input
-  .get_view(start~, end=tag_close_pos + 1)
-  .map(fn(view) { view.to_owned() })
+) -> String {
+  self.input[start:tag_close_pos + 1].to_owned()
 }
 
 ///|
@@ -131,10 +129,7 @@ fn Parser::node_with_start_tag_source(
   tag_close_pos : Int,
 ) -> Node {
   let node = self.node_with_origin(node, offset)
-  match self.source_tag_slice(offset, tag_close_pos) {
-    Some(raw) => node.set_source_start_tag(raw)
-    None => ()
-  }
+  node.set_source_start_tag(self.source_tag_slice(offset, tag_close_pos))
   node
 }
 
@@ -147,14 +142,10 @@ fn Parser::append_sanitize_escape_source_text(
   if self.root.kind != Fragment {
     return
   }
-  match self.input.get_view(start~, end~) {
-    Some(view) => {
-      let node = self.text_at(view, start)
-      node.mark_sanitize_escape_only()
-      self.current_node().append_child(node)
-    }
-    None => ()
-  }
+  let view = self.input[start:end]
+  let node = self.text_at(view, start)
+  node.mark_sanitize_escape_only()
+  self.current_node().append_child(node)
 }
 
 ///|
@@ -249,13 +240,8 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     if self.current_is_document_head() {
       ignore(self.stack.pop())
     }
-    match cleaned[:].get_view(start=whitespace.length(), end=cleaned.length()) {
-      Some(rest) => {
-        cleaned = rest.to_owned()
-        text_start += whitespace.length()
-      }
-      None => return
-    }
+    cleaned = cleaned[whitespace.length():].to_owned()
+    text_start += whitespace.length()
   }
   if self.current_is_document_head() && text_has_non_ascii_whitespace(cleaned) {
     let whitespace = leading_ascii_whitespace(cleaned)
@@ -268,13 +254,8 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
       self.current_node().append_child(self.text_at(data, text_start))
     }
     ignore(self.stack.pop())
-    match cleaned[:].get_view(start=whitespace.length(), end=cleaned.length()) {
-      Some(rest) => {
-        cleaned = rest.to_owned()
-        text_start += whitespace.length()
-      }
-      None => return
-    }
+    cleaned = cleaned[whitespace.length():].to_owned()
+    text_start += whitespace.length()
   }
   if self.uses_document_frameset_rules() &&
     !self.frameset_reprocesses_in_body_mode &&
@@ -411,16 +392,12 @@ fn Parser::report_foster_parenting_character_errors(
   let mut count = 0
   let mut pos = 0
   while pos < value.length() {
-    match value.get_char(pos) {
-      Some(ch) => {
-        if !ch.is_ascii_whitespace() {
-          self.error_at("foster-parenting-character", start + pos)
-          count += 1
-        }
-        pos += ch.utf16_len()
-      }
-      None => break
+    let ch = value.get_char(pos).unwrap()
+    if !ch.is_ascii_whitespace() {
+      self.error_at("foster-parenting-character", start + pos)
+      count += 1
     }
+    pos += ch.utf16_len()
   }
   count
 }
@@ -1897,16 +1874,16 @@ fn Parser::remove_null_characters(
   let out = StringBuilder::new(size_hint=raw.length())
   let mut pos = 0
   while pos < raw.length() {
-    match raw.get_char(pos) {
-      Some('\u{0000}') => {
+    let ch = raw.get_char(pos).unwrap()
+    match ch {
+      '\u{0000}' => {
         self.error_at("unexpected-null-character", start + pos)
         pos += 1
       }
-      Some(ch) => {
+      _ => {
         out.write_char(ch)
         pos += ch.utf16_len()
       }
-      None => break
     }
   }
   out.to_string()
@@ -1921,17 +1898,17 @@ fn Parser::replace_null_characters(
   let out = StringBuilder::new(size_hint=raw.length())
   let mut pos = 0
   while pos < raw.length() {
-    match raw.get_char(pos) {
-      Some('\u{0000}') => {
+    let ch = raw.get_char(pos).unwrap()
+    match ch {
+      '\u{0000}' => {
         self.error_at("unexpected-null-character", start + pos)
         out.write_char('\u{FFFD}')
         pos += 1
       }
-      Some(ch) => {
+      _ => {
         out.write_char(ch)
         pos += ch.utf16_len()
       }
-      None => break
     }
   }
   out.to_string()
@@ -1961,37 +1938,26 @@ fn Parser::report_current_noncharacter(self : Parser) -> Unit {
 fn Parser::parse_all(self : Parser) -> Unit {
   while !self.is_eof() {
     let start = self.pos
-    match self.current() {
-      Some('<') =>
-        if self.starts_with("<!--") {
-          self.parse_comment()
-        } else if self.starts_with("</") {
-          self.parse_end_tag()
-        } else if starts_with_case_insensitive(
-            self.input,
-            self.pos,
-            "<!doctype",
-          ) {
-          self.parse_doctype()
-        } else if self.starts_with("<!") {
-          self.parse_markup_declaration()
-        } else {
-          self.parse_start_tag_or_text()
-        }
-      Some(_) => {
-        while !self.is_eof() && !self.starts_with("<") {
-          self.report_current_noncharacter()
-          ignore(self.advance_char())
-        }
-        match self.input.get_view(start~, end=self.pos) {
-          Some(view) => {
-            self.flush_deferred_initial_doctype_error()
-            self.append_text(view, start)
-          }
-          None => ()
-        }
+    if self.current().unwrap() == '<' {
+      if self.starts_with("<!--") {
+        self.parse_comment()
+      } else if self.starts_with("</") {
+        self.parse_end_tag()
+      } else if starts_with_case_insensitive(self.input, self.pos, "<!doctype") {
+        self.parse_doctype()
+      } else if self.starts_with("<!") {
+        self.parse_markup_declaration()
+      } else {
+        self.parse_start_tag_or_text()
       }
-      None => ()
+    } else {
+      while !self.is_eof() && !self.starts_with("<") {
+        self.report_current_noncharacter()
+        ignore(self.advance_char())
+      }
+      let view = self.input[start:self.pos]
+      self.flush_deferred_initial_doctype_error()
+      self.append_text(view, start)
     }
   }
 }
@@ -2158,13 +2124,9 @@ fn eof_error_pos(input : StringView) -> Int {
   let mut last_char : Char? = None
   while pos < input.length() {
     last = pos
-    match input.get_char(pos) {
-      Some(ch) => {
-        last_char = Some(ch)
-        pos += ch.utf16_len()
-      }
-      None => break
-    }
+    let ch = input.get_char(pos).unwrap()
+    last_char = Some(ch)
+    pos += ch.utf16_len()
   }
   match last_char {
     Some('\r') | Some('\n') => input.length()
@@ -2264,18 +2226,10 @@ fn Parser::parse_bogus_comment(self : Parser, origin_start : Int) -> Unit {
   while !self.is_eof() && self.current() != Some('>') {
     ignore(self.advance_char())
   }
-  match self.input.get_view(start=data_start, end=self.pos) {
-    Some(view) => {
-      let data = normalize_bogus_comment_data(view)
-      let data = if self.xml_coercion {
-        coerce_comment_for_xml(data)
-      } else {
-        data
-      }
-      self.current_node().append_child(self.comment_at(data, origin_start))
-    }
-    None => ()
-  }
+  let view = self.input[data_start:self.pos]
+  let data = normalize_bogus_comment_data(view)
+  let data = if self.xml_coercion { coerce_comment_for_xml(data) } else { data }
+  self.current_node().append_child(self.comment_at(data, origin_start))
   if self.current() == Some('>') {
     ignore(self.advance_char())
   }
@@ -2305,24 +2259,20 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
   while !self.is_eof() && !self.starts_with("]]>") {
     ignore(self.advance_char())
   }
-  match self.input.get_view(start~, end=self.pos) {
-    Some(view) => {
-      let cleaned = if self.current_node_uses_foreign_content_for_text() {
-        self.clean_foreign_content_text(view, start)
-      } else {
-        self.remove_null_characters(view, start)
-      }
-      if !cleaned.is_empty() {
-        let cleaned = normalize_tree_builder_text(cleaned)
-        let data = if self.xml_coercion {
-          coerce_text_for_xml(cleaned)
-        } else {
-          cleaned
-        }
-        self.current_node().append_child(self.text_at(data, start))
-      }
+  let view = self.input[start:self.pos]
+  let cleaned = if self.current_node_uses_foreign_content_for_text() {
+    self.clean_foreign_content_text(view, start)
+  } else {
+    self.remove_null_characters(view, start)
+  }
+  if !cleaned.is_empty() {
+    let cleaned = normalize_tree_builder_text(cleaned)
+    let data = if self.xml_coercion {
+      coerce_text_for_xml(cleaned)
+    } else {
+      cleaned
     }
-    None => ()
+    self.current_node().append_child(self.text_at(data, start))
   }
   if self.starts_with("]]>") {
     self.pos += 3
@@ -2343,11 +2293,11 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
   }
   let name_start = self.pos
   while !self.is_eof() {
-    match self.current() {
-      Some('>') => break
-      Some(ch) if ch.is_ascii_whitespace() => break
-      Some(_) => ignore(self.advance_char())
-      None => ()
+    let ch = self.current().unwrap()
+    if ch == '>' || ch.is_ascii_whitespace() {
+      break
+    } else {
+      ignore(self.advance_char())
     }
   }
   let (name, name_errors) = parse_lower_name_value_replacing_nulls(
@@ -2359,11 +2309,10 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
   while !self.is_eof() && !self.starts_with(">") {
     ignore(self.advance_char())
   }
-  let external = match self.input.get_view(start=ids_start, end=self.pos) {
-    Some(view) => parse_doctype_external(view, self.starts_with(">"))
-    None =>
-      { public_id: None, system_id: None, errors: [], force_quirks: false }
-  }
+  let external = parse_doctype_external(
+    self.input[ids_start:self.pos],
+    self.starts_with(">"),
+  )
   let public_id = external.public_id
   let system_id = external.system_id
   let has_external_error = !external.errors.is_empty()
@@ -2606,9 +2555,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_template_end_tag(
       name,
       tag_close_pos,
-      source_end_tag=self
-        .source_tag_slice(start, tag_close_pos)
-        .unwrap_or("</" + name + ">"),
+      source_end_tag=self.source_tag_slice(start, tag_close_pos),
     ) {
     return
   }
@@ -2629,9 +2576,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.pop_until(
       name,
       tag_close_pos,
-      source_end_tag=self
-        .source_tag_slice(start, tag_close_pos)
-        .unwrap_or("</" + name + ">"),
+      source_end_tag=self.source_tag_slice(start, tag_close_pos),
     )
   }
 }
@@ -7039,57 +6984,50 @@ fn consume_named_entity_with_errors(
     return None
   }
   let has_semicolon = input.get_char(name_end) is Some(';')
-  match input.get_view(start=name_start, end=name_end) {
-    Some(name) =>
-      if has_semicolon {
-        match semicolon_named_entity_value(name) {
-          Some(value) => return Some({ value, next: name_end + 1, errors: [] })
-          None => ()
-        }
-        if !in_attribute {
-          match longest_legacy_named_entity(input, name_start, name_end) {
-            Some((value, next)) =>
-              return Some({
-                value,
-                next,
-                errors: [entity_without_semicolon_error(input, start)],
-              })
-            None => ()
-          }
-        }
-        None
-      } else {
-        match legacy_named_entity_value(name) {
-          Some(value) =>
-            if legacy_entity_blocked_in_attribute(
-                input,
-                name_end,
-                in_attribute~,
-              ) {
-              return None
-            } else {
-              return Some({
-                value,
-                next: name_end,
-                errors: [entity_without_semicolon_error(input, start)],
-              })
-            }
-          None => ()
-        }
-        if in_attribute {
-          return None
-        }
-        match longest_legacy_named_entity(input, name_start, name_end) {
-          Some((value, next)) =>
-            Some({
-              value,
-              next,
-              errors: [entity_without_semicolon_error(input, start)],
-            })
-          None => None
-        }
+  let name = input[name_start:name_end]
+  if has_semicolon {
+    match semicolon_named_entity_value(name) {
+      Some(value) => return Some({ value, next: name_end + 1, errors: [] })
+      None => ()
+    }
+    if !in_attribute {
+      match longest_legacy_named_entity(input, name_start, name_end) {
+        Some((value, next)) =>
+          return Some({
+            value,
+            next,
+            errors: [entity_without_semicolon_error(input, start)],
+          })
+        None => ()
       }
-    None => None
+    }
+    None
+  } else {
+    match legacy_named_entity_value(name) {
+      Some(value) =>
+        if legacy_entity_blocked_in_attribute(input, name_end, in_attribute~) {
+          return None
+        } else {
+          return Some({
+            value,
+            next: name_end,
+            errors: [entity_without_semicolon_error(input, start)],
+          })
+        }
+      None => ()
+    }
+    if in_attribute {
+      return None
+    }
+    match longest_legacy_named_entity(input, name_start, name_end) {
+      Some((value, next)) =>
+        Some({
+          value,
+          next,
+          errors: [entity_without_semicolon_error(input, start)],
+        })
+      None => None
+    }
   }
 }
 
@@ -7142,17 +7080,13 @@ fn consume_numeric_entity(
   let digits_start = pos
   let mut value = 0
   while pos < input.length() {
-    match input.get_char(pos) {
-      Some(ch) => {
-        let digit = digit_value(ch)
-        if digit < 0 || digit >= base {
-          break
-        }
-        value = value * base + digit
-        pos += ch.utf16_len()
-      }
-      None => break
+    let ch = input.get_char(pos).unwrap()
+    let digit = digit_value(ch)
+    if digit < 0 || digit >= base {
+      break
     }
+    value = value * base + digit
+    pos += ch.utf16_len()
   }
   if pos == digits_start {
     return None
@@ -7357,15 +7291,11 @@ fn find_elements_by_name(root : Node, name : String) -> Array[Node] {
   let found : Array[Node] = []
   let stack : Array[Node] = [root]
   while !stack.is_empty() {
-    match stack.pop() {
-      Some(node) => {
-        if node.kind == Element && node.name == name {
-          found.push(node)
-        }
-        push_children_reverse(stack, node)
-      }
-      None => ()
+    let node = stack.pop().unwrap()
+    if node.kind == Element && node.name == name {
+      found.push(node)
     }
+    push_children_reverse(stack, node)
   }
   found
 }
@@ -7374,15 +7304,11 @@ fn find_elements_by_name(root : Node, name : String) -> Array[Node] {
 fn find_first_element_by_name(root : Node, name : String) -> Node? {
   let stack : Array[Node] = [root]
   while !stack.is_empty() {
-    match stack.pop() {
-      Some(node) => {
-        if node.kind == Element && node.name == name {
-          return Some(node)
-        }
-        push_children_reverse(stack, node)
-      }
-      None => ()
+    let node = stack.pop().unwrap()
+    if node.kind == Element && node.name == name {
+      return Some(node)
     }
+    push_children_reverse(stack, node)
   }
   None
 }
@@ -7436,10 +7362,7 @@ fn text_node_without_leading_ascii_whitespace(node : Node) -> Node? {
   } else if start >= view.length() {
     None
   } else {
-    match view.get_view(start~, end=view.length()) {
-      Some(rest) => Some(text(rest))
-      None => None
-    }
+    Some(text(view[start:view.length()]))
   }
 }
 
@@ -7458,15 +7381,7 @@ fn split_text_node_leading_ascii_whitespace(node : Node) -> (Node?, Node?) {
   } else if start >= view.length() {
     (Some(node), None)
   } else {
-    let leading = match view.get_view(start=0, end=start) {
-      Some(part) => Some(text(part))
-      None => None
-    }
-    let rest = match view.get_view(start~, end=view.length()) {
-      Some(part) => Some(text(part))
-      None => None
-    }
-    (leading, rest)
+    (Some(text(view[0:start])), Some(text(view[start:view.length()])))
   }
 }
 
@@ -7932,10 +7847,7 @@ fn decode_windows1252_lossy(input : BytesView) -> String {
     } else {
       value
     }
-    match code.to_char() {
-      Some(ch) => out.write_char(ch)
-      None => out.write_char('\u{FFFD}')
-    }
+    out.write_char(code.to_char().unwrap())
   }
   out.to_string()
 }
@@ -8047,10 +7959,9 @@ fn iso88592_code_point(value : Int) -> Int {
 fn decode_iso88592_lossy(input : BytesView) -> String {
   let out = StringBuilder::new(size_hint=input.length())
   for index in 0..<input.length() {
-    match iso88592_code_point(input[index].to_int()).to_char() {
-      Some(ch) => out.write_char(ch)
-      None => out.write_char('\u{FFFD}')
-    }
+    out.write_char(
+      iso88592_code_point(input[index].to_int()).to_char().unwrap(),
+    )
   }
   out.to_string()
 }
@@ -8093,10 +8004,7 @@ fn ascii_lower_bytes(input : BytesView, start : Int, end : Int) -> String {
   for index in start..<end {
     let value = input[index].to_int()
     if value < 0x80 {
-      match ascii_lower_value(value).to_char() {
-        Some(ch) => out.write_char(ch)
-        None => ()
-      }
+      out.write_char(ascii_lower_value(value).to_char().unwrap())
     }
   }
   out.to_string()
@@ -8133,10 +8041,7 @@ fn ascii_lower_content_bytes(
       ascii_lower_value(input[index].to_int())
     }
     if value < 0x80 {
-      match value.to_char() {
-        Some(ch) => out.write_char(ch)
-        None => ()
-      }
+      out.write_char(value.to_char().unwrap())
     }
   }
   out.to_string()
@@ -8232,16 +8137,12 @@ fn extract_charset_from_content_bytes(
     match quote {
       Some(expected) =>
         if ch == expected {
-          guard content.get_view(start=value_start, end=pos) is Some(label) else {
-            return None
-          }
+          let label = content[value_start:pos]
           return normalize_meta_html_encoding_label(label)
         }
       None =>
         if ch.is_ascii_whitespace() || ch == ';' {
-          guard content.get_view(start=value_start, end=pos) is Some(label) else {
-            return None
-          }
+          let label = content[value_start:pos]
           return normalize_meta_html_encoding_label(label)
         }
     }
@@ -8250,9 +8151,7 @@ fn extract_charset_from_content_bytes(
   match quote {
     Some(_) => None
     None => {
-      guard content.get_view(start=value_start, end=pos) is Some(label) else {
-        return None
-      }
+      let label = content[value_start:pos]
       normalize_meta_html_encoding_label(label)
     }
   }
