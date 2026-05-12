@@ -310,6 +310,8 @@ reference implementation in `.repos/justhtml`.
       analyze` now reports all source files fully covered.
 - [x] Hardened CI to type-check all targets, run JS and native tests, and gate
       on the fully-covered `moon coverage analyze` result.
+- [x] Prepared the next Mooncakes patch release version after `0.1.0` was
+      already present on the registry, and locked the CLI version output to it.
 
 ## Working Rule
 

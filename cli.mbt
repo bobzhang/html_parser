@@ -137,6 +137,11 @@ fn cli_default_options() -> CliOptions {
 }
 
 ///|
+fn cli_version() -> String {
+  "0.1.1"
+}
+
+///|
 fn cli_option_value_from_equals(arg : String, option : String) -> String? {
   let prefix = "\{option}="
   if !arg.has_prefix(prefix) {
@@ -190,7 +195,7 @@ fn cli_parse_args(args : ArrayView[String]) -> CliParseResult {
       return CliParseExit(cli_exit(0, stdout=cli_help()))
     }
     if arg == "--version" {
-      return CliParseExit(cli_exit(0, stdout="justhtml 0.1.0\n"))
+      return CliParseExit(cli_exit(0, stdout="justhtml \{cli_version()}\n"))
     }
     let (format_value, next_index, format_error) = cli_read_option_value(
       args, index, "--format",
