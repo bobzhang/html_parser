@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import pathlib
+import subprocess
 import sys
 
 
@@ -21,6 +22,17 @@ def require_text(text: str, needle: str, label: str) -> bool:
     return True
 
 
+def tracked_scripts() -> set[str]:
+    result = subprocess.run(
+        ["git", "ls-files", "scripts/*"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return set(result.stdout.splitlines())
+
+
 def main(argv: list[str]) -> int:
     if argv:
         error("usage: python3 scripts/check_validation_inventory.py")
@@ -34,6 +46,7 @@ def main(argv: list[str]) -> int:
     ci_helpers = [
         "scripts/check_release_version.py",
         "scripts/check_scripts.sh",
+        "scripts/check_validation_inventory.py",
         "scripts/check_github_workflows.py",
         "scripts/check_source_layout.py",
         "scripts/check_moonbit_style.py",
@@ -62,6 +75,7 @@ def main(argv: list[str]) -> int:
         "scripts/check_release_version.py",
         "scripts/check_fixture_sync.py",
         "scripts/check_fixture_manifest.py",
+        "scripts/check_validation_inventory.py",
         "scripts/check_github_workflows.py",
         "scripts/check_source_layout.py",
         "scripts/check_moonbit_style.py",
@@ -80,6 +94,13 @@ def main(argv: list[str]) -> int:
         "scripts/check_publish_archive.py",
         "scripts/verify_mooncakes_package.sh",
     ) and ok
+
+    covered_scripts = set(ci_helpers) | set(smoke_helpers) | {
+        "scripts/check_publish_archive.py",
+    }
+    for helper in sorted(tracked_scripts() - covered_scripts):
+        error(f"tracked validation helper is missing from inventory: {helper}")
+        ok = False
 
     return 0 if ok else 1
 

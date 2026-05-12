@@ -371,6 +371,8 @@ reference implementation in `.repos/justhtml`.
       Mooncakes archive checks stay wired into the shared validation graph.
 - [x] Added a vendored fixture manifest with size and SHA-256 checks so CI can
       catch fixture truncation or accidental edits without `.repos/justhtml`.
+- [x] Tightened the validation inventory guard so it covers itself and fails on
+      any tracked validation helper missing from the inventory.
 
 ## Working Rule
 
