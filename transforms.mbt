@@ -877,11 +877,7 @@ fn transform_children(parent : Node, transform : TransformSpec) -> Unit {
           }
         }
         DropUrlAttributes => {
-          if apply_drop_url_attrs_transform(child, transform) {
-            transform_report_node_action(
-              child, transform, "Sanitized URL attributes on",
-            )
-          }
+          ignore(apply_drop_url_attrs_transform(child, transform))
           transform_children(child, transform)
           index += 1
         }
@@ -1306,6 +1302,24 @@ fn transform_attr_is_url_like(
 }
 
 ///|
+fn transform_report_unsafe_url_attr(
+  node : Node,
+  transform : TransformSpec,
+  attr_name : String,
+  reason? : String,
+) -> Unit {
+  let suffix = match reason {
+    Some(value) => " (" + value + ")"
+    None => ""
+  }
+  transform_report(
+    transform,
+    "Unsafe URL in attribute '" + attr_name + "'" + suffix,
+    Some(node),
+  )
+}
+
+///|
 fn apply_drop_url_attrs_transform(
   node : Node,
   transform : TransformSpec,
@@ -1314,7 +1328,8 @@ fn apply_drop_url_attrs_transform(
   if node.attrs.length() == 0 {
     return false
   }
-  let mut changed = false
+  let to_drop : Array[String] = []
+  let to_set : Map[String, String?] = {}
   let tag_name = lower_ascii(node.name[:])
   match
     (
@@ -1327,8 +1342,13 @@ fn apply_drop_url_attrs_transform(
         None => None
       }
       if attr_value_is_refresh(http_equiv_value) {
-        node.attrs.remove(content_key)
-        changed = true
+        transform_report_unsafe_url_attr(
+          node,
+          transform,
+          "content",
+          reason="meta refresh",
+        )
+        push_unique_string(to_drop, content_key)
       }
     }
     _ => ()
@@ -1336,7 +1356,6 @@ fn apply_drop_url_attrs_transform(
   let effectively_foreign = node_is_effectively_foreign(node)
   let keys = node.attrs.keys().to_array()
   for key in keys {
-    guard node.attrs.contains(key) else { continue }
     let attr_name = lower_ascii(key[:])
     let current_value = match node.attrs.get(key) {
       Some(value) => value
@@ -1347,34 +1366,68 @@ fn apply_drop_url_attrs_transform(
       ) {
       continue
     }
+    if tag_name == "base" && attr_name == "href" {
+      transform_report_unsafe_url_attr(
+        node,
+        transform,
+        "href",
+        reason="base tag",
+      )
+      push_unique_string(to_drop, key)
+      continue
+    }
     match current_value {
       Some(raw_value) =>
-        match
-          sanitize_attribute_value(
-            policy,
-            tag_name,
-            attr_name,
-            raw_value,
-            effectively_foreign~,
-          ) {
-          Some(cleaned) =>
-            if cleaned != raw_value || attr_name != key {
-              node.attrs.remove(key)
-              node.attrs[attr_name] = Some(cleaned)
-              changed = true
-            }
+        match policy.url_policy.lookup_rule(tag_name, attr_name) {
           None => {
-            node.attrs.remove(key)
-            changed = true
+            transform_report_unsafe_url_attr(
+              node,
+              transform,
+              attr_name,
+              reason="no rule",
+            )
+            push_unique_string(to_drop, key)
           }
+          Some(_) =>
+            match
+              sanitize_attribute_value(
+                policy,
+                tag_name,
+                attr_name,
+                raw_value,
+                effectively_foreign~,
+              ) {
+              Some(cleaned) =>
+                if cleaned != raw_value || attr_name != key {
+                  push_unique_string(to_drop, key)
+                  to_set[attr_name] = Some(cleaned)
+                }
+              None => {
+                transform_report_unsafe_url_attr(node, transform, attr_name)
+                push_unique_string(to_drop, key)
+              }
+            }
         }
       None => {
-        node.attrs.remove(key)
-        changed = true
+        transform_report_unsafe_url_attr(node, transform, attr_name)
+        push_unique_string(to_drop, key)
       }
     }
   }
-  changed
+  if to_drop.is_empty() && to_set.is_empty() {
+    false
+  } else {
+    transform_call_hook(node, transform)
+    let out = node.attrs.copy()
+    for key in to_drop {
+      out.remove(key)
+    }
+    for key, value in to_set {
+      out[key] = value
+    }
+    attrs_replace_with(node, out)
+    true
+  }
 }
 
 ///|

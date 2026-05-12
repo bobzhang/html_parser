@@ -376,6 +376,10 @@ JustHTML from Python to MoonBit.
   reuse selector-level action reports for these transforms; the dropped
   attribute name and matched pattern or allowlist reason are part of the
   observable behavior.
+- URL transforms are also rewrite-attribute transforms, but only unsafe drops
+  are reported. Normalization and proxy rewrites still call the hook when they
+  change attributes, but they do not emit a report. Keep the URL reason suffixes
+  exact: `(meta refresh)`, `(base tag)`, and `(no rule)`.
 - Python models `Stage` as a separate union member, but MoonBit can keep the
   public pipeline homogeneous by making stages a recursive `TransformSpec`
   variant that stores `Array[TransformSpec]`. Top-level stage handling can

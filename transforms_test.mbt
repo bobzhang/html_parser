@@ -938,6 +938,62 @@ test "drop_url_attrs validates URL attrs and normalizes mixed-case names" {
 }
 
 ///|
+test "drop_url_attrs reports exact unsafe URL reasons before hook" {
+  let events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    events.push("hook:" + node.name())
+  }
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    events.push("report:" + message)
+    match node {
+      Some(hit) => events.push("node:" + hit.name())
+      None => events.push("node:none")
+    }
+  }
+  let trusted_rule = @html_parser.UrlRule::new(
+    allowed_schemes=["https"],
+    allowed_hosts=["trusted.example"],
+    allow_relative=false,
+  )
+  let url_policy = @html_parser.UrlPolicy::new(default_allow_relative=false, allow_rules=[
+    @html_parser.UrlPolicyRule::new("a", "href", trusted_rule),
+    @html_parser.UrlPolicyRule::new("base", "href", trusted_rule),
+  ])
+  let root = @html_parser.fragment(children=[
+    @html_parser.element("a", attrs={ "href": Some("javascript:alert(1)") }),
+    @html_parser.element("a", attrs={ "src": Some("https://trusted.example/x") }),
+    @html_parser.element("base", attrs={
+      "href": Some("https://trusted.example/assets/"),
+    }),
+    @html_parser.element("meta", attrs={
+      "http-equiv": Some("refresh"),
+      "content": Some("0;url=https://evil.example/"),
+    }),
+    @html_parser.element("a", attrs={ "href": None }),
+  ])
+  ignore(
+    @html_parser.apply_transforms(root, [
+      @html_parser.TransformSpec::drop_url_attrs(
+        "*",
+        url_policy~,
+        hook~,
+        report~,
+      ),
+    ]),
+  )
+  assert_eq(events, [
+    "report:Unsafe URL in attribute 'href'", "node:a", "hook:a", "report:Unsafe URL in attribute 'src' (no rule)",
+    "node:a", "hook:a", "report:Unsafe URL in attribute 'href' (base tag)", "node:base",
+    "hook:base", "report:Unsafe URL in attribute 'content' (meta refresh)", "node:meta",
+    "hook:meta", "report:Unsafe URL in attribute 'href'", "node:a", "hook:a",
+  ])
+  assert_eq(
+    root.to_html(pretty=false),
+    "<a></a><a></a><base><meta http-equiv=\"refresh\"><a></a>",
+  )
+}
+
+///|
 test "drop_url_attrs sanitizes foreign URL function attributes" {
   let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
     @html_parser.UrlPolicyRule::new(
