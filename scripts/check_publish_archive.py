@@ -3,6 +3,7 @@
 
 from __future__ import annotations
 
+import collections
 import json
 import pathlib
 import subprocess
@@ -73,7 +74,13 @@ def main(argv: list[str]) -> int:
 
     ok = True
     with zipfile.ZipFile(archive) as zf:
-        names = set(zf.namelist())
+        name_list = zf.namelist()
+        names = set(name_list)
+
+        for name, count in sorted(collections.Counter(name_list).items()):
+            if count > 1:
+                error(f"Mooncakes archive contains duplicate path: {name}")
+                ok = False
 
         required = expected_published_files()
         for path in sorted(required):

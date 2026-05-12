@@ -388,6 +388,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Extended source-layout validation to cover all split root test modules.
 - [x] Extended source-layout validation to reject all tracked local/generated
       paths covered by `.gitignore`.
+- [x] Added a Mooncakes archive duplicate-path guard so packaged files cannot
+      appear more than once.
 
 ## Working Rule
 
