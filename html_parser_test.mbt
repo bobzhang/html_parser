@@ -3586,6 +3586,10 @@ test "to_markdown indents nested lists like reference" {
     @html_parser.element("li", children=[@html_parser.text("two")]),
   ])
   assert_eq(block.to_markdown(), "- one\n\n\n- two")
+  let skips_non_items = @html_parser.parse_fragment(
+    "<ul><div>skip</div><li>One</li><span>skip</span></ul>",
+  )
+  assert_eq(skips_non_items.to_markdown(), "- One")
 }
 
 ///|
