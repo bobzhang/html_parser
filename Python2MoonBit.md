@@ -338,6 +338,10 @@ JustHTML from Python to MoonBit.
   return that mapped label directly instead of adding an `xn--` prefix. Private
   helper tests should still cover passthrough branches like `mailto:` and IPv6
   hosts because public linkification may bypass punycoding for those forms.
+  Python may need an explicit `UnicodeError` fallback for lone surrogates; in
+  MoonBit source strings, `Char` iteration only yields Unicode scalar values, so
+  the equivalent private IDNA path can stay total instead of returning an
+  `Option`.
 - DOM transforms that replace one text node with several nodes need to work on
   the package-private `children` array, because `Node::children()` returns a
   copy for callers. Always reset the removed node's parent and assign the

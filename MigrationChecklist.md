@@ -250,6 +250,8 @@ reference implementation in `.repos/justhtml`.
       `StringView` iteration and direct part slices.
 - [x] Refactored linkify punycode href prefix, userinfo, and tail splitting to
       use direct `StringView` slices from known-valid offsets.
+- [x] Simplified linkify punycode label encoding around MoonBit scalar-value
+      `Char` iteration and documented the Python surrogate fallback difference.
 
 ## Working Rule
 

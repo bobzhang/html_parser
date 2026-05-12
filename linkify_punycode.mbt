@@ -89,35 +89,27 @@ fn linkify_punycode_host(host : StringView) -> String {
   for ch in host {
     if ch == '.' {
       let label = host[start:pos]
-      match linkify_punycode_label(label) {
-        Some(encoded) => labels.push(encoded)
-        None => return host.to_owned()
-      }
+      labels.push(linkify_punycode_label(label))
       start = pos + 1
     }
     pos += ch.utf16_len()
   }
   let label = host[start:host.length()]
-  match linkify_punycode_label(label) {
-    Some(encoded) => labels.push(encoded)
-    None => return host.to_owned()
-  }
+  labels.push(linkify_punycode_label(label))
   labels.join(".")
 }
 
 ///|
-fn linkify_punycode_label(label : StringView) -> String? {
+fn linkify_punycode_label(label : StringView) -> String {
   if !linkify_has_non_ascii(label) {
-    return Some(label.to_owned())
+    return label.to_owned()
   }
-  guard linkify_idna_codepoints(label) is Some(codepoints) else { return None }
+  let codepoints = linkify_idna_codepoints(label)
   let encoded = linkify_punycode_encode(codepoints)
-  if encoded == "" {
-    None
-  } else if linkify_codepoints_all_basic(codepoints) {
-    Some(encoded)
+  if linkify_codepoints_all_basic(codepoints) {
+    encoded
   } else {
-    Some("xn--" + encoded)
+    "xn--" + encoded
   }
 }
 
@@ -142,13 +134,10 @@ fn linkify_has_non_ascii(value : StringView) -> Bool {
 }
 
 ///|
-fn linkify_idna_codepoints(label : StringView) -> Array[Int]? {
+fn linkify_idna_codepoints(label : StringView) -> Array[Int] {
   let out : Array[Int] = []
   for ch in label {
     let code = ch.to_int()
-    if code >= 0xD800 && code <= 0xDFFF {
-      return None
-    }
     if code >= 0x41 && code <= 0x5A {
       out.push(code + 0x20)
     } else if (code >= 0xC0 && code <= 0xD6) || (code >= 0xD8 && code <= 0xDE) {
@@ -157,7 +146,7 @@ fn linkify_idna_codepoints(label : StringView) -> Array[Int]? {
       linkify_push_idna_mapped_codepoint(out, code)
     }
   }
-  Some(out)
+  out
 }
 
 ///|
@@ -209,9 +198,6 @@ fn linkify_punycode_encode(input : Array[Int]) -> String {
       if code >= n && code < m {
         m = code
       }
-    }
-    if m == 0x110000 {
-      return ""
     }
     delta += (m - n) * (handled + 1)
     n = m
