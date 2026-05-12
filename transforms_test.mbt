@@ -354,9 +354,7 @@ test "sanitize transform propagates unsafe raise policy errors" {
   ])
   match result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(
-        message, "Unsafe attribute 'foo' on <p> was dropped because it is not allowed",
-      )
+      assert_eq(message, "Unsafe attribute 'foo' (not allowed)")
     _ => fail("expected sanitize transform to raise UnsafeHtml")
   }
 }
@@ -388,7 +386,7 @@ test "sanitize transform hooks and reports unsafe mutations" {
     ]),
   )
   assert_eq(events, [
-    "hook:p", "report:Unsafe attribute 'onclick' on <p> was dropped because it is not allowed",
+    "hook:p", "report:Unsafe attribute 'onclick' (matched forbidden pattern 'on*')",
     "node:p", "hook:#text", "report:Stripped invisible Unicode from text node", "node:#text",
     "hook:#comment", "report:Unsafe comment was dropped", "node:#comment", "hook:script",
     "report:Unsafe tag 'script' (dropped content)", "node:script",

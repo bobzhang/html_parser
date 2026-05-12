@@ -1116,9 +1116,7 @@ test "sanitize_dom can collect and raise unsafe findings" {
   )
   match result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(
-        message, "Unsafe attribute 'foo' on <p> was dropped because it is not allowed",
-      )
+      assert_eq(message, "Unsafe attribute 'foo' (not allowed)")
     _ => fail("expected sanitize_dom to raise UnsafeHtml")
   }
 }
@@ -1141,7 +1139,7 @@ test "sanitize_dom raise mode reports dangerous attributes and urls" {
   match attr_result {
     Err(UnsafeHtml(message)) =>
       assert_eq(
-        message, "Unsafe attribute 'onclick' on <p> was dropped because it is not allowed",
+        message, "Unsafe attribute 'onclick' (matched forbidden pattern 'on*')",
       )
     _ => fail("expected dangerous attribute to raise UnsafeHtml")
   }
@@ -1169,7 +1167,7 @@ test "sanitize_dom raise mode reports dangerous attributes and urls" {
   )
   match link_result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(message, "Unsafe attribute 'href' on <a> was dropped")
+      assert_eq(message, "Unsafe URL in attribute 'href'")
     _ => fail("expected unsafe URL to raise UnsafeHtml")
   }
 
@@ -1220,7 +1218,7 @@ test "sanitize_dom raise mode reports URL list and base drops" {
   )
   match srcset_result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(message, "Unsafe attribute 'imagesrcset' on <link> was dropped")
+      assert_eq(message, "Unsafe URL in attribute 'imagesrcset'")
     _ => fail("expected unsafe imagesrcset to raise UnsafeHtml")
   }
 
@@ -1247,7 +1245,7 @@ test "sanitize_dom raise mode reports URL list and base drops" {
   )
   match base_result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(message, "Unsafe attribute 'href' on <base> was dropped")
+      assert_eq(message, "Unsafe URL in attribute 'href' (base tag)")
     _ => fail("expected base href to raise UnsafeHtml")
   }
 
@@ -1275,9 +1273,7 @@ test "sanitize_dom raise mode reports URL list and base drops" {
   )
   match attr_result {
     Err(UnsafeHtml(message)) =>
-      assert_eq(
-        message, "Unsafe attribute 'attributionsrc' on <img> was dropped",
-      )
+      assert_eq(message, "Unsafe URL in attribute 'attributionsrc'")
     _ => fail("expected unsafe attributionsrc to raise UnsafeHtml")
   }
 }

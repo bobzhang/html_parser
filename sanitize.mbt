@@ -1828,6 +1828,68 @@ fn sanitize_meta_refresh_content(
 }
 
 ///|
+fn sanitize_forbidden_attr_pattern(attr_name : String) -> String? {
+  if attr_name == "srcdoc" {
+    Some("srcdoc")
+  } else if string_view_contains_char(attr_name[:], ':') {
+    Some("*:*")
+  } else if attr_name.has_prefix("on") {
+    Some("on*")
+  } else {
+    None
+  }
+}
+
+///|
+fn sanitize_url_like_attr_for_report(
+  attr_name : String,
+  raw_value : String?,
+  effectively_foreign : Bool,
+) -> Bool {
+  let foreign_url_function_loads = match raw_value {
+    Some(value) => css_value_may_load_external_resource(value)
+    None => false
+  }
+  is_single_url_like_attr(attr_name) ||
+  is_srcset_like_attr(attr_name) ||
+  is_space_separated_url_list_attr(attr_name) ||
+  (
+    effectively_foreign &&
+    is_foreign_url_function_like_attr(attr_name) &&
+    foreign_url_function_loads
+  )
+}
+
+///|
+fn sanitize_dropped_attr_report_message(
+  policy : SanitizationPolicy,
+  tag_name : String,
+  attr_name : String,
+  raw_value : String?,
+  effectively_foreign : Bool,
+) -> String {
+  if attr_name == "style" {
+    "Unsafe inline style in attribute 'style'"
+  } else if tag_name == "base" && attr_name == "href" {
+    "Unsafe URL in attribute 'href' (base tag)"
+  } else if sanitize_url_like_attr_for_report(
+      attr_name, raw_value, effectively_foreign,
+    ) {
+    let suffix = match raw_value {
+      Some(_) =>
+        match policy.url_policy.lookup_rule(tag_name, attr_name) {
+          None => " (no rule)"
+          Some(_) => ""
+        }
+      None => ""
+    }
+    "Unsafe URL in attribute '" + attr_name + "'" + suffix
+  } else {
+    "Unsafe attribute '" + attr_name + "' on <" + tag_name + "> was dropped"
+  }
+}
+
+///|
 fn sanitize_element_attributes(
   node : Node,
   policy : SanitizationPolicy,
@@ -1838,15 +1900,28 @@ fn sanitize_element_attributes(
   let keys = node.attrs.keys().to_array()
   for key in keys {
     let attr_name = lower_ascii(key[:])
+    match sanitize_forbidden_attr_pattern(attr_name) {
+      Some(pattern) => {
+        sanitize_report_unsafe(
+          policy,
+          observer,
+          "Unsafe attribute '" +
+          attr_name +
+          "' (matched forbidden pattern '" +
+          pattern +
+          "')",
+          Some(node),
+        )
+        node.attrs.remove(key)
+        continue
+      }
+      None => ()
+    }
     if !policy_allows_attribute(policy, tag_name, attr_name) {
       sanitize_report_unsafe(
         policy,
         observer,
-        "Unsafe attribute '" +
-        attr_name +
-        "' on <" +
-        tag_name +
-        "> was dropped because it is not allowed",
+        "Unsafe attribute '" + attr_name + "' (not allowed)",
         Some(node),
       )
       node.attrs.remove(key)
@@ -1875,11 +1950,13 @@ fn sanitize_element_attributes(
               sanitize_report_unsafe(
                 policy,
                 observer,
-                "Unsafe attribute '" +
-                attr_name +
-                "' on <" +
-                tag_name +
-                "> was dropped",
+                sanitize_dropped_attr_report_message(
+                  policy,
+                  tag_name,
+                  attr_name,
+                  Some(raw_value),
+                  effectively_foreign,
+                ),
                 Some(node),
               )
               node.attrs.remove(key)
@@ -1895,11 +1972,13 @@ fn sanitize_element_attributes(
           sanitize_report_unsafe(
             policy,
             observer,
-            "Unsafe attribute '" +
-            attr_name +
-            "' on <" +
-            tag_name +
-            "> was dropped",
+            sanitize_dropped_attr_report_message(
+              policy,
+              tag_name,
+              attr_name,
+              None,
+              effectively_foreign,
+            ),
             Some(node),
           )
           node.attrs.remove(key)
