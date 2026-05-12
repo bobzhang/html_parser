@@ -258,3 +258,14 @@ test "CLI output files and strict mode are surfaced in pure result" {
   assert_eq(strict.stdout, "")
   assert_true(strict.stderr.contains("Strict mode error"))
 }
+
+///|
+test "CLI surfaces unsafe recovered names during rendering" {
+  let result = cli_run(
+    ["-", "--fragment", "--unsafe"],
+    "<a\u{0000}b id=x>y</a\u{0000}b>",
+  )
+  assert_eq(result.exit_code, 2)
+  assert_eq(result.stdout, "")
+  assert_true(result.stderr.contains("Unsafe element name"))
+}

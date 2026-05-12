@@ -1859,6 +1859,11 @@ JustHTML from Python to MoonBit.
   bytes, stdout/stderr, output-file writes, and process exit codes. This makes
   almost all Python `test_cli.py` behavior testable under normal `moon test`
   without process spawning.
+- The pure CLI runner should preserve serializer failures as normal exit-code
+  2 parse/render errors. Inputs with recovered unsafe tag names can parse
+  successfully in `--unsafe` fragment mode but still raise
+  `InvalidSerialization` during HTML rendering; surface that message through
+  `stderr` instead of crashing or silently dropping it.
 - `@env.args()` includes the executable name on native builds. Slice it with
   `all_args[1:]` before passing user arguments to parser logic. The slice is an
   `ArrayView[String]`, so helpers should accept `ArrayView[String]` instead of
