@@ -312,6 +312,8 @@ reference implementation in `.repos/justhtml`.
       on the fully-covered `moon coverage analyze` result.
 - [x] Prepared the next Mooncakes patch release version after `0.1.0` was
       already present on the registry, and locked the CLI version output to it.
+- [x] Adjusted the Mooncakes CI dry-run gate so published versions keep passing
+      after package validation reports the expected duplicate-version response.
 
 ## Working Rule
 
