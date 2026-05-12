@@ -33,11 +33,13 @@ fn make_node(
 }
 
 ///|
+/// Create a document node with optional children.
 pub fn document(children? : Array[Node] = []) -> Node {
   make_node(Document, "#document", None, {}, "", None, None, false, children)
 }
 
 ///|
+/// Create a document-fragment node with optional children.
 pub fn fragment(children? : Array[Node] = []) -> Node {
   make_node(
     Fragment,
@@ -64,6 +66,10 @@ fn normalize_element_namespace(ns : StringView) -> String {
 }
 
 ///|
+/// Create an element node.
+///
+/// Namespace aliases `html`, `svg`, and `mathml` are normalized for serializer
+/// and sanitizer behavior. Child nodes are attached in order.
 pub fn element(
   name : StringView,
   attrs? : Map[String, String?] = {},
@@ -85,16 +91,19 @@ pub fn element(
 }
 
 ///|
+/// Create a text node.
 pub fn text(data : StringView) -> Node {
   make_node(Text, "#text", None, {}, data.to_owned(), None, None, false, [])
 }
 
 ///|
+/// Create a comment node.
 pub fn comment(data : StringView) -> Node {
   make_node(Comment, "#comment", None, {}, data.to_owned(), None, None, false, [])
 }
 
 ///|
+/// Create a doctype node.
 pub fn doctype(
   name? : String = "html",
   public_id? : String,
@@ -115,6 +124,10 @@ pub fn doctype(
 }
 
 ///|
+/// Append `child` to this node.
+///
+/// The child is detached from any existing parent first. Non-container nodes
+/// and cycle-producing appends are ignored.
 pub fn Node::append_child(self : Node, child : Node) -> Unit {
   if !node_accepts_children(self) || node_is_self_or_ancestor(child, self) {
     return
@@ -146,6 +159,10 @@ fn Node::insert_child_before(self : Node, child : Node, before : Node) -> Unit {
 }
 
 ///|
+/// Insert `child` before `before`, or append when `before` is absent.
+///
+/// If `before` is not a current child, the child is appended. Invalid insertions
+/// are ignored in the same way as `append_child`.
 pub fn Node::insert_before(self : Node, child : Node, before : Node?) -> Unit {
   match before {
     Some(reference) => self.insert_child_before(child, reference)
@@ -185,6 +202,10 @@ fn detach_from_parent(node : Node) -> Unit {
 }
 
 ///|
+/// Replace `old_child` with `new_child`.
+///
+/// Returns the removed child when replacement succeeds, or `None` when
+/// `old_child` is not a current child or the replacement would create a cycle.
 pub fn Node::replace_child(
   self : Node,
   new_child : Node,
@@ -220,6 +241,7 @@ pub fn Node::replace_child(
 }
 
 ///|
+/// Remove `child` from this node if it is a current child.
 pub fn Node::remove_child(self : Node, child : Node) -> Unit {
   if !node_accepts_children(self) {
     return
@@ -238,61 +260,76 @@ pub fn Node::remove_child(self : Node, child : Node) -> Unit {
 }
 
 ///|
+/// Test whether this node has any child nodes.
 pub fn Node::has_child_nodes(self : Node) -> Bool {
   !self.children.is_empty()
 }
 
 ///|
+/// Return this node's kind.
 pub fn Node::kind(self : Node) -> NodeKind {
   self.kind
 }
 
 ///|
+/// Return this node's parent, if any.
 pub fn Node::parent(self : Node) -> Node? {
   self.parent
 }
 
 ///|
+/// Return this node's name.
 pub fn Node::name(self : Node) -> String {
   self.name
 }
 
 ///|
+/// Return this element's namespace URI, if any.
 pub fn Node::namespace_uri(self : Node) -> String? {
   self.ns
 }
 
 ///|
+/// Return a copy of this node's attributes.
 pub fn Node::attrs(self : Node) -> Map[String, String?] {
   self.attrs.copy()
 }
 
 ///|
+/// Return this text, comment, or doctype node's data payload.
 pub fn Node::data(self : Node) -> String {
   self.data
 }
 
 ///|
+/// Return a copy of this node's child list.
+///
+/// The returned array is detached from the node, but the child nodes themselves
+/// are the same node objects.
 pub fn Node::children(self : Node) -> Array[Node] {
   self.children.copy()
 }
 
 ///|
+/// Return this node's original source offset, if known.
 pub fn Node::origin_offset(self : Node) -> Int? {
   self.origin_offset
 }
 
 ///|
+/// Return this node's original 1-based source line, if known.
 pub fn Node::origin_line(self : Node) -> Int? {
   self.origin_line
 }
 
 ///|
+/// Return this node's original 1-based source column, if known.
 pub fn Node::origin_col(self : Node) -> Int? {
   self.origin_col
 }
 
 ///|
+/// Return this node's original `(line, column)` source location, if known.
 pub fn Node::origin_location(self : Node) -> (Int, Int)? {
   match (self.origin_line, self.origin_col) {
     (Some(line), Some(col)) => Some((line, col))
@@ -321,6 +358,10 @@ fn Node::copy_origin_from(self : Node, source : Node) -> Unit {
 }
 
 ///|
+/// Clone this node.
+///
+/// `deep=true` recursively clones descendants. `override_attrs` replaces the
+/// cloned node's attributes, which is useful for transform operations.
 pub fn Node::clone_node(
   self : Node,
   deep? : Bool = false,
@@ -360,6 +401,7 @@ pub fn Node::clone_node(
 }
 
 ///|
+/// Return this node's descendant text with no separator and no trimming.
 pub fn Node::text(self : Node) -> String {
   self.to_text(separator="", strip=false)
 }

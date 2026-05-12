@@ -99,8 +99,8 @@ reference implementation in `.repos/justhtml`.
   - [ ] Import or translate tree-builder fixtures
   - [ ] Import or translate encoding fixtures
   - [ ] Regression harness for JustHTML-specific `.dat` and `.test` files
-- [ ] Documentation and warning cleanup
-  - [ ] Public API docs for warning 74
+- [x] Documentation and warning cleanup
+  - [x] Public API docs for warning 74
     - [x] `tokens.mbt` tokenizer API docs
     - [x] `transforms.mbt` decide action docs
     - [x] `markdown.mbt` Markdown conversion docs
@@ -110,6 +110,7 @@ reference implementation in `.repos/justhtml`.
     - [x] `types.mbt` core model docs
     - [x] `stream.mbt` streaming API docs
     - [x] `sanitize.mbt` sanitizer policy docs
+    - [x] `dom.mbt` public DOM API docs
   - [x] Remove unnecessary annotations for warning 73
     - [x] `comment_scan.mbt` constructor annotations
     - [x] `script_text.mbt` constructor annotations
