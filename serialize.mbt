@@ -1174,17 +1174,15 @@ fn class_contains(value : StringView, needle : StringView) -> Bool {
   }
   let mut token_start = 0
   let mut pos = 0
-  while pos < value.length() {
-    match value.get_char(pos) {
-      Some(ch) if is_html_whitespace_char(ch) => {
-        if class_token_matches(value, token_start, pos, needle) {
-          return true
-        }
-        pos += ch.utf16_len()
-        token_start = pos
+  for ch in value {
+    if is_html_whitespace_char(ch) {
+      if class_token_matches(value, token_start, pos, needle) {
+        return true
       }
-      Some(ch) => pos += ch.utf16_len()
-      None => break
+      pos += ch.utf16_len()
+      token_start = pos
+    } else {
+      pos += ch.utf16_len()
     }
   }
   class_token_matches(value, token_start, value.length(), needle)

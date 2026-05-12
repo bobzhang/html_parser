@@ -19,6 +19,10 @@ JustHTML from Python to MoonBit.
 - When a parser consumes a `Char`, advance by `ch.utf16_len()`, not by `1`.
   Add low-level cursor tests with an astral character so EOF and position
   assertions catch accidental code-unit/character-count regressions.
+- For linear scans over a known-valid `StringView`, prefer `for ch in view` and
+  maintain a separate UTF-16 offset only when token boundaries are needed. Keep
+  manual `get_char(pos)` loops for caller-provided offsets or parser cursors
+  that must fail closed on invalid UTF-16 boundaries.
 - `StringBuilder::write_string` takes a `String`, not a `StringView`. Keep test
   fixture builders and hot parser helpers explicit about whether they are
   appending owned strings or views.
