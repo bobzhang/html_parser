@@ -647,6 +647,10 @@ JustHTML from Python to MoonBit.
   filesystem reads for fixture coverage unless the package is already
   target-gated. Static fixture tables with row-count guards are a practical
   substitute for Python's file-reading harness.
+- Keep the optional JustHTML reference checkout at `.repos/justhtml` for local
+  fixture-sync validation. The checked-in fixture subset should stay
+  self-contained for CI, while local scripts can compare it against the full
+  Python source tree when that checkout is present.
 - Known-doctype checks are intentionally exact. Legacy doctypes such as HTML
   4.01 Transitional with the loose DTD still produce a doctype node, but they
   report `unknown-doctype`; do not collapse them into the accepted strict/legacy

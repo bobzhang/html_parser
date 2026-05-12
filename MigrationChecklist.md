@@ -353,6 +353,8 @@ reference implementation in `.repos/justhtml`.
       local validation entrypoint instead of duplicating Moon commands.
 - [x] Added source-layout checks for tracked package directories, generated
       interfaces, root implementation modules, and vendored fixture coverage.
+- [x] Added migration-doc checks for the Python-to-MoonBit gotchas, fixture
+      workflow notes, native CLI constraints, and release validation docs.
 
 ## Working Rule
 
