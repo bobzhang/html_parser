@@ -2003,17 +2003,18 @@ fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
   let mut pos = 0
   let mut defer_doctype = false
   while pos < self.input.length() {
-    match self.input.get_char(pos) {
-      Some(ch) if ch.is_ascii_whitespace() => pos += ch.utf16_len()
-      Some('<') if view_starts_with_at(self.input, pos, "<!--") =>
+    let ch = self.input.get_char(pos).unwrap()
+    match ch {
+      _ if ch.is_ascii_whitespace() => pos += ch.utf16_len()
+      '<' if view_starts_with_at(self.input, pos, "<!--") =>
         match find_comment_close(self.input, pos) {
           Some(end) => pos = end
           None =>
             return Some(self.make_error_at_eof("expected-doctype-but-got-eof"))
         }
-      Some('<') if starts_with_case_insensitive(self.input, pos, "<!doctype") =>
+      '<' if starts_with_case_insensitive(self.input, pos, "<!doctype") =>
         return None
-      Some('<') if view_starts_with_at(self.input, pos, "<!") => {
+      '<' if view_starts_with_at(self.input, pos, "<!") => {
         defer_doctype = true
         match find_markup_close(self.input, pos) {
           Some(close) => pos = close + 1
@@ -2021,7 +2022,7 @@ fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
             return Some(self.make_error_at_eof("expected-doctype-but-got-eof"))
         }
       }
-      Some('<') if view_starts_with_at(self.input, pos, "</") =>
+      '<' if view_starts_with_at(self.input, pos, "</") =>
         match find_markup_close(self.input, pos) {
           Some(close) => {
             let malformed = match self.input.get_char(pos + 2) {
@@ -2045,7 +2046,7 @@ fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
           None =>
             return Some(self.make_error_at_eof("expected-doctype-but-got-eof"))
         }
-      Some('<') =>
+      '<' =>
         match self.input.get_char(pos + 1) {
           Some(ch) if is_tag_name_start(ch) =>
             match find_markup_close(self.input, pos) {
@@ -2081,7 +2082,7 @@ fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
             return Some(error)
           }
         }
-      Some(_) => {
+      _ => {
         let error = self.make_error_at("expected-doctype-but-got-chars", pos)
         if defer_doctype {
           return Some(error)
@@ -2089,7 +2090,6 @@ fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
         self.errors.push(error)
         return None
       }
-      None => ()
     }
   }
   let error = self.make_error_at_eof("expected-doctype-but-got-eof")
@@ -2403,12 +2403,11 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   }
   let name_start = self.pos
   while !self.is_eof() {
-    match self.current() {
-      Some('>') => break
-      Some('/') => break
-      Some(ch) if ch.is_ascii_whitespace() => break
-      Some(_) => ignore(self.advance_char())
-      None => ()
+    let ch = self.current().unwrap()
+    if ch == '>' || ch == '/' || ch.is_ascii_whitespace() {
+      break
+    } else {
+      ignore(self.advance_char())
     }
   }
   let (name, name_errors) = parse_lower_name_value_replacing_nulls(
@@ -2419,21 +2418,19 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   for error in name_errors {
     self.error_at(error.code, error.offset)
   }
-  if name == "" {
-    self.error_at("missing-end-tag-name", start)
-  }
   let attrs : Map[String, String?] = {}
   let mut noncanonical_end_tag = false
   let mut closed = false
   while !self.is_eof() {
     self.skip_ascii_whitespace()
-    match self.current() {
-      Some('>') => {
+    let ch = self.current().unwrap()
+    match ch {
+      '>' => {
         ignore(self.advance_char())
         closed = true
         break
       }
-      Some('/') => {
+      '/' => {
         ignore(self.advance_char())
         noncanonical_end_tag = true
         if self.current() == Some('>') {
@@ -2444,11 +2441,10 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
           self.error_at("unexpected-character-after-solidus-in-tag", self.pos)
         }
       }
-      Some(_) => {
+      _ => {
         noncanonical_end_tag = true
         self.parse_attribute(attrs)
       }
-      None => ()
     }
   }
   if !closed {
@@ -2766,16 +2762,13 @@ fn Parser::pop_until(
     _ => self.error_at("end-tag-too-early", pos)
   }
   while self.stack.length() > 1 {
-    match self.stack.pop() {
-      Some(node) if node.kind == Element && names_match_end_tag(node, name) => {
-        match source_end_tag {
-          Some(raw) => node.set_source_end_tag(raw)
-          None => ()
-        }
-        break
+    let node = self.stack.pop().unwrap()
+    if node.kind == Element && names_match_end_tag(node, name) {
+      match source_end_tag {
+        Some(raw) => node.set_source_end_tag(raw)
+        None => ()
       }
-      Some(_) => ()
-      None => break
+      break
     }
   }
 }
@@ -2822,10 +2815,9 @@ fn Parser::close_open_element(self : Parser, name : String) -> Bool {
     return false
   }
   while self.stack.length() > 1 {
-    match self.stack.pop() {
-      Some(node) if node.kind == Element && node.name == name => break
-      Some(_) => ()
-      None => break
+    let node = self.stack.pop().unwrap()
+    if node.kind == Element && node.name == name {
+      break
     }
   }
   true
@@ -4028,10 +4020,9 @@ fn Parser::reset_select_insertion_mode(self : Parser) -> Unit {
 ///|
 fn Parser::pop_until_select_in_insertion_mode(self : Parser) -> Unit {
   while self.stack.length() > 1 {
-    match self.stack.pop() {
-      Some(node) if node.kind == Element && node.name == "select" => break
-      Some(_) => ()
-      None => break
+    let node = self.stack.pop().unwrap()
+    if node.kind == Element && node.name == "select" {
+      break
     }
   }
 }
@@ -4901,11 +4892,9 @@ fn Parser::close_open_heading_element(
     _ => self.error_at("end-tag-too-early", pos)
   }
   while self.stack.length() > 1 {
-    match self.stack.pop() {
-      Some(node) if node.kind == Element && is_heading_element_name(node.name) =>
-        break
-      Some(_) => ()
-      None => break
+    let node = self.stack.pop().unwrap()
+    if node.kind == Element && is_heading_element_name(node.name) {
+      break
     }
   }
 }
@@ -5001,13 +4990,14 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       let mut closed = false
       while !self.is_eof() {
         self.skip_ascii_whitespace()
-        match self.current() {
-          Some('>') => {
+        let ch = self.current().unwrap()
+        match ch {
+          '>' => {
             ignore(self.advance_char())
             closed = true
             break
           }
-          Some('/') => {
+          '/' => {
             ignore(self.advance_char())
             if self.current() == Some('>') {
               ignore(self.advance_char())
@@ -5021,8 +5011,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
               )
             }
           }
-          Some(_) => self.parse_attribute(attrs)
-          None => ()
+          _ => self.parse_attribute(attrs)
         }
       }
       if !closed {
@@ -5291,13 +5280,9 @@ fn Parser::parse_invalid_tag_open_as_text(self : Parser, start : Int) -> Unit {
     self.report_current_noncharacter()
     ignore(self.advance_char())
   }
-  match self.input.get_view(start~, end=self.pos) {
-    Some(view) => {
-      self.flush_deferred_initial_doctype_error()
-      self.append_text(view, start)
-    }
-    None => ()
-  }
+  let view = self.input[start:self.pos]
+  self.flush_deferred_initial_doctype_error()
+  self.append_text(view, start)
 }
 
 ///|
@@ -5308,17 +5293,17 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
     ignore(self.advance_char())
   }
   while !self.is_eof() {
-    match self.current() {
-      Some(ch) if ch.is_ascii_whitespace() ||
-        ch == '=' ||
-        ch == '/' ||
-        ch == '>' => break
-      Some('<') | Some('"') | Some('\'') => {
-        self.error_at("unexpected-character-in-attribute-name", self.pos)
-        ignore(self.advance_char())
+    let ch = self.current().unwrap()
+    if ch.is_ascii_whitespace() || ch == '=' || ch == '/' || ch == '>' {
+      break
+    } else {
+      match ch {
+        '<' | '"' | '\'' => {
+          self.error_at("unexpected-character-in-attribute-name", self.pos)
+          ignore(self.advance_char())
+        }
+        _ => ignore(self.advance_char())
       }
-      Some(_) => ignore(self.advance_char())
-      None => ()
     }
   }
   let (name, name_errors) = parse_lower_name_value_replacing_nulls(
@@ -5356,33 +5341,31 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
     _ => {
       let start = self.pos
       while !self.is_eof() {
-        match self.current() {
-          Some(ch) if ch.is_ascii_whitespace() || ch == '>' => break
-          Some('\u{0000}') => {
+        let ch = self.current().unwrap()
+        if ch.is_ascii_whitespace() || ch == '>' {
+          break
+        }
+        match ch {
+          '\u{0000}' => {
             self.error_at("unexpected-null-character", self.pos)
             ignore(self.advance_char())
           }
-          Some('"') | Some('\'') | Some('<') | Some('=') | Some('`') => {
+          '"' | '\'' | '<' | '=' | '`' => {
             self.error_at(
               "unexpected-character-in-unquoted-attribute-value",
               self.pos,
             )
             ignore(self.advance_char())
           }
-          Some(_) => ignore(self.advance_char())
-          None => ()
+          _ => ignore(self.advance_char())
         }
       }
-      match self.input.get_view(start~, end=self.pos) {
-        Some(view) => {
-          let decoded = decode_attribute_value_with_errors(view)
-          for error in decoded.errors {
-            self.error_at(error.code, self.pos)
-          }
-          decoded.data
-        }
-        None => ""
+      let view = self.input[start:self.pos]
+      let decoded = decode_attribute_value_with_errors(view)
+      for error in decoded.errors {
+        self.error_at(error.code, self.pos)
       }
+      decoded.data
     }
   }
   if !duplicate {
@@ -5400,7 +5383,7 @@ fn Parser::parse_quoted_attribute_value(self : Parser, quote : Char) -> String {
     }
     ignore(self.advance_char())
   }
-  let raw = self.input.get_view(start~, end=self.pos)
+  let raw = self.input[start:self.pos]
   if self.current() == Some(quote) {
     ignore(self.advance_char())
     match self.current() {
@@ -5409,16 +5392,11 @@ fn Parser::parse_quoted_attribute_value(self : Parser, quote : Char) -> String {
       _ => ()
     }
   }
-  match raw {
-    Some(view) => {
-      let decoded = decode_attribute_value_with_errors(view)
-      for error in decoded.errors {
-        self.error_at(error.code, self.pos)
-      }
-      decoded.data
-    }
-    None => ""
+  let decoded = decode_attribute_value_with_errors(raw)
+  for error in decoded.errors {
+    self.error_at(error.code, self.pos)
   }
+  decoded.data
 }
 
 ///|
@@ -5558,10 +5536,8 @@ fn parse_quoted_doctype_value_at(
       let mut pos = start + quote.utf16_len()
       let value_start = pos
       while pos < input.length() && input.get_char(pos) != Some(quote) {
-        match input.get_char(pos) {
-          Some(ch) => pos += ch.utf16_len()
-          None => break
-        }
+        let ch = input.get_char(pos).unwrap()
+        pos += ch.utf16_len()
       }
       let mut closed = false
       let value = Some(normalize_doctype_value(input, value_start, pos, errors))
@@ -5597,10 +5573,7 @@ fn view_has_prefix_case_insensitive_at(
   if end > input.length() {
     false
   } else {
-    match input.get_view(start~, end~) {
-      Some(view) => view.compare_ignore_ascii_case(prefix) == 0
-      None => false
-    }
+    input[start:end].compare_ignore_ascii_case(prefix) == 0
   }
 }
 
@@ -5676,10 +5649,8 @@ fn view_last_char_offset(input : StringView) -> Int {
   let mut pos = 0
   while pos < input.length() {
     last = pos
-    match input.get_char(pos) {
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
+    let ch = input.get_char(pos).unwrap()
+    pos += ch.utf16_len()
   }
   last
 }
@@ -6126,10 +6097,10 @@ fn matching_end_tag_error_pos(input : StringView, start : Int) -> Int {
 fn Parser::skip_matching_end_tag(self : Parser) -> Unit {
   self.pos += 2
   while !self.is_eof() {
-    match self.current() {
-      Some('>') => break
-      Some(_) => ignore(self.advance_char())
-      None => ()
+    if self.current().unwrap() == '>' {
+      break
+    } else {
+      ignore(self.advance_char())
     }
   }
   if self.current() == Some('>') {
@@ -6186,21 +6157,18 @@ fn Parser::consume_special_element_content(
 ) -> Unit {
   let content_start = self.pos
   if name == "plaintext" {
-    match self.input.get_view(start=content_start, end=self.input.length()) {
-      Some(view) =>
-        parent.append_child(
-          self.text_at(
-            self.decoded_special_text(
-              name,
-              view,
-              content_start,
-              eof_error_pos(self.input),
-            ),
-            content_start,
-          ),
-        )
-      None => ()
-    }
+    let view = self.input[content_start:self.input.length()]
+    parent.append_child(
+      self.text_at(
+        self.decoded_special_text(
+          name,
+          view,
+          content_start,
+          eof_error_pos(self.input),
+        ),
+        content_start,
+      ),
+    )
     self.error_at_special_text_eof(name)
     self.pos = self.input.length()
     return
@@ -6236,16 +6204,13 @@ fn Parser::consume_special_element_content(
   match find_matching_end_tag(self.input, self.pos, name) {
     Some(end_start) => {
       let error_pos = matching_end_tag_error_pos(self.input, end_start)
-      match self.input.get_view(start=content_start, end=end_start) {
-        Some(view) =>
-          parent.append_child(
-            self.text_at(
-              self.decoded_special_text(name, view, content_start, error_pos),
-              content_start,
-            ),
-          )
-        None => ()
-      }
+      let view = self.input[content_start:end_start]
+      parent.append_child(
+        self.text_at(
+          self.decoded_special_text(name, view, content_start, error_pos),
+          content_start,
+        ),
+      )
       self.pos = end_start
       if !self.consume_matching_special_end_tag() {
         self.error_at_special_text_eof(name)
@@ -6253,16 +6218,13 @@ fn Parser::consume_special_element_content(
     }
     None => {
       let error_pos = eof_error_pos(self.input)
-      match self.input.get_view(start=content_start, end=self.input.length()) {
-        Some(view) =>
-          parent.append_child(
-            self.text_at(
-              self.decoded_special_text(name, view, content_start, error_pos),
-              content_start,
-            ),
-          )
-        None => ()
-      }
+      let view = self.input[content_start:self.input.length()]
+      parent.append_child(
+        self.text_at(
+          self.decoded_special_text(name, view, content_start, error_pos),
+          content_start,
+        ),
+      )
       self.error_at_special_text_eof(name)
       self.pos = self.input.length()
     }
@@ -6465,30 +6427,21 @@ fn Parser::parse_fragment_context(
   }
   let name = context.tag_name
   if is_fragment_plain_text_context(name) {
-    match self.input.get_view(start=0, end=self.input.length()) {
-      Some(view) => self.append_fragment_context_text(view, 0)
-      None => ()
-    }
+    self.append_fragment_context_text(self.input[0:self.input.length()], 0)
     self.pos = self.input.length()
     return true
   }
   if is_fragment_raw_text_context(name) {
     match find_matching_end_tag(self.input, 0, name) {
       Some(end_start) => {
-        match self.input.get_view(start=0, end=end_start) {
-          Some(view) => self.append_fragment_context_text(view, 0)
-          None => ()
-        }
+        self.append_fragment_context_text(self.input[0:end_start], 0)
         self.pos = end_start
         self.skip_matching_end_tag()
         self.error_at("unexpected-end-tag", end_start)
         self.parse_all()
       }
       None => {
-        match self.input.get_view(start=0, end=self.input.length()) {
-          Some(view) => self.append_fragment_context_text(view, 0)
-          None => ()
-        }
+        self.append_fragment_context_text(self.input[0:self.input.length()], 0)
         self.pos = self.input.length()
       }
     }
@@ -6538,8 +6491,9 @@ fn line_col_at(input : StringView, target : Int) -> (Int, Int) {
   let mut line = 1
   let mut col = 1
   while offset < target && offset < input.length() {
-    match input.get_char(offset) {
-      Some('\r') => {
+    let ch = input.get_char(offset).unwrap()
+    match ch {
+      '\r' => {
         line += 1
         col = 1
         offset += 1
@@ -6547,16 +6501,15 @@ fn line_col_at(input : StringView, target : Int) -> (Int, Int) {
           offset += 1
         }
       }
-      Some('\n') => {
+      '\n' => {
         line += 1
         col = 1
         offset += 1
       }
-      Some(ch) => {
+      _ => {
         col += 1
         offset += ch.utf16_len()
       }
-      None => break
     }
   }
   (line, col)
@@ -6567,13 +6520,9 @@ fn input_ends_with_newline(input : StringView) -> Bool {
   let mut pos = 0
   let mut last : Char? = None
   while pos < input.length() {
-    match input.get_char(pos) {
-      Some(ch) => {
-        last = Some(ch)
-        pos += ch.utf16_len()
-      }
-      None => break
-    }
+    let ch = input.get_char(pos).unwrap()
+    last = Some(ch)
+    pos += ch.utf16_len()
   }
   match last {
     Some('\r') | Some('\n') => true
@@ -6587,8 +6536,9 @@ fn eof_line_col(input : StringView) -> (Int, Int) {
   let mut line = 1
   let mut col = 0
   while offset < input.length() {
-    match input.get_char(offset) {
-      Some('\r') => {
+    let ch = input.get_char(offset).unwrap()
+    match ch {
+      '\r' => {
         line += 1
         col = 0
         offset += 1
@@ -6596,16 +6546,15 @@ fn eof_line_col(input : StringView) -> (Int, Int) {
           offset += 1
         }
       }
-      Some('\n') => {
+      '\n' => {
         line += 1
         col = 0
         offset += 1
       }
-      Some(ch) => {
+      _ => {
         col += 1
         offset += ch.utf16_len()
       }
-      None => break
     }
   }
   (line, col)
@@ -6625,19 +6574,19 @@ fn normalize_newlines(input : StringView) -> String {
   let out = StringBuilder::new(size_hint=input.length())
   let mut pos = 0
   while pos < input.length() {
-    match input.get_char(pos) {
-      Some('\r') => {
+    let ch = input.get_char(pos).unwrap()
+    match ch {
+      '\r' => {
         out.write_char('\n')
         pos += 1
         if input.get_char(pos) is Some('\n') {
           pos += 1
         }
       }
-      Some(ch) => {
+      _ => {
         out.write_char(ch)
         pos += ch.utf16_len()
       }
-      None => break
     }
   }
   out.to_string()
@@ -6648,23 +6597,23 @@ fn normalize_bogus_comment_data(input : StringView) -> String {
   let out = StringBuilder::new(size_hint=input.length())
   let mut pos = 0
   while pos < input.length() {
-    match input.get_char(pos) {
-      Some('\u{0000}') => {
+    let ch = input.get_char(pos).unwrap()
+    match ch {
+      '\u{0000}' => {
         out.write_char('\u{FFFD}')
         pos += 1
       }
-      Some('\r') => {
+      '\r' => {
         out.write_char('\n')
         pos += 1
         if input.get_char(pos) is Some('\n') {
           pos += 1
         }
       }
-      Some(ch) => {
+      _ => {
         out.write_char(ch)
         pos += ch.utf16_len()
       }
-      None => break
     }
   }
   out.to_string()
@@ -6727,8 +6676,9 @@ fn decode_entities_with_errors(
   let errors : Array[EntityDecodeError] = []
   let mut pos = 0
   while pos < input.length() {
-    match input.get_char(pos) {
-      Some('&') =>
+    let ch = input.get_char(pos).unwrap()
+    match ch {
+      '&' =>
         match consume_entity_with_errors(input, pos, in_attribute~) {
           Some(consumed) => {
             out.write_string(consumed.value)
@@ -6742,8 +6692,7 @@ fn decode_entities_with_errors(
             pos += 1
           }
         }
-      Some(_) => pos = write_normalized_char(input, pos, out)
-      None => break
+      _ => pos = write_normalized_char(input, pos, out)
     }
   }
   { data: out.to_string(), errors }
@@ -6959,12 +6908,9 @@ fn longest_legacy_named_entity(
 ) -> (String, Int)? {
   let mut end = name_end
   while end > name_start {
-    match input.get_view(start=name_start, end~) {
-      Some(name) =>
-        match legacy_named_entity_value(name) {
-          Some(value) => return Some((value, end))
-          None => ()
-        }
+    let name = input[name_start:end]
+    match legacy_named_entity_value(name) {
+      Some(value) => return Some((value, end))
       None => ()
     }
     end -= 1

@@ -136,6 +136,17 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
   guard rest is Some(rest_node) else { fail("expected rest text node") }
   assert_eq(leading_node.data, " \t")
   assert_eq(rest_node.data, "😀body")
+  assert_eq(normalize_newlines("a\r\n😀\rb"), "a\n😀\nb")
+  assert_eq(
+    normalize_bogus_comment_data("a\u{0000}\r\n😀"),
+    "a\u{FFFD}\n😀",
+  )
+  let (line, col) = line_col_at("a😀\nb", 4)
+  assert_eq(line, 2)
+  assert_eq(col, 1)
+  let (eof_line, eof_col) = eof_line_col("a😀\n")
+  assert_eq(eof_line, 2)
+  assert_eq(eof_col, 0)
 }
 
 ///|

@@ -292,6 +292,9 @@ reference implementation in `.repos/justhtml`.
 - [x] Refactored parser source-slice, text-cleanup, entity, scaffold, and
       charset helper scans around scanner-owned UTF-16 boundaries, with
       astral-character whitebox coverage for the touched text helpers.
+- [x] Refactored parser tag/attribute, special-text, doctype, line/column, and
+      entity scanner loops around local cursor invariants, with newline and
+      bogus-comment Unicode regressions.
 
 ## Working Rule
 
