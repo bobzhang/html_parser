@@ -138,3 +138,16 @@ For example:
 printf '<p>Hello <b>MoonBit</b></p>' \
   | _build/native/release/build/cmd/main/main.exe - --format text
 ```
+
+## Development Checks
+
+Run the same validation entrypoint used by CI:
+
+```sh
+bash scripts/check_ci.sh --skip-without-credentials
+```
+
+Drop `--skip-without-credentials` when logged in locally and checking the full
+Mooncakes dry-run path. The script checks release-version consistency,
+formatting, generated interfaces, all supported targets, default/JS/native
+tests, coverage, native CLI smoke behavior, and Mooncakes package validation.

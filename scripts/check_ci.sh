@@ -1,0 +1,68 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+usage() {
+  echo "usage: bash scripts/check_ci.sh [--skip-without-credentials]" >&2
+}
+
+skip_mooncakes_without_credentials=false
+case "${1:-}" in
+  "")
+    ;;
+  "--skip-without-credentials")
+    skip_mooncakes_without_credentials=true
+    ;;
+  *)
+    usage
+    exit 2
+    ;;
+esac
+
+if [[ "$#" -gt 1 ]]; then
+  usage
+  exit 2
+fi
+
+step() {
+  printf '\n==> %s\n' "$1"
+}
+
+step "Check release version consistency"
+python3 scripts/check_release_version.py
+
+step "Check formatting"
+moon fmt --check
+
+step "Check generated interfaces"
+bash scripts/check_interfaces.sh
+
+step "Type check default target"
+moon check --warn-list +73
+
+step "Type check all targets"
+moon check --target all --warn-list +73
+
+step "Type check native CLI"
+moon check --target native cmd/main --warn-list +73
+
+step "Run default tests"
+moon test
+
+step "Run JS tests"
+moon test --target js
+
+step "Run native tests"
+moon test --target native
+
+step "Analyze coverage"
+bash scripts/check_coverage.sh
+
+step "Build and smoke test native CLI"
+bash scripts/smoke_native_cli.sh
+
+step "Verify Mooncakes package"
+if [[ "$skip_mooncakes_without_credentials" == true ]]; then
+  bash scripts/verify_mooncakes_package.sh --skip-without-credentials
+else
+  bash scripts/verify_mooncakes_package.sh
+fi

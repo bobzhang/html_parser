@@ -328,6 +328,8 @@ reference implementation in `.repos/justhtml`.
       calling it.
 - [x] Moved generated-interface validation into a reusable local script and
       kept CI calling it.
+- [x] Added a single local CI entrypoint that runs the repository validation
+      gates and made GitHub Actions call it.
 
 ## Working Rule
 
