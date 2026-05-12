@@ -260,15 +260,15 @@ fn linkify_find_substring(haystack : StringView, needle : StringView) -> Int? {
     return None
   }
   let mut pos = 0
-  while pos + needle.length() <= haystack.length() {
+  for ch in haystack {
+    if pos + needle.length() > haystack.length() {
+      break
+    }
     match haystack.get_view(start=pos, end=pos + needle.length()) {
       Some(part) if part == needle => return Some(pos)
       _ => ()
     }
-    match haystack.get_char(pos) {
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
+    pos += ch.utf16_len()
   }
   None
 }
