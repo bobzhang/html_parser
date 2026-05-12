@@ -117,7 +117,7 @@ reference implementation in `.repos/justhtml`.
     - [x] `html_parser_wbtest.mbt` whitebox helper view conversions
     - [x] `parser.mbt` tree-builder helper view conversions
     - [x] `sanitize.mbt` sanitizer policy view conversions
-  - [ ] Qualify README checked examples for warning 25
+  - [x] Qualify README checked examples for warning 25
 
 ## Working Rule
 

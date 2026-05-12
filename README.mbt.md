@@ -40,7 +40,9 @@ The current slice provides:
 ```mbt check
 ///|
 test "readme parse fragment example" {
-  let doc = parse_fragment("<p class='intro'>Hello <b>MoonBit</b></p>")
+  let doc = @html_parser.parse_fragment(
+    "<p class='intro'>Hello <b>MoonBit</b></p>",
+  )
   assert_eq(
     doc.to_html(pretty=false),
     "<p class=\"intro\">Hello <b>MoonBit</b></p>",
@@ -48,7 +50,7 @@ test "readme parse fragment example" {
   assert_eq(doc.to_text(separator="", strip=false), "Hello MoonBit")
   assert_eq(doc.to_markdown(), "Hello **MoonBit**")
   assert_eq(doc.query("p.intro").length(), 1)
-  let tokens = tokenize("<p>Hello</p>").tokens
+  let tokens = @html_parser.tokenize("<p>Hello</p>").tokens
   assert_eq(tokens.length(), 4)
 }
 ```
@@ -57,7 +59,7 @@ test "readme parse fragment example" {
 ///|
 test "readme parse bytes example" {
   let bytes = @utf8.encode("<meta charset=utf-8><p>\u{20AC}</p>")
-  let doc = parse_bytes(bytes)
+  let doc = @html_parser.parse_bytes(bytes)
   guard doc.encoding is Some("utf-8") else { fail("expected utf-8 encoding") }
   assert_eq(doc.to_text(separator="", strip=false), "\u{20AC}")
 }
@@ -66,13 +68,16 @@ test "readme parse bytes example" {
 ```mbt check
 ///|
 test "readme sanitize dom example" {
-  let doc = parse(
+  let doc = @html_parser.parse(
     "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",
     sanitize=false,
   )
-  let clean = sanitize_dom(doc.root, policy=default_sanitization_policy())
+  let clean = @html_parser.sanitize_dom(
+    doc.root,
+    policy=@html_parser.default_sanitization_policy(),
+  )
   assert_eq(clean.to_html(pretty=false), "<p>ok</p>")
-  let fragment = parse_fragment(
+  let fragment = @html_parser.parse_fragment(
     "<p onclick=alert(1)>ok</p><script>alert(1)</script>",
     sanitize=true,
   )
