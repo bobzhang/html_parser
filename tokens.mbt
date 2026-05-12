@@ -194,7 +194,7 @@ fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
       }
       let data = decoded.data
       let data = if self.xml_coercion {
-        coerce_text_for_xml(data[:])
+        coerce_text_for_xml(data)
       } else {
         data
       }
@@ -213,7 +213,7 @@ fn SourceTokenizer::parse_comment(self : SourceTokenizer) -> Unit {
   }
   self.pos = scan.end
   let data = if self.xml_coercion {
-    coerce_comment_for_xml(scan.data[:])
+    coerce_comment_for_xml(scan.data)
   } else {
     scan.data
   }
@@ -471,7 +471,7 @@ fn SourceTokenizer::parse_invalid_tag_open_as_text(
       }
       let data = decoded.data
       let data = if self.xml_coercion {
-        coerce_text_for_xml(data[:])
+        coerce_text_for_xml(data)
       } else {
         data
       }
@@ -491,11 +491,7 @@ fn SourceTokenizer::parse_bogus_comment(self : SourceTokenizer) -> Unit {
     Some(view) => normalize_bogus_comment_data(view)
     None => ""
   }
-  let data = if self.xml_coercion {
-    coerce_comment_for_xml(data[:])
-  } else {
-    data
-  }
+  let data = if self.xml_coercion { coerce_comment_for_xml(data) } else { data }
   if self.current() == Some('>') {
     ignore(self.advance_char())
   }
@@ -652,7 +648,7 @@ fn SourceTokenizer::decoded_special_text(
     normalize_newlines(raw)
   }
   if self.xml_coercion {
-    coerce_text_for_xml(data[:])
+    coerce_text_for_xml(data)
   } else {
     data
   }
@@ -714,7 +710,7 @@ fn SourceTokenizer::consume_special_text_tokens(
     }
     if !scan.data.is_empty() {
       let data = if self.xml_coercion {
-        coerce_text_for_xml(scan.data[:])
+        coerce_text_for_xml(scan.data)
       } else {
         scan.data
       }
