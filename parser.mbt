@@ -59,7 +59,7 @@ fn Parser::new(
   track_node_locations? : Bool = false,
 ) -> Parser {
   let input = strip_leading_bom(input)
-  Parser::{
+  {
     input,
     scripting_enabled,
     xml_coercion,
@@ -2308,12 +2308,7 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
   let external = match self.input.get_view(start=ids_start, end=self.pos) {
     Some(view) => parse_doctype_external(view, self.starts_with(">"))
     None =>
-      DoctypeExternalParse::{
-        public_id: None,
-        system_id: None,
-        errors: [],
-        force_quirks: false,
-      }
+      { public_id: None, system_id: None, errors: [], force_quirks: false }
   }
   let public_id = external.public_id
   let system_id = external.system_id
@@ -5680,7 +5675,7 @@ fn push_doctype_external_error(
   code : String,
   offset : Int,
 ) -> Unit {
-  errors.push(DoctypeExternalError::{ code, offset })
+  errors.push({ code, offset })
 }
 
 ///|
@@ -6013,7 +6008,7 @@ fn parse_doctype_external(
     }
     _ => ()
   }
-  DoctypeExternalParse::{ public_id, system_id, errors, force_quirks }
+  { public_id, system_id, errors, force_quirks }
 }
 
 ///|
@@ -6713,13 +6708,13 @@ fn decode_entities_with_errors(
       None => break
     }
   }
-  EntityDecodeResult::{ data: out.to_string(), errors }
+  { data: out.to_string(), errors }
 }
 
 ///|
 fn decode_attribute_value_with_errors(input : StringView) -> EntityDecodeResult {
   let decoded = decode_entities_with_errors(input, in_attribute=true)
-  EntityDecodeResult::{
+  {
     data: decoded.data.replace_all(old="\u{0000}", new="\u{FFFD}"),
     errors: decoded.errors,
   }
@@ -6743,7 +6738,7 @@ fn entity_without_semicolon_error(
   input : StringView,
   start : Int,
 ) -> EntityDecodeError {
-  EntityDecodeError::{
+  {
     code: "missing-semicolon-after-character-reference",
     offset: named_entity_missing_semicolon_error_offset(input, start),
   }
@@ -6955,18 +6950,13 @@ fn consume_named_entity_with_errors(
     Some(name) =>
       if has_semicolon {
         match semicolon_named_entity_value(name) {
-          Some(value) =>
-            return Some(EntityConsumeResult::{
-              value,
-              next: name_end + 1,
-              errors: [],
-            })
+          Some(value) => return Some({ value, next: name_end + 1, errors: [] })
           None => ()
         }
         if !in_attribute {
           match longest_legacy_named_entity(input, name_start, name_end) {
             Some((value, next)) =>
-              return Some(EntityConsumeResult::{
+              return Some({
                 value,
                 next,
                 errors: [entity_without_semicolon_error(input, start)],
@@ -6985,7 +6975,7 @@ fn consume_named_entity_with_errors(
               ) {
               return None
             } else {
-              return Some(EntityConsumeResult::{
+              return Some({
                 value,
                 next: name_end,
                 errors: [entity_without_semicolon_error(input, start)],
@@ -6998,7 +6988,7 @@ fn consume_named_entity_with_errors(
         }
         match longest_legacy_named_entity(input, name_start, name_end) {
           Some((value, next)) =>
-            Some(EntityConsumeResult::{
+            Some({
               value,
               next,
               errors: [entity_without_semicolon_error(input, start)],
@@ -7080,29 +7070,25 @@ fn consume_numeric_entity(
     pos += 1
     error_offset = pos - 1
   } else {
-    errors.push(EntityDecodeError::{
+    errors.push({
       code: "missing-semicolon-after-character-reference",
       offset: error_offset,
     })
   }
   if numeric_reference_can_report_character_error(value) {
     if is_character_reference_control(value) {
-      errors.push(EntityDecodeError::{
-        code: "control-character-reference",
-        offset: error_offset,
-      })
+      errors.push({ code: "control-character-reference", offset: error_offset })
     }
     if is_xml_noncharacter_code(value) {
-      errors.push(EntityDecodeError::{
+      errors.push({
         code: "noncharacter-character-reference",
         offset: error_offset,
       })
     }
   }
   match html_numeric_entity_replacement(value).to_char() {
-    Some(ch) =>
-      Some(EntityConsumeResult::{ value: ch.to_string(), next: pos, errors })
-    None => Some(EntityConsumeResult::{ value: "\u{FFFD}", next: pos, errors })
+    Some(ch) => Some({ value: ch.to_string(), next: pos, errors })
+    None => Some({ value: "\u{FFFD}", next: pos, errors })
   }
 }
 
@@ -7202,12 +7188,12 @@ pub fn parse(
   populate_selectedcontent(root)
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {
-    raise HtmlError::StrictMode(parser.errors[0])
+    raise StrictMode(parser.errors[0])
   }
   if sanitize {
     ignore(sanitize_dom(root))
   }
-  ParsedHtml::{ root, errors, encoding: None }
+  { root, errors, encoding: None }
 }
 
 ///|
@@ -7786,12 +7772,12 @@ pub fn parse_fragment(
   populate_selectedcontent(root)
   let errors = if collect_errors || strict { parser.errors } else { [] }
   if strict && !parser.errors.is_empty() {
-    raise HtmlError::StrictMode(parser.errors[0])
+    raise StrictMode(parser.errors[0])
   }
   if sanitize {
     ignore(sanitize_dom(root))
   }
-  ParsedHtml::{ root, errors, encoding: None }
+  { root, errors, encoding: None }
 }
 
 ///|
@@ -8462,7 +8448,7 @@ pub fn parse_bytes(
     xml_coercion~,
     track_node_locations~,
   )
-  ParsedHtml::{
+  {
     root: parsed.root,
     errors: parsed.errors,
     encoding: Some(detected_encoding),

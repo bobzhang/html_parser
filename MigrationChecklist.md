@@ -107,6 +107,7 @@ reference implementation in `.repos/justhtml`.
     - [x] `tokens.mbt` constructor annotations
     - [x] `types.mbt` constructor annotations
     - [x] `markdown.mbt` constructor annotation
+    - [x] `parser.mbt` helper constructor annotations
   - [ ] Remove unnecessary view conversions for warning 75
   - [ ] Qualify README checked examples for warning 25
 
