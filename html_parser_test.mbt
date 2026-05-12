@@ -583,7 +583,7 @@ test "builder exposes DOM helper invariants" {
   let custom = @html_parser.element("Thing", ns="CustomNS")
   assert_eq(custom.name(), "Thing")
   assert_true(custom.namespace_uri() is Some("CustomNS"))
-  assert_true(custom.kind() is @html_parser.NodeKind::Element)
+  assert_true(custom.kind() is Element)
   assert_eq(custom.data(), "")
   assert_eq(custom.text(), "")
   assert_eq(custom.has_child_nodes(), false)
@@ -605,7 +605,7 @@ test "builder exposes DOM helper invariants" {
     "<div id=\"root\">a<span>b</span></div>",
   )
   let original_children = parent.children()
-  assert_true(original_children[0].kind() is @html_parser.NodeKind::Text)
+  assert_true(original_children[0].kind() is Text)
   assert_eq(original_children[0].data(), "a")
   let attrs_copy = parent.attrs()
   attrs_copy["id"] = Some("mutated")
@@ -618,7 +618,7 @@ test "builder exposes DOM helper invariants" {
   override_attrs["id"] = Some("mutated")
   assert_eq(override_clone.to_html(pretty=false), "<div id=\"override\"></div>")
   let note = @html_parser.comment("note")
-  assert_true(note.kind() is @html_parser.NodeKind::Comment)
+  assert_true(note.kind() is Comment)
   assert_eq(note.data(), "note")
   assert_eq(note.text(), "")
   note.append_child(@html_parser.text("ignored"))
@@ -4464,7 +4464,7 @@ test "parser and tokenizer preserve doctype external ids" {
     "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01//EN\" \"http://www.w3.org/TR/html4/strict.dtd\"><html><head></head><body></body></html>",
   )
   let tokens = @html_parser.tokenize(source)
-  guard tokens.tokens[0] is @html_parser.HtmlToken::DoctypeToken(info) else {
+  guard tokens.tokens[0] is DoctypeToken(info) else {
     fail("expected doctype token")
   }
   assert_eq(info.name, "html")
@@ -4477,7 +4477,7 @@ test "parser and tokenizer preserve doctype external ids" {
   let system = @html_parser.tokenize(
     "<!DOCTYPE html SYSTEM \"about:legacy-compat\">",
   )
-  guard system.tokens[0] is @html_parser.HtmlToken::DoctypeToken(system_info) else {
+  guard system.tokens[0] is DoctypeToken(system_info) else {
     fail("expected system doctype")
   }
   guard system_info.public_id is None else { fail("expected no public id") }
@@ -4487,8 +4487,7 @@ test "parser and tokenizer preserve doctype external ids" {
   let newline_ids = @html_parser.tokenize(
     "<!DOCTYPE html PUBLIC \"a\rb\" \"s\r\nt\">",
   )
-  guard newline_ids.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(newline_info) else {
+  guard newline_ids.tokens[0] is DoctypeToken(newline_info) else {
     fail("expected newline-normalized doctype")
   }
   guard newline_info.public_id is Some("a\nb") else {
@@ -4518,8 +4517,7 @@ test "parser and tokenizer preserve doctype external ids" {
     collect_errors=true,
   )
   assert_eq(public_trailing_cr.errors.length(), 0)
-  guard public_trailing_cr.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(public_trailing_info) else {
+  guard public_trailing_cr.tokens[0] is DoctypeToken(public_trailing_info) else {
     fail("expected public doctype with trailing CR whitespace")
   }
   guard public_trailing_info.public_id is Some("p") else {
@@ -4547,7 +4545,7 @@ test "parser and tokenizer handle malformed doctype names" {
     fail("expected missing doctype name at close bracket")
   }
   let missing_token = @html_parser.tokenize("<!doctype>", collect_errors=true)
-  guard missing_token.tokens[0] is @html_parser.HtmlToken::DoctypeToken(info) else {
+  guard missing_token.tokens[0] is DoctypeToken(info) else {
     fail("expected doctype token")
   }
   assert_eq(info.name, "")
@@ -4568,7 +4566,7 @@ test "parser and tokenizer handle malformed doctype names" {
     fail("expected doctype EOF at final character")
   }
   let eof_token = @html_parser.tokenize("<!doctype", collect_errors=true)
-  guard eof_token.tokens[0] is @html_parser.HtmlToken::DoctypeToken(eof_info) else {
+  guard eof_token.tokens[0] is DoctypeToken(eof_info) else {
     fail("expected EOF doctype token")
   }
   assert_eq(eof_info.name, "")
@@ -4579,8 +4577,7 @@ test "parser and tokenizer handle malformed doctype names" {
     "<!doctype html",
     collect_errors=true,
   )
-  guard name_eof_token.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(name_eof_info) else {
+  guard name_eof_token.tokens[0] is DoctypeToken(name_eof_info) else {
     fail("expected named EOF doctype token")
   }
   assert_eq(name_eof_info.name, "html")
@@ -4622,8 +4619,7 @@ test "parser and tokenizer report doctype name whitespace errors" {
     missing_before_token.errors[0].code,
     "missing-whitespace-before-doctype-name",
   )
-  guard missing_before_token.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(before_info) else {
+  guard missing_before_token.tokens[0] is DoctypeToken(before_info) else {
     fail("expected doctype token")
   }
   assert_eq(before_info.name, "html")
@@ -4640,8 +4636,7 @@ test "parser and tokenizer report doctype name whitespace errors" {
   guard junk_after_name.errors[0].column is Some(16) else {
     fail("expected missing whitespace after doctype name at junk")
   }
-  guard junk_after_name.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(junk_info) else {
+  guard junk_after_name.tokens[0] is DoctypeToken(junk_info) else {
     fail("expected doctype token")
   }
   assert_eq(junk_info.name, "html")
@@ -4687,7 +4682,7 @@ test "parser and tokenizer replace null characters in doctypes" {
   guard name_null.errors[0].column is Some(12) else {
     fail("expected null error inside doctype name")
   }
-  guard name_null.tokens[0] is @html_parser.HtmlToken::DoctypeToken(name_info) else {
+  guard name_null.tokens[0] is DoctypeToken(name_info) else {
     fail("expected doctype token")
   }
   assert_eq(name_info.name, "h�tml")
@@ -4713,8 +4708,7 @@ test "parser and tokenizer replace null characters in doctypes" {
   guard public_null.errors[0].column is Some(25) else {
     fail("expected null error inside public identifier")
   }
-  guard public_null.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(public_info) else {
+  guard public_null.tokens[0] is DoctypeToken(public_info) else {
     fail("expected doctype token")
   }
   guard public_info.public_id is Some("x�y") else {
@@ -4754,8 +4748,7 @@ test "parser and tokenizer report missing doctype identifiers" {
     collect_errors=true,
   )
   assert_eq(public_token.errors[0].code, "missing-doctype-public-identifier")
-  guard public_token.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(public_info) else {
+  guard public_token.tokens[0] is DoctypeToken(public_info) else {
     fail("expected doctype token")
   }
   assert_eq(public_info.name, "html")
@@ -4828,8 +4821,7 @@ test "parser and tokenizer report missing doctype identifiers" {
     collect_errors=true,
   )
   assert_eq(system_token.errors[0].code, "missing-doctype-system-identifier")
-  guard system_token.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(system_info) else {
+  guard system_token.tokens[0] is DoctypeToken(system_info) else {
     fail("expected doctype token")
   }
   assert_eq(system_info.name, "html")
@@ -4863,8 +4855,7 @@ test "parser and tokenizer report missing doctype identifier quotes" {
     public_unquoted.errors[0].code,
     "missing-quote-before-doctype-public-identifier",
   )
-  guard public_unquoted.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(public_info) else {
+  guard public_unquoted.tokens[0] is DoctypeToken(public_info) else {
     fail("expected doctype token")
   }
   assert_eq(public_info.name, "html")
@@ -4894,8 +4885,7 @@ test "parser and tokenizer report missing doctype identifier quotes" {
     system_unquoted.errors[0].code,
     "missing-quote-before-doctype-system-identifier",
   )
-  guard system_unquoted.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(system_info) else {
+  guard system_unquoted.tokens[0] is DoctypeToken(system_info) else {
     fail("expected doctype token")
   }
   assert_eq(system_info.name, "html")
@@ -5150,7 +5140,7 @@ test "parser and tokenizer report post-public-identifier errors" {
     unexpected.errors[0].code,
     "unexpected-character-after-doctype-public-identifier",
   )
-  guard unexpected.tokens[0] is @html_parser.HtmlToken::DoctypeToken(info) else {
+  guard unexpected.tokens[0] is DoctypeToken(info) else {
     fail("expected doctype token")
   }
   assert_eq(info.name, "html")
@@ -5168,8 +5158,7 @@ test "parser and tokenizer report post-public-identifier errors" {
   guard missing_quote.errors[0].column is Some(27) else {
     fail("expected missing system quote after public-id whitespace")
   }
-  guard missing_quote.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(missing_quote_info) else {
+  guard missing_quote.tokens[0] is DoctypeToken(missing_quote_info) else {
     fail("expected doctype token after missing system quote")
   }
   guard missing_quote_info.public_id is Some("x") else {
@@ -5204,8 +5193,7 @@ test "parser and tokenizer report system identifier tail errors" {
   guard system_extra.errors[0].column is Some(26) else {
     fail("expected system identifier tail error at trailing character")
   }
-  guard system_extra.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(system_info) else {
+  guard system_extra.tokens[0] is DoctypeToken(system_info) else {
     fail("expected doctype token")
   }
   guard system_info.system_id is Some("x") else { fail("expected system id") }
@@ -5216,8 +5204,7 @@ test "parser and tokenizer report system identifier tail errors" {
   )
   assert_eq(system_eof.errors.length(), 1)
   assert_eq(system_eof.errors[0].code, "eof-in-doctype")
-  guard system_eof.tokens[0]
-    is @html_parser.HtmlToken::DoctypeToken(system_eof_info) else {
+  guard system_eof.tokens[0] is DoctypeToken(system_eof_info) else {
     fail("expected doctype token")
   }
   guard system_eof_info.system_id is Some("x") else {
@@ -5279,7 +5266,7 @@ test "parser and tokenizer report system identifier tail errors" {
   guard fused.errors[1].column is Some(29) else {
     fail("expected fused system tail error at trailing character")
   }
-  guard fused.tokens[0] is @html_parser.HtmlToken::DoctypeToken(fused_info) else {
+  guard fused.tokens[0] is DoctypeToken(fused_info) else {
     fail("expected fused doctype token")
   }
   guard fused_info.public_id is Some("p") else { fail("expected public id") }
@@ -9377,18 +9364,17 @@ test "parser and tokenizer optionally coerce XML-invalid text" {
     "\u{000C}\u{FDD0}<script>\u{FDD0}</script><!--a--b-->",
     xml_coercion=true,
   )
-  guard tokens.tokens[0] is @html_parser.HtmlToken::Characters(" �") else {
+  guard tokens.tokens[0] is Characters(" �") else {
     fail("expected form-feed and noncharacter coercion in text")
   }
-  guard tokens.tokens[2] is @html_parser.HtmlToken::Characters("�") else {
+  guard tokens.tokens[2] is Characters("�") else {
     fail("expected XML coercion in script text")
   }
-  guard tokens.tokens[4] is @html_parser.HtmlToken::CommentToken("a- -b") else {
+  guard tokens.tokens[4] is CommentToken("a- -b") else {
     fail("expected XML comment double-hyphen coercion")
   }
   let default_tokens = @html_parser.tokenize("\u{000C}\u{FDD0}")
-  guard default_tokens.tokens[0]
-    is @html_parser.HtmlToken::Characters("\u{000C}\u{FDD0}") else {
+  guard default_tokens.tokens[0] is Characters("\u{000C}\u{FDD0}") else {
     fail("expected XML coercion to be opt-in")
   }
   let parsed = @html_parser.parse_fragment(
@@ -12359,29 +12345,21 @@ test "parse_bytes handles empty labels aliases and malformed utf16 tails" {
 test "tokenize exposes stable token data structures" {
   let result = @html_parser.tokenize("<p class='x'>Hi<br><!--ok--></p>")
   assert_eq(result.tokens.length(), 6)
-  guard result.tokens[0] is @html_parser.HtmlToken::Tag(start) else {
-    fail("expected start tag")
-  }
-  assert_true(start.kind is @html_parser.TagKind::StartTag)
+  guard result.tokens[0] is Tag(start) else { fail("expected start tag") }
+  assert_true(start.kind is StartTag)
   assert_eq(start.name, "p")
   guard start.attrs["class"] is Some("x") else { fail("expected class attr") }
-  guard result.tokens[1] is @html_parser.HtmlToken::Characters("Hi") else {
+  guard result.tokens[1] is Characters("Hi") else {
     fail("expected text token")
   }
-  guard result.tokens[2] is @html_parser.HtmlToken::Tag(br) else {
-    fail("expected br tag")
-  }
+  guard result.tokens[2] is Tag(br) else { fail("expected br tag") }
   assert_eq(br.self_closing, false)
-  guard result.tokens[3] is @html_parser.HtmlToken::CommentToken("ok") else {
+  guard result.tokens[3] is CommentToken("ok") else {
     fail("expected comment token")
   }
-  guard result.tokens[5] is @html_parser.HtmlToken::Eof else {
-    fail("expected EOF")
-  }
+  guard result.tokens[5] is Eof else { fail("expected EOF") }
   let explicit = @html_parser.tokenize("<img/>")
-  guard explicit.tokens[0] is @html_parser.HtmlToken::Tag(img) else {
-    fail("expected img tag")
-  }
+  guard explicit.tokens[0] is Tag(img) else { fail("expected img tag") }
   assert_eq(img.self_closing, true)
 }
 
@@ -12627,7 +12605,7 @@ test "entity decoding covers upstream fixture cases" {
 ///|
 test "entity decoding reports upstream fixture errors" {
   let numeric = @html_parser.tokenize("&#65", collect_errors=true)
-  guard numeric.tokens[0] is @html_parser.HtmlToken::Characters("A") else {
+  guard numeric.tokens[0] is Characters("A") else {
     fail("expected numeric reference token")
   }
   assert_eq(numeric.errors.length(), 1)
@@ -12639,7 +12617,7 @@ test "entity decoding reports upstream fixture errors" {
     fail("expected numeric missing semicolon at column 4")
   }
   let control = @html_parser.tokenize("&#x80", collect_errors=true)
-  guard control.tokens[0] is @html_parser.HtmlToken::Characters("\u{20AC}") else {
+  guard control.tokens[0] is Characters("\u{20AC}") else {
     fail("expected Windows-1252 numeric replacement")
   }
   assert_eq(control.errors.length(), 2)
@@ -12652,7 +12630,7 @@ test "entity decoding reports upstream fixture errors" {
     fail("expected control reference at column 5")
   }
   let noncharacter = @html_parser.tokenize("&#xFDD0;", collect_errors=true)
-  guard noncharacter.tokens[0] is @html_parser.HtmlToken::Characters("\u{FDD0}") else {
+  guard noncharacter.tokens[0] is Characters("\u{FDD0}") else {
     fail("expected noncharacter numeric reference")
   }
   assert_eq(noncharacter.errors.length(), 1)
@@ -12661,7 +12639,7 @@ test "entity decoding reports upstream fixture errors" {
     fail("expected noncharacter reference at column 8")
   }
   let named_semicolon = @html_parser.tokenize("&notit;", collect_errors=true)
-  guard named_semicolon.tokens[0] is @html_parser.HtmlToken::Characters("¬it;") else {
+  guard named_semicolon.tokens[0] is Characters("¬it;") else {
     fail("expected legacy prefix match with semicolon")
   }
   assert_eq(named_semicolon.errors.length(), 1)
@@ -12673,7 +12651,7 @@ test "entity decoding reports upstream fixture errors" {
     fail("expected legacy semicolon error at column 7")
   }
   let named_eof = @html_parser.tokenize("&notit", collect_errors=true)
-  guard named_eof.tokens[0] is @html_parser.HtmlToken::Characters("¬it") else {
+  guard named_eof.tokens[0] is Characters("¬it") else {
     fail("expected legacy prefix match without semicolon")
   }
   assert_eq(named_eof.errors.length(), 1)
@@ -12705,7 +12683,7 @@ test "entity decoding reports upstream fixture errors" {
     collect_errors=true,
   )
   guard named_legacy.tokens[0]
-    is @html_parser.HtmlToken::Characters("\u{00A9} \u{00E9} \u{00BD} \u{00A9}") else {
+    is Characters("\u{00A9} \u{00E9} \u{00BD} \u{00A9}") else {
     fail("expected legacy named entity decoding")
   }
   assert_eq(named_legacy.errors.length(), 4)
@@ -12717,9 +12695,7 @@ test "entity decoding reports upstream fixture errors" {
     collect_errors=true,
   )
   guard named_prefix.tokens[0]
-    is @html_parser.HtmlToken::Characters(
-      "\u{00A9}cat; \u{00AE}ression \u{00BD}x \u{00AC}it;"
-    ) else {
+    is Characters("\u{00A9}cat; \u{00AE}ression \u{00BD}x \u{00AC}it;") else {
     fail("expected longest legacy prefix decoding")
   }
   assert_eq(named_prefix.errors.length(), 4)
@@ -12731,7 +12707,7 @@ test "entity decoding reports upstream fixture errors" {
 ///|
 test "numeric entity decoding covers replacement and no digit edges" {
   let zero = @html_parser.tokenize("&#0;", collect_errors=true)
-  guard zero.tokens[0] is @html_parser.HtmlToken::Characters("\u{FFFD}") else {
+  guard zero.tokens[0] is Characters("\u{FFFD}") else {
     fail("expected null numeric reference replacement")
   }
   assert_eq(zero.errors.length(), 1)
@@ -12740,7 +12716,7 @@ test "numeric entity decoding covers replacement and no digit edges" {
     fail("expected null control reference at column 4")
   }
   let c1 = @html_parser.tokenize("&#x82;", collect_errors=true)
-  guard c1.tokens[0] is @html_parser.HtmlToken::Characters("\u{201A}") else {
+  guard c1.tokens[0] is Characters("\u{201A}") else {
     fail("expected C1 numeric replacement")
   }
   assert_eq(c1.errors.length(), 1)
@@ -12799,7 +12775,7 @@ test "numeric entity decoding covers replacement and no digit edges" {
     assert_eq(result.errors[0].code, "control-character-reference")
   }
   let lowercase_hex = @html_parser.tokenize("&#xa;", collect_errors=true)
-  guard lowercase_hex.tokens[0] is @html_parser.HtmlToken::Characters("\n") else {
+  guard lowercase_hex.tokens[0] is Characters("\n") else {
     fail("expected lowercase hex numeric reference")
   }
   assert_eq(lowercase_hex.errors.length(), 1)
@@ -12808,7 +12784,7 @@ test "numeric entity decoding covers replacement and no digit edges" {
     fail("expected lowercase hex control reference at column 5")
   }
   let upper_x = @html_parser.tokenize("&#X66;", collect_errors=true)
-  guard upper_x.tokens[0] is @html_parser.HtmlToken::Characters("f") else {
+  guard upper_x.tokens[0] is Characters("f") else {
     fail("expected uppercase X hex marker")
   }
   assert_eq(upper_x.errors.length(), 0)
@@ -12816,14 +12792,12 @@ test "numeric entity decoding covers replacement and no digit edges" {
     "&#x110000; &#xD800;",
     collect_errors=true,
   )
-  guard invalid_scalars.tokens[0]
-    is @html_parser.HtmlToken::Characters("\u{FFFD} \u{FFFD}") else {
+  guard invalid_scalars.tokens[0] is Characters("\u{FFFD} \u{FFFD}") else {
     fail("expected invalid numeric scalars to replace")
   }
   assert_eq(invalid_scalars.errors.length(), 0)
   let no_digits = @html_parser.tokenize("&#x; &#; &#xg;", collect_errors=true)
-  guard no_digits.tokens[0]
-    is @html_parser.HtmlToken::Characters("&#x; &#; &#xg;") else {
+  guard no_digits.tokens[0] is Characters("&#x; &#; &#xg;") else {
     fail("expected digitless numeric references to remain literal")
   }
   assert_eq(no_digits.errors.length(), 0)
@@ -12835,7 +12809,7 @@ test "attribute entity decoding reports upstream fixture errors" {
     "<div a='&#x80 &notit;'>",
     collect_errors=true,
   )
-  guard quoted.tokens[0] is @html_parser.HtmlToken::Tag(quoted_tag) else {
+  guard quoted.tokens[0] is Tag(quoted_tag) else {
     fail("expected quoted attr tag")
   }
   guard quoted_tag.attrs["a"] is Some("\u{20AC} &notit;") else {
@@ -12857,8 +12831,7 @@ test "attribute entity decoding reports upstream fixture errors" {
     "<div a=&#65>",
     collect_errors=true,
   )
-  guard unquoted_numeric.tokens[0]
-    is @html_parser.HtmlToken::Tag(unquoted_numeric_tag) else {
+  guard unquoted_numeric.tokens[0] is Tag(unquoted_numeric_tag) else {
     fail("expected unquoted numeric attr tag")
   }
   guard unquoted_numeric_tag.attrs["a"] is Some("A") else {
@@ -12876,8 +12849,7 @@ test "attribute entity decoding reports upstream fixture errors" {
     "<div a=&notit>",
     collect_errors=true,
   )
-  guard unquoted_named.tokens[0]
-    is @html_parser.HtmlToken::Tag(unquoted_named_tag) else {
+  guard unquoted_named.tokens[0] is Tag(unquoted_named_tag) else {
     fail("expected unquoted named attr tag")
   }
   guard unquoted_named_tag.attrs["a"] is Some("&notit") else {
@@ -12904,7 +12876,7 @@ test "attribute entity decoding reports upstream fixture errors" {
     "<div a='&copycat; &copy= &copy &copy; &apos &apos;'>",
     collect_errors=true,
   )
-  guard legacy_named.tokens[0] is @html_parser.HtmlToken::Tag(legacy_tag) else {
+  guard legacy_named.tokens[0] is Tag(legacy_tag) else {
     fail("expected legacy named attr tag")
   }
   guard legacy_tag.attrs["a"]
@@ -12920,7 +12892,7 @@ test "attribute entity decoding reports upstream fixture errors" {
     "<div a='&notin; &trade; &notin &trade'>x</div>",
     collect_errors=true,
   )
-  guard exact_named.tokens[0] is @html_parser.HtmlToken::Tag(exact_tag) else {
+  guard exact_named.tokens[0] is Tag(exact_tag) else {
     fail("expected exact named attr tag")
   }
   guard exact_tag.attrs["a"] is Some("\u{2209} \u{2122} &notin &trade") else {
@@ -12964,7 +12936,7 @@ test "special text entity decoding reports upstream fixture errors" {
     "<title>&#x80 &notit;</title>",
     collect_errors=true,
   )
-  guard title.tokens[1] is @html_parser.HtmlToken::Characters("\u{20AC} ¬it;") else {
+  guard title.tokens[1] is Characters("\u{20AC} ¬it;") else {
     fail("expected title RCDATA entities")
   }
   assert_eq(title.errors.length(), 3)
@@ -12981,7 +12953,7 @@ test "special text entity decoding reports upstream fixture errors" {
     "<textarea>&#65</textarea>",
     collect_errors=true,
   )
-  guard textarea.tokens[1] is @html_parser.HtmlToken::Characters("A") else {
+  guard textarea.tokens[1] is Characters("A") else {
     fail("expected textarea RCDATA entity")
   }
   assert_eq(textarea.errors.length(), 1)
@@ -12996,7 +12968,7 @@ test "special text entity decoding reports upstream fixture errors" {
     "<script>&#x80</script>",
     collect_errors=true,
   )
-  guard script.tokens[1] is @html_parser.HtmlToken::Characters("&#x80") else {
+  guard script.tokens[1] is Characters("&#x80") else {
     fail("expected script raw text to skip entity decoding")
   }
   assert_eq(script.errors.length(), 0)
@@ -13021,33 +12993,29 @@ test "special text entity decoding reports upstream fixture errors" {
 test "tokenize preserves raw end tags before tree recovery" {
   let result = @html_parser.tokenize("<p>open</span>")
   assert_eq(result.tokens.length(), 4)
-  guard result.tokens[0] is @html_parser.HtmlToken::Tag(start) else {
-    fail("expected p start tag")
-  }
-  assert_true(start.kind is @html_parser.TagKind::StartTag)
+  guard result.tokens[0] is Tag(start) else { fail("expected p start tag") }
+  assert_true(start.kind is StartTag)
   assert_eq(start.name, "p")
-  guard result.tokens[2] is @html_parser.HtmlToken::Tag(end_tag) else {
+  guard result.tokens[2] is Tag(end_tag) else {
     fail("expected raw span end tag")
   }
-  assert_true(end_tag.kind is @html_parser.TagKind::EndTag)
+  assert_true(end_tag.kind is EndTag)
   assert_eq(end_tag.name, "span")
 }
 
 ///|
 test "tokenize preserves end tag attributes and self closing solidus" {
   let self_closing = @html_parser.tokenize("</div/>", collect_errors=true)
-  guard self_closing.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
-    fail("expected end tag")
-  }
-  assert_true(tag.kind is @html_parser.TagKind::EndTag)
+  guard self_closing.tokens[0] is Tag(tag) else { fail("expected end tag") }
+  assert_true(tag.kind is EndTag)
   assert_eq(tag.name, "div")
   assert_eq(tag.self_closing, true)
   assert_eq(self_closing.errors.length(), 0)
   let attrs = @html_parser.tokenize("</div attr=x>", collect_errors=true)
-  guard attrs.tokens[0] is @html_parser.HtmlToken::Tag(attr_tag) else {
+  guard attrs.tokens[0] is Tag(attr_tag) else {
     fail("expected attributed end tag")
   }
-  assert_true(attr_tag.kind is @html_parser.TagKind::EndTag)
+  assert_true(attr_tag.kind is EndTag)
   assert_eq(attr_tag.name, "div")
   guard attr_tag.attrs["attr"] is Some("x") else {
     fail("expected end tag attr")
@@ -13055,18 +13023,18 @@ test "tokenize preserves end tag attributes and self closing solidus" {
   assert_eq(attr_tag.self_closing, false)
   assert_eq(attrs.errors.length(), 0)
   let null_name = @html_parser.tokenize("</d\u{0000}iv>", collect_errors=true)
-  guard null_name.tokens[0] is @html_parser.HtmlToken::Tag(null_tag) else {
+  guard null_name.tokens[0] is Tag(null_tag) else {
     fail("expected null-containing end tag")
   }
-  assert_true(null_tag.kind is @html_parser.TagKind::EndTag)
+  assert_true(null_tag.kind is EndTag)
   assert_eq(null_tag.name, "d\u{FFFD}iv")
   assert_eq(null_name.errors.length(), 1)
   assert_eq(null_name.errors[0].code, "unexpected-null-character")
   let bad_solidus = @html_parser.tokenize("</div/ x>", collect_errors=true)
-  guard bad_solidus.tokens[0] is @html_parser.HtmlToken::Tag(bad_tag) else {
+  guard bad_solidus.tokens[0] is Tag(bad_tag) else {
     fail("expected recovered end tag after bad solidus")
   }
-  assert_true(bad_tag.kind is @html_parser.TagKind::EndTag)
+  assert_true(bad_tag.kind is EndTag)
   assert_eq(bad_tag.name, "div")
   assert_eq(bad_tag.self_closing, false)
   guard bad_tag.attrs["x"] is Some("") else {
@@ -13085,16 +13053,16 @@ test "parser matches end tags before self closing solidus" {
   assert_eq(div.to_html(pretty=false), "<div>x</div>y")
   assert_eq(div.errors.length(), 0)
   let script = @html_parser.tokenize("<script>x</script/>after")
-  guard script.tokens[1] is @html_parser.HtmlToken::Characters("x") else {
+  guard script.tokens[1] is Characters("x") else {
     fail("expected script text before slash end tag")
   }
-  guard script.tokens[2] is @html_parser.HtmlToken::Tag(end_script) else {
+  guard script.tokens[2] is Tag(end_script) else {
     fail("expected script end tag before slash")
   }
-  assert_true(end_script.kind is @html_parser.TagKind::EndTag)
+  assert_true(end_script.kind is EndTag)
   assert_eq(end_script.name, "script")
   assert_eq(end_script.self_closing, true)
-  guard script.tokens[3] is @html_parser.HtmlToken::Characters("after") else {
+  guard script.tokens[3] is Characters("after") else {
     fail("expected text after slash end tag")
   }
 }
@@ -13149,13 +13117,13 @@ test "tokenize matches rawtext and rcdata end tags before bad solidus" {
     "<title>a</title/foo><p>b",
     collect_errors=true,
   )
-  guard title.tokens[1] is @html_parser.HtmlToken::Characters("a") else {
+  guard title.tokens[1] is Characters("a") else {
     fail("expected title text before slash end tag")
   }
-  guard title.tokens[2] is @html_parser.HtmlToken::Tag(end_title) else {
+  guard title.tokens[2] is Tag(end_title) else {
     fail("expected title end tag before slash attribute")
   }
-  assert_true(end_title.kind is @html_parser.TagKind::EndTag)
+  assert_true(end_title.kind is EndTag)
   assert_eq(end_title.name, "title")
   guard end_title.attrs["foo"] is Some("") else {
     fail("expected recovered foo attribute on title end tag")
@@ -13169,13 +13137,13 @@ test "tokenize matches rawtext and rcdata end tags before bad solidus" {
     "<script>a</script/foo><p>b",
     collect_errors=true,
   )
-  guard script.tokens[1] is @html_parser.HtmlToken::Characters("a") else {
+  guard script.tokens[1] is Characters("a") else {
     fail("expected script text before slash end tag")
   }
-  guard script.tokens[2] is @html_parser.HtmlToken::Tag(end_script) else {
+  guard script.tokens[2] is Tag(end_script) else {
     fail("expected script end tag before slash attribute")
   }
-  assert_true(end_script.kind is @html_parser.TagKind::EndTag)
+  assert_true(end_script.kind is EndTag)
   assert_eq(end_script.name, "script")
   guard end_script.attrs["foo"] is Some("") else {
     fail("expected recovered foo attribute on script end tag")
@@ -13197,7 +13165,7 @@ test "tokenize reports malformed end tag errors when requested" {
     fail("expected empty end tag error at >")
   }
   let invalid = @html_parser.tokenize("</ >", collect_errors=true)
-  guard invalid.tokens[0] is @html_parser.HtmlToken::CommentToken(" ") else {
+  guard invalid.tokens[0] is CommentToken(" ") else {
     fail("expected invalid end tag as bogus comment")
   }
   assert_eq(invalid.errors.length(), 1)
@@ -13210,17 +13178,17 @@ test "tokenize reports malformed end tag errors when requested" {
 ///|
 test "tokenize handles selected bogus comment fixture cases" {
   let processing = @html_parser.tokenize("<?foo>")
-  guard processing.tokens[0] is @html_parser.HtmlToken::CommentToken("?foo") else {
+  guard processing.tokens[0] is CommentToken("?foo") else {
     fail("expected bogus comment")
   }
   let invalid_end = @html_parser.tokenize("</?", collect_errors=true)
-  guard invalid_end.tokens[0] is @html_parser.HtmlToken::CommentToken("?") else {
+  guard invalid_end.tokens[0] is CommentToken("?") else {
     fail("expected invalid end tag as bogus comment")
   }
   assert_eq(invalid_end.errors.length(), 1)
   assert_eq(invalid_end.errors[0].code, "invalid-first-character-of-tag-name")
   let question = @html_parser.tokenize("<?foo>", collect_errors=true)
-  guard question.tokens[0] is @html_parser.HtmlToken::CommentToken("?foo") else {
+  guard question.tokens[0] is CommentToken("?foo") else {
     fail("expected question-mark markup as bogus comment")
   }
   assert_eq(question.errors.length(), 1)
@@ -13241,7 +13209,7 @@ test "tokenize handles selected bogus comment fixture cases" {
     "unexpected-question-mark-instead-of-tag-name",
   )
   let declaration = @html_parser.tokenize("<!foo>", collect_errors=true)
-  guard declaration.tokens[0] is @html_parser.HtmlToken::CommentToken("foo") else {
+  guard declaration.tokens[0] is CommentToken("foo") else {
     fail("expected malformed declaration as bogus comment")
   }
   assert_eq(declaration.errors.length(), 1)
@@ -13250,7 +13218,7 @@ test "tokenize handles selected bogus comment fixture cases" {
     fail("expected malformed declaration error at bang")
   }
   let cdata = @html_parser.tokenize("<![CDATA[x]]>", collect_errors=true)
-  guard cdata.tokens[0] is @html_parser.HtmlToken::CommentToken("[CDATA[x]]") else {
+  guard cdata.tokens[0] is CommentToken("[CDATA[x]]") else {
     fail("expected HTML CDATA as bogus comment")
   }
   assert_eq(cdata.errors.length(), 1)
@@ -13260,10 +13228,10 @@ test "tokenize handles selected bogus comment fixture cases" {
   }
   let invalid_open = @html_parser.tokenize("<*foo>", collect_errors=true)
   assert_eq(invalid_open.tokens.length(), 2)
-  guard invalid_open.tokens[0] is @html_parser.HtmlToken::Characters("<*foo>") else {
+  guard invalid_open.tokens[0] is Characters("<*foo>") else {
     fail("expected invalid tag-open sequence as text")
   }
-  guard invalid_open.tokens[1] is @html_parser.HtmlToken::Eof else {
+  guard invalid_open.tokens[1] is Eof else {
     fail("expected EOF after invalid tag-open text")
   }
   assert_eq(invalid_open.errors.length(), 1)
@@ -13272,7 +13240,7 @@ test "tokenize handles selected bogus comment fixture cases" {
     fail("expected invalid tag-open error at second character")
   }
   let invalid_entity = @html_parser.tokenize("<&notit", collect_errors=true)
-  guard invalid_entity.tokens[0] is @html_parser.HtmlToken::Characters("<¬it") else {
+  guard invalid_entity.tokens[0] is Characters("<¬it") else {
     fail("expected invalid tag-open entity recovery")
   }
   assert_eq(invalid_entity.errors.length(), 2)
@@ -13289,7 +13257,7 @@ test "tokenize handles selected bogus comment fixture cases" {
     collect_errors=true,
     xml_coercion=true,
   )
-  guard xml_question.tokens[0] is @html_parser.HtmlToken::CommentToken("?a- -b") else {
+  guard xml_question.tokens[0] is CommentToken("?a- -b") else {
     fail("expected XML-coerced bogus comment")
   }
   assert_eq(xml_question.errors.length(), 1)
@@ -13302,8 +13270,7 @@ test "tokenize handles selected bogus comment fixture cases" {
 ///|
 test "tokenize replaces nulls in bogus comment data" {
   let question = @html_parser.tokenize("<?a\u{0000}b>", collect_errors=true)
-  guard question.tokens[0]
-    is @html_parser.HtmlToken::CommentToken("?a\u{FFFD}b") else {
+  guard question.tokens[0] is CommentToken("?a\u{FFFD}b") else {
     fail("expected replacement char in question-mark bogus comment")
   }
   assert_eq(question.errors.length(), 1)
@@ -13312,8 +13279,7 @@ test "tokenize replaces nulls in bogus comment data" {
     "unexpected-question-mark-instead-of-tag-name",
   )
   let declaration = @html_parser.tokenize("<!a\u{0000}b>", collect_errors=true)
-  guard declaration.tokens[0]
-    is @html_parser.HtmlToken::CommentToken("a\u{FFFD}b") else {
+  guard declaration.tokens[0] is CommentToken("a\u{FFFD}b") else {
     fail("expected replacement char in malformed declaration")
   }
   assert_eq(declaration.errors.length(), 1)
@@ -13322,8 +13288,7 @@ test "tokenize replaces nulls in bogus comment data" {
     "<![CDATA[a\u{0000}b]]>",
     collect_errors=true,
   )
-  guard cdata.tokens[0]
-    is @html_parser.HtmlToken::CommentToken("[CDATA[a\u{FFFD}b]]") else {
+  guard cdata.tokens[0] is CommentToken("[CDATA[a\u{FFFD}b]]") else {
     fail("expected replacement char in HTML CDATA bogus comment")
   }
   assert_eq(cdata.errors.length(), 1)
@@ -13354,7 +13319,7 @@ test "parser replaces nulls in bogus comment data" {
 ///|
 test "tokenize reports abrupt closing of empty comments" {
   let simple = @html_parser.tokenize("<!-->", collect_errors=true)
-  guard simple.tokens[0] is @html_parser.HtmlToken::CommentToken("") else {
+  guard simple.tokens[0] is CommentToken("") else {
     fail("expected empty comment")
   }
   assert_eq(simple.errors.length(), 1)
@@ -13363,7 +13328,7 @@ test "tokenize reports abrupt closing of empty comments" {
     fail("expected abrupt empty comment at >")
   }
   let dash = @html_parser.tokenize("<!--->", collect_errors=true)
-  guard dash.tokens[0] is @html_parser.HtmlToken::CommentToken("") else {
+  guard dash.tokens[0] is CommentToken("") else {
     fail("expected empty dash comment")
   }
   assert_eq(dash.errors.length(), 1)
@@ -13394,7 +13359,7 @@ test "parser reports abrupt closing of empty comments" {
 ///|
 test "tokenize reports incorrectly closed comments" {
   let bang = @html_parser.tokenize("<!--x--!>", collect_errors=true)
-  guard bang.tokens[0] is @html_parser.HtmlToken::CommentToken("x") else {
+  guard bang.tokens[0] is CommentToken("x") else {
     fail("expected bang-closed comment")
   }
   assert_eq(bang.errors.length(), 1)
@@ -13403,7 +13368,7 @@ test "tokenize reports incorrectly closed comments" {
     fail("expected bang close error at >")
   }
   let text = @html_parser.tokenize("<!--x--y-->", collect_errors=true)
-  guard text.tokens[0] is @html_parser.HtmlToken::CommentToken("x--y") else {
+  guard text.tokens[0] is CommentToken("x--y") else {
     fail("expected recovered comment data")
   }
   assert_eq(text.errors.length(), 1)
@@ -13434,15 +13399,13 @@ test "parser reports incorrectly closed comments" {
 ///|
 test "tokenize reports selected EOF and null fixture errors" {
   let lt = @html_parser.tokenize("<", collect_errors=true)
-  guard lt.tokens[0] is @html_parser.HtmlToken::Characters("<") else {
-    fail("expected literal <")
-  }
+  guard lt.tokens[0] is Characters("<") else { fail("expected literal <") }
   assert_eq(lt.errors[0].code, "eof-before-tag-name")
   guard lt.errors[0].column is Some(1) else {
     fail("expected bare < EOF at the < character")
   }
   let end_open = @html_parser.tokenize("</", collect_errors=true)
-  guard end_open.tokens[0] is @html_parser.HtmlToken::Characters("</") else {
+  guard end_open.tokens[0] is Characters("</") else {
     fail("expected literal </")
   }
   assert_eq(end_open.errors[0].code, "eof-before-tag-name")
@@ -13454,7 +13417,7 @@ test "tokenize reports selected EOF and null fixture errors" {
     collect_errors=true,
   )
   assert_eq(unfinished_start.tokens.length(), 1)
-  guard unfinished_start.tokens[0] is @html_parser.HtmlToken::Eof else {
+  guard unfinished_start.tokens[0] is Eof else {
     fail("expected only EOF token for incomplete quoted tag")
   }
   assert_eq(unfinished_start.errors.length(), 1)
@@ -13480,7 +13443,7 @@ test "tokenize reports selected EOF and null fixture errors" {
     collect_errors=true,
   )
   assert_eq(unfinished_unquoted.tokens.length(), 1)
-  guard unfinished_unquoted.tokens[0] is @html_parser.HtmlToken::Eof else {
+  guard unfinished_unquoted.tokens[0] is Eof else {
     fail("expected only EOF token for incomplete unquoted tag")
   }
   assert_eq(unfinished_unquoted.errors.length(), 1)
@@ -13490,7 +13453,7 @@ test "tokenize reports selected EOF and null fixture errors" {
   }
   let unfinished_end = @html_parser.tokenize("</span", collect_errors=true)
   assert_eq(unfinished_end.tokens.length(), 1)
-  guard unfinished_end.tokens[0] is @html_parser.HtmlToken::Eof else {
+  guard unfinished_end.tokens[0] is Eof else {
     fail("expected only EOF token for incomplete end tag")
   }
   assert_eq(unfinished_end.errors.length(), 1)
@@ -13500,11 +13463,10 @@ test "tokenize reports selected EOF and null fixture errors" {
   }
   let unfinished_comment = @html_parser.tokenize("<!--x", collect_errors=true)
   assert_eq(unfinished_comment.tokens.length(), 2)
-  guard unfinished_comment.tokens[0]
-    is @html_parser.HtmlToken::CommentToken("x") else {
+  guard unfinished_comment.tokens[0] is CommentToken("x") else {
     fail("expected comment token before EOF")
   }
-  guard unfinished_comment.tokens[1] is @html_parser.HtmlToken::Eof else {
+  guard unfinished_comment.tokens[1] is Eof else {
     fail("expected EOF after unfinished comment token")
   }
   assert_eq(unfinished_comment.errors.length(), 1)
@@ -13513,7 +13475,7 @@ test "tokenize reports selected EOF and null fixture errors" {
     fail("expected unfinished comment EOF at final character")
   }
   let nul_text = @html_parser.tokenize("a\u{0000}b", collect_errors=true)
-  guard nul_text.tokens[0] is @html_parser.HtmlToken::Characters("a\u{0000}b") else {
+  guard nul_text.tokens[0] is Characters("a\u{0000}b") else {
     fail("expected null-preserving text")
   }
   assert_eq(nul_text.errors[0].code, "unexpected-null-character")
@@ -13524,9 +13486,7 @@ test "tokenize reports selected EOF and null fixture errors" {
     "<div foo=\"a\u{0000}b\">",
     collect_errors=true,
   )
-  guard nul_attr.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
-    fail("expected div tag")
-  }
+  guard nul_attr.tokens[0] is Tag(tag) else { fail("expected div tag") }
   guard tag.attrs["foo"] is Some("a\u{FFFD}b") else {
     fail("expected replacement char in attr")
   }
@@ -13550,7 +13510,7 @@ test "tokenize reports selected EOF and null fixture errors" {
     "<div foo=a\u{0000}b>",
     collect_errors=true,
   )
-  guard nul_unquoted_attr.tokens[0] is @html_parser.HtmlToken::Tag(unquoted_tag) else {
+  guard nul_unquoted_attr.tokens[0] is Tag(unquoted_tag) else {
     fail("expected div tag with unquoted null attr")
   }
   guard unquoted_tag.attrs["foo"] is Some("a\u{FFFD}b") else {
@@ -13562,7 +13522,7 @@ test "tokenize reports selected EOF and null fixture errors" {
     "<div a\u{0000}b='c'>",
     collect_errors=true,
   )
-  guard nul_attr_name.tokens[0] is @html_parser.HtmlToken::Tag(attr_name_tag) else {
+  guard nul_attr_name.tokens[0] is Tag(attr_name_tag) else {
     fail("expected div tag")
   }
   guard attr_name_tag.attrs["a\u{FFFD}b"] is Some("c") else {
@@ -13577,17 +13537,17 @@ test "tokenize reports selected EOF and null fixture errors" {
     "<script\u{0000}>x</script>",
     collect_errors=true,
   )
-  guard nul_tag_name.tokens[0] is @html_parser.HtmlToken::Tag(start) else {
+  guard nul_tag_name.tokens[0] is Tag(start) else {
     fail("expected script start tag")
   }
   assert_eq(start.name, "script\u{FFFD}")
-  guard nul_tag_name.tokens[1] is @html_parser.HtmlToken::Characters("x") else {
+  guard nul_tag_name.tokens[1] is Characters("x") else {
     fail("expected text after null-mutated script tag")
   }
-  guard nul_tag_name.tokens[2] is @html_parser.HtmlToken::Tag(end_tag) else {
+  guard nul_tag_name.tokens[2] is Tag(end_tag) else {
     fail("expected script end tag")
   }
-  assert_true(end_tag.kind is @html_parser.TagKind::EndTag)
+  assert_true(end_tag.kind is EndTag)
   assert_eq(end_tag.name, "script")
   assert_eq(nul_tag_name.errors.length(), 1)
   assert_eq(nul_tag_name.errors[0].code, "unexpected-null-character")
@@ -13622,17 +13582,13 @@ test "tokenize matches upstream script escaped null EOF fixture" {
 ///|
 test "tokenize reports missing attribute value fixture errors" {
   let bare = @html_parser.tokenize("<div attr>", collect_errors=true)
-  guard bare.tokens[0] is @html_parser.HtmlToken::Tag(bare_tag) else {
-    fail("expected div tag")
-  }
+  guard bare.tokens[0] is Tag(bare_tag) else { fail("expected div tag") }
   guard bare_tag.attrs["attr"] is Some("") else {
     fail("expected empty attr without error")
   }
   assert_eq(bare.errors.length(), 0)
   let simple = @html_parser.tokenize("<div attr=>", collect_errors=true)
-  guard simple.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
-    fail("expected div tag")
-  }
+  guard simple.tokens[0] is Tag(tag) else { fail("expected div tag") }
   guard tag.attrs["attr"] is Some("") else { fail("expected empty attr value") }
   assert_eq(simple.errors[0].code, "missing-attribute-value")
   guard simple.errors[0].column is Some(11) else {
@@ -13667,9 +13623,7 @@ test "parser reports missing attribute value after equals only" {
 ///|
 test "tokenize reports unquoted attribute value fixture errors" {
   let less = @html_parser.tokenize("<div a=b<c>", collect_errors=true)
-  guard less.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
-    fail("expected div tag")
-  }
+  guard less.tokens[0] is Tag(tag) else { fail("expected div tag") }
   guard tag.attrs["a"] is Some("b<c") else {
     fail("expected < in unquoted attr value")
   }
@@ -13682,7 +13636,7 @@ test "tokenize reports unquoted attribute value fixture errors" {
     fail("expected unquoted attr value error at column 9")
   }
   let backtick = @html_parser.tokenize("<div a=b`c>", collect_errors=true)
-  guard backtick.tokens[0] is @html_parser.HtmlToken::Tag(backtick_tag) else {
+  guard backtick.tokens[0] is Tag(backtick_tag) else {
     fail("expected div tag")
   }
   guard backtick_tag.attrs["a"] is Some("b`c") else {
@@ -13698,9 +13652,7 @@ test "tokenize reports unquoted attribute value fixture errors" {
 ///|
 test "tokenize reports missing whitespace after quoted attribute value" {
   let result = @html_parser.tokenize("<div a=\"b\"c=d>", collect_errors=true)
-  guard result.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
-    fail("expected div tag")
-  }
+  guard result.tokens[0] is Tag(tag) else { fail("expected div tag") }
   guard tag.attrs["a"] is Some("b") else { fail("expected quoted attr") }
   guard tag.attrs["c"] is Some("d") else { fail("expected adjacent attr") }
   assert_eq(result.errors.length(), 1)
@@ -13713,9 +13665,7 @@ test "tokenize reports missing whitespace after quoted attribute value" {
 ///|
 test "tokenize reports attribute name fixture errors" {
   let equals = @html_parser.tokenize("<div\r=abc>", collect_errors=true)
-  guard equals.tokens[0] is @html_parser.HtmlToken::Tag(eq_tag) else {
-    fail("expected div tag")
-  }
+  guard equals.tokens[0] is Tag(eq_tag) else { fail("expected div tag") }
   guard eq_tag.attrs["=abc"] is Some("") else { fail("expected =abc attr") }
   assert_eq(equals.errors.length(), 1)
   assert_eq(
@@ -13729,9 +13679,7 @@ test "tokenize reports attribute name fixture errors" {
     fail("expected equals error at column 1")
   }
   let invalid_char = @html_parser.tokenize("<div a<b>", collect_errors=true)
-  guard invalid_char.tokens[0] is @html_parser.HtmlToken::Tag(bad_tag) else {
-    fail("expected div tag")
-  }
+  guard invalid_char.tokens[0] is Tag(bad_tag) else { fail("expected div tag") }
   guard bad_tag.attrs["a<b"] is Some("") else { fail("expected a<b attr") }
   assert_eq(invalid_char.errors.length(), 1)
   assert_eq(
@@ -13742,9 +13690,7 @@ test "tokenize reports attribute name fixture errors" {
     fail("expected bad attr char at column 7")
   }
   let quote = @html_parser.tokenize("<div a\"b>", collect_errors=true)
-  guard quote.tokens[0] is @html_parser.HtmlToken::Tag(quote_tag) else {
-    fail("expected div tag")
-  }
+  guard quote.tokens[0] is Tag(quote_tag) else { fail("expected div tag") }
   guard quote_tag.attrs["a\"b"] is Some("") else {
     fail("expected quote in attr name")
   }
@@ -13766,9 +13712,7 @@ test "parser and tokenizer keep first duplicate attribute value" {
   assert_eq(doc.errors[0].code, "duplicate-attribute")
   assert_eq(doc.errors[1].code, "duplicate-attribute")
   let tokens = @html_parser.tokenize("<div a=1 a=2 a=3>", collect_errors=true)
-  guard tokens.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
-    fail("expected div tag")
-  }
+  guard tokens.tokens[0] is Tag(tag) else { fail("expected div tag") }
   guard tag.attrs["a"] is Some("1") else {
     fail("expected first duplicate value")
   }
@@ -13862,9 +13806,7 @@ test "parser reports missing whitespace after quoted attribute value" {
 ///|
 test "tokenize recovers invalid self closing start tag fixture case" {
   let result = @html_parser.tokenize("<div /a>", collect_errors=true)
-  guard result.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
-    fail("expected div tag")
-  }
+  guard result.tokens[0] is Tag(tag) else { fail("expected div tag") }
   assert_eq(tag.name, "div")
   assert_eq(tag.self_closing, false)
   guard tag.attrs["a"] is Some("") else { fail("expected recovered a attr") }
@@ -13886,9 +13828,7 @@ test "tokenize recovers invalid self closing start tag fixture case" {
 ///|
 test "start tag solidus does not skip following whitespace" {
   let tokenized = @html_parser.tokenize("<div/ >", collect_errors=true)
-  guard tokenized.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
-    fail("expected div tag")
-  }
+  guard tokenized.tokens[0] is Tag(tag) else { fail("expected div tag") }
   assert_eq(tag.name, "div")
   assert_eq(tag.self_closing, false)
   assert_eq(tokenized.errors.length(), 1)
@@ -13900,9 +13840,7 @@ test "start tag solidus does not skip following whitespace" {
     fail("expected whitespace after solidus at column 6")
   }
   let img = @html_parser.tokenize("<img />", collect_errors=true)
-  guard img.tokens[0] is @html_parser.HtmlToken::Tag(img_tag) else {
-    fail("expected img tag")
-  }
+  guard img.tokens[0] is Tag(img_tag) else { fail("expected img tag") }
   assert_eq(img_tag.self_closing, true)
   assert_eq(img.errors.length(), 0)
   let fragment = @html_parser.parse_fragment("<div/ >", collect_errors=true)
@@ -13921,24 +13859,20 @@ test "start tag solidus does not skip following whitespace" {
 ///|
 test "tokenize normalizes BOM and CRLF edge cases" {
   let bom = @html_parser.tokenize("\u{FEFF}<div>")
-  guard bom.tokens[0] is @html_parser.HtmlToken::Tag(tag) else {
-    fail("expected div start tag")
-  }
+  guard bom.tokens[0] is Tag(tag) else { fail("expected div start tag") }
   assert_eq(tag.name, "div")
   let text = @html_parser.tokenize("abc\r\ndef\rghi")
-  guard text.tokens[0] is @html_parser.HtmlToken::Characters(data) else {
+  guard text.tokens[0] is Characters(data) else {
     fail("expected character token")
   }
   assert_eq(data, "abc\ndef\nghi")
   let comment = @html_parser.tokenize("<!-- a\rb -->")
-  guard comment.tokens[0] is @html_parser.HtmlToken::CommentToken(data) else {
+  guard comment.tokens[0] is CommentToken(data) else {
     fail("expected comment")
   }
   assert_eq(data, " a\nb ")
   let attr = @html_parser.tokenize("<div title=\"a\rb\">")
-  guard attr.tokens[0] is @html_parser.HtmlToken::Tag(attr_tag) else {
-    fail("expected attr tag")
-  }
+  guard attr.tokens[0] is Tag(attr_tag) else { fail("expected attr tag") }
   guard attr_tag.attrs["title"] is Some("a\nb") else {
     fail("expected normalized attr")
   }
@@ -14112,7 +14046,7 @@ test "tokenize matches upstream CR and LF normalization fixtures" {
 ///|
 test "tokenize handles comment dash EOF and null edge cases" {
   let crlf_eof = @html_parser.tokenize("<!----!\r\n", collect_errors=true)
-  guard crlf_eof.tokens[0] is @html_parser.HtmlToken::CommentToken("--!\n") else {
+  guard crlf_eof.tokens[0] is CommentToken("--!\n") else {
     fail("expected CRLF EOF comment data")
   }
   assert_eq(crlf_eof.errors.length(), 1)
@@ -14137,7 +14071,7 @@ test "tokenize handles comment dash EOF and null edge cases" {
     "<!--x--!\u{0000}-->",
     collect_errors=true,
   )
-  guard bang_null.tokens[0] is @html_parser.HtmlToken::CommentToken("x--!�") else {
+  guard bang_null.tokens[0] is CommentToken("x--!�") else {
     fail("expected replacement after --! null")
   }
   assert_eq(bang_null.errors.length(), 1)
@@ -14149,8 +14083,7 @@ test "tokenize handles comment dash EOF and null edge cases" {
     "<!--x---a-->",
     collect_errors=true,
   )
-  guard incorrectly_closed.tokens[0]
-    is @html_parser.HtmlToken::CommentToken("x---a") else {
+  guard incorrectly_closed.tokens[0] is CommentToken("x---a") else {
     fail("expected incorrectly closed dash run data")
   }
   assert_eq(incorrectly_closed.errors.length(), 1)
@@ -14159,7 +14092,7 @@ test "tokenize handles comment dash EOF and null edge cases" {
     fail("expected incorrect close error at column 9")
   }
   let dash_null = @html_parser.tokenize("<!--x--\u{0000}>", collect_errors=true)
-  guard dash_null.tokens[0] is @html_parser.HtmlToken::CommentToken("x--�>") else {
+  guard dash_null.tokens[0] is CommentToken("x--�>") else {
     fail("expected replacement after -- null")
   }
   assert_eq(dash_null.errors.length(), 2)
@@ -14170,7 +14103,7 @@ test "tokenize handles comment dash EOF and null edge cases" {
 ///|
 test "tokenize handles comment EOF branch variants" {
   let empty = @html_parser.tokenize("<!--", collect_errors=true)
-  guard empty.tokens[0] is @html_parser.HtmlToken::CommentToken("") else {
+  guard empty.tokens[0] is CommentToken("") else {
     fail("expected empty EOF comment")
   }
   assert_eq(empty.errors.length(), 1)
@@ -14179,7 +14112,7 @@ test "tokenize handles comment EOF branch variants" {
     fail("expected empty comment EOF at column 4")
   }
   let bang_eof = @html_parser.tokenize("<!--x--!", collect_errors=true)
-  guard bang_eof.tokens[0] is @html_parser.HtmlToken::CommentToken("x") else {
+  guard bang_eof.tokens[0] is CommentToken("x") else {
     fail("expected --! EOF comment data")
   }
   assert_eq(bang_eof.errors.length(), 1)
@@ -14188,7 +14121,7 @@ test "tokenize handles comment EOF branch variants" {
     fail("expected --! EOF at column 8")
   }
   let dash_eof = @html_parser.tokenize("<!--x--", collect_errors=true)
-  guard dash_eof.tokens[0] is @html_parser.HtmlToken::CommentToken("x") else {
+  guard dash_eof.tokens[0] is CommentToken("x") else {
     fail("expected -- EOF comment data")
   }
   assert_eq(dash_eof.errors.length(), 1)
@@ -14197,7 +14130,7 @@ test "tokenize handles comment EOF branch variants" {
     fail("expected -- EOF at column 7")
   }
   let null_eof = @html_parser.tokenize("<!--x\u{0000}", collect_errors=true)
-  guard null_eof.tokens[0] is @html_parser.HtmlToken::CommentToken("x�") else {
+  guard null_eof.tokens[0] is CommentToken("x�") else {
     fail("expected null EOF comment data")
   }
   assert_eq(null_eof.errors.length(), 2)
@@ -14294,7 +14227,7 @@ test "parser handles null characters in text attributes and text modes" {
 ///|
 test "parser and tokenizer report noncharacters in input stream" {
   let tokens = @html_parser.tokenize("ab\u{FDD0}cd", collect_errors=true)
-  guard tokens.tokens[0] is @html_parser.HtmlToken::Characters("ab\u{FDD0}cd") else {
+  guard tokens.tokens[0] is Characters("ab\u{FDD0}cd") else {
     fail("expected noncharacter to stay in character token")
   }
   assert_eq(tokens.errors.length(), 1)
@@ -14312,8 +14245,7 @@ test "parser and tokenizer report noncharacters in input stream" {
     fail("expected multiline noncharacter at column 2")
   }
   let invalid_open = @html_parser.tokenize("<\u{FDD0}", collect_errors=true)
-  guard invalid_open.tokens[0]
-    is @html_parser.HtmlToken::Characters("<\u{FDD0}") else {
+  guard invalid_open.tokens[0] is Characters("<\u{FDD0}") else {
     fail("expected invalid tag open as text")
   }
   assert_eq(invalid_open.errors.length(), 3)
@@ -14325,15 +14257,14 @@ test "parser and tokenizer report noncharacters in input stream" {
     collect_errors=true,
     xml_coercion=true,
   )
-  guard invalid_xml.tokens[0] is @html_parser.HtmlToken::Characters("< �<") else {
+  guard invalid_xml.tokens[0] is Characters("< �<") else {
     fail("expected invalid tag-open text to decode and XML-coerce")
   }
   assert_eq(invalid_xml.errors.length(), 2)
   assert_eq(invalid_xml.errors[0].code, "invalid-first-character-of-tag-name")
   assert_eq(invalid_xml.errors[1].code, "noncharacter-in-input-stream")
   let invalid_null = @html_parser.tokenize("<\u{0000}", collect_errors=true)
-  guard invalid_null.tokens[0]
-    is @html_parser.HtmlToken::Characters("<\u{0000}") else {
+  guard invalid_null.tokens[0] is Characters("<\u{0000}") else {
     fail("expected invalid tag-open null text")
   }
   assert_eq(invalid_null.errors.length(), 2)
@@ -14861,31 +14792,29 @@ test "parser ignores one initial newline in pre listing and textarea" {
 test "tokenize preserves rawtext and rcdata element contents" {
   let script = @html_parser.tokenize("<script><!--a--<b</script>")
   assert_eq(script.tokens.length(), 4)
-  guard script.tokens[1] is @html_parser.HtmlToken::Characters("<!--a--<<b") else {
+  guard script.tokens[1] is Characters("<!--a--<<b") else {
     fail("expected raw script text")
   }
-  guard script.tokens[2] is @html_parser.HtmlToken::Tag(end_script) else {
-    fail("expected script end")
-  }
-  assert_true(end_script.kind is @html_parser.TagKind::EndTag)
+  guard script.tokens[2] is Tag(end_script) else { fail("expected script end") }
+  assert_true(end_script.kind is EndTag)
   assert_eq(end_script.name, "script")
   let escaped_end = @html_parser.tokenize("<script><!--a--</script>")
-  guard escaped_end.tokens[1] is @html_parser.HtmlToken::Characters("<!--a--<") else {
+  guard escaped_end.tokens[1] is Characters("<!--a--<") else {
     fail("expected escaped script end-tag boundary text")
   }
   let escaped_eof = @html_parser.tokenize("<script><!--a--<")
-  guard escaped_eof.tokens[1] is @html_parser.HtmlToken::Characters("<!--a--<<") else {
+  guard escaped_eof.tokens[1] is Characters("<!--a--<<") else {
     fail("expected escaped EOF less-than text")
   }
   let comment_end = @html_parser.tokenize("<script><!--a--></script>")
-  guard comment_end.tokens[1] is @html_parser.HtmlToken::Characters("<!--a-->") else {
+  guard comment_end.tokens[1] is Characters("<!--a-->") else {
     fail("expected script comment close to return to raw text")
   }
   let nul_script = @html_parser.tokenize(
     "<script>a\u{0000}b</script>",
     collect_errors=true,
   )
-  guard nul_script.tokens[1] is @html_parser.HtmlToken::Characters("a\u{FFFD}b") else {
+  guard nul_script.tokens[1] is Characters("a\u{FFFD}b") else {
     fail("expected replacement char in script text")
   }
   assert_eq(nul_script.errors.length(), 1)
@@ -14897,7 +14826,7 @@ test "tokenize preserves rawtext and rcdata element contents" {
     "<style>a\u{0000}b</style>",
     collect_errors=true,
   )
-  guard nul_style.tokens[1] is @html_parser.HtmlToken::Characters("a\u{FFFD}b") else {
+  guard nul_style.tokens[1] is Characters("a\u{FFFD}b") else {
     fail("expected replacement char in style text")
   }
   assert_eq(nul_style.errors.length(), 1)
@@ -14906,8 +14835,7 @@ test "tokenize preserves rawtext and rcdata element contents" {
     "<title>a\u{0000} &lt; b</title>",
     collect_errors=true,
   )
-  guard nul_title.tokens[1]
-    is @html_parser.HtmlToken::Characters("a\u{FFFD} < b") else {
+  guard nul_title.tokens[1] is Characters("a\u{FFFD} < b") else {
     fail("expected replacement char and entity decoding in title text")
   }
   assert_eq(nul_title.errors.length(), 1)
@@ -14916,8 +14844,7 @@ test "tokenize preserves rawtext and rcdata element contents" {
     "<plaintext>a\u{0000}b",
     collect_errors=true,
   )
-  guard nul_plaintext.tokens[1]
-    is @html_parser.HtmlToken::Characters("a\u{FFFD}b") else {
+  guard nul_plaintext.tokens[1] is Characters("a\u{FFFD}b") else {
     fail("expected replacement char in plaintext")
   }
   assert_eq(nul_plaintext.errors.length(), 1)
@@ -14925,64 +14852,60 @@ test "tokenize preserves rawtext and rcdata element contents" {
   let double_escaped = @html_parser.tokenize(
     "<script><!--<script>x</script>y</script>",
   )
-  guard double_escaped.tokens[1]
-    is @html_parser.HtmlToken::Characters("<!--<script>x</script>y") else {
+  guard double_escaped.tokens[1] is Characters("<!--<script>x</script>y") else {
     fail("expected inner script end tag to stay in double-escaped text")
   }
-  guard double_escaped.tokens[2] is @html_parser.HtmlToken::Tag(double_end) else {
+  guard double_escaped.tokens[2] is Tag(double_end) else {
     fail("expected final script end")
   }
   assert_eq(double_end.name, "script")
   let not_double_escaped = @html_parser.tokenize(
     "<script><!--<scripty>x</script>-->z</script>",
   )
-  guard not_double_escaped.tokens[1]
-    is @html_parser.HtmlToken::Characters("<!--<scripty>x") else {
+  guard not_double_escaped.tokens[1] is Characters("<!--<scripty>x") else {
     fail("expected non-script word to avoid double-escaped state")
   }
-  guard not_double_escaped.tokens[3]
-    is @html_parser.HtmlToken::Characters("-->z") else {
+  guard not_double_escaped.tokens[3] is Characters("-->z") else {
     fail("expected text after the first script end tag")
   }
   let textarea = @html_parser.tokenize("<textarea>a &lt; b</textarea>")
-  guard textarea.tokens[1] is @html_parser.HtmlToken::Characters("a < b") else {
+  guard textarea.tokens[1] is Characters("a < b") else {
     fail("expected decoded textarea text")
   }
   let textarea_lf = @html_parser.tokenize("<textarea>\nline</textarea>")
-  guard textarea_lf.tokens[1] is @html_parser.HtmlToken::Characters("\nline") else {
+  guard textarea_lf.tokens[1] is Characters("\nline") else {
     fail("expected tokenizer to preserve textarea leading newline")
   }
   let xmp = @html_parser.tokenize("<xmp><b>x</b></xmp>")
-  guard xmp.tokens[1] is @html_parser.HtmlToken::Characters("<b>x</b>") else {
+  guard xmp.tokens[1] is Characters("<b>x</b>") else {
     fail("expected xmp raw text")
   }
   let plaintext = @html_parser.tokenize("<plaintext><b>x</b></plaintext>")
-  guard plaintext.tokens[1]
-    is @html_parser.HtmlToken::Characters("<b>x</b></plaintext>") else {
+  guard plaintext.tokens[1] is Characters("<b>x</b></plaintext>") else {
     fail("expected plaintext through EOF")
   }
   let iframe = @html_parser.tokenize("<iframe><b>x</b></iframe>")
-  guard iframe.tokens[1] is @html_parser.HtmlToken::Characters("<b>x</b>") else {
+  guard iframe.tokens[1] is Characters("<b>x</b>") else {
     fail("expected iframe raw text")
   }
   let empty_title = @html_parser.tokenize("<title></title>")
-  guard empty_title.tokens[1] is @html_parser.HtmlToken::Tag(empty_title_end) else {
+  guard empty_title.tokens[1] is Tag(empty_title_end) else {
     fail("expected immediate title end tag")
   }
-  assert_true(empty_title_end.kind is @html_parser.TagKind::EndTag)
+  assert_true(empty_title_end.kind is EndTag)
   let eof_title = @html_parser.tokenize("<title>")
-  guard eof_title.tokens[1] is @html_parser.HtmlToken::Eof else {
+  guard eof_title.tokens[1] is Eof else {
     fail("expected EOF after empty unclosed title")
   }
   let empty_plaintext = @html_parser.tokenize("<plaintext>")
-  guard empty_plaintext.tokens[1] is @html_parser.HtmlToken::Eof else {
+  guard empty_plaintext.tokens[1] is Eof else {
     fail("expected EOF after empty plaintext")
   }
   let xml_title = @html_parser.tokenize(
     "<title>\u{000C}\u{FDD0}</title>",
     xml_coercion=true,
   )
-  guard xml_title.tokens[1] is @html_parser.HtmlToken::Characters(" �") else {
+  guard xml_title.tokens[1] is Characters(" �") else {
     fail("expected XML coercion in RCDATA text")
   }
 }
@@ -14990,39 +14913,39 @@ test "tokenize preserves rawtext and rcdata element contents" {
 ///|
 test "tokenize keeps similarly named special end tags in text" {
   let title = @html_parser.tokenize("<title>a</titlex></title>")
-  guard title.tokens[1] is @html_parser.HtmlToken::Characters("a</titlex>") else {
+  guard title.tokens[1] is Characters("a</titlex>") else {
     fail("expected title suffix end tag to stay in text")
   }
-  guard title.tokens[2] is @html_parser.HtmlToken::Tag(end_title) else {
+  guard title.tokens[2] is Tag(end_title) else {
     fail("expected final title end tag")
   }
-  assert_true(end_title.kind is @html_parser.TagKind::EndTag)
+  assert_true(end_title.kind is EndTag)
   assert_eq(end_title.name, "title")
   let style = @html_parser.tokenize("<style>a</stylex></style>")
-  guard style.tokens[1] is @html_parser.HtmlToken::Characters("a</stylex>") else {
+  guard style.tokens[1] is Characters("a</stylex>") else {
     fail("expected style suffix end tag to stay in text")
   }
-  guard style.tokens[2] is @html_parser.HtmlToken::Tag(end_style) else {
+  guard style.tokens[2] is Tag(end_style) else {
     fail("expected final style end tag")
   }
-  assert_true(end_style.kind is @html_parser.TagKind::EndTag)
+  assert_true(end_style.kind is EndTag)
   assert_eq(end_style.name, "style")
 }
 
 ///|
 test "tokenize does not report special text EOF tree errors" {
   let script = @html_parser.tokenize("<script>x", collect_errors=true)
-  guard script.tokens[1] is @html_parser.HtmlToken::Characters("x") else {
+  guard script.tokens[1] is Characters("x") else {
     fail("expected unclosed script text")
   }
   assert_eq(script.errors.length(), 0)
   let plaintext = @html_parser.tokenize("<plaintext>x", collect_errors=true)
-  guard plaintext.tokens[1] is @html_parser.HtmlToken::Characters("x") else {
+  guard plaintext.tokens[1] is Characters("x") else {
     fail("expected unclosed plaintext text")
   }
   assert_eq(plaintext.errors.length(), 0)
   let title = @html_parser.tokenize("<title>x", collect_errors=true)
-  guard title.tokens[1] is @html_parser.HtmlToken::Characters("x") else {
+  guard title.tokens[1] is Characters("x") else {
     fail("expected unclosed title text")
   }
   assert_eq(title.errors.length(), 0)

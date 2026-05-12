@@ -101,13 +101,14 @@ reference implementation in `.repos/justhtml`.
   - [ ] Regression harness for JustHTML-specific `.dat` and `.test` files
 - [ ] Documentation and warning cleanup
   - [ ] Public API docs for warning 74
-  - [ ] Remove unnecessary annotations for warning 73
+  - [x] Remove unnecessary annotations for warning 73
     - [x] `comment_scan.mbt` constructor annotations
     - [x] `script_text.mbt` constructor annotations
     - [x] `tokens.mbt` constructor annotations
     - [x] `types.mbt` constructor annotations
     - [x] `markdown.mbt` constructor annotation
     - [x] `parser.mbt` helper constructor annotations
+    - [x] `html_parser_test.mbt` enum constructor annotations
   - [ ] Remove unnecessary view conversions for warning 75
   - [ ] Qualify README checked examples for warning 25
 
