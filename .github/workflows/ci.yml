@@ -56,6 +56,23 @@ jobs:
           set -e
           test "$code" -eq 1
           test ! -s /tmp/html_parser_cli_empty.txt
+          "$CLI" tests/fixtures/justhtml/data/wikipedia.html --format markdown > /tmp/html_parser_wikipedia.md
+          first_line="$(grep -m1 -v '^[[:space:]]*$' /tmp/html_parser_wikipedia.md)"
+          case "$first_line" in
+            \<img*) ;;
+            *)
+              echo "Expected Wikipedia Markdown to start with body image, got: $first_line" >&2
+              exit 1
+              ;;
+          esac
+          grep -F 'The Free Encyclopedia' /tmp/html_parser_wikipedia.md
+          grep -F '(https://en.wikipedia.org/)' /tmp/html_parser_wikipedia.md
+          grep -F '[Wikiquote Free quote compendium](https://www.wikiquote.org/)' /tmp/html_parser_wikipedia.md
+          grep -F '[MediaWiki Free &amp; open wiki software](https://www.mediawiki.org/)' /tmp/html_parser_wikipedia.md
+          grep -F '[Wikisource Free content library](https://www.wikisource.org/)' /tmp/html_parser_wikipedia.md
+          grep -F '[Wikispecies Free species directory](https://species.wikimedia.org/)' /tmp/html_parser_wikipedia.md
+          grep -F '[Wikifunctions Free function library](https://www.wikifunctions.org/)' /tmp/html_parser_wikipedia.md
+          grep -F '[Meta-Wiki Community coordination &amp; documentation](https://meta.wikimedia.org/)' /tmp/html_parser_wikipedia.md
 
       - name: Verify Mooncakes package
         run: |

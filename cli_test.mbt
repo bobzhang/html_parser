@@ -133,6 +133,22 @@ test "CLI markdown allow tags no match and invalid selector" {
 }
 
 ///|
+test "CLI markdown safe mode resolves protocol relative links" {
+  let safe = cli_run(
+    ["-", "--fragment", "--format", "markdown"],
+    "<p><a href='//example.com/path'>Example</a></p>",
+  )
+  assert_eq(safe.exit_code, 0)
+  assert_eq(safe.stdout, "[Example](https://example.com/path)\n")
+  let unsafe_result = cli_run(
+    ["-", "--fragment", "--format", "markdown", "--unsafe"],
+    "<p><a href='//example.com/path'>Example</a></p>",
+  )
+  assert_eq(unsafe_result.exit_code, 0)
+  assert_eq(unsafe_result.stdout, "[Example](//example.com/path)\n")
+}
+
+///|
 test "CLI output files and strict mode are surfaced in pure result" {
   let output = cli_run(
     ["-", "--format", "text", "--output", "out.txt"],

@@ -737,6 +737,11 @@ JustHTML from Python to MoonBit.
 - Link rendering distinguishes the original `href` presence from the normalized
   destination. Python skips parens for missing, valueless, or empty-string
   `href`, but a whitespace-only `href` is truthy and renders as `()`.
+- Python's `JustHTML(...)` constructor sanitizes by default, so Markdown
+  regressions that look like pure `to_markdown()` cases may also depend on URL
+  sanitizer normalization. For example, protocol-relative `href` values become
+  `https://...` before Markdown rendering in safe-mode document/CLI paths,
+  while `sanitize=false` or CLI `--unsafe` preserves `//...`.
 - Attribute serialization has policy baked into the Python helper: `None`,
   empty string, and values that match the attribute name case-insensitively are
   minimized, while quoted values prefer single quotes only when that avoids

@@ -149,6 +149,12 @@ reference implementation in `.repos/justhtml`.
     - [x] `sanitize.mbt` sanitizer policy view conversions
   - [x] Qualify README checked examples for warning 25
 
+## Post-Completion Audits
+
+- [x] Ported the Wikipedia Markdown regression as a native CLI fixture smoke in
+      CI, including title/body ordering, safe-mode protocol-relative link
+      normalization, and footer project links.
+
 ## Working Rule
 
 Port one feature slice at a time. Each slice should add focused tests, run the
