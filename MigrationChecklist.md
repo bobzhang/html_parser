@@ -347,6 +347,8 @@ reference implementation in `.repos/justhtml`.
       bad-argument paths.
 - [x] Generalized generated-interface validation to discover all tracked
       `pkg.generated.mbti` files instead of hard-coding package paths.
+- [x] Added native CLI package layout checks for `cmd/main`, its native target
+      settings, and the C stub symbols used by the entrypoint.
 
 ## Working Rule
 

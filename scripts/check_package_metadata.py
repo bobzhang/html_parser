@@ -25,6 +25,20 @@ def expect_string(metadata: dict[str, Any], field: str) -> str | None:
     return value
 
 
+def file_text(path: pathlib.Path, label: str) -> str | None:
+    if not path.is_file():
+        error(f"{label} does not exist: {path.relative_to(ROOT)}")
+        return None
+    return path.read_text()
+
+
+def require_text(text: str, needle: str, label: str) -> bool:
+    if needle not in text:
+        error(f"{label} must contain {needle!r}")
+        return False
+    return True
+
+
 def main() -> int:
     metadata = json.loads((ROOT / "moon.mod.json").read_text())
     ok = True
@@ -117,6 +131,32 @@ def main() -> int:
     if description is not None and len(description) > 200:
         error("moon.mod.json description should stay concise")
         ok = False
+
+    cli_pkg = file_text(ROOT / "cmd" / "main" / "moon.pkg", "native CLI package")
+    cli_main = file_text(ROOT / "cmd" / "main" / "main.mbt", "native CLI entrypoint")
+    cli_stub = file_text(ROOT / "cmd" / "main" / "cli_io.c", "native CLI C stub")
+    if cli_pkg is None or cli_main is None or cli_stub is None:
+        ok = False
+    else:
+        package_needles = [
+            'supported_targets = "+native"',
+            '"is-main": true',
+            '"native-stub": [ "cli_io.c" ]',
+        ]
+        if name is not None:
+            package_needles.append(f'"{name}"')
+        for needle in package_needles:
+            ok = require_text(cli_pkg, needle, "cmd/main/moon.pkg") and ok
+        for symbol in [
+            "html_parser_cli_read_stdin",
+            "html_parser_cli_read_file",
+            "html_parser_cli_write_stdout",
+            "html_parser_cli_write_stderr",
+            "html_parser_cli_write_file",
+            "html_parser_cli_exit",
+        ]:
+            ok = require_text(cli_main, symbol, "cmd/main/main.mbt") and ok
+            ok = require_text(cli_stub, symbol, "cmd/main/cli_io.c") and ok
 
     return 0 if ok else 1
 
