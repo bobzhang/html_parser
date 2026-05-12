@@ -1,10 +1,20 @@
 ///|
+/// Describes how the CLI should obtain input after argument parsing.
+///
+/// `CliImmediate` means parsing already produced a complete result, such as
+/// help, version output, or an argument error. `CliReadPath` asks the caller to
+/// read the given path, where `"-"` conventionally means standard input.
 pub(all) enum CliReadPlan {
   CliImmediate(CliResult)
   CliReadPath(String)
 } derive(Debug, Eq)
 
 ///|
+/// Result produced by the embeddable CLI runner.
+///
+/// `stdout` and `stderr` contain terminal output. When `file_output_path` is
+/// present, `file_output_content` contains the bytes that a shell wrapper should
+/// write to that path instead of printing to standard output.
 pub(all) struct CliResult {
   exit_code : Int
   stdout : String
@@ -45,6 +55,7 @@ priv enum CliParseResult {
 }
 
 ///|
+/// Return the CLI usage text.
 pub fn cli_help() -> String {
   let text =
     #|usage: justhtml [OPTIONS] <path|->
@@ -292,6 +303,10 @@ fn cli_parse_args(args : ArrayView[String]) -> CliParseResult {
 }
 
 ///|
+/// Parse CLI arguments and report whether the caller must read an input path.
+///
+/// Use this when integrating with an environment that performs its own file or
+/// standard-input IO. For direct byte input, use `run_cli_bytes`.
 pub fn cli_read_plan(args : ArrayView[String]) -> CliReadPlan {
   match cli_parse_args(args) {
     CliParseExit(result) => CliImmediate(result)
@@ -500,6 +515,11 @@ fn cli_output_result(content : String, options : CliOptions) -> CliResult {
 }
 
 ///|
+/// Run the JustHTML-compatible CLI over already-read input bytes.
+///
+/// `args` should contain only command-line arguments after the executable name.
+/// The returned `CliResult` captures exit status, terminal output, and optional
+/// output-file content for the caller to write.
 pub fn run_cli_bytes(args : ArrayView[String], input : BytesView) -> CliResult {
   let options = match cli_parse_args(args) {
     CliParseExit(result) => return result
