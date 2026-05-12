@@ -152,8 +152,9 @@ Mooncakes dry-run path. The script checks release-version consistency,
 validation-script syntax and argument smoke paths, helper suffix/shebang
 conventions, validation-inventory wiring, GitHub workflow drift and tracked
 workflow inventory including the Copilot setup workflow, source layout,
-migration docs, vendored fixture sync when `.repos/justhtml` is present,
-vendored fixture manifest hashes, package metadata, formatting, generated
-interfaces, all supported targets, default/JS/native tests with a count floor,
-coverage, native CLI smoke behavior, Mooncakes package validation, and dynamic
-Mooncakes archive inventory/content checks.
+migration docs, local Git hook wiring, vendored fixture sync when
+`.repos/justhtml` is present, vendored fixture manifest hashes, package
+metadata, formatting, generated interfaces, all supported targets,
+default/JS/native tests with a count floor, coverage, native CLI smoke
+behavior, Mooncakes package validation, and dynamic Mooncakes archive
+inventory/content checks.

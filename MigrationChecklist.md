@@ -381,6 +381,8 @@ reference implementation in `.repos/justhtml`.
       source, test, fixture, documentation, and validation-helper file.
 - [x] Extended migration-document validation so README's development-checks
       summary covers the newer inventory and convention guards.
+- [x] Added Git hook inventory checks so tracked hook files stay covered by the
+      local hook validation guard.
 
 ## Working Rule
 

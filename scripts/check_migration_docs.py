@@ -63,6 +63,7 @@ def main(argv: list[str]) -> int:
             "Copilot setup workflow",
             "source layout",
             "migration docs",
+            "local Git hook wiring",
             "helper suffix/shebang conventions",
             "validation-inventory wiring",
             "vendored fixture sync",

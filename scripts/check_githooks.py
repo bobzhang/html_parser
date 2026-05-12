@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import pathlib
 import stat
+import subprocess
 import sys
 
 
@@ -22,6 +23,17 @@ def require_text(path: pathlib.Path, text: str, needle: str) -> bool:
     return True
 
 
+def tracked_githook_files() -> set[str]:
+    result = subprocess.run(
+        ["git", "ls-files", ".githooks/*"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return set(result.stdout.splitlines())
+
+
 def main(argv: list[str]) -> int:
     if argv:
         error("usage: python3 scripts/check_githooks.py")
@@ -30,6 +42,17 @@ def main(argv: list[str]) -> int:
     hook = ROOT / ".githooks" / "pre-commit"
     readme = ROOT / ".githooks" / "README.md"
     ok = True
+    expected_hook_files = {
+        ".githooks/README.md",
+        ".githooks/pre-commit",
+    }
+    actual_hook_files = tracked_githook_files()
+    for path in sorted(expected_hook_files - actual_hook_files):
+        error(f"expected Git hook file is not tracked: {path}")
+        ok = False
+    for path in sorted(actual_hook_files - expected_hook_files):
+        error(f"tracked Git hook file is missing from validation: {path}")
+        ok = False
 
     if not hook.is_file():
         error(".githooks/pre-commit does not exist")
