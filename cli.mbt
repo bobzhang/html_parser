@@ -579,3 +579,22 @@ pub fn run_cli_bytes(args : ArrayView[String], input : BytesView) -> CliResult {
   }
   cli_run_parsed(parsed.root, options, safe, policy)
 }
+
+///|
+/// Run the CLI with caller-provided path reading.
+///
+/// The callback receives the input path selected by argument parsing. This is
+/// useful for native or embedded hosts that want the library to handle CLI
+/// options while the host owns filesystem or standard-input IO.
+pub fn run_cli_with_reader(
+  args : ArrayView[String],
+  read_input : (String) -> Bytes,
+) -> CliResult {
+  match cli_read_plan(args) {
+    CliImmediate(result) => result
+    CliReadPath(path) => {
+      let input = read_input(path)
+      run_cli_bytes(args, input)
+    }
+  }
+}

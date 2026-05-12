@@ -1911,6 +1911,11 @@ JustHTML from Python to MoonBit.
   bytes, stdout/stderr, output-file writes, and process exit codes. This makes
   almost all Python `test_cli.py` behavior testable under normal `moon test`
   without process spawning.
+- For native wrappers, push callback-shaped orchestration back into the root
+  library package when it has behavior worth testing. A helper that accepts
+  `ArrayView[String]` plus a `(String) -> Bytes` input reader can cover
+  immediate argument exits and path-backed reads without touching C stdio or
+  process exits.
 - The pure CLI runner should preserve serializer failures as normal exit-code
   2 parse/render errors. Inputs with recovered unsafe tag names can parse
   successfully in `--unsafe` fragment mode but still raise
@@ -1941,3 +1946,6 @@ JustHTML from Python to MoonBit.
   directly. `moon run --target native --release --build-only cmd/main` produces
   `_build/native/release/build/cmd/main/main.exe`; direct execution preserves
   exit codes for no-match and argument/selector errors.
+- When switching between native-only tests and coverage work, prefer `moon
+  clean` before `moon coverage analyze`. Stale native trace metadata under
+  `_build` can confuse the coverage reporter even after `moon coverage clean`.

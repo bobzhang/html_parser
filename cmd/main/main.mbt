@@ -2,13 +2,7 @@
 fn main {
   let all_args = @env.args()
   let args = if all_args.is_empty() { all_args[:] } else { all_args[1:] }
-  match @html_parser.cli_read_plan(args) {
-    CliImmediate(result) => emit_cli_result(result)
-    CliReadPath(path) => {
-      let input = read_cli_input(path)
-      emit_cli_result(@html_parser.run_cli_bytes(args, input))
-    }
-  }
+  emit_cli_result(@html_parser.run_cli_with_reader(args, read_cli_input))
 }
 
 ///|

@@ -29,6 +29,20 @@ test "CLI help version and read plan" {
     is CliReadPath("-") else {
     fail("expected CLI to ask for stdin input")
   }
+  let immediate = @html_parser.run_cli_with_reader(["--help"], fn(_path) { b"" })
+  assert_eq(immediate.exit_code, 0)
+  assert_true(immediate.stdout.contains("usage: justhtml"))
+  let paths : Array[String] = []
+  let read = @html_parser.run_cli_with_reader(["-", "--format", "text"], fn(
+    path,
+  ) {
+    paths.push(path)
+    @utf8.encode("<p>Reader</p>")
+  })
+  assert_eq(paths.length(), 1)
+  assert_eq(paths[0], "-")
+  assert_eq(read.exit_code, 0)
+  assert_eq(read.stdout, "Reader\n")
 }
 
 ///|

@@ -303,6 +303,11 @@ reference implementation in `.repos/justhtml`.
       tests and covered the safe sanitize/cleanup error return paths.
 - [x] Cleared root CLI package coverage; the only remaining uncovered line is
       the native `cmd/main` immediate-exit entrypoint branch.
+- [x] Added a callback-based root CLI runner for host-owned input reads, made
+      the native entrypoint a thin caller, and covered immediate/read plans in
+      normal root-package tests.
+- [x] Rechecked coverage from a clean build tree; standard `moon coverage
+      analyze` now reports all source files fully covered.
 
 ## Working Rule
 

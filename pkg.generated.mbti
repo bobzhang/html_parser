@@ -46,6 +46,8 @@ pub fn query(Node, StringView) -> Array[Node]
 
 pub fn run_cli_bytes(ArrayView[String], BytesView) -> CliResult
 
+pub fn run_cli_with_reader(ArrayView[String], (String) -> Bytes) -> CliResult
+
 pub fn sanitize_dom(Node, policy? : SanitizationPolicy) -> Node raise HtmlError
 
 pub fn stream(StringView) -> Array[StreamEvent]
