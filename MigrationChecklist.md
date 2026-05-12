@@ -252,6 +252,8 @@ reference implementation in `.repos/justhtml`.
       use direct `StringView` slices from known-valid offsets.
 - [x] Simplified linkify punycode label encoding around MoonBit scalar-value
       `Char` iteration and documented the Python surrogate fallback difference.
+- [x] Refactored Markdown builder and helper trimming slices to use direct
+      `StringView` slices after local scans produce valid offsets.
 
 ## Working Rule
 

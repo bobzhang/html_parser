@@ -58,10 +58,7 @@ fn markdown_trim_trailing_spaces_tabs(value : StringView) -> String {
       _ => break
     }
   }
-  match value.get_view(start=0, end~) {
-    Some(trimmed) => trimmed.to_owned()
-    None => value.to_owned()
-  }
+  value[0:end].to_owned()
 }
 
 ///|
@@ -111,9 +108,7 @@ fn MarkdownBuilder::text(self : MarkdownBuilder, value : StringView) -> Unit {
       self.pending_space = false
     }
     if self.parts.is_empty() || self.newline_count > 0 {
-      guard value.get_view(start=pos, end=value.length()) is Some(rest) else {
-        break
-      }
+      let rest = value[pos:value.length()]
       match markdown_escape_line_start(rest) {
         Some((replacement, consumed)) => {
           self.parts.push(replacement)
@@ -221,15 +216,9 @@ fn markdown_escape_ordered_line_start(value : StringView) -> (String, Int)? {
   }
   match value.get_char(pos) {
     Some('.') if markdown_next_char_is_space(value, pos + 1) =>
-      match value.get_view(start=0, end=pos) {
-        Some(prefix) => Some((prefix.to_owned() + "\\.", pos + 1))
-        None => None
-      }
+      Some((value[0:pos].to_owned() + "\\.", pos + 1))
     Some(')') if markdown_next_char_is_space(value, pos + 1) =>
-      match value.get_view(start=0, end=pos) {
-        Some(prefix) => Some((prefix.to_owned() + "\\)", pos + 1))
-        None => None
-      }
+      Some((value[0:pos].to_owned() + "\\)", pos + 1))
     _ => None
   }
 }
@@ -311,10 +300,7 @@ fn markdown_code_block_body(value : StringView) -> String {
       _ => break
     }
   }
-  match value.get_view(start=0, end~) {
-    Some(body) => body.to_owned()
-    None => value.to_owned()
-  }
+  value[0:end].to_owned()
 }
 
 ///|
