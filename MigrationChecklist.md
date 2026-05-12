@@ -379,6 +379,8 @@ reference implementation in `.repos/justhtml`.
       and guard the Copilot MoonBit setup workflow.
 - [x] Generalized Mooncakes archive checks to require every tracked published
       source, test, fixture, documentation, and validation-helper file.
+- [x] Extended migration-document validation so README's development-checks
+      summary covers the newer inventory and convention guards.
 
 ## Working Rule
 

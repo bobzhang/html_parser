@@ -14,8 +14,14 @@ def error(message: str) -> None:
     print(message, file=sys.stderr)
 
 
+def collapse_whitespace(text: str) -> str:
+    return " ".join(text.split())
+
+
 def require_text(path: pathlib.Path, text: str, needle: str) -> bool:
-    if needle not in text:
+    if needle not in text and (
+        collapse_whitespace(needle) not in collapse_whitespace(text)
+    ):
         error(f"{path.relative_to(ROOT)} must contain {needle!r}")
         return False
     return True
@@ -53,14 +59,18 @@ def main(argv: list[str]) -> int:
         ROOT / "README.mbt.md": [
             "bash scripts/check_ci.sh --skip-without-credentials",
             "GitHub workflow drift",
+            "tracked workflow inventory",
+            "Copilot setup workflow",
             "source layout",
             "migration docs",
+            "helper suffix/shebang conventions",
+            "validation-inventory wiring",
             "vendored fixture sync",
-            "vendored fixture\nmanifest hashes",
+            "vendored fixture manifest hashes",
             "tests with a count floor",
             "native CLI smoke behavior",
             "Mooncakes package validation",
-            "Mooncakes archive-content checks",
+            "dynamic Mooncakes archive inventory/content checks",
         ],
     }
 
