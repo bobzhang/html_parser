@@ -130,6 +130,158 @@ fn sanitize_fixture_foreign_namespace_policy(
 }
 
 ///|
+fn sanitize_fixture_document_output(
+  input_html : String,
+  policy? : @html_parser.SanitizationPolicy,
+) -> String raise {
+  let parsed = @html_parser.parse(input_html, sanitize=false)
+  match policy {
+    Some(policy) =>
+      @html_parser.sanitize_dom(parsed.root, policy~).to_html(pretty=false)
+    None => @html_parser.sanitize_dom(parsed.root).to_html(pretty=false)
+  }
+}
+
+///|
+fn sanitize_fixture_empty_url_policy() -> @html_parser.UrlPolicy {
+  @html_parser.UrlPolicy::new(allow_rules=[])
+}
+
+///|
+fn sanitize_fixture_div_style_policy(
+  allowed_css_properties : Array[String],
+) -> @html_parser.SanitizationPolicy {
+  @html_parser.SanitizationPolicy::new(
+    ["div"],
+    allowed_attributes={ "*": [], "div": ["style"] },
+    url_policy=sanitize_fixture_empty_url_policy(),
+    allowed_css_properties~,
+  )
+}
+
+///|
+fn sanitize_fixture_structural_style_cases() -> Array[SanitizeFixtureCase] {
+  [
+    {
+      index: 2,
+      name: "disallowed_tag_keeps_children",
+      input_html: "<span>x</span>",
+      expected_html: "x",
+      policy: @html_parser.SanitizationPolicy::new(
+        ["div"],
+        allowed_attributes={ "*": [], "div": [] },
+        url_policy=sanitize_fixture_empty_url_policy(),
+      ),
+    },
+    {
+      index: 29,
+      name: "disallowed_tag_drop_removes_subtree",
+      input_html: "<b>Hello <sarcasm>world</sarcasm></b>",
+      expected_html: "<b>Hello </b>",
+      policy: @html_parser.SanitizationPolicy::new(
+        ["b"],
+        allowed_attributes={ "*": [], "b": [] },
+        url_policy=sanitize_fixture_empty_url_policy(),
+        disallowed_tag_handling=Drop,
+      ),
+    },
+    {
+      index: 30,
+      name: "attribute_filtering_drops_on_srcdoc_and_colon",
+      input_html: "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t></div>",
+      expected_html: "<div id=\"x\" title=\"t\"></div>",
+      policy: @html_parser.SanitizationPolicy::new(
+        ["div"],
+        allowed_attributes={ "*": ["id"], "div": ["title"] },
+        url_policy=sanitize_fixture_empty_url_policy(),
+      ),
+    },
+    {
+      index: 31,
+      name: "attribute_not_in_allowlist_is_dropped",
+      input_html: "<div class=x></div>",
+      expected_html: "<div></div>",
+      policy: @html_parser.SanitizationPolicy::new(
+        ["div"],
+        allowed_attributes={ "*": [], "div": [] },
+        url_policy=sanitize_fixture_empty_url_policy(),
+      ),
+    },
+    {
+      index: 32,
+      name: "inline_style_sanitization_allows_selected_properties",
+      input_html: "<div style='color: red; position: absolute; BORDER: 1px solid red; ; invalid'></div>",
+      expected_html: "<div style=\"color: red; border: 1px solid red\"></div>",
+      policy: sanitize_fixture_div_style_policy(["color", "border"]),
+    },
+    {
+      index: 34,
+      name: "inline_style_drops_resource_loading_url_function",
+      input_html: "<div style='background-image: url(https://evil.example/x); color: red'></div>",
+      expected_html: "<div style=\"color: red\"></div>",
+      policy: sanitize_fixture_div_style_policy(["background-image", "color"]),
+    },
+    {
+      index: 35,
+      name: "inline_style_drops_resource_loading_obfuscated_url_function",
+      input_html: "<div style='background-image: u\\72l(https://evil.example/x); color: red'></div>",
+      expected_html: "<div style=\"color: red\"></div>",
+      policy: sanitize_fixture_div_style_policy(["background-image", "color"]),
+    },
+    {
+      index: 36,
+      name: "inline_style_drops_expression_even_when_allowlisted",
+      input_html: "<div style='width: expression(alert(1)); color: red'></div>",
+      expected_html: "<div style=\"color: red\"></div>",
+      policy: sanitize_fixture_div_style_policy(["width", "color"]),
+    },
+    {
+      index: 37,
+      name: "img_valueless_src_is_dropped",
+      input_html: "<img/src/onerror=prompt(8)>",
+      expected_html: "<img>",
+      policy: @html_parser.SanitizationPolicy::new(
+        ["img"],
+        allowed_attributes={ "*": [], "img": ["src"] },
+        url_policy=@html_parser.UrlPolicy::new(allow_rules=[
+          @html_parser.UrlPolicyRule::new(
+            "img",
+            "src",
+            @html_parser.UrlRule::new(
+              allowed_schemes=[],
+              allow_relative=true,
+              allow_fragment=false,
+            ),
+          ),
+        ]),
+      ),
+    },
+    {
+      index: 38,
+      name: "url_rules_drop_javascript_and_force_rel",
+      input_html: "<a href='javascript:alert(1)' rel='nofollow'>x</a><a href='https://example.com'>y</a>",
+      expected_html: "<a rel=\"nofollow noopener noreferrer\">x</a><a href=\"https://example.com\" rel=\"noopener noreferrer\">y</a>",
+      policy: @html_parser.SanitizationPolicy::new(
+        ["a"],
+        allowed_attributes={ "*": [], "a": ["href"] },
+        url_policy=@html_parser.UrlPolicy::new(allow_rules=[
+          @html_parser.UrlPolicyRule::new(
+            "a",
+            "href",
+            @html_parser.UrlRule::new(
+              allowed_schemes=["https"],
+              allow_relative=true,
+              allow_fragment=true,
+            ),
+          ),
+        ]),
+        force_link_rel=["noopener", "noreferrer"],
+      ),
+    },
+  ]
+}
+
+///|
 fn sanitize_fixture_url_template_cases() -> Array[SanitizeFixtureCase] {
   [
     {
@@ -353,6 +505,38 @@ fn sanitize_fixture_attribute_namespace_cases() -> Array[SanitizeFixtureCase] {
 }
 
 ///|
+test "sanitizer matches vendored document fixture rows" {
+  assert_eq(
+    sanitize_fixture_document_output(
+      "<!DOCTYPE html><!--x--><p>ok</p><script>alert(1)</script>",
+      policy=@html_parser.default_sanitization_policy(),
+    ),
+    "<p>ok</p>",
+  )
+  let keep_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "*": [], "p": [] },
+    url_policy=sanitize_fixture_empty_url_policy(),
+    drop_comments=false,
+    drop_doctype=false,
+  )
+  assert_eq(
+    sanitize_fixture_document_output(
+      "<!DOCTYPE html><!--x--><p>ok</p>",
+      policy=keep_policy,
+    ),
+    "<!DOCTYPE html><!--x--><p>ok</p>",
+  )
+}
+
+///|
+test "sanitizer matches vendored structural and style fixture rows" {
+  for case in sanitize_fixture_structural_style_cases() {
+    assert_sanitize_fixture(case)
+  }
+}
+
+///|
 test "sanitizer matches vendored URL and template fixture rows" {
   for case in sanitize_fixture_url_template_cases() {
     assert_sanitize_fixture(case)
@@ -368,6 +552,7 @@ test "sanitizer matches vendored attribute and namespace fixture rows" {
 
 ///|
 test "sanitizer fixture table covers translated URL and template rows" {
+  assert_eq(sanitize_fixture_structural_style_cases().length(), 10)
   assert_eq(sanitize_fixture_url_template_cases().length(), 13)
   assert_eq(sanitize_fixture_attribute_namespace_cases().length(), 10)
 }

@@ -160,6 +160,9 @@ reference implementation in `.repos/justhtml`.
 - [x] Translated sanitizer JSON fixture rows for forced `rel` deduplication,
       fragment/relative URL blocking, host allowlist checks, boolean attribute
       preservation, and foreign-namespace policy toggles.
+- [x] Translated sanitizer JSON fixture rows for default document sanitization,
+      subtree dropping, unsafe attribute filtering, inline style filtering, and
+      default forced-link `rel` behavior.
 
 ## Working Rule
 

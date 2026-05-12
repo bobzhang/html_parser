@@ -833,6 +833,11 @@ JustHTML from Python to MoonBit.
   Standalone non-container roots such as `Text`, `Comment`, and `Doctype`
   still need the same policy decisions, so wrap them in a temporary fragment
   during sanitization and unwrap the result afterwards.
+- Upstream sanitizer fixture rows marked `policy: "DEFAULT"` mean the regular
+  fragment-style default policy, even when the input is parsed as a document.
+  In MoonBit, `sanitize_dom(document)` without an explicit policy uses the
+  document-preserving policy, so exact fixture ports should pass
+  `default_sanitization_policy()` when they expect document shell unwrapping.
 - Sanitizer policies contain mutable lookup tables in MoonBit (`Set`/`Map`), so
   default policy helpers should return fresh policy values rather than sharing
   one global object across tests. URL checks should reject decoded C0 controls
