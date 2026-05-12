@@ -264,6 +264,8 @@ reference implementation in `.repos/justhtml`.
       the loop/boundary invariant instead of carrying repeated `None` arms.
 - [x] Refactored linkify current-position checks to use scanner boundary
       invariants while keeping the astral-safe previous-boundary fallback.
+- [x] Refactored tokenizer doctype/start/end tag cursor loops to use scanner
+      boundary invariants and direct `StringView` slices.
 
 ## Working Rule
 

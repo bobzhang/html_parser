@@ -271,11 +271,10 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   }
   let name_start = self.pos
   while !self.is_eof() {
-    match self.current() {
-      Some('>') => break
-      Some(ch) if ch.is_ascii_whitespace() => break
-      Some(_) => ignore(self.advance_char())
-      None => ()
+    match self.current().unwrap() {
+      '>' => break
+      ch if ch.is_ascii_whitespace() => break
+      _ => ignore(self.advance_char())
     }
   }
   let (name, name_errors) = parse_lower_name_value_replacing_nulls(
@@ -287,11 +286,10 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   while !self.is_eof() && !self.starts_with(">") {
     ignore(self.advance_char())
   }
-  let external = match self.input.get_view(start=ids_start, end=self.pos) {
-    Some(view) => parse_doctype_external(view, self.starts_with(">"))
-    None =>
-      { public_id: None, system_id: None, errors: [], force_quirks: false }
-  }
+  let external = parse_doctype_external(
+    self.input[ids_start:self.pos],
+    self.starts_with(">"),
+  )
   let public_id = external.public_id
   let system_id = external.system_id
   let has_external_error = !external.errors.is_empty()
@@ -326,7 +324,6 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
 
 ///|
 fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
-  let start = self.pos
   self.pos += 2
   match self.current() {
     Some('>') => {
@@ -348,12 +345,11 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
   }
   let name_start = self.pos
   while !self.is_eof() {
-    match self.current() {
-      Some('>') => break
-      Some('/') => break
-      Some(ch) if ch.is_ascii_whitespace() => break
-      Some(_) => ignore(self.advance_char())
-      None => ()
+    match self.current().unwrap() {
+      '>' => break
+      '/' => break
+      ch if ch.is_ascii_whitespace() => break
+      _ => ignore(self.advance_char())
     }
   }
   let (name, name_errors) = parse_lower_name_value_replacing_nulls(
@@ -364,21 +360,21 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
   for error in name_errors {
     self.error_at(error.code, error.offset)
   }
-  if name == "" {
-    self.error_at("missing-end-tag-name", start)
-  }
   let attrs : Map[String, String?] = {}
   let mut self_closing = false
   let mut closed = false
   while !self.is_eof() {
     self.skip_ascii_whitespace()
-    match self.current() {
-      Some('>') => {
+    if self.is_eof() {
+      break
+    }
+    match self.current().unwrap() {
+      '>' => {
         ignore(self.advance_char())
         closed = true
         break
       }
-      Some('/') => {
+      '/' => {
         ignore(self.advance_char())
         if self.current() == Some('>') {
           ignore(self.advance_char())
@@ -389,17 +385,14 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
           self.error_at("unexpected-character-after-solidus-in-tag", self.pos)
         }
       }
-      Some(_) => self.parse_attribute(attrs)
-      None => ()
+      _ => self.parse_attribute(attrs)
     }
   }
   if !closed {
     self.error_at_eof("eof-in-tag")
     return
   }
-  if name != "" {
-    self.tokens.push(Tag({ kind: EndTag, name, attrs, self_closing }))
-  }
+  self.tokens.push(Tag({ kind: EndTag, name, attrs, self_closing }))
 }
 
 ///|
@@ -428,13 +421,16 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
       let mut closed = false
       while !self.is_eof() {
         self.skip_ascii_whitespace()
-        match self.current() {
-          Some('>') => {
+        if self.is_eof() {
+          break
+        }
+        match self.current().unwrap() {
+          '>' => {
             ignore(self.advance_char())
             closed = true
             break
           }
-          Some('/') => {
+          '/' => {
             ignore(self.advance_char())
             if self.current() == Some('>') {
               ignore(self.advance_char())
@@ -448,8 +444,7 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
               )
             }
           }
-          Some(_) => self.parse_attribute(attrs)
-          None => ()
+          _ => self.parse_attribute(attrs)
         }
       }
       if !closed {
