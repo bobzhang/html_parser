@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn apply_transforms(Node, Array[TransformSpec]) -> Node
+
 pub fn comment(StringView) -> Node
 
 pub fn css_preset_text() -> Array[String]
@@ -183,6 +185,18 @@ pub(all) struct TokenizedHtml {
   tokens : Array[HtmlToken]
   errors : Array[ParseError]
 } derive(@debug.Debug)
+
+pub struct TransformSpec {
+  // private fields
+} derive(@debug.Debug)
+pub fn TransformSpec::collapse_whitespace(skip_tags? : Array[String]) -> Self
+pub fn TransformSpec::drop(StringView) -> Self
+pub fn TransformSpec::drop_comments() -> Self
+pub fn TransformSpec::drop_doctype() -> Self
+pub fn TransformSpec::empty(StringView) -> Self
+pub fn TransformSpec::escape(StringView) -> Self
+pub fn TransformSpec::linkify(config? : LinkifyConfig, skip_tags? : Array[String]) -> Self
+pub fn TransformSpec::unwrap(StringView) -> Self
 
 pub(all) enum UnsafeHandling {
   Strip

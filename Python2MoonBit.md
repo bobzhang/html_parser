@@ -312,6 +312,20 @@ JustHTML from Python to MoonBit.
   copy for callers. Always reset the removed node's parent and assign the
   replacement nodes' parent pointers before inserting them; serialization and
   later DOM queries rely on those links staying coherent.
+- Ported Python transforms often mutate node fields directly. In MoonBit,
+  private record fields are still immutable unless declared `mut`; this port
+  keeps `Node.data` immutable, so text transforms such as whitespace collapse
+  should replace the text child with a new node and repair parent links instead
+  of assigning to `node.data`.
+- Optional labeled arguments are passed as payload values, not as `Some(...)`.
+  A helper with `config? : LinkifyConfig` may store a `LinkifyConfig?`
+  internally, but callers still write `config=config`, not
+  `config=Some(config)`.
+- Python transform walkers mark newly inserted nodes so earlier transforms do
+  not run on them again. When porting stage/order behavior, decide explicitly
+  whether replacement children can be seen by the current spec, by later specs,
+  or only by later stages; tests such as `Drop("a"), Linkify()` versus
+  `Linkify(), Drop("a")` catch accidental order changes.
 - Python accepts a raw callable as `UrlPolicy.url_filter`; in MoonBit, wrap the
   callback with `UrlFilter::new` so `UrlPolicy` can still derive `Debug`.
   Its debug representation should stay opaque: assert the wrapper type label,

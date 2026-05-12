@@ -17,6 +17,19 @@ reference implementation in `.repos/justhtml`.
 - [x] Default sanitizer policy, URL rules, CSS URL filtering, and unsafe handling
 - [x] Initial Markdown conversion
 - [x] Mooncakes package metadata, GitHub repository, and CI
+- [x] Initial public transform pipeline shell with structural and utility DOM
+      transforms
+
+## Migration Roadmap
+
+1. Finish the general transform pipeline: callbacks, attribute transforms,
+   sanitizer-backed URL/style transforms, explicit stages, selector limits, and
+   remaining transform edge-case tests.
+2. Port the streaming API and `tests/test_stream.py` behavior.
+3. Port CLI compatibility and `tests/test_cli.py` behavior.
+4. Sweep Markdown parity against the remaining Python tests.
+5. Add broader html5lib/JustHTML conformance fixture harnesses.
+6. Clean up public docs and warning baselines.
 
 ## Remaining Feature Work
 
@@ -31,9 +44,12 @@ reference implementation in `.repos/justhtml`.
   - [x] Skip existing anchors and preformatted text by default
   - [x] Preserve template content behavior
 - [ ] General transform pipeline
-  - [ ] Transform specs: `Drop`, `Unwrap`, `Escape`, `Empty`, `Edit`, `EditDocument`
+  - [x] Public `TransformSpec` and `apply_transforms` API shell
+  - [x] Structural transform specs: `Drop`, `Unwrap`, `Escape`, `Empty`
+  - [ ] Callback transform specs: `Edit`, `EditDocument`
   - [ ] Attribute transforms: `EditAttrs`, `DropAttrs`, `AllowlistAttrs`, `MergeAttrs`
-  - [ ] Utility transforms: `CollapseWhitespace`, `DropComments`, `DropDoctype`
+  - [x] Utility transforms: `CollapseWhitespace`, `DropComments`, `DropDoctype`
+  - [x] Linkify transform integration and order-sensitive smoke tests
   - [ ] URL/style transform specs and sanitizer transform integration
   - [ ] Compiled stages, selector limits, and deterministic application order
 - [ ] Streaming API
