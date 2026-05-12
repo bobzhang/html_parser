@@ -83,6 +83,24 @@ test "linkify matches upstream internal validation regressions" {
 }
 
 ///|
+test "linkify rejects malformed host email and port edges" {
+  let no_links : Array[String] = [
+    "mailto:@example.com", "mailto:user@", "bad exa_mple.com", "http://example.com:abc",
+    "user@.com", "//:8080/path",
+  ]
+  for text in no_links {
+    guard @html_parser.find_links(text).length() == 0 else {
+      fail("expected no malformed edge link for " + text)
+    }
+  }
+
+  let punycode_tld = @html_parser.find_links("see site.xn--p1ai")
+  assert_eq(punycode_tld.length(), 1)
+  assert_eq(punycode_tld[0].text, "site.xn--p1ai")
+  assert_eq(punycode_tld[0].href, "http://site.xn--p1ai")
+}
+
+///|
 test "linkify handles long punctuation runs without widening matches" {
   for ch in ["\"", "-", ".", "!"] {
     assert_eq(@html_parser.find_links(ch.repeat(2000)).length(), 0)

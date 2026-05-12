@@ -187,6 +187,9 @@ reference implementation in `.repos/justhtml`.
 - [x] Added sanitizer/transform observer regressions for escape-only source
       text outside escape mode, hook-only/report-only callbacks, and void
       element escaping.
+- [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
+      fuzzy underscore hosts, invalid ports, leading-dot email domains,
+      empty protocol-relative hosts, and punycode TLDs.
 
 ## Working Rule
 

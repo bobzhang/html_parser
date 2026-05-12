@@ -303,6 +303,10 @@ JustHTML from Python to MoonBit.
   same branches: protocol-relative host validation, invalid fuzzy-email TLDs,
   uppercase extra-TLD normalization, bad URL ports, quoted candidates, and long
   punctuation runs that would expose quadratic trimming.
+- Keep the linkify port intentionally aligned with Python's quirks. Non-numeric
+  or too-large ports are rejected, but an empty port marker before a path is
+  accepted by the reference. Leading-dot email domains such as `user@.com`
+  still reject because stripping edge dots leaves no TLD split.
 - Linkify's explicit `mailto:` path is more permissive than fuzzy email
   detection: `mailto:foo@bar` is valid, while bare `foo@bar` is not. Pass that
   policy difference into a shared email validator instead of duplicating the
