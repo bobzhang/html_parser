@@ -140,9 +140,21 @@ def main(argv: list[str]) -> int:
             error(f"tracked source file is outside a MoonBit package: {path}")
             ok = False
 
-    forbidden_prefixes = (".repos/", "_build/")
+    forbidden_prefixes = (
+        ".mooncakes/",
+        ".moonagent/",
+        ".repos/",
+        "_build/",
+        "__pycache__/",
+    )
     for path in sorted(tracked):
-        if path.startswith(forbidden_prefixes):
+        if (
+            path.startswith(forbidden_prefixes)
+            or path.endswith("/.DS_Store")
+            or path == ".DS_Store"
+            or "/__pycache__/" in f"/{path}/"
+            or path.endswith(".pyc")
+        ):
             error(f"generated/reference checkout path must not be tracked: {path}")
             ok = False
 

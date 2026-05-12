@@ -386,6 +386,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Extended source-layout validation to cover all root implementation
       modules split out during the port.
 - [x] Extended source-layout validation to cover all split root test modules.
+- [x] Extended source-layout validation to reject all tracked local/generated
+      paths covered by `.gitignore`.
 
 ## Working Rule
 
