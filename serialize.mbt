@@ -462,7 +462,9 @@ fn compact_pretty_text_children(
   } else {
     let raw = StringBuilder::new()
     for child in node.children {
-      raw.write_string(child.data)
+      if !child.sanitize_escape_only {
+        raw.write_string(child.data)
+      }
     }
     out.write_string(escape_text(collapse_html_whitespace(raw.to_string())))
   }

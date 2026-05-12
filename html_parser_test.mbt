@@ -1017,6 +1017,27 @@ test "sanitize_dom removes parser escape-only text outside escape mode" {
 }
 
 ///|
+test "parser escape-only sentinels stay hidden from serializers" {
+  let fragment = @html_parser.parse_fragment(
+    "safe <!DOCTYPE and y>z",
+    context=@html_parser.FragmentContext::new("div"),
+    sanitize=false,
+  )
+  assert_eq(fragment.to_html(pretty=false), "safe z")
+  assert_eq(fragment.to_html(pretty=true), "safe\nz")
+  assert_eq(fragment.to_text(separator="", strip=false), "safe z")
+
+  let inline = @html_parser.parse_fragment(
+    "<p>safe <!DOCTYPE and y>z</p>",
+    context=@html_parser.FragmentContext::new("div"),
+    sanitize=false,
+  )
+  assert_eq(inline.to_html(pretty=false), "<p>safe z</p>")
+  assert_eq(inline.to_html(pretty=true), "<p>safe z</p>")
+  assert_eq(inline.to_text(separator="", strip=false), "safe z")
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
