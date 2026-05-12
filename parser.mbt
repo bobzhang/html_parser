@@ -181,7 +181,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   } else {
     self.remove_null_characters(raw, start)
   }
-  cleaned = normalize_tree_builder_text(cleaned[:])
+  cleaned = normalize_tree_builder_text(cleaned)
   if cleaned.is_empty() {
     return
   }
@@ -195,7 +195,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     ignore(self.stack.pop())
     if !whitespace.is_empty() {
       let data = if self.xml_coercion {
-        coerce_text_for_xml(whitespace[:])
+        coerce_text_for_xml(whitespace)
       } else {
         whitespace
       }
@@ -216,7 +216,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     let whitespace = leading_ascii_whitespace(cleaned)
     if !whitespace.is_empty() {
       let data = if self.xml_coercion {
-        coerce_text_for_xml(whitespace[:])
+        coerce_text_for_xml(whitespace)
       } else {
         whitespace
       }
@@ -276,9 +276,9 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   for error in decoded_result.errors {
     self.error_at(error.code, text_start + error.offset)
   }
-  let decoded = normalize_tree_builder_text(decoded_result.data[:])
+  let decoded = normalize_tree_builder_text(decoded_result.data)
   let data = if self.xml_coercion {
-    coerce_text_for_xml(decoded[:])
+    coerce_text_for_xml(decoded)
   } else {
     decoded
   }
@@ -941,7 +941,7 @@ fn Parser::handle_column_group_text(
     if has_non_whitespace {
       let whitespace = leading_ascii_whitespace(cleaned)
       if !whitespace.is_empty() {
-        current.append_child(text(decode_entities_for_tree_text(whitespace[:])))
+        current.append_child(text(decode_entities_for_tree_text(whitespace)))
       }
       ignore(self.pop_current_element_if_name("colgroup"))
       let non_whitespace = cleaned[whitespace.length():]
@@ -1007,7 +1007,7 @@ fn Parser::handle_fragment_context_colgroup_text(
   if !whitespace.is_empty() {
     self
     .current_node()
-    .append_child(text(decode_entities_for_tree_text(whitespace[:])))
+    .append_child(text(decode_entities_for_tree_text(whitespace)))
   }
   true
 }
@@ -1029,7 +1029,7 @@ fn Parser::handle_template_column_group_text(
   if !whitespace.is_empty() {
     self
     .current_node()
-    .append_child(text(decode_entities_for_tree_text(whitespace[:])))
+    .append_child(text(decode_entities_for_tree_text(whitespace)))
   }
   self.error_at("unexpected-characters-in-template-column-group", start)
   true
@@ -1835,7 +1835,7 @@ fn normalize_tree_builder_text(value : StringView) -> String {
 ///|
 fn decode_entities_for_tree_text(value : StringView) -> String {
   let decoded = decode_entities(value, in_attribute=false)
-  normalize_tree_builder_text(decoded[:])
+  normalize_tree_builder_text(decoded)
 }
 
 ///|
@@ -2198,7 +2198,7 @@ fn Parser::parse_comment(self : Parser) -> Unit {
   }
   self.pos = scan.end
   let data = if self.xml_coercion {
-    coerce_comment_for_xml(scan.data[:])
+    coerce_comment_for_xml(scan.data)
   } else {
     scan.data
   }
@@ -2215,7 +2215,7 @@ fn Parser::parse_bogus_comment(self : Parser, origin_start : Int) -> Unit {
     Some(view) => {
       let data = normalize_bogus_comment_data(view)
       let data = if self.xml_coercion {
-        coerce_comment_for_xml(data[:])
+        coerce_comment_for_xml(data)
       } else {
         data
       }
@@ -2259,9 +2259,9 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
         self.remove_null_characters(view, start)
       }
       if !cleaned.is_empty() {
-        let cleaned = normalize_tree_builder_text(cleaned[:])
+        let cleaned = normalize_tree_builder_text(cleaned)
         let data = if self.xml_coercion {
-          coerce_text_for_xml(cleaned[:])
+          coerce_text_for_xml(cleaned)
         } else {
           cleaned
         }
@@ -5464,9 +5464,9 @@ fn Parser::decoded_special_text(
   } else {
     normalize_newlines(raw)
   }
-  let data = normalize_tree_builder_text(data[:])
+  let data = normalize_tree_builder_text(data)
   if self.xml_coercion {
-    coerce_text_for_xml(data[:])
+    coerce_text_for_xml(data)
   } else {
     data
   }
@@ -6173,9 +6173,9 @@ fn Parser::consume_special_element_content(
       self.error_at(error.code, error.offset)
     }
     if !scan.data.is_empty() {
-      let scan_data = normalize_tree_builder_text(scan.data[:])
+      let scan_data = normalize_tree_builder_text(scan.data)
       let data = if self.xml_coercion {
-        coerce_text_for_xml(scan_data[:])
+        coerce_text_for_xml(scan_data)
       } else {
         scan_data
       }
@@ -6266,8 +6266,8 @@ fn Parser::append_fragment_context_text(
   }
   let raw = self.replace_null_characters(raw, start)
   let data = normalize_newlines(raw)
-  let data = normalize_tree_builder_text(data[:])
-  let data = if self.xml_coercion { coerce_text_for_xml(data[:]) } else { data }
+  let data = normalize_tree_builder_text(data)
+  let data = if self.xml_coercion { coerce_text_for_xml(data) } else { data }
   self.root.append_child(self.text_at(data, start))
 }
 
@@ -8227,7 +8227,7 @@ fn parse_meta_tag_declared_encoding(
       match charset {
         Some((start, end)) => {
           let label = ascii_lower_bytes(input, start, end)
-          match normalize_meta_html_encoding_label(label[:]) {
+          match normalize_meta_html_encoding_label(label) {
             Some(encoding) => return (Some(encoding), pos + 1)
             None => ()
           }
