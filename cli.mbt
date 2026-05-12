@@ -142,10 +142,7 @@ fn cli_option_value_from_equals(arg : String, option : String) -> String? {
   if !arg.has_prefix(prefix) {
     return None
   }
-  match arg.get_view(start=prefix.length()) {
-    Some(value) => Some(value.to_owned())
-    None => Some("")
-  }
+  Some(arg[prefix.length():arg.length()].to_owned())
 }
 
 ///|

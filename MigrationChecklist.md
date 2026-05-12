@@ -254,6 +254,8 @@ reference implementation in `.repos/justhtml`.
       `Char` iteration and documented the Python surrogate fallback difference.
 - [x] Refactored Markdown builder and helper trimming slices to use direct
       `StringView` slices after local scans produce valid offsets.
+- [x] Refactored CLI equals-form option parsing to use direct slices and added
+      whitebox coverage for no-path read plans.
 
 ## Working Rule
 
