@@ -239,13 +239,9 @@ fn neutralize_rawtext_end_tag_sequences(
       out.write_string("&lt;")
       pos += 1
     } else {
-      match value.get_char(pos) {
-        Some(ch) => {
-          out.write_char(ch)
-          pos += ch.utf16_len()
-        }
-        None => break
-      }
+      let ch = value.get_char(pos).unwrap()
+      out.write_char(ch)
+      pos += ch.utf16_len()
     }
   }
   out.to_string()
@@ -1198,10 +1194,7 @@ fn class_token_matches(
   if end <= start {
     false
   } else {
-    match value.get_view(start~, end~) {
-      Some(part) => part == needle
-      None => false
-    }
+    value[start:end] == needle
   }
 }
 
@@ -1218,20 +1211,16 @@ fn next_simple_selector_marker(selector : StringView, start : Int) -> Int {
   let mut pos = start
   let mut paren_depth = 0
   while pos < selector.length() {
-    match selector.get_char(pos) {
-      Some(ch) => {
-        if ch == '(' {
-          paren_depth += 1
-        } else if ch == ')' && paren_depth > 0 {
-          paren_depth -= 1
-        } else if paren_depth == 0 &&
-          (ch == '.' || ch == '#' || ch == '[' || ch == ':') {
-          return pos
-        }
-        pos += ch.utf16_len()
-      }
-      None => break
+    let ch = selector.get_char(pos).unwrap()
+    if ch == '(' {
+      paren_depth += 1
+    } else if ch == ')' && paren_depth > 0 {
+      paren_depth -= 1
+    } else if paren_depth == 0 &&
+      (ch == '.' || ch == '#' || ch == '[' || ch == ':') {
+      return pos
     }
+    pos += ch.utf16_len()
   }
   selector.length()
 }
@@ -1242,29 +1231,25 @@ fn find_attribute_selector_end(selector : StringView, start : Int) -> Int? {
   let mut quote : Char? = None
   let mut escaped = false
   while pos < selector.length() {
-    match selector.get_char(pos) {
-      Some(ch) => {
-        match quote {
-          Some(q) =>
-            if escaped {
-              escaped = false
-            } else if ch == '\\' {
-              escaped = true
-            } else if ch == q {
-              quote = None
-            }
-          None =>
-            if ch == '"' || ch == '\'' {
-              quote = Some(ch)
-              escaped = false
-            } else if ch == ']' {
-              return Some(pos)
-            }
+    let ch = selector.get_char(pos).unwrap()
+    match quote {
+      Some(q) =>
+        if escaped {
+          escaped = false
+        } else if ch == '\\' {
+          escaped = true
+        } else if ch == q {
+          quote = None
         }
-        pos += ch.utf16_len()
-      }
-      None => break
+      None =>
+        if ch == '"' || ch == '\'' {
+          quote = Some(ch)
+          escaped = false
+        } else if ch == ']' {
+          return Some(pos)
+        }
     }
+    pos += ch.utf16_len()
   }
   None
 }
@@ -1439,10 +1424,7 @@ fn string_view_contains(haystack : StringView, needle : StringView) -> Bool {
       Some(part) if part == needle => return true
       _ => ()
     }
-    match haystack.get_char(pos) {
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
+    pos += haystack.get_char(pos).unwrap().utf16_len()
   }
   false
 }
@@ -2170,16 +2152,11 @@ fn selector_list_part(
   start : Int,
   end : Int,
 ) -> StringView? {
-  match selector.get_view(start~, end~) {
-    Some(part) => {
-      let part = part.trim()
-      if part.is_empty() {
-        None
-      } else {
-        Some(part)
-      }
-    }
-    None => None
+  let part = selector[start:end].trim()
+  if part.is_empty() {
+    None
+  } else {
+    Some(part)
   }
 }
 
@@ -2198,44 +2175,40 @@ fn selector_list_parts(selector : StringView) -> Array[StringView]? {
   let mut escaped = false
   let mut seen_part = false
   while pos < selector.length() {
-    match selector.get_char(pos) {
-      Some(ch) => {
-        match quote {
-          Some(q) =>
-            if escaped {
-              escaped = false
-            } else if ch == '\\' {
-              escaped = true
-            } else if ch == q {
-              quote = None
-            }
-          None =>
-            if bracket_depth > 0 && (ch == '"' || ch == '\'') {
-              quote = Some(ch)
-              escaped = false
-            } else if ch == '[' {
-              bracket_depth += 1
-            } else if ch == ']' && bracket_depth > 0 {
-              bracket_depth -= 1
-            } else if bracket_depth == 0 && ch == '(' {
-              paren_depth += 1
-            } else if bracket_depth == 0 && ch == ')' && paren_depth > 0 {
-              paren_depth -= 1
-            } else if ch == ',' && bracket_depth == 0 && paren_depth == 0 {
-              match selector_list_part(selector, start, pos) {
-                Some(part) => {
-                  seen_part = true
-                  parts.push(part)
-                }
-                None => if !seen_part { return None }
-              }
-              start = pos + ch.utf16_len()
-            }
+    let ch = selector.get_char(pos).unwrap()
+    match quote {
+      Some(q) =>
+        if escaped {
+          escaped = false
+        } else if ch == '\\' {
+          escaped = true
+        } else if ch == q {
+          quote = None
         }
-        pos += ch.utf16_len()
-      }
-      None => break
+      None =>
+        if bracket_depth > 0 && (ch == '"' || ch == '\'') {
+          quote = Some(ch)
+          escaped = false
+        } else if ch == '[' {
+          bracket_depth += 1
+        } else if ch == ']' && bracket_depth > 0 {
+          bracket_depth -= 1
+        } else if bracket_depth == 0 && ch == '(' {
+          paren_depth += 1
+        } else if bracket_depth == 0 && ch == ')' && paren_depth > 0 {
+          paren_depth -= 1
+        } else if ch == ',' && bracket_depth == 0 && paren_depth == 0 {
+          match selector_list_part(selector, start, pos) {
+            Some(part) => {
+              seen_part = true
+              parts.push(part)
+            }
+            None => if !seen_part { return None }
+          }
+          start = pos + ch.utf16_len()
+        }
     }
+    pos += ch.utf16_len()
   }
   match selector_list_part(selector, start, selector.length()) {
     Some(part) => {
@@ -2285,75 +2258,67 @@ fn split_complex_selector(
   let mut escaped = false
   let mut pending = DescendantCombinator
   while pos < selector.length() {
-    match selector.get_char(pos) {
-      Some(ch) => {
-        match quote {
-          Some(q) =>
-            if escaped {
-              escaped = false
-            } else if ch == '\\' {
-              escaped = true
-            } else if ch == q {
-              quote = None
-            }
-          None =>
-            if bracket_depth > 0 && (ch == '"' || ch == '\'') {
-              quote = Some(ch)
-              escaped = false
-            } else if ch == '[' {
-              bracket_depth += 1
-            } else if ch == ']' && bracket_depth > 0 {
-              bracket_depth -= 1
-            } else if bracket_depth == 0 && ch == '(' {
-              paren_depth += 1
-            } else if bracket_depth == 0 && ch == ')' && paren_depth > 0 {
-              paren_depth -= 1
-            } else if bracket_depth == 0 &&
-              paren_depth == 0 &&
-              is_html_whitespace_char(ch) {
-              match selector_list_part(selector, start, pos) {
-                Some(part) => {
-                  push_complex_selector_part(parts, combinators, part, pending)
-                  pending = DescendantCombinator
-                }
-                None => ()
-              }
-              start = pos + ch.utf16_len()
-            } else if bracket_depth == 0 &&
-              paren_depth == 0 &&
-              (ch == '>' || ch == '+' || ch == '~') {
-              match selector_list_part(selector, start, pos) {
-                Some(part) =>
-                  push_complex_selector_part(parts, combinators, part, pending)
-                None =>
-                  if parts.is_empty() || pending != DescendantCombinator {
-                    return None
-                  }
-              }
-              pending = if ch == '>' {
-                ChildCombinator
-              } else if ch == '+' {
-                AdjacentSiblingCombinator
-              } else {
-                GeneralSiblingCombinator
-              }
-              start = pos + ch.utf16_len()
-            }
+    let ch = selector.get_char(pos).unwrap()
+    match quote {
+      Some(q) =>
+        if escaped {
+          escaped = false
+        } else if ch == '\\' {
+          escaped = true
+        } else if ch == q {
+          quote = None
         }
-        pos += ch.utf16_len()
-      }
-      None => break
+      None =>
+        if bracket_depth > 0 && (ch == '"' || ch == '\'') {
+          quote = Some(ch)
+          escaped = false
+        } else if ch == '[' {
+          bracket_depth += 1
+        } else if ch == ']' && bracket_depth > 0 {
+          bracket_depth -= 1
+        } else if bracket_depth == 0 && ch == '(' {
+          paren_depth += 1
+        } else if bracket_depth == 0 && ch == ')' && paren_depth > 0 {
+          paren_depth -= 1
+        } else if bracket_depth == 0 &&
+          paren_depth == 0 &&
+          is_html_whitespace_char(ch) {
+          match selector_list_part(selector, start, pos) {
+            Some(part) => {
+              push_complex_selector_part(parts, combinators, part, pending)
+              pending = DescendantCombinator
+            }
+            None => ()
+          }
+          start = pos + ch.utf16_len()
+        } else if bracket_depth == 0 &&
+          paren_depth == 0 &&
+          (ch == '>' || ch == '+' || ch == '~') {
+          match selector_list_part(selector, start, pos) {
+            Some(part) =>
+              push_complex_selector_part(parts, combinators, part, pending)
+            None =>
+              if parts.is_empty() || pending != DescendantCombinator {
+                return None
+              }
+          }
+          pending = if ch == '>' {
+            ChildCombinator
+          } else if ch == '+' {
+            AdjacentSiblingCombinator
+          } else {
+            GeneralSiblingCombinator
+          }
+          start = pos + ch.utf16_len()
+        }
     }
+    pos += ch.utf16_len()
   }
   match selector_list_part(selector, start, selector.length()) {
     Some(part) => push_complex_selector_part(parts, combinators, part, pending)
     None => return None
   }
-  if parts.is_empty() {
-    None
-  } else {
-    Some((parts, combinators))
-  }
+  Some((parts, combinators))
 }
 
 ///|

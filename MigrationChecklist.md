@@ -274,6 +274,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Added linkify astral-left-boundary coverage to lock fuzzy-link UTF-16
       offsets after surrogate-pair characters.
 - [x] Simplified CLI read-plan handling after parser-owned path validation.
+- [x] Refactored serializer raw-text and selector scanner helpers to use
+      direct `StringView` slices and guarded UTF-16 cursor unwraps.
 
 ## Working Rule
 
