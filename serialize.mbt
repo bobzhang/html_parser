@@ -952,6 +952,20 @@ fn node_to_html_pretty(
 }
 
 ///|
+fn render_node_html(
+  node : Node,
+  pretty : Bool,
+  indent_size : Int,
+  quote : Char,
+) -> String raise HtmlError {
+  if pretty {
+    node_to_html_pretty(node, 0, indent_size, quote)
+  } else {
+    node_to_html_compact(node, quote)
+  }
+}
+
+///|
 /// Serialize this node and its descendants as HTML or an escaped context value.
 ///
 /// `pretty=false` emits compact HTML. `context` controls escaping for raw HTML,
@@ -964,24 +978,25 @@ pub fn Node::to_html(
   quote? : Char = '"',
 ) -> String raise HtmlError {
   match context {
-    Url => percent_encode_url(self.to_text().trim())
-    _ => {
-      let quote_char = match context {
-        JsString | HtmlAttrValue => validate_serialization_quote(quote)
-        _ => if quote == '\'' { '\'' } else { '"' }
-      }
-      let html = if pretty {
-        node_to_html_pretty(self, 0, indent_size, quote_char)
-      } else {
-        node_to_html_compact(self, quote_char)
-      }
-      match context {
-        Html => html
-        JsString => escape_js_string(html, quote_char)
-        HtmlAttrValue => escape_attr_value(html, quote_char)
-        Url => html
-      }
+    Html => {
+      let quote_char = if quote == '\'' { '\'' } else { '"' }
+      render_node_html(self, pretty, indent_size, quote_char)
     }
+    JsString => {
+      let quote_char = validate_serialization_quote(quote)
+      escape_js_string(
+        render_node_html(self, pretty, indent_size, quote_char),
+        quote_char,
+      )
+    }
+    HtmlAttrValue => {
+      let quote_char = validate_serialization_quote(quote)
+      escape_attr_value(
+        render_node_html(self, pretty, indent_size, quote_char),
+        quote_char,
+      )
+    }
+    Url => percent_encode_url(self.to_text().trim())
   }
 }
 

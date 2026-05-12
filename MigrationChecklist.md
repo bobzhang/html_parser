@@ -210,6 +210,9 @@ reference implementation in `.repos/justhtml`.
       hidden in compact HTML, pretty HTML, Markdown, and text output.
 - [x] Added serializer whitebox regressions for escape-only text nodes inside
       pretty inline runs and all-hidden pretty inline run fallbacks.
+- [x] Refactored HTML serialization context dispatch so `Url`, `Html`,
+      `JsString`, and `HtmlAttrValue` are handled as explicit enum arms without
+      an unreachable inner fallback.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.

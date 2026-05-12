@@ -1166,6 +1166,10 @@ JustHTML from Python to MoonBit.
   escape mode can preserve raw spelling when needed. Every serializer path,
   including pretty inline-run formatting and direct text-node rendering, must
   skip those nodes unless the sanitizer explicitly clears the sentinel.
+- When porting Python context flags to MoonBit enums, prefer explicit enum arms
+  over a catch-all plus nested match. The compiler may require exhaustiveness in
+  the nested match even when an outer branch already handled a case, which can
+  leave dead fallback arms that hide real coverage gaps.
 - Some Python DOM mutation paths raise `ValueError` for invalid references or
   unsupported containers. This MoonBit port generally exposes total builder
   helpers instead: `remove_child` ignores missing children, invalid append/insert
