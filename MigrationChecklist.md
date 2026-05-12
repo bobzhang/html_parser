@@ -377,6 +377,8 @@ reference implementation in `.repos/justhtml`.
       suffixes and interpreter shebangs.
 - [x] Extended GitHub workflow validation to inventory every tracked workflow
       and guard the Copilot MoonBit setup workflow.
+- [x] Generalized Mooncakes archive checks to require every tracked published
+      source, test, fixture, documentation, and validation-helper file.
 
 ## Working Rule
 

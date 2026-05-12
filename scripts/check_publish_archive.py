@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import json
 import pathlib
+import subprocess
 import sys
 import zipfile
 
@@ -30,6 +31,34 @@ def expected_archive_path() -> pathlib.Path | None:
     return ROOT / "_build" / "publish" / f"{owner}-{package}-{version}.zip"
 
 
+def tracked_files() -> set[str]:
+    result = subprocess.run(
+        ["git", "ls-files"],
+        cwd=ROOT,
+        check=True,
+        capture_output=True,
+        text=True,
+    )
+    return set(result.stdout.splitlines())
+
+
+def expected_published_files() -> set[str]:
+    expected: set[str] = set()
+    for path in tracked_files():
+        pure = pathlib.PurePosixPath(path)
+        if pure.name in {"moon.mod.json", "moon.pkg", "LICENSE"}:
+            expected.add(path)
+        elif pure.parent == pathlib.PurePosixPath(".") and pure.suffix == ".md":
+            expected.add(path)
+        elif path.startswith("scripts/"):
+            expected.add(path)
+        elif path.startswith("tests/fixtures/justhtml/"):
+            expected.add(path)
+        elif path.endswith((".mbt", ".mbt.md", ".mbti", ".c")):
+            expected.add(path)
+    return expected
+
+
 def main(argv: list[str]) -> int:
     if len(argv) > 1 or (argv and argv[0].startswith("-")):
         error("usage: python3 scripts/check_publish_archive.py [zip-path]")
@@ -46,38 +75,7 @@ def main(argv: list[str]) -> int:
     with zipfile.ZipFile(archive) as zf:
         names = set(zf.namelist())
 
-        required = {
-            "moon.mod.json",
-            "moon.pkg",
-            "pkg.generated.mbti",
-            "README.mbt.md",
-            "README.md",
-            "LICENSE",
-            "html_parser.mbt",
-            "parser.mbt",
-            "tokens.mbt",
-            "dom.mbt",
-            "serialize.mbt",
-            "sanitize.mbt",
-            "transforms.mbt",
-            "markdown.mbt",
-            "linkify.mbt",
-            "linkify_dom.mbt",
-            "linkify_punycode.mbt",
-            "stream.mbt",
-            "cli.mbt",
-            "types.mbt",
-            "cmd/main/moon.pkg",
-            "cmd/main/main.mbt",
-            "cmd/main/cli_io.c",
-            "cmd/main/pkg.generated.mbti",
-            "tests/fixtures/justhtml/LICENSE.justhtml",
-            "tests/fixtures/justhtml/README.upstream.md",
-            "tests/fixtures/justhtml/data/wikipedia.html",
-            "tests/fixtures/justhtml/justhtml-sanitize-tests/cases.json",
-            "tests/fixtures/justhtml/linkify-it/fixtures/links.txt",
-            "tests/fixtures/justhtml/linkify-it/fixtures/not_links.txt",
-        }
+        required = expected_published_files()
         for path in sorted(required):
             if path not in names:
                 error(f"Mooncakes archive is missing required file: {path}")
