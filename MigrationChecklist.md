@@ -359,6 +359,8 @@ reference implementation in `.repos/justhtml`.
       fixture, docs, native CLI, generated interface, and forbidden path rules.
 - [x] Added a shared test runner that enforces the default, JS, and native
       MoonBit test-count floor so fixture coverage cannot silently shrink.
+- [x] Added a `.gitignore` guard for local generated output, Mooncakes state,
+      the optional reference checkout, Python bytecode, and macOS metadata.
 
 ## Working Rule
 
