@@ -271,6 +271,8 @@ reference implementation in `.repos/justhtml`.
       slices.
 - [x] Refactored tokenizer attribute value slices and special-text null cleanup
       to rely on scanner-owned UTF-16 boundaries and Unicode-safe iteration.
+- [x] Added linkify astral-left-boundary coverage to lock fuzzy-link UTF-16
+      offsets after surrogate-pair characters.
 
 ## Working Rule
 

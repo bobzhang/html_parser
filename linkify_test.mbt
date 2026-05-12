@@ -121,6 +121,11 @@ test "linkify handles unicode tlds as utf16 offsets" {
   assert_eq(matches[0].text, "пример.рф")
   assert_eq(matches[0].href, "http://xn--e1afmkfd.xn--p1ai")
   assert_eq(matches[0].kind, "url")
+  let after_emoji = @html_parser.find_links("😀http://example.com")
+  assert_eq(after_emoji.length(), 1)
+  assert_eq(after_emoji[0].start, 2)
+  assert_eq(after_emoji[0].end, 20)
+  assert_eq(after_emoji[0].text, "http://example.com")
 }
 
 ///|
