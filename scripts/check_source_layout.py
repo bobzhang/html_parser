@@ -75,6 +75,30 @@ def main(argv: list[str]) -> int:
             error(f"expected root package module is not tracked: {path}")
             ok = False
 
+    required_root_tests = {
+        "cli_test.mbt",
+        "cli_wbtest.mbt",
+        "encoding_fixtures_test.mbt",
+        "html_parser_test.mbt",
+        "html_parser_wbtest.mbt",
+        "linkify_dom_test.mbt",
+        "linkify_dom_wbtest.mbt",
+        "linkify_fixtures_test.mbt",
+        "linkify_punycode_wbtest.mbt",
+        "linkify_test.mbt",
+        "linkify_wbtest.mbt",
+        "sanitize_fixtures_test.mbt",
+        "sanitize_wbtest.mbt",
+        "stream_test.mbt",
+        "tokenizer_fixtures_test.mbt",
+        "transforms_test.mbt",
+        "treebuilder_fixtures_test.mbt",
+    }
+    for path in sorted(required_root_tests):
+        if path not in tracked:
+            error(f"expected root package test module is not tracked: {path}")
+            ok = False
+
     package_dirs = {
         str(pathlib.PurePosixPath(path).parent)
         for path in tracked

@@ -385,6 +385,7 @@ reference implementation in `.repos/justhtml`.
       local hook validation guard.
 - [x] Extended source-layout validation to cover all root implementation
       modules split out during the port.
+- [x] Extended source-layout validation to cover all split root test modules.
 
 ## Working Rule
 
