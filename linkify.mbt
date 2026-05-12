@@ -968,16 +968,11 @@ fn linkify_is_scheme_url(candidate : StringView) -> Bool {
 fn linkify_last_char_index(value : StringView, needle : Char) -> Int? {
   let mut pos = 0
   let mut last : Int? = None
-  while pos < value.length() {
-    match value.get_char(pos) {
-      Some(ch) => {
-        if ch == needle {
-          last = Some(pos)
-        }
-        pos += ch.utf16_len()
-      }
-      None => break
+  for ch in value {
+    if ch == needle {
+      last = Some(pos)
     }
+    pos += ch.utf16_len()
   }
   last
 }

@@ -226,6 +226,8 @@ reference implementation in `.repos/justhtml`.
       prefixless Unicode hosts, IPv6 passthrough, and all-ASCII IDNA mappings.
 - [x] Added tokenizer whitebox regressions for EOF stepping and delimiter-only
       attribute helper parsing.
+- [x] Refactored linkify's last-character scan to use Unicode-safe
+      `StringView` iteration while retaining UTF-16 result offsets.
 
 ## Working Rule
 
