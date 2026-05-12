@@ -99,25 +99,21 @@ fn linkify_punycode_host(host : StringView) -> String {
   let labels : Array[String] = []
   let mut start = 0
   let mut pos = 0
-  while pos <= host.length() {
-    if pos == host.length() || host.get_char(pos) is Some('.') {
-      guard host.get_view(start~, end=pos) is Some(label) else {
-        return host.to_owned()
-      }
+  for ch in host {
+    if ch == '.' {
+      let label = host[start:pos]
       match linkify_punycode_label(label) {
         Some(encoded) => labels.push(encoded)
         None => return host.to_owned()
       }
       start = pos + 1
     }
-    if pos < host.length() {
-      match host.get_char(pos) {
-        Some(ch) => pos += ch.utf16_len()
-        None => break
-      }
-    } else {
-      pos += 1
-    }
+    pos += ch.utf16_len()
+  }
+  let label = host[start:host.length()]
+  match linkify_punycode_label(label) {
+    Some(encoded) => labels.push(encoded)
+    None => return host.to_owned()
   }
   labels.join(".")
 }

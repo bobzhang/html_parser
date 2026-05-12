@@ -232,6 +232,8 @@ reference implementation in `.repos/justhtml`.
       `StringView` iteration before slicing at URL delimiters.
 - [x] Refactored linkify punycode host/tail splitting to use Unicode-safe
       `StringView` iteration before slicing at URL delimiters.
+- [x] Refactored linkify punycode label splitting to use Unicode-safe
+      `StringView` iteration while preserving final/trailing labels.
 
 ## Working Rule
 
