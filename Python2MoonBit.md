@@ -869,7 +869,13 @@ JustHTML from Python to MoonBit.
   private parser metadata (`source_start_tag`/`source_end_tag`) plus hidden
   escape-only text fragments for malformed source that normal `to_html()` must
   still ignore. Only materialize those hidden fragments when sanitizer
-  `disallowed_tag_handling=Escape` is active.
+  `disallowed_tag_handling=Escape` is active; a second sanitization pass with
+  `Drop` or `Unwrap` must remove the hidden fragments rather than leak the raw
+  malformed source text.
+- Transform hooks and report callbacks are independent optional callbacks in
+  MoonBit, while Python tends to pass callables or `None` through dynamic
+  branches. Test hook-only and report-only paths separately so wrapper
+  callbacks do not accidentally require both callbacks to be present.
 - Sanitizer policies contain mutable lookup tables in MoonBit (`Set`/`Map`), so
   default policy helpers should return fresh policy values rather than sharing
   one global object across tests. URL checks should reject decoded C0 controls

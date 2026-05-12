@@ -184,6 +184,9 @@ reference implementation in `.repos/justhtml`.
 - [x] Added transform traversal regressions for nested stage selector limits,
       nested document fragments, `Decide(Escape)` fragment unwrapping,
       text-collapse recursion, linkify recursion, and prune-empty recursion.
+- [x] Added sanitizer/transform observer regressions for escape-only source
+      text outside escape mode, hook-only/report-only callbacks, and void
+      element escaping.
 
 ## Working Rule
 

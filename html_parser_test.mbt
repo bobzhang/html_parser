@@ -999,6 +999,24 @@ test "sanitize_dom escape handling preserves disallowed template children" {
 }
 
 ///|
+test "sanitize_dom removes parser escape-only text outside escape mode" {
+  let fragment = @html_parser.parse_fragment(
+    "safe <!DOCTYPE and y>z",
+    context=@html_parser.FragmentContext::new("div"),
+    sanitize=false,
+  )
+  let policy = @html_parser.SanitizationPolicy::new(
+    [],
+    allowed_attributes={ "*": [] },
+    disallowed_tag_handling=Drop,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "safe z",
+  )
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",

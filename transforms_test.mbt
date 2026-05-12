@@ -48,6 +48,20 @@ test "apply_transforms drops unwraps escapes and empties selected elements" {
 }
 
 ///|
+test "escape transform does not synthesize void element end tags" {
+  let doc = @html_parser.parse_fragment("<p><img src=/x><br><span>y</span></p>")
+  ignore(
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::escape("img, br, span"),
+    ]),
+  )
+  assert_eq(
+    doc.root.to_html(pretty=false),
+    "<p>&lt;img src=\"/x\"&gt;&lt;br&gt;&lt;span&gt;y&lt;/span&gt;</p>",
+  )
+}
+
+///|
 test "unwrap skips direct moved children but walks their descendants" {
   let root = @html_parser.parse_fragment(
     "<div><div>x</div><section><div>y</div></section></div>",
@@ -1128,6 +1142,42 @@ test "sanitize transform hooks and reports unsafe mutations" {
     "node:script",
   ])
   assert_eq(doc.root.to_html(pretty=false), "<p>x</p>")
+}
+
+///|
+test "sanitize transform supports hook-only and report-only observers" {
+  let policy = @html_parser.SanitizationPolicy::new(["p"], allowed_attributes={
+    "p": [],
+  })
+  let hook_events : Array[String] = []
+  let hook : (@html_parser.Node) -> Unit = fn(node) {
+    hook_events.push(node.name())
+  }
+  let hook_doc = @html_parser.parse_fragment("<p foo='1'>x</p><!--c-->")
+  ignore(
+    @html_parser.apply_transforms(hook_doc.root, [
+      @html_parser.TransformSpec::sanitize(policy~, hook~),
+    ]),
+  )
+  assert_eq(hook_events, ["p", "#comment"])
+  assert_eq(hook_doc.root.to_html(pretty=false), "<p>x</p>")
+
+  let reports : Array[String] = []
+  let report : (String, @html_parser.Node?) -> Unit = fn(message, node) {
+    let name = match node {
+      Some(hit) => hit.name()
+      None => "none"
+    }
+    reports.push(message + ":" + name)
+  }
+  let report_doc = @html_parser.parse_fragment("<p foo='1'>x</p>")
+  ignore(
+    @html_parser.apply_transforms(report_doc.root, [
+      @html_parser.TransformSpec::sanitize(policy~, report~),
+    ]),
+  )
+  assert_eq(reports, ["Unsafe attribute 'foo' (not allowed):p"])
+  assert_eq(report_doc.root.to_html(pretty=false), "<p>x</p>")
 }
 
 ///|
