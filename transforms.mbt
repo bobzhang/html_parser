@@ -25,6 +25,10 @@ priv enum TransformKind {
 } derive(Debug)
 
 ///|
+/// Action returned by a `TransformSpec::decide` callback.
+///
+/// `Keep` leaves the matched node unchanged. The other variants apply the same
+/// structural operations as the corresponding selector transforms.
 pub(all) enum DecideAction {
   Keep
   Drop
