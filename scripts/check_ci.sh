@@ -56,6 +56,9 @@ python3 scripts/check_github_workflows.py
 step "Check source layout"
 python3 scripts/check_source_layout.py
 
+step "Check MoonBit source style"
+python3 scripts/check_moonbit_style.py
+
 step "Check gitignore"
 python3 scripts/check_gitignore.py
 

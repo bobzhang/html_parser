@@ -363,6 +363,8 @@ reference implementation in `.repos/justhtml`.
       the optional reference checkout, Python bytecode, and macOS metadata.
 - [x] Updated the optional pre-commit hook to call the shared local CI entrypoint
       and added a guard to keep hook documentation and behavior aligned.
+- [x] Added a MoonBit block-style guard and brought the placeholder root source
+      file under the project-wide `///|` separator convention.
 
 ## Working Rule
 
