@@ -241,6 +241,7 @@ def main(argv: list[str]) -> int:
         "parser/diagnostics.mbt",
         "parser/document_shell.mbt",
         "parser/end_tags.mbt",
+        "parser/fragment_shell.mbt",
         "parser/fragment_context.mbt",
         "parser/frameset.mbt",
         "parser/foreign_adjustments.mbt",
