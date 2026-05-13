@@ -254,6 +254,7 @@ def main(argv: list[str]) -> int:
         "cli/args.mbt",
         "cli/cli.mbt",
         "cli/model.mbt",
+        "cli/safety.mbt",
     }
     for path in sorted(required_cli_modules):
         if path not in tracked:
