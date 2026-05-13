@@ -412,6 +412,8 @@ reference implementation in `.repos/justhtml`.
       meta-charset sniffing, UTF-16 BOMs, and fail-closed prescan behavior.
 - [x] Added public transform regression tests for structural pipelines,
       attribute policy transforms, and callback/report event ordering.
+- [x] Added public serializer regression tests for pretty HTML, escaping
+      contexts, URL context output, and invalid programmatic serialization.
 
 ## Working Rule
 

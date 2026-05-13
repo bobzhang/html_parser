@@ -96,6 +96,7 @@ def main(argv: list[str]) -> int:
         "sanitize_fixtures_test.mbt",
         "sanitize_wbtest.mbt",
         "security_policy_regression_test.mbt",
+        "serializer_public_regression_test.mbt",
         "selector_public_regression_test.mbt",
         "stream_test.mbt",
         "token_stream_regression_test.mbt",
