@@ -231,6 +231,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Split selector limit validation helpers into `selector/validation.mbt`.
 - [x] Split selector match budget context into `selector/budget.mbt`.
 - [x] Split context-aware selector matching into `selector/limited.mbt`.
+- [x] Split shared selector node identity checks into `selector/identity.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
