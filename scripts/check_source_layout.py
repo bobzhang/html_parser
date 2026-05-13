@@ -141,6 +141,7 @@ def main(argv: list[str]) -> int:
         "transform/attributes.mbt",
         "transform/builders.mbt",
         "transform/decide.mbt",
+        "transform/linkify.mbt",
         "transform/node_drop.mbt",
         "transform/node_edit.mbt",
         "transform/normalization.mbt",
@@ -149,7 +150,6 @@ def main(argv: list[str]) -> int:
         "transform/reporting.mbt",
         "transform/selectors.mbt",
         "transform/spec.mbt",
-        "transform/transform.mbt",
         "transform/url_style.mbt",
         "transform/whitespace.mbt",
     }

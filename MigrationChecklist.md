@@ -351,6 +351,8 @@ reference implementation in `.repos/justhtml`.
       `transform/whitespace.mbt`.
 - [x] Split transform prune-empty post-order helpers into
       `transform/prune.mbt`.
+- [x] Split transform linkify DOM helpers into `transform/linkify.mbt` and
+      remove the empty legacy `transform/transform.mbt` catch-all.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
