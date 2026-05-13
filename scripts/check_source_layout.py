@@ -146,6 +146,7 @@ def main(argv: list[str]) -> int:
         "parser/api.mbt",
         "parser/diagnostics.mbt",
         "parser/foreign_content.mbt",
+        "parser/markup.mbt",
         "parser/parser.mbt",
         "parser/scaffold.mbt",
         "parser/state.mbt",

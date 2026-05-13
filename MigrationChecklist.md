@@ -260,6 +260,8 @@ reference implementation in `.repos/justhtml`.
       `parser/diagnostics.mbt`.
 - [x] Split parser text insertion, normalization, and null-character helpers
       into `parser/text.mbt`.
+- [x] Split parser comment, markup declaration, CDATA, and doctype scanners
+      into `parser/markup.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
