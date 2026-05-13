@@ -392,6 +392,8 @@ reference implementation in `.repos/justhtml`.
       appear more than once.
 - [x] Added a MoonBit test-name inventory guard so refactors cannot silently
       delete, rename, or skip tracked test declarations.
+- [x] Added public API golden regression tests for parse/query/render,
+      sanitize-plus-linkify transforms, and bytes/stream workflows.
 
 ## Working Rule
 

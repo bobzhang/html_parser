@@ -87,6 +87,7 @@ def main(argv: list[str]) -> int:
         "linkify_punycode_wbtest.mbt",
         "linkify_test.mbt",
         "linkify_wbtest.mbt",
+        "public_api_regression_test.mbt",
         "sanitize_fixtures_test.mbt",
         "sanitize_wbtest.mbt",
         "stream_test.mbt",
