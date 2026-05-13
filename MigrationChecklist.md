@@ -669,6 +669,8 @@ reference implementation in `.repos/justhtml`.
       `tokenizer/script_text_types.mbt`.
 - [x] Split shared tokenizer tag-tail scanning into
       `tokenizer/tag_tail.mbt`.
+- [x] Split private tokenizer doctype helper utilities into
+      `tokenizer/doctype_helpers.mbt`.
 
 ## Working Rule
 
