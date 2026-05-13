@@ -7,10 +7,23 @@ import {
 }
 
 // Values
+pub fn scan_comment_data(StringView, Int) -> CommentScan
 
 // Errors
 
 // Types and methods
+pub(all) struct CommentScan {
+  data : String
+  end : Int
+  eof : Bool
+  errors : Array[CommentScanError]
+}
+
+pub(all) struct CommentScanError {
+  code : String
+  offset : Int
+}
+
 pub(all) struct DoctypeInfo {
   name : String
   public_id : String?
