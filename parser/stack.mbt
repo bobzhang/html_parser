@@ -131,6 +131,39 @@ fn Parser::last_stack_index_of_node(self : Parser, target : @dom.Node) -> Int {
 }
 
 ///|
+fn Parser::open_html_element(self : Parser) -> @dom.Node? {
+  for node in self.stack {
+    if node.kind == Element && node.name == "html" {
+      return Some(node)
+    }
+  }
+  document_html_element(self.root)
+}
+
+///|
+fn Parser::stack_contains_node(self : Parser, target : @dom.Node) -> Bool {
+  for node in self.stack {
+    if physical_equal(node, target) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn Parser::remove_open_node(self : Parser, target : @dom.Node) -> Bool {
+  let mut index = 0
+  while index < self.stack.length() {
+    if physical_equal(self.stack[index], target) {
+      ignore(self.stack.remove(index))
+      return true
+    }
+    index += 1
+  }
+  false
+}
+
+///|
 fn Parser::insert_element_without_push(
   self : Parser,
   name : StringView,

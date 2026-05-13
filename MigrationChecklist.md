@@ -277,6 +277,8 @@ reference implementation in `.repos/justhtml`.
       `parser/template_context.mbt`.
 - [x] Split parser generic stack and insertion helpers into
       `parser/stack.mbt`.
+- [x] Moved remaining parser stack lookup/removal helpers into
+      `parser/stack.mbt`.
 - [x] Split parser document frameset helpers into `parser/frameset.mbt`.
 - [x] Split parser active-formatting and adoption-agency helpers into
       `parser/active_formatting.mbt`.
