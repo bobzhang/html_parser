@@ -138,6 +138,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_transform_modules = {
+        "transform/spec.mbt",
         "transform/transform.mbt",
     }
     for path in sorted(required_transform_modules):
