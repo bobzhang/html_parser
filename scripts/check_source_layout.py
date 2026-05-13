@@ -81,6 +81,7 @@ def main(argv: list[str]) -> int:
         "cli_wbtest.mbt",
         "dom_public_regression_test.mbt",
         "encoding_fixtures_test.mbt",
+        "encoding_public_regression_test.mbt",
         "golden_output_regression_test.mbt",
         "html_parser_test.mbt",
         "html_parser_wbtest.mbt",

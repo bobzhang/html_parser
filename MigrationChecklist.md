@@ -408,6 +408,8 @@ reference implementation in `.repos/justhtml`.
       UTF-16 offsets, configurable TLD/IP matching, and DOM skip tags.
 - [x] Added public CLI regression tests for read plans, reader/file output,
       cleanup security modes, strict errors, and argument diagnostics.
+- [x] Added public byte-decoding regression tests for transport labels,
+      meta-charset sniffing, UTF-16 BOMs, and fail-closed prescan behavior.
 
 ## Working Rule
 
