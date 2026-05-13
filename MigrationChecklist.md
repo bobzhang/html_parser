@@ -675,6 +675,8 @@ reference implementation in `.repos/justhtml`.
       `tokenizer/doctype_types.mbt`.
 - [x] Split tokenizer comment scanner public data definitions into
       `tokenizer/comment_scan_types.mbt`.
+- [x] Split tokenizer entity public data definitions into
+      `tokenizer/entity_types.mbt`.
 
 ## Working Rule
 

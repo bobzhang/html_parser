@@ -1,23 +1,4 @@
 ///|
-pub(all) struct EntityDecodeError {
-  code : String
-  offset : Int
-}
-
-///|
-pub(all) struct EntityDecodeResult {
-  data : String
-  errors : Array[EntityDecodeError]
-}
-
-///|
-pub(all) struct EntityConsumeResult {
-  value : String
-  next : Int
-  errors : Array[EntityDecodeError]
-}
-
-///|
 pub fn decode_entities(input : StringView, in_attribute~ : Bool) -> String {
   decode_entities_with_errors(input, in_attribute~).data
 }
