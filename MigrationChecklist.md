@@ -404,6 +404,8 @@ reference implementation in `.repos/justhtml`.
       malformed-token diagnostics, streaming events, and stream-sink copying.
 - [x] Added public selector regression tests for combinators, attribute
       operators, selector lists, pseudos, `query_one`, and `matches`.
+- [x] Added public linkify regression tests for mixed URL/email/domain matches,
+      UTF-16 offsets, configurable TLD/IP matching, and DOM skip tags.
 
 ## Working Rule
 
