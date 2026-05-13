@@ -1,0 +1,45 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/html_parser/stream"
+
+import {
+  "bobzhang/html_parser/tokenizer",
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) struct StreamDoctypeEvent {
+  name : String
+  public_id : String?
+  system_id : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum StreamEvent {
+  StreamStart(StreamStartEvent)
+  StreamText(String)
+  StreamEnd(String)
+  StreamComment(String)
+  StreamDoctype(StreamDoctypeEvent)
+} derive(Eq, @debug.Debug)
+
+pub struct StreamSink {
+  // private fields
+} derive(@debug.Debug)
+pub fn StreamSink::drain(Self) -> Array[StreamEvent]
+pub fn StreamSink::drain_each(Self, (StreamEvent) -> Unit) -> Unit
+pub fn StreamSink::new() -> Self
+pub fn StreamSink::process_characters(Self, String) -> Unit
+pub fn StreamSink::process_token(Self, @tokenizer.HtmlToken) -> Unit
+
+pub(all) struct StreamStartEvent {
+  name : String
+  attrs : Map[String, String?]
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

@@ -230,7 +230,8 @@ reference implementation in `.repos/justhtml`.
       compatibility builders and `pub using @dom { type Node }`.
 - [x] Extract tokenizer data structures.
 - [ ] Move tokenizer implementation into `tokenizer`.
-- [ ] Extract stream event API.
+- [x] Extract stream event API and sink.
+- [ ] Move stream parser/byte facade into `stream`.
 - [ ] Extract selector parsing and matching.
 - [ ] Extract HTML serializer and text extraction.
 - [ ] Extract Markdown conversion.
