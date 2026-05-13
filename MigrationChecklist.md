@@ -304,6 +304,8 @@ reference implementation in `.repos/justhtml`.
       `parser/template_table_context.mbt`.
 - [x] Split parser table end-tag and fragment-table guards into
       `parser/table_end_tags.mbt`.
+- [x] Split sanitizer policy/data type declarations into
+      `sanitize/types.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
