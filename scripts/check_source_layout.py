@@ -94,6 +94,7 @@ def main(argv: list[str]) -> int:
         "sanitize/policy.mbt",
         "sanitize/sanitize.mbt",
         "sanitize/types.mbt",
+        "sanitize/url.mbt",
     }
     for path in sorted(required_sanitize_modules):
         if path not in tracked:
