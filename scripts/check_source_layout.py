@@ -121,6 +121,7 @@ def main(argv: list[str]) -> int:
         "linkify/config.mbt",
         "linkify/dom.mbt",
         "linkify/host.mbt",
+        "linkify/href.mbt",
         "linkify/linkify.mbt",
         "linkify/punycode.mbt",
         "linkify/syntax.mbt",
