@@ -91,6 +91,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_sanitize_modules = {
+        "sanitize/css.mbt",
         "sanitize/policy.mbt",
         "sanitize/sanitize.mbt",
         "sanitize/types.mbt",
