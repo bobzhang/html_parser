@@ -65,6 +65,33 @@ test "linkify_dom supports config and custom skip tags" {
 }
 
 ///|
+test "linkify_dom supports config without custom skip tags" {
+  let doc = @html_parser.parse_fragment("<p>site.internal</p>")
+  ignore(
+    @html_parser.linkify_dom(
+      doc.root,
+      config=@html_parser.LinkifyConfig::with_extra_tlds(["internal"]),
+    ),
+  )
+  assert_eq(
+    doc.root.to_html(pretty=false),
+    "<p><a href=\"http://site.internal\">site.internal</a></p>",
+  )
+}
+
+///|
+test "linkify_dom supports custom skip tags without config" {
+  let doc = @html_parser.parse_fragment(
+    "<p>example.com</p><span>example.com</span>",
+  )
+  ignore(@html_parser.linkify_dom(doc.root, skip_tags=["span"]))
+  assert_eq(
+    doc.root.to_html(pretty=false),
+    "<p><a href=\"http://example.com\">example.com</a></p><span>example.com</span>",
+  )
+}
+
+///|
 test "linkify_dom handles standalone text nodes and empty text nodes" {
   let linked = @html_parser.linkify_dom(@html_parser.text("Go example.com now"))
   assert_eq(

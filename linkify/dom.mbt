@@ -6,10 +6,10 @@
 /// and `textarea`), while still processing normal children such as template
 /// contents.
 pub fn linkify_dom(
-  node : Node,
+  node : @dom.Node,
   config? : LinkifyConfig,
   skip_tags? : Array[String],
-) -> Node {
+) -> @dom.Node {
   let config = match config {
     Some(value) => value
     None => LinkifyConfig::new()
@@ -21,7 +21,7 @@ pub fn linkify_dom(
   let skip_set = linkify_dom_skip_tag_set(skip_tags)
   match node.kind {
     Text => {
-      let wrapper = fragment(children=[node])
+      let wrapper = @dom.fragment(children=[node])
       linkify_dom_children(wrapper, config, skip_set, false)
       if wrapper.children.length() == 1 {
         let only = wrapper.children[0]
@@ -34,7 +34,7 @@ pub fn linkify_dom(
     }
     Document | Fragment | Element => {
       let skip = node.kind == Element &&
-        skip_set.contains(lower_ascii(node.name))
+        skip_set.contains(@syn.lower_ascii(node.name))
       linkify_dom_children(node, config, skip_set, skip)
       node
     }
@@ -43,7 +43,7 @@ pub fn linkify_dom(
 }
 
 ///|
-fn linkify_default_dom_skip_tags() -> Array[String] {
+pub fn linkify_default_dom_skip_tags() -> Array[String] {
   ["a", "code", "pre", "script", "style", "textarea"]
 }
 
@@ -51,7 +51,7 @@ fn linkify_default_dom_skip_tags() -> Array[String] {
 fn linkify_dom_skip_tag_set(tags : Array[String]) -> Set[String] {
   let out : Set[String] = Set::default()
   for tag in tags {
-    let normalized = lower_ascii(tag.trim())
+    let normalized = @syn.lower_ascii(tag.trim())
     if normalized != "" {
       out.add(normalized)
     }
@@ -61,7 +61,7 @@ fn linkify_dom_skip_tag_set(tags : Array[String]) -> Set[String] {
 
 ///|
 fn linkify_dom_children(
-  parent : Node,
+  parent : @dom.Node,
   config : LinkifyConfig,
   skip_tags : Set[String],
   skip_linkify : Bool,
@@ -84,7 +84,7 @@ fn linkify_dom_children(
       }
       Element => {
         let child_skip = skip_linkify ||
-          skip_tags.contains(lower_ascii(child.name))
+          skip_tags.contains(@syn.lower_ascii(child.name))
         linkify_dom_children(child, config, skip_tags, child_skip)
         index += 1
       }
@@ -95,9 +95,9 @@ fn linkify_dom_children(
 
 ///|
 fn linkify_text_child_at(
-  parent : Node,
+  parent : @dom.Node,
   index : Int,
-  child : Node,
+  child : @dom.Node,
   config : LinkifyConfig,
 ) -> Int {
   let matches = find_links_with_config(child.data, config)
@@ -108,29 +108,30 @@ fn linkify_text_child_at(
 }
 
 ///|
-fn linkify_text_child_at_matches(
-  parent : Node,
+pub fn linkify_text_child_at_matches(
+  parent : @dom.Node,
   index : Int,
-  child : Node,
+  child : @dom.Node,
   matches : Array[LinkMatch],
 ) -> Int {
   if matches.is_empty() {
     return 0
   }
-  let replacements : Array[Node] = []
+  let replacements : Array[@dom.Node] = []
   let mut cursor = 0
   for m in matches {
     if m.start > cursor {
       match child.data.get_view(start=cursor, end=m.start) {
-        Some(prefix) if !prefix.is_empty() => replacements.push(text(prefix))
+        Some(prefix) if !prefix.is_empty() =>
+          replacements.push(@dom.text(prefix))
         _ => ()
       }
     }
     let ns = parent.ns.unwrap_or("html")
-    let anchor = element(
+    let anchor = @dom.element(
       "a",
       attrs={ "href": Some(m.href) },
-      children=[text(m.text)],
+      children=[@dom.text(m.text)],
       ns~,
     )
     replacements.push(anchor)
@@ -138,7 +139,7 @@ fn linkify_text_child_at_matches(
   }
   if cursor < child.data.length() {
     match child.data.get_view(start=cursor, end=child.data.length()) {
-      Some(tail) if !tail.is_empty() => replacements.push(text(tail))
+      Some(tail) if !tail.is_empty() => replacements.push(@dom.text(tail))
       _ => ()
     }
   }

@@ -1,0 +1,40 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/html_parser/linkify"
+
+import {
+  "bobzhang/html_parser/dom",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn find_links(StringView) -> Array[LinkMatch]
+
+pub fn find_links_with_config(StringView, LinkifyConfig) -> Array[LinkMatch]
+
+pub fn linkify_default_dom_skip_tags() -> Array[String]
+
+pub fn linkify_dom(@dom.Node, config? : LinkifyConfig, skip_tags? : Array[String]) -> @dom.Node
+
+pub fn linkify_text_child_at_matches(@dom.Node, Int, @dom.Node, Array[LinkMatch]) -> Int
+
+// Errors
+
+// Types and methods
+pub(all) struct LinkMatch {
+  start : Int
+  end : Int
+  text : String
+  href : String
+  kind : String
+} derive(Eq, @debug.Debug)
+
+pub struct LinkifyConfig {
+  // private fields
+} derive(@debug.Debug)
+pub fn LinkifyConfig::new(fuzzy_ip? : Bool, extra_tlds? : Array[String]) -> Self
+pub fn LinkifyConfig::with_extra_tlds(Array[String]) -> Self
+
+// Type aliases
+
+// Traits
+

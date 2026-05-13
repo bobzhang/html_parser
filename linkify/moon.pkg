@@ -1,0 +1,4 @@
+import {
+  "bobzhang/html_parser/dom" @dom,
+  "bobzhang/html_parser/internal/syntax" @syn,
+}

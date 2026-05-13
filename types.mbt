@@ -16,6 +16,12 @@ fn parser_error_category(code : StringView) -> String {
 pub type HtmlError = @core.HtmlError
 
 ///|
+pub using @link {type LinkifyConfig}
+
+///|
+pub using @link {type LinkMatch}
+
+///|
 pub using @sel {type SelectorLimits}
 
 ///|

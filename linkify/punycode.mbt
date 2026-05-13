@@ -21,16 +21,18 @@ let linkify_punycode_initial_n = 128
 
 ///|
 fn linkify_punycode_href(href : StringView) -> String {
-  if starts_with_case_insensitive(href, 0, "mailto:") {
+  if @syn.starts_with_case_insensitive(href, 0, "mailto:") {
     return href.to_owned()
   }
-  let (prefix, rest_start) = if starts_with_case_insensitive(href, 0, "http://") {
+  let (prefix, rest_start) = if @syn.starts_with_case_insensitive(
+      href, 0, "http://",
+    ) {
     ("http://", 7)
-  } else if starts_with_case_insensitive(href, 0, "https://") {
+  } else if @syn.starts_with_case_insensitive(href, 0, "https://") {
     ("https://", 8)
-  } else if starts_with_case_insensitive(href, 0, "ftp://") {
+  } else if @syn.starts_with_case_insensitive(href, 0, "ftp://") {
     ("ftp://", 6)
-  } else if starts_with_case_insensitive(href, 0, "//") {
+  } else if @syn.starts_with_case_insensitive(href, 0, "//") {
     ("//", 2)
   } else {
     ("", 0)

@@ -1315,6 +1315,11 @@ JustHTML from Python to MoonBit.
   such as `SanitizationPolicy::sanitize_attribute_value` on the owning
   `sanitize` package rather than defining public methods on a re-exported
   foreign type.
+- Moving linkify into its own package showed that feature-local whitebox tests
+  should avoid pulling higher-level packages back into a lower-level package.
+  Prefer direct DOM shape assertions over importing the serializer just to
+  compare HTML strings; this keeps the dependency graph pointed upward through
+  compatibility wrappers.
 - A moved feature package cannot add methods to root-owned types such as
   `ParsedHtml`. Keep those methods in the compatibility package as thin
   wrappers over the new package-level function.

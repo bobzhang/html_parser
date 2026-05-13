@@ -62,8 +62,6 @@ def main(argv: list[str]) -> int:
         "markdown.mbt",
         "table_normalize.mbt",
         "linkify.mbt",
-        "linkify_dom.mbt",
-        "linkify_punycode.mbt",
         "stream.mbt",
         "cli.mbt",
         "types.mbt",
@@ -112,6 +110,26 @@ def main(argv: list[str]) -> int:
             error(f"expected sanitize package test module is not tracked: {path}")
             ok = False
 
+    required_linkify_modules = {
+        "linkify/dom.mbt",
+        "linkify/linkify.mbt",
+        "linkify/punycode.mbt",
+    }
+    for path in sorted(required_linkify_modules):
+        if path not in tracked:
+            error(f"expected linkify package module is not tracked: {path}")
+            ok = False
+
+    required_linkify_tests = {
+        "linkify/dom_wbtest.mbt",
+        "linkify/linkify_wbtest.mbt",
+        "linkify/punycode_wbtest.mbt",
+    }
+    for path in sorted(required_linkify_tests):
+        if path not in tracked:
+            error(f"expected linkify package test module is not tracked: {path}")
+            ok = False
+
     required_root_tests = {
         "builder_public_regression_test.mbt",
         "cli_test.mbt",
@@ -125,12 +143,9 @@ def main(argv: list[str]) -> int:
         "html_parser_test.mbt",
         "html_parser_wbtest.mbt",
         "linkify_dom_test.mbt",
-        "linkify_dom_wbtest.mbt",
         "linkify_fixtures_test.mbt",
-        "linkify_punycode_wbtest.mbt",
         "linkify_public_regression_test.mbt",
         "linkify_test.mbt",
-        "linkify_wbtest.mbt",
         "parser_public_regression_test.mbt",
         "public_api_regression_test.mbt",
         "sanitize_fixtures_test.mbt",

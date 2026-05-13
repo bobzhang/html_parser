@@ -4,6 +4,7 @@ package "bobzhang/html_parser"
 import {
   "bobzhang/html_parser/core",
   "bobzhang/html_parser/dom",
+  "bobzhang/html_parser/linkify",
   "bobzhang/html_parser/sanitize",
   "bobzhang/html_parser/selector",
   "bobzhang/html_parser/serializer",
@@ -33,13 +34,13 @@ pub fn document(children? : Array[@dom.Node]) -> @dom.Node
 
 pub fn element(StringView, attrs? : Map[String, String?], children? : Array[@dom.Node], ns? : String) -> @dom.Node
 
-pub fn find_links(StringView) -> Array[LinkMatch]
+pub fn find_links(StringView) -> Array[@linkify.LinkMatch]
 
-pub fn find_links_with_config(StringView, LinkifyConfig) -> Array[LinkMatch]
+pub fn find_links_with_config(StringView, @linkify.LinkifyConfig) -> Array[@linkify.LinkMatch]
 
 pub fn fragment(children? : Array[@dom.Node]) -> @dom.Node
 
-pub fn linkify_dom(@dom.Node, config? : LinkifyConfig, skip_tags? : Array[String]) -> @dom.Node
+pub fn linkify_dom(@dom.Node, config? : @linkify.LinkifyConfig, skip_tags? : Array[String]) -> @dom.Node
 
 pub fn matches(@dom.Node, StringView) -> Bool
 
@@ -109,20 +110,6 @@ pub(all) struct FragmentContext {
 } derive(Eq, @debug.Debug)
 pub fn FragmentContext::new(StringView, ns? : String) -> Self
 
-pub(all) struct LinkMatch {
-  start : Int
-  end : Int
-  text : String
-  href : String
-  kind : String
-} derive(Eq, @debug.Debug)
-
-pub struct LinkifyConfig {
-  // private fields
-} derive(@debug.Debug)
-pub fn LinkifyConfig::new(fuzzy_ip? : Bool, extra_tlds? : Array[String]) -> Self
-pub fn LinkifyConfig::with_extra_tlds(Array[String]) -> Self
-
 pub struct ParsedHtml {
   root : @dom.Node
   errors : Array[@core.ParseError]
@@ -152,7 +139,7 @@ pub fn TransformSpec::edit_attrs(StringView, (@dom.Node) -> Map[String, String?]
 pub fn TransformSpec::edit_document((@dom.Node) -> Unit, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::empty(StringView, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::escape(StringView, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::linkify(config? : LinkifyConfig, skip_tags? : Array[String], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
+pub fn TransformSpec::linkify(config? : @linkify.LinkifyConfig, skip_tags? : Array[String], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::merge_attrs(StringView, attr~ : StringView, tokens~ : Array[String], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::prune_empty(StringView, strip_whitespace? : Bool, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::sanitize(policy? : @sanitize.SanitizationPolicy, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
@@ -170,6 +157,10 @@ pub using @serializer {type HtmlContext}
 pub using @core {type HtmlError}
 
 pub using @tokenizer {type HtmlToken}
+
+pub using @linkify {type LinkMatch}
+
+pub using @linkify {type LinkifyConfig}
 
 pub using @dom {type Node}
 
