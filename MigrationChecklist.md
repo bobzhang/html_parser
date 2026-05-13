@@ -323,6 +323,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split tokenizer state, cursor helpers, and tokenizer diagnostics into
       `tokenizer/state.mbt`.
 - [x] Split tokenizer dispatch loop into `tokenizer/driver.mbt`.
+- [x] Split tokenizer named entity lookup tables into
+      `tokenizer/named_entities.mbt`.
 - [x] Split parser attribute scanners into `parser/attributes.mbt`.
 - [x] Split document scaffolding and selected-content helpers into
       `parser/scaffold.mbt`.
