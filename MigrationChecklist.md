@@ -253,6 +253,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Split linkify host and IPv4 helpers into `linkify/host.mbt`.
 - [x] Split linkify href and scheme helpers into `linkify/href.mbt`.
 - [x] Split linkify candidate validation into `linkify/validate.mbt`.
+- [x] Split linkify candidate scanning helpers into `linkify/scan.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.

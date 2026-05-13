@@ -124,6 +124,7 @@ def main(argv: list[str]) -> int:
         "linkify/href.mbt",
         "linkify/linkify.mbt",
         "linkify/punycode.mbt",
+        "linkify/scan.mbt",
         "linkify/syntax.mbt",
         "linkify/tld.mbt",
         "linkify/validate.mbt",
