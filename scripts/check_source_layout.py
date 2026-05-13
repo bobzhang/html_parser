@@ -149,6 +149,7 @@ def main(argv: list[str]) -> int:
         "selector/syntax.mbt",
         "selector/text.mbt",
         "selector/traversal.mbt",
+        "selector/validation.mbt",
     }
     for path in sorted(required_selector_modules):
         if path not in tracked:
