@@ -406,6 +406,8 @@ reference implementation in `.repos/justhtml`.
       operators, selector lists, pseudos, `query_one`, and `matches`.
 - [x] Added public linkify regression tests for mixed URL/email/domain matches,
       UTF-16 offsets, configurable TLD/IP matching, and DOM skip tags.
+- [x] Added public CLI regression tests for read plans, reader/file output,
+      cleanup security modes, strict errors, and argument diagnostics.
 
 ## Working Rule
 
