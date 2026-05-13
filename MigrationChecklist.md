@@ -262,6 +262,8 @@ reference implementation in `.repos/justhtml`.
       `markdown/link.mbt`.
 - [x] Split Markdown pre/list/blockquote block walkers into
       `markdown/blocks.mbt`.
+- [x] Split Markdown recursive walking and tag-classification helpers into
+      `markdown/walk.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.

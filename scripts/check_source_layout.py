@@ -272,6 +272,7 @@ def main(argv: list[str]) -> int:
         "markdown/code.mbt",
         "markdown/link.mbt",
         "markdown/markdown.mbt",
+        "markdown/walk.mbt",
     }
     for path in sorted(required_markdown_modules):
         if path not in tracked:
