@@ -256,6 +256,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split parser state, cursor helpers, and node-origin helpers into
       `parser/state.mbt`.
 - [x] Split parser syntax-adapter helpers into `parser/syntax.mbt`.
+- [x] Split parser diagnostics and EOF error helpers into
+      `parser/diagnostics.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
