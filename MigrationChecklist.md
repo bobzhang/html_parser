@@ -292,6 +292,8 @@ reference implementation in `.repos/justhtml`.
       `parser/end_tags.mbt`.
 - [x] Split parser start-tag scanner and invalid-start fallback into
       `parser/start_tags.mbt`.
+- [x] Split parser foreign SVG/MathML tag and attribute adjustment helpers into
+      `parser/foreign_adjustments.mbt`.
 - [x] Moved parser fragment shell start-tag helpers into
       `parser/document_shell.mbt`.
 - [x] Split parser table-context and foster-parenting helpers into

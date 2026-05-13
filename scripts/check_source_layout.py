@@ -154,6 +154,7 @@ def main(argv: list[str]) -> int:
         "parser/end_tags.mbt",
         "parser/fragment_context.mbt",
         "parser/frameset.mbt",
+        "parser/foreign_adjustments.mbt",
         "parser/foreign_content.mbt",
         "parser/markup.mbt",
         "parser/parser.mbt",
