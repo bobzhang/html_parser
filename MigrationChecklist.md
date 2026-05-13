@@ -423,6 +423,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Extended public sanitizer policy regressions for collect/reset copying,
       URL filter callback order, document policy shell preservation, and CSS
       preset copy semantics.
+- [x] Added public constructor/default regressions for parse errors, fragment
+      contexts, selector limits, and linkify configuration copying.
 
 ## Working Rule
 
