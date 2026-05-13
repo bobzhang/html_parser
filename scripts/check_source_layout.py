@@ -260,6 +260,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_serializer_modules = {
+        "serializer/compact.mbt",
         "serializer/elements.mbt",
         "serializer/escape.mbt",
         "serializer/rawtext.mbt",
