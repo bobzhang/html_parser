@@ -138,6 +138,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_selector_modules = {
+        "selector/basic.mbt",
         "selector/limits.mbt",
         "selector/selector.mbt",
         "selector/syntax.mbt",

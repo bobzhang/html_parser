@@ -215,6 +215,8 @@ reference implementation in `.repos/justhtml`.
       an unreachable inner fallback.
 - [x] Refactored class-token selector scanning to use Unicode-safe
       `StringView` iteration while preserving UTF-16 token offsets.
+- [x] Split basic selector tag, id, and class matching helpers into
+      `selector/basic.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
