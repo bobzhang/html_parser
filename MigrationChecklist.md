@@ -357,6 +357,8 @@ reference implementation in `.repos/justhtml`.
       `parser/foreign_content.mbt`.
 - [x] Split parser foreign table recovery helpers into
       `parser/foreign_table_recovery.mbt`.
+- [x] Split parser foreign namespace and integration-point helpers into
+      `parser/foreign_namespace.mbt`.
 - [x] Split parser tree-builder scope and open-element helpers into
       `parser/scope.mbt`.
 - [x] Split parser select insertion-mode helpers and select tag handling into
