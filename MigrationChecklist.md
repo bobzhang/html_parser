@@ -400,6 +400,8 @@ reference implementation in `.repos/justhtml`.
       stripping, URL proxy rules, and collect/raise unsafe handling modes.
 - [x] Added public DOM graph regression tests for mutation invariants, detached
       clones, child/attribute copies, and UTF-16 source-location metadata.
+- [x] Added public token/stream regression tests for structured tokens,
+      malformed-token diagnostics, streaming events, and stream-sink copying.
 
 ## Working Rule
 
