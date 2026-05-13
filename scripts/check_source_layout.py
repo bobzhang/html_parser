@@ -76,6 +76,7 @@ def main(argv: list[str]) -> int:
         "tokenizer/source.mbt",
         "tokenizer/special_text.mbt",
         "tokenizer/special_text_tokens.mbt",
+        "tokenizer/text.mbt",
         "tokenizer/types.mbt",
     }
     for path in sorted(required_tokenizer_modules):
