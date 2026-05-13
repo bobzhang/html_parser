@@ -163,14 +163,9 @@ pub fn Node::origin_line(Self) -> Int?
 pub fn Node::origin_location(Self) -> (Int, Int)?
 pub fn Node::origin_offset(Self) -> Int?
 pub fn Node::parent(Self) -> Self?
-pub fn Node::query(Self, StringView) -> Array[Self]
-pub fn Node::query_one(Self, StringView) -> Self?
 pub fn Node::remove_child(Self, Self) -> Unit
 pub fn Node::replace_child(Self, Self, Self) -> Self?
 pub fn Node::text(Self) -> String
-pub fn Node::to_html(Self, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String raise @core.HtmlError
-pub fn Node::to_markdown(Self, html_passthrough? : Bool) -> String raise @core.HtmlError
-pub fn Node::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
 
 pub(all) enum NodeKind {
   Document

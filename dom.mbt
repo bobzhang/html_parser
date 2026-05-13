@@ -426,7 +426,7 @@ pub fn Node::clone_node(
 ///|
 /// Return this node's descendant text with no separator and no trimming.
 pub fn Node::text(self : Node) -> String {
-  self.to_text(separator="", strip=false)
+  to_text(self, separator="", strip=false)
 }
 
 ///|

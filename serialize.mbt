@@ -962,21 +962,6 @@ fn render_node_html(
 }
 
 ///|
-/// Serialize this node and its descendants as HTML or an escaped context value.
-///
-/// `pretty=false` emits compact HTML. `context` controls escaping for raw HTML,
-/// JavaScript strings, HTML attribute values, or URL text extraction.
-pub fn Node::to_html(
-  self : Node,
-  pretty? : Bool = true,
-  indent_size? : Int = 2,
-  context? : HtmlContext = Html,
-  quote? : Char = '"',
-) -> String raise HtmlError {
-  to_html(self, pretty~, indent_size~, context~, quote~)
-}
-
-///|
 /// Serialize a node as HTML.
 pub fn to_html(
   node : Node,
@@ -1138,20 +1123,6 @@ fn text_chunks_to_string(
     }
   }
   texts.join(separator)
-}
-
-///|
-/// Extract descendant text from this node.
-///
-/// `separator` is inserted between text chunks. Set
-/// `separator_blocks_only=true` to join only block-level text groups.
-pub fn Node::to_text(
-  self : Node,
-  separator? : String = " ",
-  strip? : Bool = true,
-  separator_blocks_only? : Bool = false,
-) -> String {
-  to_text(self, separator~, strip~, separator_blocks_only~)
 }
 
 ///|
@@ -3062,12 +3033,6 @@ fn walk_query(
 }
 
 ///|
-/// Return all descendants that match a CSS selector.
-pub fn Node::query(self : Node, selector : StringView) -> Array[Node] {
-  query(self, selector)
-}
-
-///|
 /// Return all descendants of `root` that match a CSS selector.
 pub fn query(root : Node, selector : StringView) -> Array[Node] {
   let out : Array[Node] = []
@@ -3077,12 +3042,6 @@ pub fn query(root : Node, selector : StringView) -> Array[Node] {
     walk_query(child, selector, out, allow_non_elements, visited)
   }
   out
-}
-
-///|
-/// Return the first descendant that matches a CSS selector.
-pub fn Node::query_one(self : Node, selector : StringView) -> Node? {
-  query_one(self, selector)
 }
 
 ///|

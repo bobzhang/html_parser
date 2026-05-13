@@ -790,19 +790,6 @@ fn markdown_node_inside_fragment(node : Node) -> Bool {
 }
 
 ///|
-/// Render this DOM node and its descendants as Markdown.
-///
-/// The converter handles common block and inline HTML elements and escapes
-/// Markdown-sensitive text. Set `html_passthrough=true` to preserve unsupported
-/// element nodes as raw HTML instead of flattening their textual content.
-pub fn Node::to_markdown(
-  self : Node,
-  html_passthrough? : Bool = false,
-) -> String raise HtmlError {
-  to_markdown(self, html_passthrough~)
-}
-
-///|
 /// Render a DOM node and its descendants as Markdown.
 pub fn to_markdown(
   node : Node,

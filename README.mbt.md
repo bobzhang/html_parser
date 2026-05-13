@@ -97,7 +97,7 @@ test "readme sanitize dom example" {
     doc.root,
     policy=@html_parser.default_sanitization_policy(),
   )
-  assert_eq(clean.to_html(pretty=false), "<p>ok</p>")
+  assert_eq(@html_parser.to_html(clean, pretty=false), "<p>ok</p>")
   let fragment = @html_parser.parse_fragment(
     "<p onclick=alert(1)>ok</p><script>alert(1)</script>",
     sanitize=true,
