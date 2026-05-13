@@ -285,6 +285,8 @@ reference implementation in `.repos/justhtml`.
       `parser/document_shell.mbt`.
 - [x] Moved parser document/fragment end-tag shell helpers into
       `parser/document_shell.mbt`.
+- [x] Split parser end-tag scanner and remaining body end-tag helpers into
+      `parser/end_tags.mbt`.
 - [x] Moved parser fragment shell start-tag helpers into
       `parser/document_shell.mbt`.
 - [x] Split parser table-context and foster-parenting helpers into
