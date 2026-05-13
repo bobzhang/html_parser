@@ -222,6 +222,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Split structural pseudo selector helpers into `selector/structural.mbt`.
 - [x] Split text pseudo selector argument parsing and text-content helpers into
       `selector/text.mbt`.
+- [x] Split pseudo selector dispatch and validation into `selector/pseudo.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
