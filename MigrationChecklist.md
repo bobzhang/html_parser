@@ -228,7 +228,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Remove public feature methods from the root `Node` API.
 - [x] Extract DOM node types, builders, and DOM methods into `dom`, with root
       compatibility builders and `pub using @dom { type Node }`.
-- [ ] Extract tokenizer data structures and tokenizer implementation.
+- [x] Extract tokenizer data structures.
+- [ ] Move tokenizer implementation into `tokenizer`.
 - [ ] Extract stream event API.
 - [ ] Extract selector parsing and matching.
 - [ ] Extract HTML serializer and text extraction.

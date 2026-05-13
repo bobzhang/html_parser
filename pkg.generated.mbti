@@ -4,6 +4,7 @@ package "bobzhang/html_parser"
 import {
   "bobzhang/html_parser/core",
   "bobzhang/html_parser/dom",
+  "bobzhang/html_parser/tokenizer",
   "moonbitlang/core/debug",
 }
 
@@ -72,7 +73,7 @@ pub fn to_test_format(@dom.Node) -> String
 
 pub fn to_text(@dom.Node, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
 
-pub fn tokenize(StringView, collect_errors? : Bool, xml_coercion? : Bool) -> TokenizedHtml
+pub fn tokenize(StringView, collect_errors? : Bool, xml_coercion? : Bool) -> @tokenizer.TokenizedHtml
 
 // Errors
 
@@ -104,13 +105,6 @@ pub(all) enum DisallowedTagHandling {
   Drop
 } derive(Eq, @debug.Debug)
 
-pub(all) struct DoctypeInfo {
-  name : String
-  public_id : String?
-  system_id : String?
-  force_quirks : Bool
-} derive(Eq, @debug.Debug)
-
 pub(all) struct FragmentContext {
   tag_name : String
   ns : String?
@@ -122,14 +116,6 @@ pub(all) enum HtmlContext {
   JsString
   HtmlAttrValue
   Url
-} derive(Eq, @debug.Debug)
-
-pub(all) enum HtmlToken {
-  Tag(TagToken)
-  Characters(String)
-  CommentToken(String)
-  DoctypeToken(DoctypeInfo)
-  Eof
 } derive(Eq, @debug.Debug)
 
 pub(all) struct LinkMatch {
@@ -197,29 +183,12 @@ pub fn StreamSink::drain(Self) -> Array[StreamEvent]
 pub fn StreamSink::drain_each(Self, (StreamEvent) -> Unit) -> Unit
 pub fn StreamSink::new() -> Self
 pub fn StreamSink::process_characters(Self, String) -> Unit
-pub fn StreamSink::process_token(Self, HtmlToken) -> Unit
+pub fn StreamSink::process_token(Self, @tokenizer.HtmlToken) -> Unit
 
 pub(all) struct StreamStartEvent {
   name : String
   attrs : Map[String, String?]
 } derive(Eq, @debug.Debug)
-
-pub(all) enum TagKind {
-  StartTag
-  EndTag
-} derive(Eq, @debug.Debug)
-
-pub(all) struct TagToken {
-  kind : TagKind
-  name : String
-  attrs : Map[String, String?]
-  self_closing : Bool
-} derive(Eq, @debug.Debug)
-
-pub(all) struct TokenizedHtml {
-  tokens : Array[HtmlToken]
-  errors : Array[@core.ParseError]
-} derive(@debug.Debug)
 
 pub struct TransformSpec {
   // private fields
@@ -286,13 +255,23 @@ pub struct UrlRule {
 pub fn UrlRule::new(allowed_schemes? : Array[String], allowed_hosts? : Array[String], allow_fragment? : Bool, resolve_protocol_relative? : String?, handling? : UrlHandling, allow_relative? : Bool, proxy? : UrlProxy) -> Self
 
 // Type aliases
+pub using @tokenizer {type DoctypeInfo}
+
 pub using @core {type HtmlError}
+
+pub using @tokenizer {type HtmlToken}
 
 pub using @dom {type Node}
 
 pub using @dom {type NodeKind}
 
 pub using @core {type ParseError}
+
+pub using @tokenizer {type TagKind}
+
+pub using @tokenizer {type TagToken}
+
+pub using @tokenizer {type TokenizedHtml}
 
 // Traits
 

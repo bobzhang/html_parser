@@ -1,0 +1,49 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/html_parser/tokenizer"
+
+import {
+  "bobzhang/html_parser/core",
+  "moonbitlang/core/debug",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub(all) struct DoctypeInfo {
+  name : String
+  public_id : String?
+  system_id : String?
+  force_quirks : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) enum HtmlToken {
+  Tag(TagToken)
+  Characters(String)
+  CommentToken(String)
+  DoctypeToken(DoctypeInfo)
+  Eof
+} derive(Eq, @debug.Debug)
+
+pub(all) enum TagKind {
+  StartTag
+  EndTag
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TagToken {
+  kind : TagKind
+  name : String
+  attrs : Map[String, String?]
+  self_closing : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) struct TokenizedHtml {
+  tokens : Array[HtmlToken]
+  errors : Array[@core.ParseError]
+} derive(@debug.Debug)
+
+// Type aliases
+
+// Traits
+
