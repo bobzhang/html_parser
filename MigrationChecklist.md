@@ -372,6 +372,8 @@ reference implementation in `.repos/justhtml`.
       `parser/document_shell.mbt`.
 - [x] Split parser fragment shell start/end handlers into
       `parser/fragment_shell.mbt`.
+- [x] Split parser disabled head `noscript` handlers into
+      `parser/head_noscript.mbt`.
 - [x] Split parser end-tag scanner and remaining body end-tag helpers into
       `parser/end_tags.mbt`.
 - [x] Split parser start-tag scanner and invalid-start fallback into
