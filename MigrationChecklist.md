@@ -253,6 +253,8 @@ reference implementation in `.repos/justhtml`.
       focused `parser/api.mbt` file.
 - [x] Split document scaffolding and selected-content helpers into
       `parser/scaffold.mbt`.
+- [x] Split parser state, cursor helpers, and node-origin helpers into
+      `parser/state.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
