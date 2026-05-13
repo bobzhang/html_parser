@@ -396,6 +396,8 @@ reference implementation in `.repos/justhtml`.
       sanitize-plus-linkify transforms, and bytes/stream workflows.
 - [x] Added golden output regression tests for mixed HTML serialization,
       Markdown conversion, and CLI end-user output modes.
+- [x] Added public sanitizer security-policy regression tests for default
+      stripping, URL proxy rules, and collect/raise unsafe handling modes.
 
 ## Working Rule
 
