@@ -21,20 +21,11 @@ pub fn stream(html : StringView) -> Array[StreamEvent] {
 ///|
 /// Parse an HTML string and emit streaming events incrementally.
 pub fn stream_each(html : StringView, emit : (StreamEvent) -> Unit) -> Unit {
-  let tokenizer = SourceTokenizer::new(
-    html,
-    collect_errors=false,
-    xml_coercion=false,
-  )
   let sink = StreamSink::new()
-  while !tokenizer.is_eof() {
-    tokenizer.tokens.clear()
-    ignore(tokenizer.step())
-    for token in tokenizer.tokens {
-      sink.process_token(token)
-    }
+  @tok.tokenize_each(html, fn(token) {
+    sink.process_token(token)
     sink.drain_each(emit)
-  }
+  })
   sink.drain_each(emit)
 }
 

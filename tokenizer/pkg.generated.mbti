@@ -43,6 +43,10 @@ pub fn scan_script_text(StringView, Int) -> ScriptTextScan
 
 pub fn special_text_decodes_entities(StringView) -> Bool
 
+pub fn tokenize(StringView, collect_errors? : Bool, xml_coercion? : Bool) -> TokenizedHtml
+
+pub fn tokenize_each(StringView, (HtmlToken) -> Unit, xml_coercion? : Bool) -> Unit
+
 // Errors
 
 // Types and methods

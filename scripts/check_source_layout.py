@@ -78,6 +78,7 @@ def main(argv: list[str]) -> int:
         "tokenizer/comment_scan.mbt",
         "tokenizer/doctype.mbt",
         "tokenizer/entity.mbt",
+        "tokenizer/source.mbt",
         "tokenizer/special_text.mbt",
         "tokenizer/types.mbt",
     }
@@ -87,6 +88,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_tokenizer_tests = {
+        "tokenizer/source_wbtest.mbt",
         "tokenizer/special_text_wbtest.mbt",
     }
     for path in sorted(required_tokenizer_tests):

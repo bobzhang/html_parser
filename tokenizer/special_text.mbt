@@ -289,6 +289,23 @@ pub fn special_text_decodes_entities(name : StringView) -> Bool {
 }
 
 ///|
+fn is_special_text_element(name : StringView) -> Bool {
+  match name {
+    "iframe"
+    | "noembed"
+    | "noframes"
+    | "noscript"
+    | "plaintext"
+    | "script"
+    | "style"
+    | "title"
+    | "textarea"
+    | "xmp" => true
+    _ => false
+  }
+}
+
+///|
 pub fn find_matching_end_tag(
   input : StringView,
   start : Int,
