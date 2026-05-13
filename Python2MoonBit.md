@@ -509,8 +509,9 @@ JustHTML from Python to MoonBit.
   not need to mimic tuple-shaped dynamic values; prefer a typed `StreamEvent`
   enum with small event structs, and coalesce adjacent `Characters` tokens into
   one `StreamText` event to preserve the Python-observable behavior. For byte
-  input, reuse the same `decode_html_bytes` helper as `parse_bytes`; otherwise
-  stream and parser entry points drift on BOM and meta-charset handling.
+  input, reuse the same `@enc.decode_html_bytes` helper as `parse_bytes`;
+  otherwise stream and parser entry points drift on BOM and meta-charset
+  handling.
 - Python can expose streaming with `yield`. In MoonBit, a callback API such as
   `stream_each` is a closer fit for incremental delivery; keep the reusable
   sink responsible for flushing pending text before non-text events and for

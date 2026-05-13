@@ -9,6 +9,10 @@ import {
 // Values
 pub fn stream(StringView) -> Array[StreamEvent]
 
+pub fn stream_bytes(BytesView, encoding? : String) -> Array[StreamEvent]
+
+pub fn stream_bytes_each(BytesView, (StreamEvent) -> Unit, encoding? : String) -> Unit
+
 pub fn stream_each(StringView, (StreamEvent) -> Unit) -> Unit
 
 // Errors

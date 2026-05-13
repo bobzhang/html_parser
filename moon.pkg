@@ -1,10 +1,10 @@
 import {
   "bobzhang/html_parser/core" @core,
   "bobzhang/html_parser/dom" @dom,
+  "bobzhang/html_parser/internal/encoding" @enc,
   "bobzhang/html_parser/internal/syntax" @syn,
   "bobzhang/html_parser/stream" @stream,
   "bobzhang/html_parser/tokenizer" @tok,
-  "moonbitlang/core/encoding/utf16" @utf16,
   "moonbitlang/core/encoding/utf8" @utf8,
 }
 

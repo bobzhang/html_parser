@@ -417,7 +417,7 @@ fn cli_parse_document(
   options : CliOptions,
 ) -> ParsedHtml raise HtmlError {
   if options.fragment {
-    let (decoded, _) = decode_html_bytes(input, None)
+    let (decoded, _) = @enc.decode_html_bytes(input, None)
     parse_fragment(
       decoded,
       context=FragmentContext::new("div"),

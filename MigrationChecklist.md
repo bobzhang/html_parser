@@ -237,9 +237,10 @@ reference implementation in `.repos/justhtml`.
 - [x] Move tokenizer entity decoding helpers into `tokenizer`.
 - [x] Move tokenizer special-text scanners into `tokenizer`.
 - [x] Move tokenizer implementation into `tokenizer`.
+- [x] Extract shared byte decoder into `internal/encoding`.
 - [x] Extract stream event API and sink.
 - [x] Move string stream facade into `stream`.
-- [ ] Move stream byte facade into `stream`.
+- [x] Move stream byte facade into `stream`.
 - [ ] Extract selector parsing and matching.
 - [ ] Extract HTML serializer and text extraction.
 - [ ] Extract Markdown conversion.

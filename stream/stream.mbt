@@ -49,6 +49,35 @@ pub fn stream_each(html : StringView, emit : (StreamEvent) -> Unit) -> Unit {
 }
 
 ///|
+/// Decode HTML bytes and return streaming events.
+///
+/// When `encoding` is omitted, the same byte-sniffing path used by
+/// `parse_bytes` chooses the input encoding.
+pub fn stream_bytes(
+  input : BytesView,
+  encoding? : String,
+) -> Array[StreamEvent] {
+  let events : Array[StreamEvent] = []
+  let (decoded, _) = @enc.decode_html_bytes(input, encoding)
+  stream_each(decoded, fn(event) { events.push(event) })
+  events
+}
+
+///|
+/// Decode HTML bytes and emit streaming events incrementally.
+///
+/// When `encoding` is omitted, the same byte-sniffing path used by
+/// `parse_bytes` chooses the input encoding.
+pub fn stream_bytes_each(
+  input : BytesView,
+  emit : (StreamEvent) -> Unit,
+  encoding? : String,
+) -> Unit {
+  let (decoded, _) = @enc.decode_html_bytes(input, encoding)
+  stream_each(decoded, emit)
+}
+
+///|
 /// Mutable sink that converts tokenizer tokens into coalesced stream events.
 pub struct StreamSink {
   priv events : Array[StreamEvent]

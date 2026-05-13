@@ -1,0 +1,14 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/html_parser/internal/encoding"
+
+// Values
+pub fn decode_html_bytes(BytesView, String?) -> (String, String)
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

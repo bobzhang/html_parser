@@ -67,6 +67,14 @@ test "stream_bytes decodes transport and sniffed encodings" {
       StreamEnd("p"),
     ],
   )
+  assert_true(
+    @html_parser.stream_bytes(b"<p>\xe2\x82\xac</p>", encoding="utf-8") ==
+    [
+      StreamStart({ name: "p", attrs: {} }),
+      StreamText("\u{20AC}"),
+      StreamEnd("p"),
+    ],
+  )
 }
 
 ///|
@@ -114,6 +122,21 @@ test "stream_each emits events incrementally" {
   })
   assert_true(
     bytes_events ==
+    [
+      StreamStart({ name: "p", attrs: {} }),
+      StreamText("\u{20AC}"),
+      StreamEnd("p"),
+    ],
+  )
+
+  let explicit_bytes_events : Array[@html_parser.StreamEvent] = []
+  @html_parser.stream_bytes_each(
+    b"<p>\xe2\x82\xac</p>",
+    fn(event) { explicit_bytes_events.push(event) },
+    encoding="utf-8",
+  )
+  assert_true(
+    explicit_bytes_events ==
     [
       StreamStart({ name: "p", attrs: {} }),
       StreamText("\u{20AC}"),

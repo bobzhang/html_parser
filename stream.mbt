@@ -31,10 +31,10 @@ pub fn stream_bytes(
   input : BytesView,
   encoding? : String,
 ) -> Array[StreamEvent] {
-  let events : Array[StreamEvent] = []
-  let (decoded, _) = decode_html_bytes(input, encoding)
-  stream_each(decoded, fn(event) { events.push(event) })
-  events
+  match encoding {
+    Some(value) => @stream.stream_bytes(input, encoding=value)
+    None => @stream.stream_bytes(input)
+  }
 }
 
 ///|
@@ -47,6 +47,8 @@ pub fn stream_bytes_each(
   emit : (StreamEvent) -> Unit,
   encoding? : String,
 ) -> Unit {
-  let (decoded, _) = decode_html_bytes(input, encoding)
-  stream_each(decoded, emit)
+  match encoding {
+    Some(value) => @stream.stream_bytes_each(input, emit, encoding=value)
+    None => @stream.stream_bytes_each(input, emit)
+  }
 }

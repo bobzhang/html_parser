@@ -1,0 +1,5 @@
+import {
+  "bobzhang/html_parser/tokenizer" @tok,
+  "moonbitlang/core/encoding/utf16" @utf16,
+  "moonbitlang/core/encoding/utf8" @utf8,
+}
