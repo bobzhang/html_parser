@@ -69,6 +69,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_tokenizer_modules = {
+        "tokenizer/attributes.mbt",
         "tokenizer/comment_scan.mbt",
         "tokenizer/doctype.mbt",
         "tokenizer/entity.mbt",
