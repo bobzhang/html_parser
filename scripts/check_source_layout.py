@@ -98,6 +98,7 @@ def main(argv: list[str]) -> int:
         "sanitize/observer.mbt",
         "sanitize/policy.mbt",
         "sanitize/sanitize.mbt",
+        "sanitize/syntax.mbt",
         "sanitize/text.mbt",
         "sanitize/types.mbt",
         "sanitize/url.mbt",
