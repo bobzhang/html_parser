@@ -142,6 +142,7 @@ def main(argv: list[str]) -> int:
         "selector/basic.mbt",
         "selector/limits.mbt",
         "selector/selector.mbt",
+        "selector/structural.mbt",
         "selector/syntax.mbt",
     }
     for path in sorted(required_selector_modules):
