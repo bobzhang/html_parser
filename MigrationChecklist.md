@@ -251,6 +251,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Extract CLI package.
 - [x] Split parser public entrypoints and `ParsedHtml` result methods into a
       focused `parser/api.mbt` file.
+- [x] Split document scaffolding and selected-content helpers into
+      `parser/scaffold.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
