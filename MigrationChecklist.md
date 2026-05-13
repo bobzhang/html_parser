@@ -321,6 +321,8 @@ reference implementation in `.repos/justhtml`.
       `tokenizer/doctype_tokens.mbt`.
 - [x] Split tokenizer doctype value normalization and EOF helpers into
       `tokenizer/doctype_values.mbt`.
+- [x] Split tokenizer doctype system-identifier parsing into
+      `tokenizer/doctype_system.mbt`.
 - [x] Split tokenizer start/end tag token emission into `tokenizer/tags.mbt`.
 - [x] Split tokenizer state, cursor helpers, and tokenizer diagnostics into
       `tokenizer/state.mbt`.

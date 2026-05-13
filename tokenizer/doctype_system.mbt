@@ -1,0 +1,124 @@
+///|
+fn doctype_after_system_identifier(
+  input : StringView,
+  after_system : Int,
+  closed : Bool,
+  errors : Array[DoctypeExternalError],
+) -> Bool {
+  let next = skip_ascii_whitespace_in_view(input, after_system)
+  if next >= input.length() {
+    if closed {
+      false
+    } else {
+      push_doctype_external_error(
+        errors,
+        "eof-in-doctype",
+        doctype_eof_error_offset(input),
+      )
+      true
+    }
+  } else {
+    push_doctype_external_error(
+      errors, "unexpected-character-after-doctype-system-identifier", next,
+    )
+    false
+  }
+}
+
+///|
+fn parse_doctype_system_identifier_at(
+  input : StringView,
+  quote_pos : Int,
+  closed : Bool,
+  errors : Array[DoctypeExternalError],
+) -> (String?, Bool) {
+  let (system_id, after_system, system_closed) = parse_quoted_doctype_value_at(
+    input, quote_pos, errors,
+  )
+  if !system_closed {
+    if closed {
+      push_doctype_external_error(
+        errors,
+        "abrupt-doctype-system-identifier",
+        input.length(),
+      )
+    } else {
+      push_doctype_external_error(
+        errors,
+        "eof-in-doctype-system-identifier",
+        doctype_eof_error_offset(input),
+      )
+    }
+    (system_id, true)
+  } else {
+    (
+      system_id,
+      doctype_after_system_identifier(input, after_system, closed, errors),
+    )
+  }
+}
+
+///|
+fn parse_doctype_system_after_keyword(
+  input : StringView,
+  after_keyword : Int,
+  closed : Bool,
+  errors : Array[DoctypeExternalError],
+) -> (String?, Bool) {
+  match input.get_char(after_keyword) {
+    None =>
+      if closed {
+        push_doctype_external_error(
+          errors,
+          "missing-doctype-system-identifier",
+          input.length(),
+        )
+        (None, true)
+      } else {
+        push_doctype_external_error(
+          errors,
+          "missing-quote-before-doctype-system-identifier",
+          after_keyword - 1,
+        )
+        (None, true)
+      }
+    Some(ch) if ch.is_ascii_whitespace() => {
+      let id_pos = skip_ascii_whitespace_in_view(input, after_keyword)
+      if id_pos >= input.length() {
+        push_doctype_external_error(
+          errors,
+          "missing-doctype-system-identifier",
+          if closed {
+            input.length()
+          } else {
+            doctype_eof_error_offset(input)
+          },
+        )
+        (None, true)
+      } else {
+        match input.get_char(id_pos) {
+          Some('"') | Some('\'') =>
+            parse_doctype_system_identifier_at(input, id_pos, closed, errors)
+          _ => {
+            push_doctype_external_error(
+              errors, "missing-quote-before-doctype-system-identifier", id_pos,
+            )
+            (None, true)
+          }
+        }
+      }
+    }
+    Some('"') | Some('\'') => {
+      push_doctype_external_error(
+        errors, "missing-whitespace-after-doctype-public-identifier", after_keyword,
+      )
+      parse_doctype_system_identifier_at(input, after_keyword, closed, errors)
+    }
+    _ => {
+      push_doctype_external_error(
+        errors, "unexpected-character-after-doctype-system-keyword", after_keyword,
+      )
+      (None, true)
+    }
+  }
+}
