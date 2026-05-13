@@ -123,6 +123,7 @@ def main(argv: list[str]) -> int:
         "linkify/linkify.mbt",
         "linkify/punycode.mbt",
         "linkify/syntax.mbt",
+        "linkify/tld.mbt",
     }
     for path in sorted(required_linkify_modules):
         if path not in tracked:
