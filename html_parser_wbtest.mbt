@@ -144,7 +144,7 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
   let (line, col) = line_col_at("a😀\nb", 4)
   assert_eq(line, 2)
   assert_eq(col, 1)
-  let (eof_line, eof_col) = eof_line_col("a😀\n")
+  let (eof_line, eof_col) = @syn.eof_line_col("a😀\n")
   assert_eq(eof_line, 2)
   assert_eq(eof_col, 0)
 }

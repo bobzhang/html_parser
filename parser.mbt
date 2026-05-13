@@ -1965,11 +1965,7 @@ fn view_starts_with_at(
   pos : Int,
   prefix : StringView,
 ) -> Bool {
-  let end = pos + prefix.length()
-  match input.get_view(start=pos, end~) {
-    Some(view) => view == prefix
-    None => false
-  }
+  @syn.view_starts_with_at(input, pos, prefix)
 }
 
 ///|
@@ -2116,20 +2112,7 @@ fn Parser::eof_error_pos(self : Parser) -> Int {
 
 ///|
 fn eof_error_pos(input : StringView) -> Int {
-  let mut pos = 0
-  let mut last = 0
-  let mut last_char : Char? = None
-  while pos < input.length() {
-    last = pos
-    let ch = input.get_char(pos).unwrap()
-    last_char = Some(ch)
-    pos += ch.utf16_len()
-  }
-  match last_char {
-    Some('\r') | Some('\n') => input.length()
-    Some(_) => last
-    None => 0
-  }
+  @syn.eof_error_pos(input)
 }
 
 ///|
@@ -6473,139 +6456,27 @@ fn Parser::parse_fragment_context(
 
 ///|
 fn line_col_at(input : StringView, target : Int) -> (Int, Int) {
-  if target == input.length() && input_ends_with_newline(input) {
-    return eof_line_col(input)
-  }
-  let mut offset = 0
-  let mut line = 1
-  let mut col = 1
-  while offset < target && offset < input.length() {
-    let ch = input.get_char(offset).unwrap()
-    match ch {
-      '\r' => {
-        line += 1
-        col = 1
-        offset += 1
-        if offset < target && input.get_char(offset) is Some('\n') {
-          offset += 1
-        }
-      }
-      '\n' => {
-        line += 1
-        col = 1
-        offset += 1
-      }
-      _ => {
-        col += 1
-        offset += ch.utf16_len()
-      }
-    }
-  }
-  (line, col)
+  @syn.line_col_at(input, target)
 }
 
 ///|
 fn input_ends_with_newline(input : StringView) -> Bool {
-  let mut pos = 0
-  let mut last : Char? = None
-  while pos < input.length() {
-    let ch = input.get_char(pos).unwrap()
-    last = Some(ch)
-    pos += ch.utf16_len()
-  }
-  match last {
-    Some('\r') | Some('\n') => true
-    _ => false
-  }
-}
-
-///|
-fn eof_line_col(input : StringView) -> (Int, Int) {
-  let mut offset = 0
-  let mut line = 1
-  let mut col = 0
-  while offset < input.length() {
-    let ch = input.get_char(offset).unwrap()
-    match ch {
-      '\r' => {
-        line += 1
-        col = 0
-        offset += 1
-        if input.get_char(offset) is Some('\n') {
-          offset += 1
-        }
-      }
-      '\n' => {
-        line += 1
-        col = 0
-        offset += 1
-      }
-      _ => {
-        col += 1
-        offset += ch.utf16_len()
-      }
-    }
-  }
-  (line, col)
+  @syn.input_ends_with_newline(input)
 }
 
 ///|
 fn strip_leading_bom(input : StringView) -> StringView {
-  if input.has_prefix("\u{FEFF}") {
-    input[1:]
-  } else {
-    input
-  }
+  @syn.strip_leading_bom(input)
 }
 
 ///|
 fn normalize_newlines(input : StringView) -> String {
-  let out = StringBuilder::new(size_hint=input.length())
-  let mut pos = 0
-  while pos < input.length() {
-    let ch = input.get_char(pos).unwrap()
-    match ch {
-      '\r' => {
-        out.write_char('\n')
-        pos += 1
-        if input.get_char(pos) is Some('\n') {
-          pos += 1
-        }
-      }
-      _ => {
-        out.write_char(ch)
-        pos += ch.utf16_len()
-      }
-    }
-  }
-  out.to_string()
+  @syn.normalize_newlines(input)
 }
 
 ///|
 fn normalize_bogus_comment_data(input : StringView) -> String {
-  let out = StringBuilder::new(size_hint=input.length())
-  let mut pos = 0
-  while pos < input.length() {
-    let ch = input.get_char(pos).unwrap()
-    match ch {
-      '\u{0000}' => {
-        out.write_char('\u{FFFD}')
-        pos += 1
-      }
-      '\r' => {
-        out.write_char('\n')
-        pos += 1
-        if input.get_char(pos) is Some('\n') {
-          pos += 1
-        }
-      }
-      _ => {
-        out.write_char(ch)
-        pos += ch.utf16_len()
-      }
-    }
-  }
-  out.to_string()
+  @syn.normalize_bogus_comment_data(input)
 }
 
 ///|
@@ -6614,22 +6485,7 @@ fn write_normalized_char(
   pos : Int,
   out : StringBuilder,
 ) -> Int {
-  match input.get_char(pos) {
-    Some('\r') => {
-      out.write_char('\n')
-      let next = pos + 1
-      if input.get_char(next) is Some('\n') {
-        next + 1
-      } else {
-        next
-      }
-    }
-    Some(ch) => {
-      out.write_char(ch)
-      pos + ch.utf16_len()
-    }
-    None => pos
-  }
+  @syn.write_normalized_char(input, pos, out)
 }
 
 ///|

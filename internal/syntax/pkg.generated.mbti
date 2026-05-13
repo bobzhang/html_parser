@@ -2,9 +2,27 @@
 package "bobzhang/html_parser/internal/syntax"
 
 // Values
+pub fn eof_error_pos(StringView) -> Int
+
+pub fn eof_line_col(StringView) -> (Int, Int)
+
+pub fn input_ends_with_newline(StringView) -> Bool
+
+pub fn line_col_at(StringView, Int) -> (Int, Int)
+
 pub fn lower_ascii(StringView) -> String
 
+pub fn normalize_bogus_comment_data(StringView) -> String
+
+pub fn normalize_newlines(StringView) -> String
+
 pub fn starts_with_case_insensitive(StringView, Int, StringView) -> Bool
+
+pub fn strip_leading_bom(StringView) -> StringView
+
+pub fn view_starts_with_at(StringView, Int, StringView) -> Bool
+
+pub fn write_normalized_char(StringView, Int, StringBuilder) -> Int
 
 // Errors
 

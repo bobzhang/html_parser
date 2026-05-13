@@ -223,6 +223,8 @@ reference implementation in `.repos/justhtml`.
 
 - [x] Extract diagnostics into `core`.
 - [x] Extract shared syntax helpers into `internal/syntax`.
+- [x] Extract shared source-position and newline normalization helpers into
+      `internal/syntax`.
 - [x] Add free `Node` feature APIs for serializer, selector, text, and Markdown
       operations.
 - [x] Remove public feature methods from the root `Node` API.
