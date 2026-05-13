@@ -103,6 +103,7 @@ def main(argv: list[str]) -> int:
         "sanitize/text.mbt",
         "sanitize/types.mbt",
         "sanitize/url.mbt",
+        "sanitize/url_host.mbt",
         "sanitize/url_lists.mbt",
         "sanitize/url_proxy.mbt",
     }

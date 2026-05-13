@@ -373,6 +373,8 @@ reference implementation in `.repos/justhtml`.
       `sanitize/url_proxy.mbt`.
 - [x] Split sanitizer `srcset` and URL-list attribute sanitation helpers into
       `sanitize/url_lists.mbt`.
+- [x] Split sanitizer URL host and authority extraction helpers into
+      `sanitize/url_host.mbt`.
 - [x] Split sanitizer CSS/style value sanitation helpers into
       `sanitize/css.mbt`.
 - [x] Split sanitizer element-attribute sanitation helpers into
