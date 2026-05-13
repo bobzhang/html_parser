@@ -232,6 +232,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_parser_modules = {
+        "parser/adoption_agency.mbt",
         "parser/active_formatting.mbt",
         "parser/api.mbt",
         "parser/attributes.mbt",
