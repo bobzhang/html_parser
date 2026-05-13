@@ -355,6 +355,8 @@ reference implementation in `.repos/justhtml`.
       remove the empty legacy `transform/transform.mbt` catch-all.
 - [x] Split selector public limit type and constructor into
       `selector/limits.mbt`.
+- [x] Split selector syntax predicates and shared StringView helpers into
+      `selector/syntax.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and

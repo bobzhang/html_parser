@@ -140,6 +140,7 @@ def main(argv: list[str]) -> int:
     required_selector_modules = {
         "selector/limits.mbt",
         "selector/selector.mbt",
+        "selector/syntax.mbt",
     }
     for path in sorted(required_selector_modules):
         if path not in tracked:
