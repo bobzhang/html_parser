@@ -143,6 +143,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_parser_modules = {
+        "parser/api.mbt",
         "parser/foreign_content.mbt",
         "parser/parser.mbt",
         "parser/table_normalize.mbt",

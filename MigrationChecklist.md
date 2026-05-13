@@ -249,6 +249,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Extract transform pipeline.
 - [x] Extract parser package.
 - [x] Extract CLI package.
+- [x] Split parser public entrypoints and `ParsedHtml` result methods into a
+      focused `parser/api.mbt` file.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
