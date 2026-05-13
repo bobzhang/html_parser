@@ -147,6 +147,7 @@ def main(argv: list[str]) -> int:
         "transform/selectors.mbt",
         "transform/spec.mbt",
         "transform/transform.mbt",
+        "transform/url_style.mbt",
     }
     for path in sorted(required_transform_modules):
         if path not in tracked:
