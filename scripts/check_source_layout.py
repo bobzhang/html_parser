@@ -76,6 +76,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_root_tests = {
+        "builder_public_regression_test.mbt",
         "cli_test.mbt",
         "cli_public_regression_test.mbt",
         "cli_wbtest.mbt",

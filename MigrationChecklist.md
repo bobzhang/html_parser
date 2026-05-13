@@ -418,6 +418,8 @@ reference implementation in `.repos/justhtml`.
       common Markdown output, and raw HTML passthrough behavior.
 - [x] Added public parser regression tests for document error modes, fragment
       contexts, source locations, and scripting-dependent `noscript` parsing.
+- [x] Added public builder/accessor regression tests for node constructors,
+      test-format output, namespace aliases, and invalid mutation no-ops.
 
 ## Working Rule
 
