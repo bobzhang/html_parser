@@ -282,6 +282,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Split parser table-context and foster-parenting helpers into
       `parser/table_context.mbt`.
 - [x] Split parser column-group helpers into `parser/column_group.mbt`.
+- [x] Split parser caption helpers into `parser/caption.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
