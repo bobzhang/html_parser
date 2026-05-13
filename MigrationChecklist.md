@@ -398,6 +398,8 @@ reference implementation in `.repos/justhtml`.
       Markdown conversion, and CLI end-user output modes.
 - [x] Added public sanitizer security-policy regression tests for default
       stripping, URL proxy rules, and collect/raise unsafe handling modes.
+- [x] Added public DOM graph regression tests for mutation invariants, detached
+      clones, child/attribute copies, and UTF-16 source-location metadata.
 
 ## Working Rule
 

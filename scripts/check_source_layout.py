@@ -78,6 +78,7 @@ def main(argv: list[str]) -> int:
     required_root_tests = {
         "cli_test.mbt",
         "cli_wbtest.mbt",
+        "dom_public_regression_test.mbt",
         "encoding_fixtures_test.mbt",
         "golden_output_regression_test.mbt",
         "html_parser_test.mbt",
