@@ -92,6 +92,7 @@ def main(argv: list[str]) -> int:
 
     required_sanitize_modules = {
         "sanitize/attributes.mbt",
+        "sanitize/content.mbt",
         "sanitize/css.mbt",
         "sanitize/nodes.mbt",
         "sanitize/observer.mbt",
