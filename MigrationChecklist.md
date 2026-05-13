@@ -268,6 +268,8 @@ reference implementation in `.repos/justhtml`.
       `parser/fragment_context.mbt`.
 - [x] Split parser tree-builder scope and open-element helpers into
       `parser/scope.mbt`.
+- [x] Split parser select insertion-mode helpers and select tag handling into
+      `parser/select.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
