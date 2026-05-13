@@ -234,6 +234,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Extract tokenizer data structures.
 - [x] Move tokenizer comment scanner into `tokenizer`.
 - [x] Move tokenizer doctype external-id helpers into `tokenizer`.
+- [x] Move tokenizer entity decoding helpers into `tokenizer`.
 - [ ] Move tokenizer implementation into `tokenizer`.
 - [x] Extract stream event API and sink.
 - [ ] Move stream parser/byte facade into `stream`.

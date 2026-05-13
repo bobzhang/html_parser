@@ -7,7 +7,19 @@ import {
 }
 
 // Values
+pub fn consume_named_entity_with_errors(StringView, Int, in_attribute~ : Bool) -> EntityConsumeResult?
+
+pub fn decode_attribute_value_with_errors(StringView) -> EntityDecodeResult
+
+pub fn decode_entities(StringView, in_attribute~ : Bool) -> String
+
+pub fn decode_entities_with_errors(StringView, in_attribute~ : Bool) -> EntityDecodeResult
+
 pub fn doctype_eof_error_offset(StringView) -> Int
+
+pub fn html_numeric_entity_replacement(Int) -> Int
+
+pub fn legacy_entity_blocked_in_attribute(StringView, Int, in_attribute~ : Bool) -> Bool
 
 pub fn normalize_doctype_value(StringView, Int, Int, Array[DoctypeExternalError]) -> String
 
@@ -52,6 +64,22 @@ pub(all) struct DoctypeInfo {
   system_id : String?
   force_quirks : Bool
 } derive(Eq, @debug.Debug)
+
+pub(all) struct EntityConsumeResult {
+  value : String
+  next : Int
+  errors : Array[EntityDecodeError]
+}
+
+pub(all) struct EntityDecodeError {
+  code : String
+  offset : Int
+}
+
+pub(all) struct EntityDecodeResult {
+  data : String
+  errors : Array[EntityDecodeError]
+}
 
 pub(all) enum HtmlToken {
   Tag(TagToken)

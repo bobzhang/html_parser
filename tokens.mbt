@@ -171,7 +171,7 @@ fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
   }
   let view = self.input[start:self.pos]
   if !view.is_empty() {
-    let decoded = decode_entities_with_errors(view, in_attribute=false)
+    let decoded = @tok.decode_entities_with_errors(view, in_attribute=false)
     for error in decoded.errors {
       self.error_at(error.code, start + error.offset)
     }
@@ -437,7 +437,7 @@ fn SourceTokenizer::parse_invalid_tag_open_as_text(
   }
   let view = self.input[start:self.pos]
   if !view.is_empty() {
-    let decoded = decode_entities_with_errors(view, in_attribute=false)
+    let decoded = @tok.decode_entities_with_errors(view, in_attribute=false)
     for error in decoded.errors {
       self.error_at(error.code, start + error.offset)
     }
@@ -541,7 +541,7 @@ fn SourceTokenizer::parse_attribute_value(self : SourceTokenizer) -> String {
         }
       }
       let view = self.input[start:self.pos]
-      let decoded = decode_attribute_value_with_errors(view)
+      let decoded = @tok.decode_attribute_value_with_errors(view)
       for error in decoded.errors {
         self.error_at(error.code, self.pos)
       }
@@ -572,7 +572,7 @@ fn SourceTokenizer::parse_quoted_attribute_value(
       _ => ()
     }
   }
-  let decoded = decode_attribute_value_with_errors(raw)
+  let decoded = @tok.decode_attribute_value_with_errors(raw)
   for error in decoded.errors {
     self.error_at(error.code, self.pos)
   }
@@ -589,7 +589,7 @@ fn SourceTokenizer::decoded_special_text(
 ) -> String {
   let raw = self.replace_special_text_nulls(raw, start)
   let data = if special_text_decodes_entities(name) {
-    let decoded = decode_entities_with_errors(raw, in_attribute=false)
+    let decoded = @tok.decode_entities_with_errors(raw, in_attribute=false)
     for error in decoded.errors {
       self.error_at(error.code, error_pos)
     }

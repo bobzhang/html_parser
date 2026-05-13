@@ -152,12 +152,14 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
 ///|
 test "entity helpers preserve unresolved names and attribute boundaries" {
   assert_true(
-    consume_named_entity_with_errors("&unknown;", 0, in_attribute=false) is None,
+    @tok.consume_named_entity_with_errors("&unknown;", 0, in_attribute=false)
+    is None,
   )
   assert_true(
-    consume_named_entity_with_errors("&unknown", 0, in_attribute=false) is None,
+    @tok.consume_named_entity_with_errors("&unknown", 0, in_attribute=false)
+    is None,
   )
-  guard consume_named_entity_with_errors("&copy.", 0, in_attribute=true)
+  guard @tok.consume_named_entity_with_errors("&copy.", 0, in_attribute=true)
     is Some(decoded_attr) else {
     fail("expected punctuation-delimited legacy attribute entity")
   }
@@ -165,20 +167,20 @@ test "entity helpers preserve unresolved names and attribute boundaries" {
   assert_eq(decoded_attr.next, 5)
   assert_eq(decoded_attr.errors.length(), 1)
   assert_true(
-    legacy_entity_blocked_in_attribute("&copyx", 5, in_attribute=true),
+    @tok.legacy_entity_blocked_in_attribute("&copyx", 5, in_attribute=true),
   )
   assert_true(
-    legacy_entity_blocked_in_attribute("&copy0", 5, in_attribute=true),
+    @tok.legacy_entity_blocked_in_attribute("&copy0", 5, in_attribute=true),
   )
   assert_true(
-    legacy_entity_blocked_in_attribute("&copy=", 5, in_attribute=true),
+    @tok.legacy_entity_blocked_in_attribute("&copy=", 5, in_attribute=true),
   )
   assert_eq(
-    legacy_entity_blocked_in_attribute("&copyx", 5, in_attribute=false),
+    @tok.legacy_entity_blocked_in_attribute("&copyx", 5, in_attribute=false),
     false,
   )
   assert_eq(
-    legacy_entity_blocked_in_attribute("&copy.", 5, in_attribute=true),
+    @tok.legacy_entity_blocked_in_attribute("&copy.", 5, in_attribute=true),
     false,
   )
   let unresolved = tokenize("&unknown; &unknown", collect_errors=true)
