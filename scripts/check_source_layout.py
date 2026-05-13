@@ -143,6 +143,7 @@ def main(argv: list[str]) -> int:
         "transform/normalization.mbt",
         "transform/pipeline.mbt",
         "transform/reporting.mbt",
+        "transform/selectors.mbt",
         "transform/spec.mbt",
         "transform/transform.mbt",
     }
