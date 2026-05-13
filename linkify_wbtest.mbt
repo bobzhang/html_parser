@@ -7,6 +7,8 @@ test "linkify helper edge contracts fail closed" {
   )
   assert_true(linkify_find_substring("x", "long") is None)
   assert_eq(linkify_broken_schema_context("bad://example.com", 6), true)
+  assert_eq(string_view_contains("abc", ""), false)
+  assert_eq(string_view_contains("abc", "abcd"), false)
   assert_eq(
     linkify_validate_candidate(
       "example.com",

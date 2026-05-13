@@ -19,6 +19,36 @@ pub type HtmlError = @core.HtmlError
 pub using @sel {type SelectorLimits}
 
 ///|
+pub using @san {type DisallowedTagHandling}
+
+///|
+pub using @san {type SanitizationPolicy}
+
+///|
+pub using @san {type SanitizeTransformObserver}
+
+///|
+pub using @san {type UnsafeHandling}
+
+///|
+pub using @san {type UrlFilter}
+
+///|
+pub using @san {type UrlHandling}
+
+///|
+pub using @san {type UrlPolicy}
+
+///|
+pub using @san {type UrlPolicyRule}
+
+///|
+pub using @san {type UrlProxy}
+
+///|
+pub using @san {type UrlRule}
+
+///|
 fn default_selector_limits() -> SelectorLimits {
   SelectorLimits::new()
 }

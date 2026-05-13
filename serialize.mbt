@@ -4,24 +4,6 @@ fn is_void_element(name : StringView) -> Bool {
 }
 
 ///|
-fn write_percent_encoded_byte(out : StringBuilder, byte : Byte) -> Unit {
-  @ser.write_percent_encoded_byte(out, byte)
-}
-
-///|
-fn neutralize_rawtext_end_tag_sequences(
-  value : StringView,
-  tag_name : StringView,
-) -> String {
-  @ser.neutralize_rawtext_end_tag_sequences(value, tag_name)
-}
-
-///|
-fn string_contains_char(value : StringView, needle : Char) -> Bool {
-  @ser.string_contains_char(value, needle)
-}
-
-///|
 fn serialize_start_tag_unchecked(node : Node, quote : Char) -> String {
   @ser.serialize_start_tag_unchecked(node, quote)
 }

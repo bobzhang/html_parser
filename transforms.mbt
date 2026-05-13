@@ -919,15 +919,15 @@ fn sanitize_transform_observer(
 ) -> SanitizeTransformObserver? {
   match (transform.node_hook, transform.report_callback) {
     (None, None) => None
-    _ =>
-      Some({
-        hook: transform.node_hook.map(fn(hook) {
-          fn(node) { (hook.callback)(node) }
-        }),
-        report_callback: transform.report_callback.map(fn(report) {
-          fn(message, node) { (report.callback)(message, node) }
-        }),
+    _ => {
+      let hook = transform.node_hook.map(fn(hook) {
+        fn(node) { (hook.callback)(node) }
       })
+      let report_callback = transform.report_callback.map(fn(report) {
+        fn(message, node) { (report.callback)(message, node) }
+      })
+      Some(SanitizeTransformObserver::new(hook, report_callback))
+    }
   }
 }
 

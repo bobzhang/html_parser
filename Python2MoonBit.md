@@ -1308,6 +1308,13 @@ JustHTML from Python to MoonBit.
   text neutralization, start-tag spelling, and URL percent encoding. Keep root
   compatibility wrappers for those names during a staged split, and expose only
   the minimum serializer-side functions needed to cross the package boundary.
+- Moving sanitizer code adds the same pressure in the opposite direction:
+  transforms often need sanitizer primitives without running a whole
+  `sanitize_dom` pass. Keep root compatibility wrappers private, move
+  sanitizer whitebox tests with the sanitizer package, and put public methods
+  such as `SanitizationPolicy::sanitize_attribute_value` on the owning
+  `sanitize` package rather than defining public methods on a re-exported
+  foreign type.
 - A moved feature package cannot add methods to root-owned types such as
   `ParsedHtml`. Keep those methods in the compatibility package as thin
   wrappers over the new package-level function.

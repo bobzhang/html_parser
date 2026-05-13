@@ -127,11 +127,6 @@ fn Node::mark_sanitize_escape_only(self : Node) -> Unit {
 }
 
 ///|
-fn Node::clear_sanitize_escape_only(self : Node) -> Unit {
-  self.sanitize_escape_only = false
-}
-
-///|
 fn Node::copy_origin_from(self : Node, source : Node) -> Unit {
   self.parsed_from_source = source.parsed_from_source
   self.source_start_tag = source.source_start_tag

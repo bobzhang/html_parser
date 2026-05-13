@@ -1,0 +1,111 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/html_parser/sanitize"
+
+import {
+  "bobzhang/html_parser/core",
+  "bobzhang/html_parser/dom",
+  "bobzhang/html_parser/selector",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn css_preset_text() -> Array[String]
+
+pub fn css_value_may_load_external_resource(StringView) -> Bool
+
+pub fn default_document_sanitization_policy() -> SanitizationPolicy
+
+pub fn default_sanitization_policy() -> SanitizationPolicy
+
+pub fn escaped_end_tag_for(@dom.Node) -> String?
+
+pub fn is_foreign_url_function_like_attr(String) -> Bool
+
+pub fn is_single_url_like_attr(String) -> Bool
+
+pub fn is_space_separated_url_list_attr(String) -> Bool
+
+pub fn is_srcset_like_attr(String) -> Bool
+
+pub fn node_is_effectively_foreign(@dom.Node) -> Bool
+
+pub fn push_html_whitespace_tokens(Array[String], StringView) -> Unit
+
+pub fn push_unique_string(Array[String], String) -> Unit
+
+pub fn remove_child_at(@dom.Node, Int) -> Unit
+
+pub fn sanitize_dom(@dom.Node, policy? : SanitizationPolicy) -> @dom.Node raise @core.HtmlError
+
+pub fn sanitize_dom_with_observer(@dom.Node, SanitizationPolicy?, SanitizeTransformObserver?) -> @dom.Node raise @core.HtmlError
+
+pub fn unwrap_child_at(@dom.Node, Int) -> Int
+
+// Errors
+
+// Types and methods
+pub(all) enum DisallowedTagHandling {
+  Unwrap
+  Escape
+  Drop
+} derive(Eq, @debug.Debug)
+
+pub struct SanitizationPolicy {
+  // private fields
+} derive(@debug.Debug)
+pub fn SanitizationPolicy::collected_security_errors(Self) -> Array[@core.ParseError]
+pub fn SanitizationPolicy::has_url_rule(Self, String, String) -> Bool
+pub fn SanitizationPolicy::new(Array[String], allowed_attributes? : Map[String, Array[String]], url_policy? : UrlPolicy, drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling, force_link_rel? : Array[String], allowed_css_properties? : Array[String], strip_invisible_unicode? : Bool, selector_limits? : @selector.SelectorLimits, unsafe_handling? : UnsafeHandling) -> Self
+pub fn SanitizationPolicy::reset_collected_security_errors(Self) -> Unit
+pub fn SanitizationPolicy::sanitize_attribute_value(Self, String, String, String, effectively_foreign? : Bool) -> String?
+pub fn SanitizationPolicy::sanitize_inline_style_value(Self, String, String) -> String?
+pub fn SanitizationPolicy::selector_limits(Self) -> @selector.SelectorLimits
+pub fn SanitizationPolicy::with_extra_allowed_tags(Self, Array[String]) -> Self
+
+pub struct SanitizeTransformObserver {
+  // private fields
+}
+pub fn SanitizeTransformObserver::new(((@dom.Node) -> Unit)?, ((String, @dom.Node?) -> Unit)?) -> Self
+
+pub(all) enum UnsafeHandling {
+  Strip
+  Raise
+  Collect
+} derive(Eq, @debug.Debug)
+
+pub struct UrlFilter {
+  // private fields
+}
+pub fn UrlFilter::new((String, String, String) -> String?) -> Self
+pub impl @debug.Debug for UrlFilter
+
+pub(all) enum UrlHandling {
+  UrlAllow
+  UrlStrip
+  UrlProxy
+} derive(Eq, @debug.Debug)
+
+pub struct UrlPolicy {
+  // private fields
+} derive(@debug.Debug)
+pub fn UrlPolicy::new(default_handling? : UrlHandling, default_allow_relative? : Bool, allow_rules? : Array[UrlPolicyRule], proxy? : UrlProxy, url_filter? : UrlFilter) -> Self
+
+pub struct UrlPolicyRule {
+  // private fields
+} derive(@debug.Debug)
+pub fn UrlPolicyRule::new(StringView, StringView, UrlRule) -> Self
+
+pub struct UrlProxy {
+  // private fields
+} derive(@debug.Debug)
+pub fn UrlProxy::new(StringView, param? : String) -> Self
+
+pub struct UrlRule {
+  // private fields
+} derive(@debug.Debug)
+pub fn UrlRule::new(allowed_schemes? : Array[String], allowed_hosts? : Array[String], allow_fragment? : Bool, resolve_protocol_relative? : String?, handling? : UrlHandling, allow_relative? : Bool, proxy? : UrlProxy) -> Self
+
+// Type aliases
+
+// Traits
+

@@ -4,6 +4,7 @@ package "bobzhang/html_parser"
 import {
   "bobzhang/html_parser/core",
   "bobzhang/html_parser/dom",
+  "bobzhang/html_parser/sanitize",
   "bobzhang/html_parser/selector",
   "bobzhang/html_parser/serializer",
   "bobzhang/html_parser/stream",
@@ -22,9 +23,9 @@ pub fn comment(StringView) -> @dom.Node
 
 pub fn css_preset_text() -> Array[String]
 
-pub fn default_document_sanitization_policy() -> SanitizationPolicy
+pub fn default_document_sanitization_policy() -> @sanitize.SanitizationPolicy
 
-pub fn default_sanitization_policy() -> SanitizationPolicy
+pub fn default_sanitization_policy() -> @sanitize.SanitizationPolicy
 
 pub fn doctype(name? : String, public_id? : String, system_id? : String, force_quirks? : Bool) -> @dom.Node
 
@@ -56,7 +57,7 @@ pub fn run_cli_bytes(ArrayView[String], BytesView) -> CliResult
 
 pub fn run_cli_with_reader(ArrayView[String], (String) -> Bytes) -> CliResult
 
-pub fn sanitize_dom(@dom.Node, policy? : SanitizationPolicy) -> @dom.Node raise @core.HtmlError
+pub fn sanitize_dom(@dom.Node, policy? : @sanitize.SanitizationPolicy) -> @dom.Node raise @core.HtmlError
 
 pub fn stream(StringView) -> Array[@stream.StreamEvent]
 
@@ -102,12 +103,6 @@ pub(all) enum DecideAction {
   Escape
 } derive(Eq, @debug.Debug)
 
-pub(all) enum DisallowedTagHandling {
-  Unwrap
-  Escape
-  Drop
-} derive(Eq, @debug.Debug)
-
 pub(all) struct FragmentContext {
   tag_name : String
   ns : String?
@@ -139,13 +134,6 @@ pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int, context? : 
 pub fn ParsedHtml::to_markdown(Self, html_passthrough? : Bool) -> String raise @core.HtmlError
 pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
 
-pub struct SanitizationPolicy {
-  // private fields
-} derive(@debug.Debug)
-pub fn SanitizationPolicy::collected_security_errors(Self) -> Array[@core.ParseError]
-pub fn SanitizationPolicy::new(Array[String], allowed_attributes? : Map[String, Array[String]], url_policy? : UrlPolicy, drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling, force_link_rel? : Array[String], allowed_css_properties? : Array[String], strip_invisible_unicode? : Bool, selector_limits? : @selector.SelectorLimits, unsafe_handling? : UnsafeHandling) -> Self
-pub fn SanitizationPolicy::reset_collected_security_errors(Self) -> Unit
-
 pub struct TransformSpec {
   // private fields
 } derive(@debug.Debug)
@@ -158,7 +146,7 @@ pub fn TransformSpec::drop_attrs(StringView, Array[String], enabled? : Bool, hoo
 pub fn TransformSpec::drop_comments(enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::drop_doctype(enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::drop_foreign_namespaces(enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::drop_url_attrs(StringView, url_policy~ : UrlPolicy, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
+pub fn TransformSpec::drop_url_attrs(StringView, url_policy~ : @sanitize.UrlPolicy, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::edit(StringView, (@dom.Node) -> Unit, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::edit_attrs(StringView, (@dom.Node) -> Map[String, String?]?, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::edit_document((@dom.Node) -> Unit, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
@@ -167,50 +155,14 @@ pub fn TransformSpec::escape(StringView, enabled? : Bool, hook? : (@dom.Node) ->
 pub fn TransformSpec::linkify(config? : LinkifyConfig, skip_tags? : Array[String], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::merge_attrs(StringView, attr~ : StringView, tokens~ : Array[String], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::prune_empty(StringView, strip_whitespace? : Bool, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::sanitize(policy? : SanitizationPolicy, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
+pub fn TransformSpec::sanitize(policy? : @sanitize.SanitizationPolicy, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::set_attrs(StringView, Map[String, String?], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::stage(Array[Self], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::unwrap(StringView, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 
-pub(all) enum UnsafeHandling {
-  Strip
-  Raise
-  Collect
-} derive(Eq, @debug.Debug)
-
-pub struct UrlFilter {
-  // private fields
-}
-pub fn UrlFilter::new((String, String, String) -> String?) -> Self
-pub impl @debug.Debug for UrlFilter
-
-pub(all) enum UrlHandling {
-  UrlAllow
-  UrlStrip
-  UrlProxy
-} derive(Eq, @debug.Debug)
-
-pub struct UrlPolicy {
-  // private fields
-} derive(@debug.Debug)
-pub fn UrlPolicy::new(default_handling? : UrlHandling, default_allow_relative? : Bool, allow_rules? : Array[UrlPolicyRule], proxy? : UrlProxy, url_filter? : UrlFilter) -> Self
-
-pub struct UrlPolicyRule {
-  // private fields
-} derive(@debug.Debug)
-pub fn UrlPolicyRule::new(StringView, StringView, UrlRule) -> Self
-
-pub struct UrlProxy {
-  // private fields
-} derive(@debug.Debug)
-pub fn UrlProxy::new(StringView, param? : String) -> Self
-
-pub struct UrlRule {
-  // private fields
-} derive(@debug.Debug)
-pub fn UrlRule::new(allowed_schemes? : Array[String], allowed_hosts? : Array[String], allow_fragment? : Bool, resolve_protocol_relative? : String?, handling? : UrlHandling, allow_relative? : Bool, proxy? : UrlProxy) -> Self
-
 // Type aliases
+pub using @sanitize {type DisallowedTagHandling}
+
 pub using @tokenizer {type DoctypeInfo}
 
 pub using @serializer {type HtmlContext}
@@ -224,6 +176,10 @@ pub using @dom {type Node}
 pub using @dom {type NodeKind}
 
 pub using @core {type ParseError}
+
+pub using @sanitize {type SanitizationPolicy}
+
+pub using @sanitize {type SanitizeTransformObserver}
 
 pub using @selector {type SelectorLimits}
 
@@ -240,6 +196,20 @@ pub using @tokenizer {type TagKind}
 pub using @tokenizer {type TagToken}
 
 pub using @tokenizer {type TokenizedHtml}
+
+pub using @sanitize {type UnsafeHandling}
+
+pub using @sanitize {type UrlFilter}
+
+pub using @sanitize {type UrlHandling}
+
+pub using @sanitize {type UrlPolicy}
+
+pub using @sanitize {type UrlPolicyRule}
+
+pub using @sanitize {type UrlProxy}
+
+pub using @sanitize {type UrlRule}
 
 // Traits
 

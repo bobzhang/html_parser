@@ -96,6 +96,22 @@ def main(argv: list[str]) -> int:
             error(f"expected tokenizer package test module is not tracked: {path}")
             ok = False
 
+    required_sanitize_modules = {
+        "sanitize/sanitize.mbt",
+    }
+    for path in sorted(required_sanitize_modules):
+        if path not in tracked:
+            error(f"expected sanitize package module is not tracked: {path}")
+            ok = False
+
+    required_sanitize_tests = {
+        "sanitize/sanitize_wbtest.mbt",
+    }
+    for path in sorted(required_sanitize_tests):
+        if path not in tracked:
+            error(f"expected sanitize package test module is not tracked: {path}")
+            ok = False
+
     required_root_tests = {
         "builder_public_regression_test.mbt",
         "cli_test.mbt",
@@ -118,7 +134,6 @@ def main(argv: list[str]) -> int:
         "parser_public_regression_test.mbt",
         "public_api_regression_test.mbt",
         "sanitize_fixtures_test.mbt",
-        "sanitize_wbtest.mbt",
         "security_policy_regression_test.mbt",
         "serializer_public_regression_test.mbt",
         "selector_public_regression_test.mbt",

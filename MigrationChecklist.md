@@ -244,7 +244,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Extract selector parsing and matching.
 - [x] Extract HTML serializer and text extraction.
 - [x] Extract Markdown conversion.
-- [ ] Extract sanitizer policy and DOM sanitizer.
+- [x] Extract sanitizer policy and DOM sanitizer.
 - [ ] Extract linkify scanner and DOM linkifier.
 - [ ] Extract transform pipeline.
 - [ ] Extract parser package.
