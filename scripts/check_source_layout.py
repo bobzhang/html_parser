@@ -137,6 +137,23 @@ def main(argv: list[str]) -> int:
             error(f"expected linkify package test module is not tracked: {path}")
             ok = False
 
+    required_selector_modules = {
+        "selector/limits.mbt",
+        "selector/selector.mbt",
+    }
+    for path in sorted(required_selector_modules):
+        if path not in tracked:
+            error(f"expected selector package module is not tracked: {path}")
+            ok = False
+
+    required_selector_tests = {
+        "selector/selector_wbtest.mbt",
+    }
+    for path in sorted(required_selector_tests):
+        if path not in tracked:
+            error(f"expected selector package test module is not tracked: {path}")
+            ok = False
+
     required_transform_modules = {
         "transform/attributes.mbt",
         "transform/builders.mbt",
