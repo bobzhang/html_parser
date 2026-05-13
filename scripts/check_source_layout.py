@@ -269,6 +269,7 @@ def main(argv: list[str]) -> int:
     required_markdown_modules = {
         "markdown/builder.mbt",
         "markdown/code.mbt",
+        "markdown/link.mbt",
         "markdown/markdown.mbt",
     }
     for path in sorted(required_markdown_modules):
