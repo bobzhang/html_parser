@@ -1,0 +1,1974 @@
+///|
+/// Resource limits used while parsing and matching CSS selectors.
+///
+/// Limits are defensive bounds for selector length, nesting, list size, and
+/// match cost. Negative match budgets are treated as exhausted.
+pub(all) struct SelectorLimits {
+  max_match_depth : Int
+  max_length : Int
+  max_list_items : Int
+  max_compound_simple_selectors : Int
+  max_complex_selector_parts : Int
+  max_parse_depth : Int
+  max_match_steps : Int
+  max_match_bytes : Int
+} derive(Debug, Eq)
+
+///|
+/// Construct selector limits, using conservative defaults for omitted values.
+pub fn SelectorLimits::new(
+  max_match_depth? : Int = 100,
+  max_length? : Int = 8192,
+  max_list_items? : Int = 256,
+  max_compound_simple_selectors? : Int = 512,
+  max_complex_selector_parts? : Int = 512,
+  max_parse_depth? : Int = 100,
+  max_match_steps? : Int = 100000000,
+  max_match_bytes? : Int = 100000000,
+) -> SelectorLimits {
+  {
+    max_match_depth,
+    max_length,
+    max_list_items,
+    max_compound_simple_selectors,
+    max_complex_selector_parts,
+    max_parse_depth,
+    max_match_steps,
+    max_match_bytes,
+  }
+}
+
+///|
+fn class_contains(value : StringView, needle : StringView) -> Bool {
+  if needle.is_empty() {
+    return false
+  }
+  let mut token_start = 0
+  let mut pos = 0
+  for ch in value {
+    if is_html_whitespace_char(ch) {
+      if class_token_matches(value, token_start, pos, needle) {
+        return true
+      }
+      pos += ch.utf16_len()
+      token_start = pos
+    } else {
+      pos += ch.utf16_len()
+    }
+  }
+  class_token_matches(value, token_start, value.length(), needle)
+}
+
+///|
+fn class_token_matches(
+  value : StringView,
+  start : Int,
+  end : Int,
+  needle : StringView,
+) -> Bool {
+  if end <= start {
+    false
+  } else {
+    value[start:end] == needle
+  }
+}
+
+///|
+fn is_html_whitespace_char(ch : Char) -> Bool {
+  match ch {
+    ' ' | '\t' | '\n' | '\r' | '\u{000C}' => true
+    _ => false
+  }
+}
+
+///|
+fn next_simple_selector_marker(selector : StringView, start : Int) -> Int {
+  let mut pos = start
+  let mut paren_depth = 0
+  while pos < selector.length() {
+    let ch = selector.get_char(pos).unwrap()
+    if ch == '(' {
+      paren_depth += 1
+    } else if ch == ')' && paren_depth > 0 {
+      paren_depth -= 1
+    } else if paren_depth == 0 &&
+      (ch == '.' || ch == '#' || ch == '[' || ch == ':') {
+      return pos
+    }
+    pos += ch.utf16_len()
+  }
+  selector.length()
+}
+
+///|
+fn find_attribute_selector_end(selector : StringView, start : Int) -> Int? {
+  let mut pos = start + 1
+  let mut quote : Char? = None
+  let mut escaped = false
+  while pos < selector.length() {
+    let ch = selector.get_char(pos).unwrap()
+    match quote {
+      Some(q) =>
+        if escaped {
+          escaped = false
+        } else if ch == '\\' {
+          escaped = true
+        } else if ch == q {
+          quote = None
+        }
+      None =>
+        if ch == '"' || ch == '\'' {
+          quote = Some(ch)
+          escaped = false
+        } else if ch == ']' {
+          return Some(pos)
+        }
+    }
+    pos += ch.utf16_len()
+  }
+  None
+}
+
+///|
+fn tag_selector_matches(node : @dom.Node, tag : StringView) -> Bool {
+  tag == "*" || node.name[:] == tag.to_lower()
+}
+
+///|
+fn id_selector_matches(node : @dom.Node, id : StringView) -> Bool {
+  match node.attrs.get("id") {
+    Some(Some(value)) => value[:] == id
+    _ => false
+  }
+}
+
+///|
+fn class_selector_matches(node : @dom.Node, class_name : StringView) -> Bool {
+  match node.attrs.get("class") {
+    Some(Some(value)) => class_contains(value, class_name)
+    _ => false
+  }
+}
+
+///|
+fn attribute_value_by_name(node : @dom.Node, attr_name : StringView) -> String? {
+  let wanted = @syn.lower_ascii(attr_name)
+  for name, value in node.attrs {
+    if @syn.lower_ascii(name) == wanted {
+      return Some(
+        match value {
+          Some(text) => text
+          None => ""
+        },
+      )
+    }
+  }
+  None
+}
+
+///|
+priv enum AttributeSelectorOperator {
+  AttrExact
+  AttrWord
+  AttrHyphen
+  AttrPrefix
+  AttrSuffix
+  AttrContains
+}
+
+///|
+fn attribute_name_with_operator(
+  name : StringView,
+  operator : AttributeSelectorOperator,
+) -> (StringView, AttributeSelectorOperator)? {
+  let end = name.length() - 1
+  guard name.get_view(start=0, end~) is Some(name) else { return None }
+  let name = name.trim()
+  if !selector_identifier_is_valid(name) {
+    None
+  } else {
+    Some((name, operator))
+  }
+}
+
+///|
+fn selector_identifier_start(ch : Char) -> Bool {
+  ch == '_' || ch == '-' || ch.is_ascii_alphabetic() || ch.to_int() > 127
+}
+
+///|
+fn selector_identifier_char(ch : Char) -> Bool {
+  selector_identifier_start(ch) || ch.is_digit(10)
+}
+
+///|
+fn selector_identifier_is_valid(name : StringView) -> Bool {
+  if name.is_empty() {
+    return false
+  }
+  guard name.get_char(0) is Some(first) else { return false }
+  if !selector_identifier_start(first) {
+    return false
+  }
+  let mut pos = first.utf16_len()
+  while pos < name.length() {
+    match name.get_char(pos) {
+      Some(ch) if selector_identifier_char(ch) => pos += ch.utf16_len()
+      _ => return false
+    }
+  }
+  true
+}
+
+///|
+fn attribute_name_and_operator(
+  name : StringView,
+) -> (StringView, AttributeSelectorOperator)? {
+  let name = name.trim()
+  if name.has_suffix("~") {
+    attribute_name_with_operator(name, AttrWord)
+  } else if name.has_suffix("|") {
+    attribute_name_with_operator(name, AttrHyphen)
+  } else if name.has_suffix("^") {
+    attribute_name_with_operator(name, AttrPrefix)
+  } else if name.has_suffix("$") {
+    attribute_name_with_operator(name, AttrSuffix)
+  } else if name.has_suffix("*") {
+    attribute_name_with_operator(name, AttrContains)
+  } else if selector_identifier_is_valid(name) {
+    Some((name, AttrExact))
+  } else {
+    None
+  }
+}
+
+///|
+fn quoted_attribute_selector_value(value : StringView) -> String? {
+  let value = value.trim()
+  if value.length() < 2 {
+    return Some(value.to_owned())
+  }
+  let end = value.length() - 1
+  match (value.get_char(0), value.get_char(end)) {
+    (Some('"'), Some('"')) | (Some('\''), Some('\'')) =>
+      Some(unescape_quoted_attribute_selector_value(value[1:end]))
+    _ =>
+      if string_view_has_html_whitespace(value) {
+        None
+      } else {
+        Some(value.to_owned())
+      }
+  }
+}
+
+///|
+fn string_view_has_html_whitespace(value : StringView) -> Bool {
+  for ch in value {
+    if is_html_whitespace_char(ch) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn unescape_quoted_attribute_selector_value(value : StringView) -> String {
+  let out = StringBuilder::new(size_hint=value.length())
+  let mut escaped = false
+  for ch in value {
+    if escaped {
+      out.write_char(ch)
+      escaped = false
+    } else if ch == '\\' {
+      escaped = true
+    } else {
+      out.write_char(ch)
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn string_view_contains(haystack : StringView, needle : StringView) -> Bool {
+  if needle.is_empty() || needle.length() > haystack.length() {
+    return false
+  }
+  let mut pos = 0
+  while pos + needle.length() <= haystack.length() {
+    match haystack.get_view(start=pos, end=pos + needle.length()) {
+      Some(part) if part == needle => return true
+      _ => ()
+    }
+    pos += haystack.get_char(pos).unwrap().utf16_len()
+  }
+  false
+}
+
+///|
+fn attribute_hyphen_matches(actual : StringView, expected : StringView) -> Bool {
+  if actual == expected {
+    return true
+  }
+  if actual.length() <= expected.length() || !actual.has_prefix(expected) {
+    return false
+  }
+  match actual.get_char(expected.length()) {
+    Some('-') => true
+    _ => false
+  }
+}
+
+///|
+fn attribute_value_matches(
+  actual : StringView,
+  operator : AttributeSelectorOperator,
+  expected : StringView,
+) -> Bool {
+  match operator {
+    AttrExact => actual == expected
+    AttrWord => class_contains(actual, expected)
+    AttrHyphen => attribute_hyphen_matches(actual, expected)
+    AttrPrefix => !expected.is_empty() && actual.has_prefix(expected)
+    AttrSuffix => !expected.is_empty() && actual.has_suffix(expected)
+    AttrContains => string_view_contains(actual, expected)
+  }
+}
+
+///|
+fn attribute_selector_matches(node : @dom.Node, selector : StringView) -> Bool {
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return false
+  }
+  match selector.split_once("=") {
+    Some((name, expected)) => {
+      guard attribute_name_and_operator(name) is Some((name, operator)) else {
+        return false
+      }
+      guard quoted_attribute_selector_value(expected) is Some(expected) else {
+        return false
+      }
+      match attribute_value_by_name(node, name) {
+        Some(actual) => attribute_value_matches(actual, operator, expected)
+        None => false
+      }
+    }
+    None =>
+      selector_identifier_is_valid(selector) &&
+      attribute_value_by_name(node, selector) is Some(_)
+  }
+}
+
+///|
+fn attribute_selector_is_valid(selector : StringView) -> Bool {
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return false
+  }
+  match selector.split_once("=") {
+    Some((name, expected)) =>
+      attribute_name_and_operator(name) is Some(_) &&
+      quoted_attribute_selector_value(expected) is Some(_)
+    None => selector_identifier_is_valid(selector)
+  }
+}
+
+///|
+fn is_first_element_child(node : @dom.Node) -> Bool {
+  match node.parent {
+    Some(parent) => {
+      for child in parent.children {
+        if child.kind == Element {
+          return physical_equal(child, node)
+        }
+      }
+      false
+    }
+    None => false
+  }
+}
+
+///|
+fn is_last_element_child(node : @dom.Node) -> Bool {
+  match node.parent {
+    Some(parent) => {
+      let mut last : @dom.Node? = None
+      for child in parent.children {
+        if child.kind == Element {
+          last = Some(child)
+        }
+      }
+      match last {
+        Some(child) => physical_equal(child, node)
+        None => false
+      }
+    }
+    None => false
+  }
+}
+
+///|
+fn is_only_element_child(node : @dom.Node) -> Bool {
+  is_first_element_child(node) && is_last_element_child(node)
+}
+
+///|
+fn is_empty_for_selector(node : @dom.Node) -> Bool {
+  for child in node.children {
+    match child.kind {
+      Element => return false
+      Text if !child.data[:].trim().is_empty() => return false
+      _ => ()
+    }
+  }
+  true
+}
+
+///|
+fn is_root_for_selector(node : @dom.Node) -> Bool {
+  match node.parent {
+    Some(parent) => parent.kind == Document || parent.kind == Fragment
+    None => false
+  }
+}
+
+///|
+fn is_first_of_type(node : @dom.Node) -> Bool {
+  match node.parent {
+    Some(parent) => {
+      for child in parent.children {
+        if child.kind == Element && child.name == node.name {
+          return physical_equal(child, node)
+        }
+      }
+      false
+    }
+    None => false
+  }
+}
+
+///|
+fn is_last_of_type(node : @dom.Node) -> Bool {
+  match node.parent {
+    Some(parent) => {
+      let mut last : @dom.Node? = None
+      for child in parent.children {
+        if child.kind == Element && child.name == node.name {
+          last = Some(child)
+        }
+      }
+      match last {
+        Some(child) => physical_equal(child, node)
+        None => false
+      }
+    }
+    None => false
+  }
+}
+
+///|
+fn is_only_of_type(node : @dom.Node) -> Bool {
+  is_first_of_type(node) && is_last_of_type(node)
+}
+
+///|
+fn element_child_index(node : @dom.Node) -> Int? {
+  match node.parent {
+    Some(parent) => {
+      let mut index = 0
+      for child in parent.children {
+        if child.kind == Element {
+          index += 1
+          if physical_equal(child, node) {
+            return Some(index)
+          }
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn element_type_index(node : @dom.Node) -> Int? {
+  match node.parent {
+    Some(parent) => {
+      let mut index = 0
+      for child in parent.children {
+        if child.kind == Element && child.name == node.name {
+          index += 1
+          if physical_equal(child, node) {
+            return Some(index)
+          }
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn normalize_nth_expression(expr : StringView) -> String {
+  let out = StringBuilder::new(size_hint=expr.length())
+  for ch in expr {
+    if !ch.is_ascii_whitespace() {
+      if ch.is_ascii_uppercase() {
+        out.write_char(ch.to_ascii_lowercase())
+      } else {
+        out.write_char(ch)
+      }
+    }
+  }
+  out.to_string()
+}
+
+///|
+fn parse_signed_int_view(expr : StringView) -> Int? {
+  if expr.is_empty() {
+    return None
+  }
+  let mut sign = 1
+  let mut pos = 0
+  match expr.get_char(pos) {
+    Some('+') => pos += 1
+    Some('-') => {
+      sign = -1
+      pos += 1
+    }
+    _ => ()
+  }
+  if pos >= expr.length() {
+    return None
+  }
+  let mut value = 0
+  while pos < expr.length() {
+    match expr.get_char(pos) {
+      Some(ch) if ch.is_digit(10) => {
+        value = value * 10 + ch.to_int() - ('0' : Int)
+        pos += ch.utf16_len()
+      }
+      _ => return None
+    }
+  }
+  Some(sign * value)
+}
+
+///|
+fn parse_nth_expression(expr : StringView) -> (Int, Int)? {
+  let normalized = normalize_nth_expression(expr)
+  let expr = normalized[:]
+  if expr.is_empty() {
+    return None
+  }
+  if expr == "odd" {
+    return Some((2, 1))
+  }
+  if expr == "even" {
+    return Some((2, 0))
+  }
+  match expr.split_once("n") {
+    Some((a_part, b_part)) => {
+      if string_view_contains(b_part, "n") {
+        return None
+      }
+      let a = if a_part.is_empty() || a_part == "+" {
+        Some(1)
+      } else if a_part == "-" {
+        Some(-1)
+      } else {
+        parse_signed_int_view(a_part)
+      }
+      guard a is Some(a) else { return None }
+      let b = if b_part.is_empty() {
+        Some(0)
+      } else {
+        parse_signed_int_view(b_part)
+      }
+      guard b is Some(b) else { return None }
+      Some((a, b))
+    }
+    None =>
+      match parse_signed_int_view(expr) {
+        Some(b) => Some((0, b))
+        None => None
+      }
+  }
+}
+
+///|
+fn nth_formula_matches(index : Int, a : Int, b : Int) -> Bool {
+  if a == 0 {
+    index == b
+  } else {
+    let diff = index - b
+    if a > 0 {
+      diff >= 0 && diff % a == 0
+    } else {
+      diff <= 0 && diff % a == 0
+    }
+  }
+}
+
+///|
+fn is_nth_child(node : @dom.Node, expr : StringView) -> Bool {
+  guard parse_nth_expression(expr) is Some((a, b)) else { return false }
+  match element_child_index(node) {
+    Some(index) => nth_formula_matches(index, a, b)
+    None => false
+  }
+}
+
+///|
+fn is_nth_of_type(node : @dom.Node, expr : StringView) -> Bool {
+  guard parse_nth_expression(expr) is Some((a, b)) else { return false }
+  match element_type_index(node) {
+    Some(index) => nth_formula_matches(index, a, b)
+    None => false
+  }
+}
+
+///|
+fn unescape_quoted_pseudo_arg(value : StringView, quote : Char) -> String {
+  let out = StringBuilder::new(size_hint=value.length())
+  let mut escaped = false
+  for ch in value {
+    if escaped {
+      if ch == quote || ch == '\\' {
+        out.write_char(ch)
+      } else {
+        out.write_char('\\')
+        out.write_char(ch)
+      }
+      escaped = false
+    } else if ch == '\\' {
+      escaped = true
+    } else {
+      out.write_char(ch)
+    }
+  }
+  if escaped {
+    out.write_char('\\')
+  }
+  out.to_string()
+}
+
+///|
+fn unquote_pseudo_arg(arg : StringView) -> String? {
+  let arg = arg.trim()
+  if arg.is_empty() {
+    return None
+  }
+  if arg.length() >= 2 {
+    let end = arg.length() - 1
+    match (arg.get_char(0), arg.get_char(end)) {
+      (Some('"'), Some('"')) => {
+        guard arg.get_view(start=1, end~) is Some(inner) else { return None }
+        return Some(unescape_quoted_pseudo_arg(inner, '"'))
+      }
+      (Some('\''), Some('\'')) => {
+        guard arg.get_view(start=1, end~) is Some(inner) else { return None }
+        return Some(unescape_quoted_pseudo_arg(inner, '\''))
+      }
+      _ => ()
+    }
+  }
+  Some(arg.to_owned())
+}
+
+///|
+fn remove_node_identity(nodes : Array[@dom.Node], node : @dom.Node) -> Unit {
+  let mut index = 0
+  while index < nodes.length() {
+    if physical_equal(nodes[index], node) {
+      ignore(nodes.remove(index))
+      return
+    }
+    index += 1
+  }
+}
+
+///|
+fn node_text_cache_get(
+  nodes : Array[@dom.Node],
+  texts : Array[String],
+  node : @dom.Node,
+) -> String? {
+  for index in 0..<nodes.length() {
+    if physical_equal(nodes[index], node) {
+      return Some(texts[index])
+    }
+  }
+  None
+}
+
+///|
+fn node_text_cache_set(
+  nodes : Array[@dom.Node],
+  texts : Array[String],
+  node : @dom.Node,
+  text : String,
+) -> Unit {
+  nodes.push(node)
+  texts.push(text)
+}
+
+///|
+fn selector_text_content(node : @dom.Node) -> String {
+  let cache_nodes : Array[@dom.Node] = []
+  let cache_texts : Array[String] = []
+  let visiting : Array[@dom.Node] = []
+  let stack : Array[(@dom.Node, Bool)] = [(node, false)]
+  while !stack.is_empty() {
+    let (current, visited) = stack[stack.length() - 1]
+    ignore(stack.pop())
+    if node_text_cache_get(cache_nodes, cache_texts, current) is Some(_) {
+      continue
+    }
+    if visited {
+      remove_node_identity(visiting, current)
+      if current.kind == Text {
+        node_text_cache_set(
+          cache_nodes,
+          cache_texts,
+          current,
+          current.data[:].trim().to_owned(),
+        )
+      } else {
+        let parts : Array[String] = []
+        for child in current.children {
+          match node_text_cache_get(cache_nodes, cache_texts, child) {
+            Some(text) if text != "" => parts.push(text)
+            _ => ()
+          }
+        }
+        node_text_cache_set(cache_nodes, cache_texts, current, parts.join(" "))
+      }
+    } else if node_identity_seen(visiting, current) {
+      node_text_cache_set(cache_nodes, cache_texts, current, "")
+    } else {
+      visiting.push(current)
+      stack.push((current, true))
+      let mut index = current.children.length()
+      while index > 0 {
+        index -= 1
+        stack.push((current.children[index], false))
+      }
+    }
+  }
+  node_text_cache_get(cache_nodes, cache_texts, node).unwrap_or("")
+}
+
+///|
+fn contains_text(node : @dom.Node, arg : StringView) -> Bool {
+  guard unquote_pseudo_arg(arg) is Some(needle) else { return false }
+  if needle == "" {
+    return true
+  }
+  let text = selector_text_content(node)
+  string_view_contains(text, needle)
+}
+
+///|
+fn functional_pseudo_parts(name : StringView) -> (StringView, StringView)? {
+  match name.split_once("(") {
+    Some((pseudo_name, rest)) => {
+      let mut depth = 1
+      let mut pos = 0
+      while pos < rest.length() {
+        guard rest.get_char(pos) is Some(ch) else { return None }
+        if ch == '(' {
+          depth += 1
+        } else if ch == ')' {
+          depth -= 1
+          if depth == 0 {
+            if pos + ch.utf16_len() != rest.length() {
+              return None
+            }
+            return Some((pseudo_name, rest[0:pos]))
+          }
+        }
+        pos += ch.utf16_len()
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn pseudo_selector_matches(node : @dom.Node, name : StringView) -> Bool {
+  let lower_name = @syn.lower_ascii(name)
+  match lower_name[:] {
+    "comment" => node.kind == Comment
+    "first-child" => is_first_element_child(node)
+    "last-child" => is_last_element_child(node)
+    "only-child" => is_only_element_child(node)
+    "empty" => is_empty_for_selector(node)
+    "root" => is_root_for_selector(node)
+    "first-of-type" => is_first_of_type(node)
+    "last-of-type" => is_last_of_type(node)
+    "only-of-type" => is_only_of_type(node)
+    _ =>
+      match functional_pseudo_parts(name) {
+        Some((pseudo_name, arg)) =>
+          match @syn.lower_ascii(pseudo_name)[:] {
+            "nth-child" => is_nth_child(node, arg)
+            "nth-of-type" => is_nth_of_type(node, arg)
+            "not" => !matches_selector_list(node, arg)
+            "contains" => contains_text(node, arg)
+            "comment" => node.kind == Comment
+            _ => false
+          }
+        _ => false
+      }
+  }
+}
+
+///|
+fn pseudo_selector_is_valid(name : StringView) -> Bool {
+  let lower_name = @syn.lower_ascii(name)
+  match lower_name[:] {
+    "comment"
+    | "first-child"
+    | "last-child"
+    | "only-child"
+    | "empty"
+    | "root"
+    | "first-of-type"
+    | "last-of-type"
+    | "only-of-type" => true
+    _ =>
+      match functional_pseudo_parts(name) {
+        Some((pseudo_name, arg)) =>
+          match @syn.lower_ascii(pseudo_name)[:] {
+            "nth-child" | "nth-of-type" | "not" | "comment" => true
+            "contains" => !arg.trim().is_empty()
+            _ => false
+          }
+        None => false
+      }
+  }
+}
+
+///|
+fn matches_simple_selector(node : @dom.Node, selector : StringView) -> Bool {
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return false
+  }
+  if node.kind != Element {
+    return non_element_simple_selector_matches(node, selector)
+  }
+  let mut pos = 0
+  match selector.get_char(pos).unwrap() {
+    '*' => {
+      pos += 1
+      if pos < selector.length() {
+        match selector.get_char(pos) {
+          Some('.') | Some('#') | Some('[') | Some(':') => ()
+          _ => return false
+        }
+      }
+    }
+    '.' | '#' | '[' | ':' => ()
+    _ => {
+      let end = next_simple_selector_marker(selector, pos)
+      let tag = selector[pos:end]
+      if tag.is_empty() ||
+        !selector_identifier_is_valid(tag) ||
+        !tag_selector_matches(node, tag) {
+        return false
+      }
+      pos = end
+    }
+  }
+  while pos < selector.length() {
+    let marker = selector.get_char(pos).unwrap()
+    if marker == '[' {
+      guard find_attribute_selector_end(selector, pos) is Some(end) else {
+        return false
+      }
+      let attribute = selector[pos + 1:end]
+      if !attribute_selector_matches(node, attribute) {
+        return false
+      }
+      pos = end + 1
+      continue
+    }
+    if marker == ':' {
+      let start = pos + marker.utf16_len()
+      let end = next_simple_selector_marker(selector, start)
+      let name = selector[start:end]
+      if name.is_empty() || !pseudo_selector_matches(node, name) {
+        return false
+      }
+      pos = end
+      continue
+    }
+    if marker != '.' && marker != '#' {
+      return false
+    }
+    let start = pos + marker.utf16_len()
+    let end = next_simple_selector_marker(selector, start)
+    let name = selector[start:end]
+    if name.is_empty() || !selector_identifier_is_valid(name) {
+      return false
+    }
+    if marker == '.' {
+      if !class_selector_matches(node, name) {
+        return false
+      }
+    } else if !id_selector_matches(node, name) {
+      return false
+    }
+    pos = end
+  }
+  true
+}
+
+///|
+fn simple_selector_is_valid(selector : StringView) -> Bool {
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return false
+  }
+  let mut pos = 0
+  match selector.get_char(pos).unwrap() {
+    '*' => {
+      pos += 1
+      if pos < selector.length() {
+        match selector.get_char(pos) {
+          Some('.') | Some('#') | Some('[') | Some(':') => ()
+          _ => return false
+        }
+      }
+    }
+    '.' | '#' | '[' | ':' => ()
+    _ => {
+      let end = next_simple_selector_marker(selector, pos)
+      let tag = selector[pos:end]
+      if tag.is_empty() || !selector_identifier_is_valid(tag) {
+        return false
+      }
+      pos = end
+    }
+  }
+  while pos < selector.length() {
+    let marker = selector.get_char(pos).unwrap()
+    if marker == '[' {
+      guard find_attribute_selector_end(selector, pos) is Some(end) else {
+        return false
+      }
+      let attribute = selector[pos + 1:end]
+      if !attribute_selector_is_valid(attribute) {
+        return false
+      }
+      pos = end + 1
+      continue
+    }
+    if marker == ':' {
+      let start = pos + marker.utf16_len()
+      let end = next_simple_selector_marker(selector, start)
+      let name = selector[start:end]
+      if name.is_empty() || !pseudo_selector_is_valid(name) {
+        return false
+      }
+      pos = end
+      continue
+    }
+    if marker != '.' && marker != '#' {
+      return false
+    }
+    let start = pos + marker.utf16_len()
+    let end = next_simple_selector_marker(selector, start)
+    let name = selector[start:end]
+    if name.is_empty() || !selector_identifier_is_valid(name) {
+      return false
+    }
+    pos = end
+  }
+  true
+}
+
+///|
+fn non_element_simple_selector_matches(
+  node : @dom.Node,
+  selector : StringView,
+) -> Bool {
+  let mut pos = 0
+  while pos < selector.length() {
+    guard selector.get_char(pos) is Some(':') else { return false }
+    let start = pos + ':'.utf16_len()
+    let end = next_simple_selector_marker(selector, start)
+    guard selector.get_view(start~, end~) is Some(name) else { return false }
+    if name.is_empty() || !pseudo_selector_matches(node, name) {
+      return false
+    }
+    pos = end
+  }
+  true
+}
+
+///|
+fn selector_list_part(
+  selector : StringView,
+  start : Int,
+  end : Int,
+) -> StringView? {
+  let part = selector[start:end].trim()
+  if part.is_empty() {
+    None
+  } else {
+    Some(part)
+  }
+}
+
+///|
+fn selector_list_parts(selector : StringView) -> Array[StringView]? {
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return None
+  }
+  let parts : Array[StringView] = []
+  let mut start = 0
+  let mut pos = 0
+  let mut bracket_depth = 0
+  let mut paren_depth = 0
+  let mut quote : Char? = None
+  let mut escaped = false
+  let mut seen_part = false
+  while pos < selector.length() {
+    let ch = selector.get_char(pos).unwrap()
+    match quote {
+      Some(q) =>
+        if escaped {
+          escaped = false
+        } else if ch == '\\' {
+          escaped = true
+        } else if ch == q {
+          quote = None
+        }
+      None =>
+        if bracket_depth > 0 && (ch == '"' || ch == '\'') {
+          quote = Some(ch)
+          escaped = false
+        } else if ch == '[' {
+          bracket_depth += 1
+        } else if ch == ']' && bracket_depth > 0 {
+          bracket_depth -= 1
+        } else if bracket_depth == 0 && ch == '(' {
+          paren_depth += 1
+        } else if bracket_depth == 0 && ch == ')' && paren_depth > 0 {
+          paren_depth -= 1
+        } else if ch == ',' && bracket_depth == 0 && paren_depth == 0 {
+          match selector_list_part(selector, start, pos) {
+            Some(part) => {
+              seen_part = true
+              parts.push(part)
+            }
+            None => if !seen_part { return None }
+          }
+          start = pos + ch.utf16_len()
+        }
+    }
+    pos += ch.utf16_len()
+  }
+  match selector_list_part(selector, start, selector.length()) {
+    Some(part) => {
+      parts.push(part)
+      Some(parts)
+    }
+    None => if seen_part { Some(parts) } else { None }
+  }
+}
+
+///|
+priv enum SelectorCombinator {
+  DescendantCombinator
+  ChildCombinator
+  AdjacentSiblingCombinator
+  GeneralSiblingCombinator
+} derive(Eq)
+
+///|
+fn push_complex_selector_part(
+  parts : Array[StringView],
+  combinators : Array[SelectorCombinator],
+  part : StringView,
+  pending : SelectorCombinator,
+) -> Unit {
+  if !parts.is_empty() {
+    combinators.push(pending)
+  }
+  parts.push(part)
+}
+
+///|
+fn split_complex_selector(
+  selector : StringView,
+) -> (Array[StringView], Array[SelectorCombinator])? {
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return None
+  }
+  let parts : Array[StringView] = []
+  let combinators : Array[SelectorCombinator] = []
+  let mut start = 0
+  let mut pos = 0
+  let mut bracket_depth = 0
+  let mut paren_depth = 0
+  let mut quote : Char? = None
+  let mut escaped = false
+  let mut pending = DescendantCombinator
+  while pos < selector.length() {
+    let ch = selector.get_char(pos).unwrap()
+    match quote {
+      Some(q) =>
+        if escaped {
+          escaped = false
+        } else if ch == '\\' {
+          escaped = true
+        } else if ch == q {
+          quote = None
+        }
+      None =>
+        if bracket_depth > 0 && (ch == '"' || ch == '\'') {
+          quote = Some(ch)
+          escaped = false
+        } else if ch == '[' {
+          bracket_depth += 1
+        } else if ch == ']' && bracket_depth > 0 {
+          bracket_depth -= 1
+        } else if bracket_depth == 0 && ch == '(' {
+          paren_depth += 1
+        } else if bracket_depth == 0 && ch == ')' && paren_depth > 0 {
+          paren_depth -= 1
+        } else if bracket_depth == 0 &&
+          paren_depth == 0 &&
+          is_html_whitespace_char(ch) {
+          match selector_list_part(selector, start, pos) {
+            Some(part) => {
+              push_complex_selector_part(parts, combinators, part, pending)
+              pending = DescendantCombinator
+            }
+            None => ()
+          }
+          start = pos + ch.utf16_len()
+        } else if bracket_depth == 0 &&
+          paren_depth == 0 &&
+          (ch == '>' || ch == '+' || ch == '~') {
+          match selector_list_part(selector, start, pos) {
+            Some(part) =>
+              push_complex_selector_part(parts, combinators, part, pending)
+            None =>
+              if parts.is_empty() || pending != DescendantCombinator {
+                return None
+              }
+          }
+          pending = if ch == '>' {
+            ChildCombinator
+          } else if ch == '+' {
+            AdjacentSiblingCombinator
+          } else {
+            GeneralSiblingCombinator
+          }
+          start = pos + ch.utf16_len()
+        }
+    }
+    pos += ch.utf16_len()
+  }
+  match selector_list_part(selector, start, selector.length()) {
+    Some(part) => push_complex_selector_part(parts, combinators, part, pending)
+    None => return None
+  }
+  Some((parts, combinators))
+}
+
+///|
+fn selector_identifier_end(selector : StringView, start : Int) -> Int {
+  guard selector.get_char(start) is Some(first) else { return start }
+  if !selector_identifier_start(first) {
+    return start
+  }
+  let mut pos = start + first.utf16_len()
+  while pos < selector.length() {
+    match selector.get_char(pos) {
+      Some(ch) if selector_identifier_char(ch) => pos += ch.utf16_len()
+      _ => return pos
+    }
+  }
+  pos
+}
+
+///|
+fn selector_allows_non_elements(selector : StringView) -> Bool {
+  let mut pos = 0
+  let mut bracket_depth = 0
+  let mut paren_depth = 0
+  let mut quote : Char? = None
+  let mut escaped = false
+  for ch in selector {
+    match quote {
+      Some(q) =>
+        if escaped {
+          escaped = false
+        } else if ch == '\\' {
+          escaped = true
+        } else if ch == q {
+          quote = None
+        }
+      None =>
+        if bracket_depth > 0 && (ch == '"' || ch == '\'') {
+          quote = Some(ch)
+          escaped = false
+        } else if ch == '[' {
+          bracket_depth += 1
+        } else if ch == ']' && bracket_depth > 0 {
+          bracket_depth -= 1
+        } else if bracket_depth == 0 && ch == '(' {
+          paren_depth += 1
+        } else if bracket_depth == 0 && ch == ')' && paren_depth > 0 {
+          paren_depth -= 1
+        } else if bracket_depth == 0 && paren_depth == 0 && ch == ':' {
+          let start = pos + ch.utf16_len()
+          let end = selector_identifier_end(selector, start)
+          if end > start {
+            let name = selector[start:end]
+            if @syn.lower_ascii(name) == "comment" {
+              return true
+            }
+          }
+        }
+    }
+    pos += ch.utf16_len()
+  }
+  false
+}
+
+///|
+fn previous_element_sibling(node : @dom.Node) -> @dom.Node? {
+  match node.parent {
+    Some(parent) => {
+      let mut previous : @dom.Node? = None
+      for child in parent.children {
+        if physical_equal(child, node) {
+          return previous
+        }
+        if child.kind == Element {
+          previous = Some(child)
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn previous_matching_sibling(
+  node : @dom.Node,
+  selector : StringView,
+) -> @dom.Node? {
+  match node.parent {
+    Some(parent) => {
+      let mut previous_match : @dom.Node? = None
+      for child in parent.children {
+        if physical_equal(child, node) {
+          return previous_match
+        }
+        if child.kind == Element && matches_simple_selector(child, selector) {
+          previous_match = Some(child)
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn matches_complex_selector(node : @dom.Node, selector : StringView) -> Bool {
+  guard split_complex_selector(selector) is Some((parts, combinators)) else {
+    return false
+  }
+  let last_index = parts.length() - 1
+  if !matches_simple_selector(node, parts[last_index]) {
+    return false
+  }
+  let mut needed = last_index - 1
+  let mut current = node
+  while needed >= 0 {
+    let wanted = parts[needed]
+    match combinators[needed] {
+      DescendantCombinator => {
+        let visited : Array[@dom.Node] = [current]
+        let mut cursor = current.parent
+        let mut found = false
+        while !found {
+          match cursor {
+            Some(ancestor) => {
+              if node_identity_seen(visited, ancestor) {
+                return false
+              }
+              visited.push(ancestor)
+              if matches_simple_selector(ancestor, wanted) {
+                current = ancestor
+                found = true
+              } else {
+                cursor = ancestor.parent
+              }
+            }
+            None => return false
+          }
+        }
+      }
+      ChildCombinator =>
+        match current.parent {
+          Some(ancestor) => {
+            if !matches_simple_selector(ancestor, wanted) {
+              return false
+            }
+            current = ancestor
+          }
+          None => return false
+        }
+      AdjacentSiblingCombinator =>
+        match previous_element_sibling(current) {
+          Some(sibling) => {
+            if !matches_simple_selector(sibling, wanted) {
+              return false
+            }
+            current = sibling
+          }
+          None => return false
+        }
+      GeneralSiblingCombinator =>
+        match previous_matching_sibling(current, wanted) {
+          Some(sibling) => current = sibling
+          None => return false
+        }
+    }
+    needed -= 1
+  }
+  true
+}
+
+///|
+fn complex_selector_is_valid(selector : StringView) -> Bool {
+  guard split_complex_selector(selector) is Some((parts, _)) else {
+    return false
+  }
+  for part in parts {
+    if !simple_selector_is_valid(part) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn matches_selector_list(node : @dom.Node, selector : StringView) -> Bool {
+  guard selector_list_parts(selector) is Some(parts) else { return false }
+  for part in parts {
+    if !complex_selector_is_valid(part) {
+      return false
+    }
+  }
+  for part in parts {
+    if matches_complex_selector(node, part) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn selector_simple_component_count(selector : StringView) -> Int? {
+  let selector = selector.trim()
+  if !simple_selector_is_valid(selector) {
+    return None
+  }
+  let mut count = 0
+  let mut pos = 0
+  match selector.get_char(pos).unwrap() {
+    '*' => {
+      count += 1
+      pos += 1
+    }
+    '.' | '#' | '[' | ':' => ()
+    _ => {
+      count += 1
+      pos = next_simple_selector_marker(selector, pos)
+    }
+  }
+  while pos < selector.length() {
+    let marker = selector.get_char(pos).unwrap()
+    count += 1
+    if marker == '[' {
+      let end = find_attribute_selector_end(selector, pos).unwrap()
+      pos = end + 1
+    } else if marker == ':' {
+      let start = pos + marker.utf16_len()
+      pos = next_simple_selector_marker(selector, start)
+    } else if marker == '.' || marker == '#' {
+      let start = pos + marker.utf16_len()
+      pos = next_simple_selector_marker(selector, start)
+    }
+  }
+  Some(count)
+}
+
+///|
+fn selector_validate_simple_parse_depth(
+  selector : StringView,
+  limits : SelectorLimits,
+  depth : Int,
+) -> Unit raise @core.HtmlError {
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return
+  }
+  let mut pos = 0
+  match selector.get_char(pos).unwrap() {
+    '*' => pos += 1
+    '.' | '#' | '[' | ':' => ()
+    _ => pos = next_simple_selector_marker(selector, pos)
+  }
+  while pos < selector.length() {
+    let marker = selector.get_char(pos).unwrap()
+    if marker == '[' {
+      match find_attribute_selector_end(selector, pos) {
+        Some(end) => pos = end + 1
+        None => return
+      }
+      continue
+    }
+    if marker == ':' {
+      let start = pos + marker.utf16_len()
+      let end = next_simple_selector_marker(selector, start)
+      let name = selector[start:end]
+      match functional_pseudo_parts(name) {
+        Some((pseudo_name, arg)) =>
+          if @syn.lower_ascii(pseudo_name) == "not" {
+            selector_validate_limits_at_depth(arg, limits, depth + 1)
+          }
+        None => ()
+      }
+      pos = end
+      continue
+    }
+    if marker == '.' || marker == '#' {
+      let start = pos + marker.utf16_len()
+      pos = next_simple_selector_marker(selector, start)
+    } else {
+      return
+    }
+  }
+}
+
+///|
+fn selector_validate_limits_at_depth(
+  selector : StringView,
+  limits : SelectorLimits,
+  depth : Int,
+) -> Unit raise @core.HtmlError {
+  if depth > limits.max_parse_depth {
+    raise SelectorError("Selector nesting is too deep")
+  }
+  if selector.length() > limits.max_length {
+    raise SelectorError("Selector too long")
+  }
+  guard selector_list_parts(selector) is Some(parts) else { return }
+  if parts.length() > limits.max_list_items {
+    raise SelectorError("Selector list has too many items")
+  }
+  for part in parts {
+    guard split_complex_selector(part) is Some((simple_parts, _)) else {
+      continue
+    }
+    if simple_parts.length() > limits.max_complex_selector_parts {
+      raise SelectorError("Selector has too many complex parts")
+    }
+    for simple in simple_parts {
+      match selector_simple_component_count(simple) {
+        Some(count) if count > limits.max_compound_simple_selectors =>
+          raise SelectorError("Selector has too many simple selectors")
+        _ => ()
+      }
+      selector_validate_simple_parse_depth(simple, limits, depth)
+    }
+  }
+}
+
+///|
+fn selector_validate_limits(
+  selector : StringView,
+  limits : SelectorLimits,
+) -> Unit raise @core.HtmlError {
+  selector_validate_limits_at_depth(selector, limits, 0)
+}
+
+///|
+fn selector_uses_byte_scanned_match(selector : StringView) -> Bool {
+  string_view_contains(selector, "*=") ||
+  string_view_contains(@syn.lower_ascii(selector), ":contains")
+}
+
+///|
+fn selector_match_byte_cost(node : @dom.Node, include_text : Bool) -> Int {
+  let mut cost = 0
+  for _, value in node.attrs {
+    match value {
+      Some(raw) => cost += raw.length()
+      None => ()
+    }
+  }
+  if include_text {
+    cost += selector_text_content(node).length()
+  }
+  cost
+}
+
+///|
+fn selector_check_match_budget(
+  node : @dom.Node,
+  selector : StringView,
+  limits : SelectorLimits,
+) -> Unit raise @core.HtmlError {
+  if limits.max_match_bytes < 0 {
+    raise SelectorError("Selector match byte budget exceeded")
+  }
+  if selector_uses_byte_scanned_match(selector) {
+    let include_text = string_view_contains(
+      @syn.lower_ascii(selector),
+      ":contains",
+    )
+    if selector_match_byte_cost(node, include_text) > limits.max_match_bytes {
+      raise SelectorError("Selector match byte budget exceeded")
+    }
+  }
+}
+
+///|
+priv struct SelectorMatchContext {
+  limits : SelectorLimits
+  mut remaining_steps : Int
+}
+
+///|
+fn SelectorMatchContext::new(limits : SelectorLimits) -> SelectorMatchContext {
+  { limits, remaining_steps: limits.max_match_steps }
+}
+
+///|
+fn SelectorMatchContext::tick(
+  self : SelectorMatchContext,
+  steps? : Int = 1,
+) -> Unit raise @core.HtmlError {
+  if steps <= 0 {
+    return
+  }
+  self.remaining_steps -= steps
+  if self.remaining_steps < 0 {
+    raise SelectorError("Selector match budget exceeded")
+  }
+}
+
+///|
+fn pseudo_selector_matches_with_context(
+  node : @dom.Node,
+  name : StringView,
+  context : SelectorMatchContext,
+  depth : Int,
+) -> Bool raise @core.HtmlError {
+  let lower_name = @syn.lower_ascii(name)
+  match lower_name[:] {
+    "comment" => node.kind == Comment
+    "first-child" => is_first_element_child(node)
+    "last-child" => is_last_element_child(node)
+    "only-child" => is_only_element_child(node)
+    "empty" => is_empty_for_selector(node)
+    "root" => is_root_for_selector(node)
+    "first-of-type" => is_first_of_type(node)
+    "last-of-type" => is_last_of_type(node)
+    "only-of-type" => is_only_of_type(node)
+    _ =>
+      match functional_pseudo_parts(name) {
+        Some((pseudo_name, arg)) =>
+          match @syn.lower_ascii(pseudo_name)[:] {
+            "nth-child" => is_nth_child(node, arg)
+            "nth-of-type" => is_nth_of_type(node, arg)
+            "not" =>
+              !matches_selector_list_with_context(node, arg, context, depth + 1)
+            "contains" => contains_text(node, arg)
+            "comment" => node.kind == Comment
+            _ => false
+          }
+        _ => false
+      }
+  }
+}
+
+///|
+fn non_element_simple_selector_matches_with_context(
+  node : @dom.Node,
+  selector : StringView,
+  context : SelectorMatchContext,
+  depth : Int,
+) -> Bool raise @core.HtmlError {
+  let mut pos = 0
+  while pos < selector.length() {
+    context.tick()
+    guard selector.get_char(pos) is Some(':') else { return false }
+    let start = pos + ':'.utf16_len()
+    let end = next_simple_selector_marker(selector, start)
+    guard selector.get_view(start~, end~) is Some(name) else { return false }
+    if name.is_empty() ||
+      !pseudo_selector_matches_with_context(node, name, context, depth) {
+      return false
+    }
+    pos = end
+  }
+  true
+}
+
+///|
+fn matches_simple_selector_with_context(
+  node : @dom.Node,
+  selector : StringView,
+  context : SelectorMatchContext,
+  depth : Int,
+) -> Bool raise @core.HtmlError {
+  context.tick()
+  let selector = selector.trim()
+  if selector.is_empty() {
+    return false
+  }
+  if node.kind != Element {
+    return non_element_simple_selector_matches_with_context(
+      node, selector, context, depth,
+    )
+  }
+  let mut pos = 0
+  match selector.get_char(pos).unwrap() {
+    '*' => {
+      pos += 1
+      if pos < selector.length() {
+        match selector.get_char(pos) {
+          Some('.') | Some('#') | Some('[') | Some(':') => ()
+          _ => return false
+        }
+      }
+    }
+    '.' | '#' | '[' | ':' => ()
+    _ => {
+      let end = next_simple_selector_marker(selector, pos)
+      let tag = selector[pos:end]
+      if tag.is_empty() ||
+        !selector_identifier_is_valid(tag) ||
+        !tag_selector_matches(node, tag) {
+        return false
+      }
+      pos = end
+    }
+  }
+  while pos < selector.length() {
+    context.tick()
+    let marker = selector.get_char(pos).unwrap()
+    if marker == '[' {
+      guard find_attribute_selector_end(selector, pos) is Some(end) else {
+        return false
+      }
+      let attribute = selector[pos + 1:end]
+      if !attribute_selector_matches(node, attribute) {
+        return false
+      }
+      pos = end + 1
+      continue
+    }
+    if marker == ':' {
+      let start = pos + marker.utf16_len()
+      let end = next_simple_selector_marker(selector, start)
+      let name = selector[start:end]
+      if name.is_empty() ||
+        !pseudo_selector_matches_with_context(node, name, context, depth) {
+        return false
+      }
+      pos = end
+      continue
+    }
+    if marker != '.' && marker != '#' {
+      return false
+    }
+    let start = pos + marker.utf16_len()
+    let end = next_simple_selector_marker(selector, start)
+    let name = selector[start:end]
+    if name.is_empty() || !selector_identifier_is_valid(name) {
+      return false
+    }
+    if marker == '.' {
+      if !class_selector_matches(node, name) {
+        return false
+      }
+    } else if !id_selector_matches(node, name) {
+      return false
+    }
+    pos = end
+  }
+  true
+}
+
+///|
+fn previous_matching_sibling_with_context(
+  node : @dom.Node,
+  selector : StringView,
+  context : SelectorMatchContext,
+  depth : Int,
+) -> @dom.Node? raise @core.HtmlError {
+  match node.parent {
+    Some(parent) => {
+      let mut previous_match : @dom.Node? = None
+      for child in parent.children {
+        context.tick()
+        if physical_equal(child, node) {
+          return previous_match
+        }
+        if child.kind == Element &&
+          matches_simple_selector_with_context(child, selector, context, depth) {
+          previous_match = Some(child)
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn previous_element_sibling_with_context(
+  node : @dom.Node,
+  context : SelectorMatchContext,
+) -> @dom.Node? raise @core.HtmlError {
+  match node.parent {
+    Some(parent) => {
+      let mut previous : @dom.Node? = None
+      for child in parent.children {
+        context.tick()
+        if physical_equal(child, node) {
+          return previous
+        }
+        if child.kind == Element {
+          previous = Some(child)
+        }
+      }
+      None
+    }
+    None => None
+  }
+}
+
+///|
+fn matches_complex_selector_with_context(
+  node : @dom.Node,
+  selector : StringView,
+  context : SelectorMatchContext,
+  depth : Int,
+) -> Bool raise @core.HtmlError {
+  context.tick()
+  if depth > context.limits.max_match_depth {
+    raise SelectorError("Selector nesting is too deep")
+  }
+  guard split_complex_selector(selector) is Some((parts, combinators)) else {
+    return false
+  }
+  let last_index = parts.length() - 1
+  if !matches_simple_selector_with_context(
+      node,
+      parts[last_index],
+      context,
+      depth,
+    ) {
+    return false
+  }
+  let mut needed = last_index - 1
+  let mut current = node
+  while needed >= 0 {
+    context.tick()
+    let wanted = parts[needed]
+    match combinators[needed] {
+      DescendantCombinator => {
+        let visited : Array[@dom.Node] = [current]
+        let mut cursor = current.parent
+        let mut found = false
+        while !found {
+          context.tick()
+          match cursor {
+            Some(ancestor) => {
+              if node_identity_seen(visited, ancestor) {
+                return false
+              }
+              visited.push(ancestor)
+              if matches_simple_selector_with_context(
+                  ancestor, wanted, context, depth,
+                ) {
+                current = ancestor
+                found = true
+              } else {
+                cursor = ancestor.parent
+              }
+            }
+            None => return false
+          }
+        }
+      }
+      ChildCombinator =>
+        match current.parent {
+          Some(ancestor) => {
+            if !matches_simple_selector_with_context(
+                ancestor, wanted, context, depth,
+              ) {
+              return false
+            }
+            current = ancestor
+          }
+          None => return false
+        }
+      AdjacentSiblingCombinator =>
+        match previous_element_sibling_with_context(current, context) {
+          Some(sibling) => {
+            if !matches_simple_selector_with_context(
+                sibling, wanted, context, depth,
+              ) {
+              return false
+            }
+            current = sibling
+          }
+          None => return false
+        }
+      GeneralSiblingCombinator =>
+        match
+          previous_matching_sibling_with_context(
+            current, wanted, context, depth,
+          ) {
+          Some(sibling) => current = sibling
+          None => return false
+        }
+    }
+    needed -= 1
+  }
+  true
+}
+
+///|
+fn matches_selector_list_with_context(
+  node : @dom.Node,
+  selector : StringView,
+  context : SelectorMatchContext,
+  depth : Int,
+) -> Bool raise @core.HtmlError {
+  context.tick()
+  if depth > context.limits.max_match_depth {
+    raise SelectorError("Selector nesting is too deep")
+  }
+  guard selector_list_parts(selector) is Some(parts) else { return false }
+  for part in parts {
+    if !complex_selector_is_valid(part) {
+      return false
+    }
+  }
+  for part in parts {
+    selector_check_match_budget(node, part, context.limits)
+    if matches_complex_selector_with_context(node, part, context, depth) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+pub fn matches_with_limits(
+  node : @dom.Node,
+  selector : StringView,
+  limits : SelectorLimits,
+) -> Bool raise @core.HtmlError {
+  selector_validate_limits(selector, limits)
+  matches_selector_list_with_context(
+    node,
+    selector,
+    SelectorMatchContext::new(limits),
+    0,
+  )
+}
+
+///|
+fn node_identity_seen(nodes : Array[@dom.Node], node : @dom.Node) -> Bool {
+  for seen in nodes {
+    if physical_equal(seen, node) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn walk_query(
+  node : @dom.Node,
+  selector : StringView,
+  out : Array[@dom.Node],
+  allow_non_elements : Bool,
+  visited : Array[@dom.Node],
+) -> Unit {
+  if node_identity_seen(visited, node) {
+    return
+  }
+  visited.push(node)
+  if (allow_non_elements || node.kind == Element) &&
+    matches_selector_list(node, selector) {
+    out.push(node)
+  }
+  for child in node.children {
+    walk_query(child, selector, out, allow_non_elements, visited)
+  }
+}
+
+///|
+/// Return all descendants of `root` that match a CSS selector.
+pub fn query(root : @dom.Node, selector : StringView) -> Array[@dom.Node] {
+  let out : Array[@dom.Node] = []
+  let allow_non_elements = selector_allows_non_elements(selector)
+  let visited : Array[@dom.Node] = [root]
+  for child in root.children {
+    walk_query(child, selector, out, allow_non_elements, visited)
+  }
+  out
+}
+
+///|
+/// Return the first descendant of `root` that matches a CSS selector.
+pub fn query_one(root : @dom.Node, selector : StringView) -> @dom.Node? {
+  query(root, selector).get(0)
+}
+
+///|
+/// Return whether `node` itself matches a CSS selector.
+pub fn matches(node : @dom.Node, selector : StringView) -> Bool {
+  matches_selector_list(node, selector)
+}
+
+///|
+
+///|
+/// Return whether a CSS selector parses as a non-empty selector list.
+pub fn is_valid(selector : StringView) -> Bool {
+  guard selector_list_parts(selector) is Some(parts) && !parts.is_empty() else {
+    return false
+  }
+  for part in parts {
+    if !complex_selector_is_valid(part) {
+      return false
+    }
+  }
+  true
+}

@@ -1239,7 +1239,7 @@ fn transform_matches_element(
 ) -> Bool raise HtmlError {
   match transform.kind {
     MergeAttributeTokens => lower_ascii(node.name) == transform.merge_tag
-    _ => matches_selector_list_with_limits(node, transform.selector, limits)
+    _ => @sel.matches_with_limits(node, transform.selector, limits)
   }
 }
 

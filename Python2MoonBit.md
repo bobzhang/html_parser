@@ -1297,6 +1297,10 @@ JustHTML from Python to MoonBit.
   directly, `pub(all)` can be a temporary bridge. Record it as technical debt
   and replace it with narrower package APIs once parser, sanitizer, serializer,
   and transform packages have moved.
+- When extracting a feature package, audit helpers that looked feature-local in
+  the original file. Selector matching owned `attribute_value_by_name`, but
+  Markdown also used it; keep shared root helpers in the compatibility package
+  or promote them deliberately instead of moving them blindly with the feature.
 - Prefer one shared predicate/table for parser and tokenizer state categories
   when the HTML standard uses the same set. Duplicating lists such as raw-text
   element names quickly causes parser/tokenizer drift.

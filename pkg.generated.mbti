@@ -4,6 +4,7 @@ package "bobzhang/html_parser"
 import {
   "bobzhang/html_parser/core",
   "bobzhang/html_parser/dom",
+  "bobzhang/html_parser/selector",
   "bobzhang/html_parser/stream",
   "bobzhang/html_parser/tokenizer",
   "moonbitlang/core/debug",
@@ -148,20 +149,8 @@ pub struct SanitizationPolicy {
   // private fields
 } derive(@debug.Debug)
 pub fn SanitizationPolicy::collected_security_errors(Self) -> Array[@core.ParseError]
-pub fn SanitizationPolicy::new(Array[String], allowed_attributes? : Map[String, Array[String]], url_policy? : UrlPolicy, drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling, force_link_rel? : Array[String], allowed_css_properties? : Array[String], strip_invisible_unicode? : Bool, selector_limits? : SelectorLimits, unsafe_handling? : UnsafeHandling) -> Self
+pub fn SanitizationPolicy::new(Array[String], allowed_attributes? : Map[String, Array[String]], url_policy? : UrlPolicy, drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling, force_link_rel? : Array[String], allowed_css_properties? : Array[String], strip_invisible_unicode? : Bool, selector_limits? : @selector.SelectorLimits, unsafe_handling? : UnsafeHandling) -> Self
 pub fn SanitizationPolicy::reset_collected_security_errors(Self) -> Unit
-
-pub(all) struct SelectorLimits {
-  max_match_depth : Int
-  max_length : Int
-  max_list_items : Int
-  max_compound_simple_selectors : Int
-  max_complex_selector_parts : Int
-  max_parse_depth : Int
-  max_match_steps : Int
-  max_match_bytes : Int
-} derive(Eq, @debug.Debug)
-pub fn SelectorLimits::new(max_match_depth? : Int, max_length? : Int, max_list_items? : Int, max_compound_simple_selectors? : Int, max_complex_selector_parts? : Int, max_parse_depth? : Int, max_match_steps? : Int, max_match_bytes? : Int) -> Self
 
 pub struct TransformSpec {
   // private fields
@@ -239,6 +228,8 @@ pub using @dom {type Node}
 pub using @dom {type NodeKind}
 
 pub using @core {type ParseError}
+
+pub using @selector {type SelectorLimits}
 
 pub using @stream {type StreamDoctypeEvent}
 

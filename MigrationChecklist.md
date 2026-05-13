@@ -241,7 +241,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Extract stream event API and sink.
 - [x] Move string stream facade into `stream`.
 - [x] Move stream byte facade into `stream`.
-- [ ] Extract selector parsing and matching.
+- [x] Extract selector parsing and matching.
 - [ ] Extract HTML serializer and text extraction.
 - [ ] Extract Markdown conversion.
 - [ ] Extract sanitizer policy and DOM sanitizer.

@@ -1,0 +1,39 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/html_parser/selector"
+
+import {
+  "bobzhang/html_parser/core",
+  "bobzhang/html_parser/dom",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn is_valid(StringView) -> Bool
+
+pub fn matches(@dom.Node, StringView) -> Bool
+
+pub fn matches_with_limits(@dom.Node, StringView, SelectorLimits) -> Bool raise @core.HtmlError
+
+pub fn query(@dom.Node, StringView) -> Array[@dom.Node]
+
+pub fn query_one(@dom.Node, StringView) -> @dom.Node?
+
+// Errors
+
+// Types and methods
+pub(all) struct SelectorLimits {
+  max_match_depth : Int
+  max_length : Int
+  max_list_items : Int
+  max_compound_simple_selectors : Int
+  max_complex_selector_parts : Int
+  max_parse_depth : Int
+  max_match_steps : Int
+  max_match_bytes : Int
+} derive(Eq, @debug.Debug)
+pub fn SelectorLimits::new(max_match_depth? : Int, max_length? : Int, max_list_items? : Int, max_compound_simple_selectors? : Int, max_complex_selector_parts? : Int, max_parse_depth? : Int, max_match_steps? : Int, max_match_bytes? : Int) -> Self
+
+// Type aliases
+
+// Traits
+
