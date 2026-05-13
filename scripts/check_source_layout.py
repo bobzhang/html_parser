@@ -70,6 +70,7 @@ def main(argv: list[str]) -> int:
 
     required_tokenizer_modules = {
         "tokenizer/attributes.mbt",
+        "tokenizer/comments.mbt",
         "tokenizer/comment_scan.mbt",
         "tokenizer/doctype.mbt",
         "tokenizer/entity.mbt",
