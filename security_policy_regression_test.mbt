@@ -84,3 +84,107 @@ test "public unsafe handling collect and raise modes stay stable" {
     _ => fail("expected unsafe sanitizer policy to raise")
   }
 }
+
+///|
+test "public unsafe handling collect reset and copy stay stable" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "*": [], "p": [] },
+    unsafe_handling=Collect,
+  )
+  let first = @html_parser.parse_fragment(
+    "<p onclick=x>ok</p><script>x</script>",
+    sanitize=false,
+  )
+  ignore(@html_parser.sanitize_dom(first.root, policy~))
+  let errors = policy.collected_security_errors()
+  assert_eq(errors.length(), 2)
+  errors.clear()
+  assert_eq(policy.collected_security_errors().length(), 2)
+
+  policy.reset_collected_security_errors()
+  assert_eq(policy.collected_security_errors().length(), 0)
+  let second = @html_parser.parse_fragment(
+    "<p style='position:fixed'>ok</p>",
+    sanitize=false,
+  )
+  ignore(@html_parser.sanitize_dom(second.root, policy~))
+  let reset_errors = policy.collected_security_errors()
+  assert_eq(reset_errors.length(), 1)
+  assert_eq(reset_errors[0].code, "unsafe-html")
+}
+
+///|
+test "public URL filter callback and validation order stay stable" {
+  let seen : Array[String] = []
+  let url_filter = @html_parser.UrlFilter::new(fn(tag, attr, value) {
+    seen.push(tag + "/" + attr + "=" + value)
+    match value {
+      "/ok" => Some("https://trusted.example/ok")
+      "drop" => None
+      _ => Some(value)
+    }
+  })
+  let url_policy = @html_parser.UrlPolicy::new(url_filter~, allow_rules=[
+    @html_parser.UrlPolicyRule::new(
+      "a",
+      "href",
+      @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+        "trusted.example",
+      ]),
+    ),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a"],
+    allowed_attributes={ "*": [], "a": ["href"] },
+    url_policy~,
+  )
+  let doc = @html_parser.parse_fragment(
+    "<A HREF='/ok'>ok</A><a href='drop'>drop</a><a href='https://evil.example/x'>bad</a>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(doc.root, policy~).to_html(pretty=false),
+    "<a href=\"https://trusted.example/ok\">ok</a><a>drop</a><a>bad</a>",
+  )
+  assert_eq(seen.length(), 3)
+  assert_eq(seen[0], "a/href=/ok")
+  assert_eq(seen[1], "a/href=drop")
+  assert_eq(seen[2], "a/href=https://evil.example/x")
+}
+
+///|
+test "public default document sanitizer preserves shell and doctype" {
+  let doc = @html_parser.parse(
+    "<!doctype html><html><head><title>T</title><script>x</script></head><body><p onclick=x>ok</p></body></html>",
+    sanitize=false,
+  )
+  let clean = @html_parser.sanitize_dom(
+    doc.root,
+    policy=@html_parser.default_document_sanitization_policy(),
+  )
+  assert_eq(
+    clean.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><title>T</title></head><body><p>ok</p></body></html>",
+  )
+}
+
+///|
+test "public css text preset returns independent conservative lists" {
+  let mutated = @html_parser.css_preset_text()
+  assert_true(mutated.length() > 0)
+  mutated.clear()
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["span"],
+    allowed_attributes={ "*": [], "span": ["style"] },
+    allowed_css_properties=@html_parser.css_preset_text(),
+  )
+  let doc = @html_parser.parse_fragment(
+    "<span style='font-weight:700; position:fixed; color:red'>ok</span>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(doc.root, policy~).to_html(pretty=false),
+    "<span style=\"font-weight: 700; color: red\">ok</span>",
+  )
+}

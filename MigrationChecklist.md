@@ -420,6 +420,9 @@ reference implementation in `.repos/justhtml`.
       contexts, source locations, and scripting-dependent `noscript` parsing.
 - [x] Added public builder/accessor regression tests for node constructors,
       test-format output, namespace aliases, and invalid mutation no-ops.
+- [x] Extended public sanitizer policy regressions for collect/reset copying,
+      URL filter callback order, document policy shell preservation, and CSS
+      preset copy semantics.
 
 ## Working Rule
 
