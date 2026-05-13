@@ -266,6 +266,7 @@ reference implementation in `.repos/justhtml`.
       `markdown/walk.mbt`.
 - [x] Split CLI result, option model, help, and result-construction helpers
       into `cli/model.mbt`.
+- [x] Split CLI option parsing and read-plan helpers into `cli/args.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.

@@ -251,6 +251,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_cli_modules = {
+        "cli/args.mbt",
         "cli/cli.mbt",
         "cli/model.mbt",
     }
