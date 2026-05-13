@@ -330,17 +330,6 @@ fn cli_extra_allowed_tags(value : String) -> Array[String] {
 }
 
 ///|
-fn cli_allowed_attributes_to_arrays(
-  attrs : Map[String, Set[String]],
-) -> Map[String, Array[String]] {
-  let out : Map[String, Array[String]] = {}
-  for tag, values in attrs {
-    out[tag] = values.to_array()
-  }
-  out
-}
-
-///|
 fn cli_policy_for_options(options : CliOptions) -> SanitizationPolicy? {
   match options.allow_tags {
     None => None
@@ -350,29 +339,7 @@ fn cli_policy_for_options(options : CliOptions) -> SanitizationPolicy? {
       } else {
         default_document_sanitization_policy()
       }
-      let tags = base.allowed_tags.to_array()
-      for tag in cli_extra_allowed_tags(raw) {
-        tags.push(tag)
-      }
-      Some(
-        SanitizationPolicy::new(
-          tags,
-          allowed_attributes=cli_allowed_attributes_to_arrays(
-            base.allowed_attributes,
-          ),
-          url_policy=base.url_policy,
-          drop_comments=base.drop_comments,
-          drop_doctype=base.drop_doctype,
-          drop_foreign_namespaces=base.drop_foreign_namespaces,
-          drop_content_tags=base.drop_content_tags.to_array(),
-          disallowed_tag_handling=base.disallowed_tag_handling,
-          force_link_rel=base.force_link_rel.copy(),
-          allowed_css_properties=base.allowed_css_properties.to_array(),
-          strip_invisible_unicode=base.strip_invisible_unicode,
-          selector_limits=base.selector_limits,
-          unsafe_handling=base.unsafe_handling,
-        ),
-      )
+      Some(base.with_extra_allowed_tags(cli_extra_allowed_tags(raw)))
     }
   }
 }

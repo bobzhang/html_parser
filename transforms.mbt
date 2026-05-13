@@ -650,7 +650,7 @@ fn selector_limits_from_transform_list(
       match transform.kind {
         SanitizeTree =>
           match transform.sanitize_policy {
-            Some(policy) => limits = Some(policy.selector_limits)
+            Some(policy) => limits = Some(policy.selector_limits())
             None => limits = Some(default_selector_limits())
           }
         StageGroup =>
@@ -921,8 +921,12 @@ fn sanitize_transform_observer(
     (None, None) => None
     _ =>
       Some({
-        hook: transform.node_hook,
-        report_callback: transform.report_callback,
+        hook: transform.node_hook.map(fn(hook) {
+          fn(node) { (hook.callback)(node) }
+        }),
+        report_callback: transform.report_callback.map(fn(report) {
+          fn(message, node) { (report.callback)(message, node) }
+        }),
       })
   }
 }
@@ -1703,35 +1707,32 @@ fn apply_drop_url_attrs_transform(
     }
     match current_value {
       Some(raw_value) =>
-        match policy.url_policy.lookup_rule(tag_name, attr_name) {
-          None => {
-            transform_report_unsafe_url_attr(
-              node,
-              transform,
+        if !policy.has_url_rule(tag_name, attr_name) {
+          transform_report_unsafe_url_attr(
+            node,
+            transform,
+            attr_name,
+            reason="no rule",
+          )
+          push_unique_string(to_drop, key)
+        } else {
+          match
+            policy.sanitize_attribute_value(
+              tag_name,
               attr_name,
-              reason="no rule",
-            )
-            push_unique_string(to_drop, key)
-          }
-          Some(_) =>
-            match
-              sanitize_attribute_value(
-                policy,
-                tag_name,
-                attr_name,
-                raw_value,
-                effectively_foreign~,
-              ) {
-              Some(cleaned) =>
-                if cleaned != raw_value || attr_name != key {
-                  push_unique_string(to_drop, key)
-                  to_set[attr_name] = Some(cleaned)
-                }
-              None => {
-                transform_report_unsafe_url_attr(node, transform, attr_name)
+              raw_value,
+              effectively_foreign~,
+            ) {
+            Some(cleaned) =>
+              if cleaned != raw_value || attr_name != key {
                 push_unique_string(to_drop, key)
+                to_set[attr_name] = Some(cleaned)
               }
+            None => {
+              transform_report_unsafe_url_attr(node, transform, attr_name)
+              push_unique_string(to_drop, key)
             }
+          }
         }
       None => {
         transform_report_unsafe_url_attr(node, transform, attr_name)
@@ -1767,7 +1768,7 @@ fn apply_allow_style_attrs_transform(
   let tag_name = lower_ascii(node.name)
   match node.attrs.get(style_key).unwrap() {
     Some(raw_value) =>
-      match sanitize_inline_style_value(policy, tag_name, raw_value) {
+      match policy.sanitize_inline_style_value(tag_name, raw_value) {
         Some(cleaned) =>
           if cleaned != raw_value || style_key != "style" {
             transform_call_hook(node, transform)

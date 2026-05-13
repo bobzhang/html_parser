@@ -329,6 +329,61 @@ pub fn SanitizationPolicy::collected_security_errors(
 }
 
 ///|
+fn SanitizationPolicy::selector_limits(
+  self : SanitizationPolicy,
+) -> SelectorLimits {
+  self.selector_limits
+}
+
+///|
+fn sanitize_allowed_attributes_to_arrays(
+  attrs : Map[String, Set[String]],
+) -> Map[String, Array[String]] {
+  let out : Map[String, Array[String]] = {}
+  for tag, values in attrs {
+    out[tag] = values.to_array()
+  }
+  out
+}
+
+///|
+fn SanitizationPolicy::with_extra_allowed_tags(
+  self : SanitizationPolicy,
+  extra_tags : Array[String],
+) -> SanitizationPolicy {
+  let tags = self.allowed_tags.to_array()
+  for tag in extra_tags {
+    push_unique_string(tags, lower_ascii(tag[:].trim()))
+  }
+  SanitizationPolicy::new(
+    tags,
+    allowed_attributes=sanitize_allowed_attributes_to_arrays(
+      self.allowed_attributes,
+    ),
+    url_policy=self.url_policy,
+    drop_comments=self.drop_comments,
+    drop_doctype=self.drop_doctype,
+    drop_foreign_namespaces=self.drop_foreign_namespaces,
+    drop_content_tags=self.drop_content_tags.to_array(),
+    disallowed_tag_handling=self.disallowed_tag_handling,
+    force_link_rel=self.force_link_rel.copy(),
+    allowed_css_properties=self.allowed_css_properties.to_array(),
+    strip_invisible_unicode=self.strip_invisible_unicode,
+    selector_limits=self.selector_limits,
+    unsafe_handling=self.unsafe_handling,
+  )
+}
+
+///|
+fn SanitizationPolicy::has_url_rule(
+  self : SanitizationPolicy,
+  tag_name : String,
+  attr_name : String,
+) -> Bool {
+  self.url_policy.lookup_rule(tag_name, attr_name) is Some(_)
+}
+
+///|
 fn SanitizationPolicy::handle_unsafe(
   self : SanitizationPolicy,
   message : String,
@@ -345,8 +400,8 @@ fn SanitizationPolicy::handle_unsafe(
 
 ///|
 priv struct SanitizeTransformObserver {
-  hook : TransformNodeCallback?
-  report_callback : TransformReportCallback?
+  hook : ((Node) -> Unit)?
+  report_callback : ((String, Node?) -> Unit)?
 }
 
 ///|
@@ -358,11 +413,11 @@ fn sanitize_observer_event(
   match observer {
     Some(observer) => {
       match (node, observer.hook) {
-        (Some(node), Some(hook)) => (hook.callback)(node)
+        (Some(node), Some(hook)) => hook(node)
         _ => ()
       }
       match observer.report_callback {
-        Some(report) => (report.callback)(message, node)
+        Some(report) => report(message, node)
         None => ()
       }
     }
@@ -1767,6 +1822,32 @@ fn sanitize_attribute_value(
   } else {
     Some(value)
   }
+}
+
+///|
+fn SanitizationPolicy::sanitize_attribute_value(
+  self : SanitizationPolicy,
+  tag_name : String,
+  attr_name : String,
+  value : String,
+  effectively_foreign? : Bool = false,
+) -> String? {
+  sanitize_attribute_value(
+    self,
+    tag_name,
+    attr_name,
+    value,
+    effectively_foreign~,
+  )
+}
+
+///|
+fn SanitizationPolicy::sanitize_inline_style_value(
+  self : SanitizationPolicy,
+  tag_name : String,
+  value : String,
+) -> String? {
+  sanitize_inline_style_value(self, tag_name, value)
 }
 
 ///|
