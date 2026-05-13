@@ -2,6 +2,12 @@
 pub using @dom {type NodeKind}
 
 ///|
+pub using @cl {type CliReadPlan}
+
+///|
+pub using @cl {type CliResult}
+
+///|
 pub using @ser {type HtmlContext}
 
 ///|

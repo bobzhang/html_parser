@@ -52,8 +52,3 @@ pub fn doctype(
     (None, None) => @dom.doctype(name~, force_quirks~)
   }
 }
-
-///|
-fn lower_ascii(input : StringView) -> String {
-  @syn.lower_ascii(input)
-}

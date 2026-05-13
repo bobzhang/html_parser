@@ -2,6 +2,7 @@
 package "bobzhang/html_parser"
 
 import {
+  "bobzhang/html_parser/cli",
   "bobzhang/html_parser/core",
   "bobzhang/html_parser/dom",
   "bobzhang/html_parser/linkify",
@@ -12,7 +13,6 @@ import {
   "bobzhang/html_parser/stream",
   "bobzhang/html_parser/tokenizer",
   "bobzhang/html_parser/transform",
-  "moonbitlang/core/debug",
 }
 
 // Values
@@ -20,7 +20,7 @@ pub fn apply_transforms(@dom.Node, Array[@transform.TransformSpec]) -> @dom.Node
 
 pub fn cli_help() -> String
 
-pub fn cli_read_plan(ArrayView[String]) -> CliReadPlan
+pub fn cli_read_plan(ArrayView[String]) -> @cli.CliReadPlan
 
 pub fn comment(StringView) -> @dom.Node
 
@@ -56,9 +56,9 @@ pub fn query(@dom.Node, StringView) -> Array[@dom.Node]
 
 pub fn query_one(@dom.Node, StringView) -> @dom.Node?
 
-pub fn run_cli_bytes(ArrayView[String], BytesView) -> CliResult
+pub fn run_cli_bytes(ArrayView[String], BytesView) -> @cli.CliResult
 
-pub fn run_cli_with_reader(ArrayView[String], (String) -> Bytes) -> CliResult
+pub fn run_cli_with_reader(ArrayView[String], (String) -> Bytes) -> @cli.CliResult
 
 pub fn sanitize_dom(@dom.Node, policy? : @sanitize.SanitizationPolicy) -> @dom.Node raise @core.HtmlError
 
@@ -85,20 +85,12 @@ pub fn tokenize(StringView, collect_errors? : Bool, xml_coercion? : Bool) -> @to
 // Errors
 
 // Types and methods
-pub(all) enum CliReadPlan {
-  CliImmediate(CliResult)
-  CliReadPath(String)
-} derive(Eq, @debug.Debug)
-
-pub(all) struct CliResult {
-  exit_code : Int
-  stdout : String
-  stderr : String
-  file_output_path : String?
-  file_output_content : String?
-} derive(Eq, @debug.Debug)
 
 // Type aliases
+pub using @cli {type CliReadPlan}
+
+pub using @cli {type CliResult}
+
 pub using @transform {type DecideAction}
 
 pub using @sanitize {type DisallowedTagHandling}

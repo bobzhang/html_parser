@@ -162,11 +162,26 @@ def main(argv: list[str]) -> int:
             error(f"expected parser package test module is not tracked: {path}")
             ok = False
 
+    required_cli_modules = {
+        "cli/cli.mbt",
+    }
+    for path in sorted(required_cli_modules):
+        if path not in tracked:
+            error(f"expected cli package module is not tracked: {path}")
+            ok = False
+
+    required_cli_tests = {
+        "cli/cli_wbtest.mbt",
+    }
+    for path in sorted(required_cli_tests):
+        if path not in tracked:
+            error(f"expected cli package test module is not tracked: {path}")
+            ok = False
+
     required_root_tests = {
         "builder_public_regression_test.mbt",
         "cli_test.mbt",
         "cli_public_regression_test.mbt",
-        "cli_wbtest.mbt",
         "constructor_public_regression_test.mbt",
         "dom_public_regression_test.mbt",
         "encoding_fixtures_test.mbt",

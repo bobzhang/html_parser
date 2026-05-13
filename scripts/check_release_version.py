@@ -18,7 +18,7 @@ def main(argv: list[str]) -> int:
         return 2
 
     version = json.loads((ROOT / "moon.mod.json").read_text())["version"]
-    cli = (ROOT / "cli.mbt").read_text()
+    cli = (ROOT / "cli" / "cli.mbt").read_text()
     cli_test = (ROOT / "cli_test.mbt").read_text()
 
     cli_match = re.search(

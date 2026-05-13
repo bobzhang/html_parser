@@ -14,6 +14,9 @@ fn assert_cli_arg_error(args : Array[String], message : String) -> Unit raise {
 
 ///|
 test "CLI help version and read plan" {
+  let help_text = @html_parser.cli_help()
+  assert_true(help_text.contains("usage: justhtml"))
+  assert_true(help_text.contains("--selector"))
   let help = @html_parser.run_cli_bytes(["--help"], b"")
   assert_eq(help.exit_code, 0)
   assert_true(help.stdout.contains("usage: justhtml"))

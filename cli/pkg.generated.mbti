@@ -1,0 +1,36 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/html_parser/cli"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn cli_help() -> String
+
+pub fn cli_read_plan(ArrayView[String]) -> CliReadPlan
+
+pub fn run_cli_bytes(ArrayView[String], BytesView) -> CliResult
+
+pub fn run_cli_with_reader(ArrayView[String], (String) -> Bytes) -> CliResult
+
+// Errors
+
+// Types and methods
+pub(all) enum CliReadPlan {
+  CliImmediate(CliResult)
+  CliReadPath(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CliResult {
+  exit_code : Int
+  stdout : String
+  stderr : String
+  file_output_path : String?
+  file_output_content : String?
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

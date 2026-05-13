@@ -1330,6 +1330,11 @@ JustHTML from Python to MoonBit.
   it so `ParsedHtml::to_html`, `to_text`, `to_markdown`, and selector helpers
   stayed methods on the owning package. The root package only re-exports the
   types and keeps free-function compatibility wrappers.
+- CLI logic is a good final package split because it depends on nearly every
+  public feature package: parser, sanitizer, transforms, selector, serializer,
+  Markdown, and byte decoding. Move it after those packages exist so it can call
+  them directly, and leave the root package as a small runner facade for native
+  wrappers and existing callers.
 - If an enum is part of a moved feature, move the enum with the owning feature
   and re-export it from root. For example, `HtmlContext` belongs to the
   serializer package; root signatures can keep accepting `HtmlContext` through

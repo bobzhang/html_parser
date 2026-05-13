@@ -29,9 +29,14 @@ test "CLI option helpers cover equals and no-path plans" {
 
 ///|
 test "CLI sanitize and cleanup error paths report transform errors" {
-  let raising_policy = SanitizationPolicy::new(["p"], unsafe_handling=Raise)
+  let raising_policy = @san.SanitizationPolicy::new(
+    ["p"],
+    unsafe_handling=Raise,
+  )
   guard cli_sanitize_or_error(
-      fragment(children=[element("script", children=[text("bad")])]),
+      @dom.fragment(children=[
+        @dom.element("script", children=[@dom.text("bad")]),
+      ]),
       Some(raising_policy),
     )
     is Some(sanitize_result) else {
@@ -40,7 +45,9 @@ test "CLI sanitize and cleanup error paths report transform errors" {
   assert_eq(sanitize_result.exit_code, 2)
   assert_true(sanitize_result.stderr.contains("Unsafe tag 'script'"))
   guard cli_apply_cleanup_or_error(
-      fragment(children=[element("script", children=[text("bad")])]),
+      @dom.fragment(children=[
+        @dom.element("script", children=[@dom.text("bad")]),
+      ]),
       true,
       Some(raising_policy),
     )
@@ -52,7 +59,7 @@ test "CLI sanitize and cleanup error paths report transform errors" {
   let sanitize_options = cli_default_options()
   sanitize_options.path = Some("-")
   let sanitize_pipeline = cli_run_parsed(
-    fragment(children=[element("script", children=[text("bad")])]),
+    @dom.fragment(children=[@dom.element("script", children=[@dom.text("bad")])]),
     sanitize_options,
     true,
     Some(raising_policy),
@@ -63,7 +70,7 @@ test "CLI sanitize and cleanup error paths report transform errors" {
   cleanup_options.path = Some("-")
   cleanup_options.cleanup = true
   let cleanup_pipeline = cli_run_parsed(
-    fragment(children=[element("script", children=[text("bad")])]),
+    @dom.fragment(children=[@dom.element("script", children=[@dom.text("bad")])]),
     cleanup_options,
     true,
     Some(raising_policy),
