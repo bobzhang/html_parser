@@ -416,6 +416,8 @@ reference implementation in `.repos/justhtml`.
       contexts, URL context output, and invalid programmatic serialization.
 - [x] Added public text/Markdown regression tests for text extraction modes,
       common Markdown output, and raw HTML passthrough behavior.
+- [x] Added public parser regression tests for document error modes, fragment
+      contexts, source locations, and scripting-dependent `noscript` parsing.
 
 ## Working Rule
 
