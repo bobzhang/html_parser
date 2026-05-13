@@ -394,6 +394,8 @@ reference implementation in `.repos/justhtml`.
       delete, rename, or skip tracked test declarations.
 - [x] Added public API golden regression tests for parse/query/render,
       sanitize-plus-linkify transforms, and bytes/stream workflows.
+- [x] Added golden output regression tests for mixed HTML serialization,
+      Markdown conversion, and CLI end-user output modes.
 
 ## Working Rule
 
