@@ -665,6 +665,8 @@ reference implementation in `.repos/justhtml`.
       `tokenizer/comment_scan_helpers.mbt`.
 - [x] Split tokenizer script text helpers into
       `tokenizer/script_text_helpers.mbt`.
+- [x] Split tokenizer script text data/state definitions into
+      `tokenizer/script_text_types.mbt`.
 
 ## Working Rule
 

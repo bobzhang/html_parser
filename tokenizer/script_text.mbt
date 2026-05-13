@@ -1,32 +1,4 @@
 ///|
-pub(all) struct SpecialTextError {
-  code : String
-  offset : Int
-}
-
-///|
-pub(all) struct ScriptTextScan {
-  data : String
-  end_start : Int?
-  errors : Array[SpecialTextError]
-}
-
-///|
-priv enum ScriptTextState {
-  ScriptRawText
-  ScriptEscaped
-  ScriptEscapedDash
-  ScriptEscapedDashDash
-  ScriptEscapedLessThan
-  ScriptDoubleEscapeStart
-  ScriptDoubleEscaped
-  ScriptDoubleEscapedDash
-  ScriptDoubleEscapedDashDash
-  ScriptDoubleEscapedLessThan
-  ScriptDoubleEscapeEnd
-}
-
-///|
 pub fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
   let out = StringBuilder::new(size_hint=input.length() - start)
   let errors : Array[SpecialTextError] = []
