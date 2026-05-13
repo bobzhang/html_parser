@@ -661,6 +661,8 @@ reference implementation in `.repos/justhtml`.
       selector no-match/first-match behavior, and text whitespace options.
 - [x] Split tokenizer script raw-text scanning into `tokenizer/script_text.mbt`.
 - [x] Split tokenizer named-entity scanning into `tokenizer/entity_named.mbt`.
+- [x] Split tokenizer comment scanner helpers into
+      `tokenizer/comment_scan_helpers.mbt`.
 
 ## Working Rule
 
