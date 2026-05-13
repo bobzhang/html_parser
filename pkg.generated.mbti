@@ -5,6 +5,7 @@ import {
   "bobzhang/html_parser/core",
   "bobzhang/html_parser/dom",
   "bobzhang/html_parser/selector",
+  "bobzhang/html_parser/serializer",
   "bobzhang/html_parser/stream",
   "bobzhang/html_parser/tokenizer",
   "moonbitlang/core/debug",
@@ -67,7 +68,7 @@ pub fn stream_each(StringView, (@stream.StreamEvent) -> Unit) -> Unit
 
 pub fn text(StringView) -> @dom.Node
 
-pub fn to_html(@dom.Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String raise @core.HtmlError
+pub fn to_html(@dom.Node, pretty? : Bool, indent_size? : Int, context? : @serializer.HtmlContext, quote? : Char) -> String raise @core.HtmlError
 
 pub fn to_markdown(@dom.Node, html_passthrough? : Bool) -> String raise @core.HtmlError
 
@@ -113,13 +114,6 @@ pub(all) struct FragmentContext {
 } derive(Eq, @debug.Debug)
 pub fn FragmentContext::new(StringView, ns? : String) -> Self
 
-pub(all) enum HtmlContext {
-  Html
-  JsString
-  HtmlAttrValue
-  Url
-} derive(Eq, @debug.Debug)
-
 pub(all) struct LinkMatch {
   start : Int
   end : Int
@@ -141,7 +135,7 @@ pub struct ParsedHtml {
 } derive(@debug.Debug)
 pub fn ParsedHtml::query(Self, StringView) -> Array[@dom.Node]
 pub fn ParsedHtml::query_one(Self, StringView) -> @dom.Node?
-pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String raise @core.HtmlError
+pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int, context? : @serializer.HtmlContext, quote? : Char) -> String raise @core.HtmlError
 pub fn ParsedHtml::to_markdown(Self, html_passthrough? : Bool) -> String raise @core.HtmlError
 pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
 
@@ -218,6 +212,8 @@ pub fn UrlRule::new(allowed_schemes? : Array[String], allowed_hosts? : Array[Str
 
 // Type aliases
 pub using @tokenizer {type DoctypeInfo}
+
+pub using @serializer {type HtmlContext}
 
 pub using @core {type HtmlError}
 

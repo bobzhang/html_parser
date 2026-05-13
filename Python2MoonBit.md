@@ -1301,6 +1301,15 @@ JustHTML from Python to MoonBit.
   the original file. Selector matching owned `attribute_value_by_name`, but
   Markdown also used it; keep shared root helpers in the compatibility package
   or promote them deliberately instead of moving them blindly with the feature.
+- Moving serializer code showed a second form of this boundary problem:
+  sanitizer, Markdown, and transforms reused serializer internals such as raw
+  text neutralization, start-tag spelling, and URL percent encoding. Keep root
+  compatibility wrappers for those names during a staged split, and expose only
+  the minimum serializer-side functions needed to cross the package boundary.
+- If an enum is part of a moved feature, move the enum with the owning feature
+  and re-export it from root. For example, `HtmlContext` belongs to the
+  serializer package; root signatures can keep accepting `HtmlContext` through
+  `pub using @ser { type HtmlContext }`.
 - Prefer one shared predicate/table for parser and tokenizer state categories
   when the HTML standard uses the same set. Duplicating lists such as raw-text
   element names quickly causes parser/tokenizer drift.

@@ -4,6 +4,7 @@ import {
   "bobzhang/html_parser/internal/encoding" @enc,
   "bobzhang/html_parser/internal/syntax" @syn,
   "bobzhang/html_parser/selector" @sel,
+  "bobzhang/html_parser/serializer" @ser,
   "bobzhang/html_parser/stream" @stream,
   "bobzhang/html_parser/tokenizer" @tok,
   "moonbitlang/core/encoding/utf8" @utf8,

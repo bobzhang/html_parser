@@ -242,7 +242,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Move string stream facade into `stream`.
 - [x] Move stream byte facade into `stream`.
 - [x] Extract selector parsing and matching.
-- [ ] Extract HTML serializer and text extraction.
+- [x] Extract HTML serializer and text extraction.
 - [ ] Extract Markdown conversion.
 - [ ] Extract sanitizer policy and DOM sanitizer.
 - [ ] Extract linkify scanner and DOM linkifier.

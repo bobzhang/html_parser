@@ -2,16 +2,7 @@
 pub using @dom {type NodeKind}
 
 ///|
-/// Output context used by HTML serialization.
-///
-/// Non-`Html` contexts escape serialized output for embedding in JavaScript
-/// strings, HTML attribute values, or URL text.
-pub(all) enum HtmlContext {
-  Html
-  JsString
-  HtmlAttrValue
-  Url
-} derive(Debug, Eq)
+pub using @ser {type HtmlContext}
 
 ///|
 pub type ParseError = @core.ParseError
