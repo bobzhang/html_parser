@@ -1,18 +1,4 @@
 ///|
-pub(all) struct CommentScanError {
-  code : String
-  offset : Int
-}
-
-///|
-pub(all) struct CommentScan {
-  data : String
-  end : Int
-  eof : Bool
-  errors : Array[CommentScanError]
-}
-
-///|
 pub fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
   let out = StringBuilder::new(size_hint=input.length() - start)
   let errors : Array[CommentScanError] = []
