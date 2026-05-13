@@ -660,6 +660,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Extended public CLI regressions for immediate help/version plans,
       selector no-match/first-match behavior, and text whitespace options.
 - [x] Split tokenizer script raw-text scanning into `tokenizer/script_text.mbt`.
+- [x] Split tokenizer named-entity scanning into `tokenizer/entity_named.mbt`.
 
 ## Working Rule
 
