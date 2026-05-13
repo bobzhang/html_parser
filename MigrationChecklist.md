@@ -320,6 +320,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split tokenizer doctype token emission into
       `tokenizer/doctype_tokens.mbt`.
 - [x] Split tokenizer start/end tag token emission into `tokenizer/tags.mbt`.
+- [x] Split tokenizer state, cursor helpers, and tokenizer diagnostics into
+      `tokenizer/state.mbt`.
 - [x] Split parser attribute scanners into `parser/attributes.mbt`.
 - [x] Split document scaffolding and selected-content helpers into
       `parser/scaffold.mbt`.
