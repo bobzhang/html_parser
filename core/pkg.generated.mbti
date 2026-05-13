@@ -1,0 +1,31 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/html_parser/core"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn parser_error_category(StringView) -> String
+
+// Errors
+pub(all) suberror HtmlError {
+  StrictMode(ParseError)
+  InvalidSerialization(String)
+  UnsafeHtml(String)
+  SelectorError(String)
+} derive(Eq, @debug.Debug)
+
+// Types and methods
+pub(all) struct ParseError {
+  code : String
+  line : Int?
+  column : Int?
+  category : String
+  message : String
+} derive(Eq, @debug.Debug)
+pub fn ParseError::new(String, line? : Int, column? : Int, category? : String, message? : String) -> Self
+
+// Type aliases
+
+// Traits

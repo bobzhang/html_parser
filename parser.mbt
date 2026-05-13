@@ -6702,11 +6702,7 @@ fn starts_with_case_insensitive(
   pos : Int,
   prefix : StringView,
 ) -> Bool {
-  let end = pos + prefix.length()
-  match input.get_view(start=pos, end~) {
-    Some(view) => view.compare_ignore_ascii_case(prefix) == 0
-    None => false
-  }
+  @syn.starts_with_case_insensitive(input, pos, prefix)
 }
 
 ///|

@@ -431,13 +431,5 @@ pub fn Node::text(self : Node) -> String {
 
 ///|
 fn lower_ascii(input : StringView) -> String {
-  let out = StringBuilder::new(size_hint=input.length())
-  for ch in input {
-    if ch.is_ascii_uppercase() {
-      out.write_char(ch.to_ascii_lowercase())
-    } else {
-      out.write_char(ch)
-    }
-  }
-  out.to_string()
+  @syn.lower_ascii(input)
 }
