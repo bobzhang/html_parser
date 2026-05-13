@@ -141,6 +141,7 @@ def main(argv: list[str]) -> int:
         "selector/attributes.mbt",
         "selector/basic.mbt",
         "selector/budget.mbt",
+        "selector/limited.mbt",
         "selector/limits.mbt",
         "selector/parse.mbt",
         "selector/pseudo.mbt",

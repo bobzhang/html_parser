@@ -230,6 +230,7 @@ reference implementation in `.repos/justhtml`.
       `selector/traversal.mbt`.
 - [x] Split selector limit validation helpers into `selector/validation.mbt`.
 - [x] Split selector match budget context into `selector/budget.mbt`.
+- [x] Split context-aware selector matching into `selector/limited.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
