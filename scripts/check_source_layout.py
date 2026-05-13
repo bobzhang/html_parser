@@ -161,6 +161,7 @@ def main(argv: list[str]) -> int:
         "parser/scope.mbt",
         "parser/select.mbt",
         "parser/special_text.mbt",
+        "parser/start_tags.mbt",
         "parser/stack.mbt",
         "parser/state.mbt",
         "parser/syntax.mbt",
