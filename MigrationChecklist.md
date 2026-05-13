@@ -663,6 +663,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split tokenizer named-entity scanning into `tokenizer/entity_named.mbt`.
 - [x] Split tokenizer comment scanner helpers into
       `tokenizer/comment_scan_helpers.mbt`.
+- [x] Split tokenizer script text helpers into
+      `tokenizer/script_text_helpers.mbt`.
 
 ## Working Rule
 
