@@ -270,6 +270,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split CLI sanitize policy and cleanup helpers into `cli/safety.mbt`.
 - [x] Split CLI selector validation and selection helpers into
       `cli/select.mbt`.
+- [x] Split CLI render, output, and HTML error formatting helpers into
+      `cli/render.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
