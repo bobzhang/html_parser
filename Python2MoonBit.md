@@ -1298,14 +1298,19 @@ JustHTML from Python to MoonBit.
   and replace it with narrower package APIs once parser, sanitizer, serializer,
   and transform packages have moved.
 - When extracting a feature package, audit helpers that looked feature-local in
-  the original file. Selector matching owned `attribute_value_by_name`, but
-  Markdown also used it; keep shared root helpers in the compatibility package
-  or promote them deliberately instead of moving them blindly with the feature.
+  the original file. Selector matching and Markdown both needed
+  `attribute_value_by_name`; once both lived in separate packages, each kept a
+  package-local copy and the temporary root helper could disappear. During a
+  staged split, keep a shared root helper only while it has real root callers,
+  or promote/duplicate it deliberately at the package boundary.
 - Moving serializer code showed a second form of this boundary problem:
   sanitizer, Markdown, and transforms reused serializer internals such as raw
   text neutralization, start-tag spelling, and URL percent encoding. Keep root
   compatibility wrappers for those names during a staged split, and expose only
   the minimum serializer-side functions needed to cross the package boundary.
+- A moved feature package cannot add methods to root-owned types such as
+  `ParsedHtml`. Keep those methods in the compatibility package as thin
+  wrappers over the new package-level function.
 - If an enum is part of a moved feature, move the enum with the owning feature
   and re-export it from root. For example, `HtmlContext` belongs to the
   serializer package; root signatures can keep accepting `HtmlContext` through

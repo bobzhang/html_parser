@@ -74,22 +74,6 @@ fn string_view_contains(haystack : StringView, needle : StringView) -> Bool {
 }
 
 ///|
-fn attribute_value_by_name(node : Node, attr_name : StringView) -> String? {
-  let wanted = lower_ascii(attr_name)
-  for name, value in node.attrs {
-    if lower_ascii(name) == wanted {
-      return Some(
-        match value {
-          Some(text) => text
-          None => ""
-        },
-      )
-    }
-  }
-  None
-}
-
-///|
 /// Return all descendants of `root` that match a CSS selector.
 pub fn query(root : Node, selector : StringView) -> Array[Node] {
   @sel.query(root, selector)
