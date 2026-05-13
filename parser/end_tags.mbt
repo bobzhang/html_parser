@@ -1,34 +1,4 @@
 ///|
-fn Parser::handle_template_end_tag(
-  self : Parser,
-  name : String,
-  error_pos : Int,
-  source_end_tag? : String,
-) -> Bool {
-  if name != "template" {
-    return false
-  }
-  let template_index = self.last_open_template_index()
-  if template_index < 0 {
-    self.error_at("unexpected-end-tag", error_pos)
-    return true
-  }
-  let template = self.stack[template_index]
-  match source_end_tag {
-    Some(raw) => set_node_source_end_tag(template, raw)
-    None => ()
-  }
-  self.disable_template_column_group_mode_for_node(template)
-  self.disable_template_table_context_mode_for_node(template)
-  self.template_detached_column_group_mode = false
-  while self.stack.length() > template_index {
-    ignore(self.stack.pop())
-  }
-  self.clear_active_formatting_to_marker()
-  true
-}
-
-///|
 fn Parser::parse_end_tag(self : Parser) -> Unit {
   let start = self.pos
   self.pos += 2

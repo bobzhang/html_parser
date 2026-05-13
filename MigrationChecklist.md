@@ -365,6 +365,7 @@ reference implementation in `.repos/justhtml`.
       `parser/select.mbt`.
 - [x] Split parser template context mode bookkeeping into
       `parser/template_context.mbt`.
+- [x] Moved parser template end-tag handling into `parser/template_context.mbt`.
 - [x] Split parser generic stack and insertion helpers into
       `parser/stack.mbt`.
 - [x] Moved remaining parser stack lookup/removal helpers into
