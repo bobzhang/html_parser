@@ -5,10 +5,18 @@ test "public parse query render workflow stays stable" {
     track_node_locations=true,
   )
   assert_eq(doc.query("main article#a > p a[href]").length(), 1)
+  assert_eq(
+    @html_parser.query(doc.root, "main article#a > p a[href]").length(),
+    1,
+  )
   guard doc.query_one("article#a") is Some(article) else {
     fail("expected article")
   }
+  guard @html_parser.query_one(doc.root, "article#a") is Some(function_article) else {
+    fail("expected article from function query")
+  }
   assert_eq(article.name(), "article")
+  assert_eq(function_article.name(), "article")
   assert_eq(
     doc.to_html(pretty=false),
     "<!DOCTYPE html><html><head><title>T</title></head><body><main><article id=\"a\"><h1>Hi</h1><p>One <a href=\"/x\">link</a></p></article></main></body></html>",
@@ -18,7 +26,12 @@ test "public parse query render workflow stays stable" {
     "<!DOCTYPE html>\n<html>\n  <head>\n    <title>T</title>\n  </head>\n  <body>\n    <main>\n      <article id=\"a\">\n        <h1>Hi</h1>\n        <p>One <a href=\"/x\">link</a></p>\n      </article>\n    </main>\n  </body>\n</html>",
   )
   assert_eq(doc.to_text(separator="|", strip=true), "T|Hi|One|link")
+  assert_eq(
+    @html_parser.to_text(doc.root, separator="|", strip=true),
+    "T|Hi|One|link",
+  )
   assert_eq(doc.to_markdown(), "# Hi\n\nOne [link](/x)")
+  assert_eq(@html_parser.to_markdown(doc.root), "# Hi\n\nOne [link](/x)")
 }
 
 ///|

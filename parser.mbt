@@ -8378,7 +8378,7 @@ pub fn parse_bytes(
 ///|
 /// Serialize the parsed root node back to HTML.
 ///
-/// This forwards to `Node::to_html` on `self.root`.
+/// This forwards to `to_html` on `self.root`.
 pub fn ParsedHtml::to_html(
   self : ParsedHtml,
   pretty? : Bool = true,
@@ -8386,20 +8386,20 @@ pub fn ParsedHtml::to_html(
   context? : HtmlContext = Html,
   quote? : Char = '"',
 ) -> String raise HtmlError {
-  self.root.to_html(pretty~, indent_size~, context~, quote~)
+  to_html(self.root, pretty~, indent_size~, context~, quote~)
 }
 
 ///|
 /// Extract text from the parsed root node.
 ///
-/// This forwards to `Node::to_text` on `self.root`.
+/// This forwards to `to_text` on `self.root`.
 pub fn ParsedHtml::to_text(
   self : ParsedHtml,
   separator? : String = " ",
   strip? : Bool = true,
   separator_blocks_only? : Bool = false,
 ) -> String {
-  self.root.to_text(separator~, strip~, separator_blocks_only~)
+  to_text(self.root, separator~, strip~, separator_blocks_only~)
 }
 
 ///|
@@ -8408,11 +8408,11 @@ pub fn ParsedHtml::query(
   self : ParsedHtml,
   selector : StringView,
 ) -> Array[Node] {
-  self.root.query(selector)
+  query(self.root, selector)
 }
 
 ///|
 /// Return the first descendant of the parsed root that matches a CSS selector.
 pub fn ParsedHtml::query_one(self : ParsedHtml, selector : StringView) -> Node? {
-  self.root.query_one(selector)
+  query_one(self.root, selector)
 }

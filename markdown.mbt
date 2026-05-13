@@ -565,12 +565,12 @@ fn markdown_walk_link_text(
             builder.raw(markdown_code_span(markdown_collect_text(node)))
           "ul" | "ol" =>
             markdown_walk_link_list(node, builder, html_passthrough)
-          "table" => builder.raw(node.to_html(pretty=false))
+          "table" => builder.raw(to_html(node, pretty=false))
           "script" | "style" | "textarea" =>
             if html_passthrough {
-              builder.raw(node.to_html(pretty=false))
+              builder.raw(to_html(node, pretty=false))
             }
-          "img" => builder.raw(node.to_html(pretty=false))
+          "img" => builder.raw(to_html(node, pretty=false))
           _ =>
             if markdown_block_container_name(tag) {
               for child in node.children {
@@ -741,14 +741,14 @@ fn markdown_walk(
           "script" | "style" | "textarea" => {
             builder.ensure_newlines(2)
             if html_passthrough {
-              builder.raw(node.to_html(pretty=false))
+              builder.raw(to_html(node, pretty=false))
             }
             builder.ensure_newlines(2)
           }
-          "img" => builder.raw(node.to_html(pretty=false))
+          "img" => builder.raw(to_html(node, pretty=false))
           "table" => {
             builder.ensure_newlines(2)
-            builder.raw(node.to_html(pretty=false))
+            builder.raw(to_html(node, pretty=false))
             builder.ensure_newlines(2)
           }
           _ =>
@@ -799,8 +799,17 @@ pub fn Node::to_markdown(
   self : Node,
   html_passthrough? : Bool = false,
 ) -> String raise HtmlError {
+  to_markdown(self, html_passthrough~)
+}
+
+///|
+/// Render a DOM node and its descendants as Markdown.
+pub fn to_markdown(
+  node : Node,
+  html_passthrough? : Bool = false,
+) -> String raise HtmlError {
   let builder = MarkdownBuilder::new()
-  markdown_walk(self, builder, html_passthrough, 0)
+  markdown_walk(node, builder, html_passthrough, 0)
   builder.finish()
 }
 
@@ -812,5 +821,5 @@ pub fn ParsedHtml::to_markdown(
   self : ParsedHtml,
   html_passthrough? : Bool = false,
 ) -> String raise HtmlError {
-  self.root.to_markdown(html_passthrough~)
+  to_markdown(self.root, html_passthrough~)
 }

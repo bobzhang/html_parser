@@ -973,33 +973,11 @@ pub fn Node::to_html(
   context? : HtmlContext = Html,
   quote? : Char = '"',
 ) -> String raise HtmlError {
-  match context {
-    Html => {
-      let quote_char = if quote == '\'' { '\'' } else { '"' }
-      render_node_html(self, pretty, indent_size, quote_char)
-    }
-    JsString => {
-      let quote_char = validate_serialization_quote(quote)
-      escape_js_string(
-        render_node_html(self, pretty, indent_size, quote_char),
-        quote_char,
-      )
-    }
-    HtmlAttrValue => {
-      let quote_char = validate_serialization_quote(quote)
-      escape_attr_value(
-        render_node_html(self, pretty, indent_size, quote_char),
-        quote_char,
-      )
-    }
-    Url => percent_encode_url(self.to_text().trim())
-  }
+  to_html(self, pretty~, indent_size~, context~, quote~)
 }
 
 ///|
 /// Serialize a node as HTML.
-///
-/// This is the function form of `Node::to_html`.
 pub fn to_html(
   node : Node,
   pretty? : Bool = true,
@@ -1007,7 +985,27 @@ pub fn to_html(
   context? : HtmlContext = Html,
   quote? : Char = '"',
 ) -> String raise HtmlError {
-  node.to_html(pretty~, indent_size~, context~, quote~)
+  match context {
+    Html => {
+      let quote_char = if quote == '\'' { '\'' } else { '"' }
+      render_node_html(node, pretty, indent_size, quote_char)
+    }
+    JsString => {
+      let quote_char = validate_serialization_quote(quote)
+      escape_js_string(
+        render_node_html(node, pretty, indent_size, quote_char),
+        quote_char,
+      )
+    }
+    HtmlAttrValue => {
+      let quote_char = validate_serialization_quote(quote)
+      escape_attr_value(
+        render_node_html(node, pretty, indent_size, quote_char),
+        quote_char,
+      )
+    }
+    Url => percent_encode_url(to_text(node).trim())
+  }
 }
 
 ///|
@@ -1153,13 +1151,24 @@ pub fn Node::to_text(
   strip? : Bool = true,
   separator_blocks_only? : Bool = false,
 ) -> String {
+  to_text(self, separator~, strip~, separator_blocks_only~)
+}
+
+///|
+/// Extract descendant text from a node.
+pub fn to_text(
+  node : Node,
+  separator? : String = " ",
+  strip? : Bool = true,
+  separator_blocks_only? : Bool = false,
+) -> String {
   if separator_blocks_only {
     let chunks : Array[Array[String]] = [[]]
-    collect_text_block_chunks(self, chunks, strip)
+    collect_text_block_chunks(node, chunks, strip)
     return text_chunks_to_string(chunks, separator, strip)
   }
   let parts : Array[String] = []
-  collect_text(self, parts, strip)
+  collect_text(node, parts, strip)
   parts.join(separator)
 }
 
@@ -3055,10 +3064,16 @@ fn walk_query(
 ///|
 /// Return all descendants that match a CSS selector.
 pub fn Node::query(self : Node, selector : StringView) -> Array[Node] {
+  query(self, selector)
+}
+
+///|
+/// Return all descendants of `root` that match a CSS selector.
+pub fn query(root : Node, selector : StringView) -> Array[Node] {
   let out : Array[Node] = []
   let allow_non_elements = selector_allows_non_elements(selector)
-  let visited : Array[Node] = [self]
-  for child in self.children {
+  let visited : Array[Node] = [root]
+  for child in root.children {
     walk_query(child, selector, out, allow_non_elements, visited)
   }
   out
@@ -3067,20 +3082,19 @@ pub fn Node::query(self : Node, selector : StringView) -> Array[Node] {
 ///|
 /// Return the first descendant that matches a CSS selector.
 pub fn Node::query_one(self : Node, selector : StringView) -> Node? {
-  let matches = self.query(selector)
-  matches.get(0)
+  query_one(self, selector)
+}
+
+///|
+/// Return the first descendant of `root` that matches a CSS selector.
+pub fn query_one(root : Node, selector : StringView) -> Node? {
+  query(root, selector).get(0)
 }
 
 ///|
 /// Return whether `node` itself matches a CSS selector.
 pub fn matches(node : Node, selector : StringView) -> Bool {
   matches_selector_list(node, selector)
-}
-
-///|
-/// Return all descendants of `root` that match a CSS selector.
-pub fn query(root : Node, selector : StringView) -> Array[Node] {
-  root.query(selector)
 }
 
 ///|

@@ -45,6 +45,8 @@ pub fn parse_fragment(StringView, context? : FragmentContext, sanitize? : Bool, 
 
 pub fn query(Node, StringView) -> Array[Node]
 
+pub fn query_one(Node, StringView) -> Node?
+
 pub fn run_cli_bytes(ArrayView[String], BytesView) -> CliResult
 
 pub fn run_cli_with_reader(ArrayView[String], (String) -> Bytes) -> CliResult
@@ -63,7 +65,11 @@ pub fn text(StringView) -> Node
 
 pub fn to_html(Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String raise @core.HtmlError
 
+pub fn to_markdown(Node, html_passthrough? : Bool) -> String raise @core.HtmlError
+
 pub fn to_test_format(Node) -> String
+
+pub fn to_text(Node, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
 
 pub fn tokenize(StringView, collect_errors? : Bool, xml_coercion? : Bool) -> TokenizedHtml
 

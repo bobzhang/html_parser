@@ -503,7 +503,7 @@ fn cli_selected_nodes(root : Node, options : CliOptions) -> Array[Node]? {
       if !cli_selector_is_valid(selector) {
         return None
       }
-      root.query(selector)
+      query(root, selector)
     }
     None => [root]
   }
@@ -530,14 +530,15 @@ fn cli_html_error_message(error : HtmlError) -> String {
 ///|
 fn cli_render_node(node : Node, options : CliOptions) -> String raise HtmlError {
   match options.format {
-    CliHtml => node.to_html()
+    CliHtml => to_html(node)
     CliText =>
-      node.to_text(
+      to_text(
+        node,
         separator=options.separator,
         strip=options.strip,
         separator_blocks_only=options.separator_blocks_only,
       )
-    CliMarkdown => node.to_markdown()
+    CliMarkdown => to_markdown(node)
   }
 }
 
