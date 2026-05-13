@@ -312,6 +312,8 @@ reference implementation in `.repos/justhtml`.
       `sanitize/url.mbt`.
 - [x] Split sanitizer CSS/style value sanitation helpers into
       `sanitize/css.mbt`.
+- [x] Split sanitizer element-attribute sanitation helpers into
+      `sanitize/attributes.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
