@@ -11,27 +11,6 @@ pub(all) enum HtmlContext {
 } derive(Debug, Eq)
 
 ///|
-pub fn is_void_element(name : StringView) -> Bool {
-  match name {
-    "area"
-    | "base"
-    | "br"
-    | "col"
-    | "embed"
-    | "hr"
-    | "img"
-    | "input"
-    | "link"
-    | "meta"
-    | "param"
-    | "source"
-    | "track"
-    | "wbr" => true
-    _ => false
-  }
-}
-
-///|
 fn node_to_html_compact(
   node : @dom.Node,
   quote : Char,
@@ -112,15 +91,6 @@ fn element_has_only_text_children(node : @dom.Node) -> Bool {
 }
 
 ///|
-fn pretty_text_preserves_whitespace(name : StringView) -> Bool {
-  match name {
-    "script" | "style" | "pre" | "textarea" | "listing" | "xmp" | "plaintext" =>
-      true
-    _ => false
-  }
-}
-
-///|
 fn compact_pretty_text_children(
   node : @dom.Node,
   quote : Char,
@@ -140,103 +110,6 @@ fn compact_pretty_text_children(
     out.write_string(escape_text(collapse_html_whitespace(raw.to_string())))
   }
   out.to_string()
-}
-
-///|
-fn layout_block_element_name(name : StringView) -> Bool {
-  match name {
-    "address"
-    | "article"
-    | "aside"
-    | "blockquote"
-    | "body"
-    | "caption"
-    | "center"
-    | "dd"
-    | "details"
-    | "dialog"
-    | "dir"
-    | "div"
-    | "dl"
-    | "dt"
-    | "fieldset"
-    | "figcaption"
-    | "figure"
-    | "footer"
-    | "form"
-    | "h1"
-    | "h2"
-    | "h3"
-    | "h4"
-    | "h5"
-    | "h6"
-    | "header"
-    | "hgroup"
-    | "hr"
-    | "html"
-    | "iframe"
-    | "li"
-    | "listing"
-    | "main"
-    | "marquee"
-    | "menu"
-    | "nav"
-    | "noframes"
-    | "noscript"
-    | "ol"
-    | "p"
-    | "plaintext"
-    | "pre"
-    | "search"
-    | "section"
-    | "summary"
-    | "table"
-    | "tbody"
-    | "td"
-    | "tfoot"
-    | "th"
-    | "thead"
-    | "tr"
-    | "ul" => true
-    _ => false
-  }
-}
-
-///|
-fn inline_pretty_element_name(name : StringView) -> Bool {
-  match name {
-    "a"
-    | "abbr"
-    | "b"
-    | "bdi"
-    | "bdo"
-    | "cite"
-    | "code"
-    | "data"
-    | "del"
-    | "dfn"
-    | "em"
-    | "i"
-    | "ins"
-    | "kbd"
-    | "label"
-    | "mark"
-    | "q"
-    | "rp"
-    | "rt"
-    | "ruby"
-    | "s"
-    | "samp"
-    | "small"
-    | "span"
-    | "strong"
-    | "sub"
-    | "sup"
-    | "time"
-    | "u"
-    | "var" => true
-    _ => false
-  }
 }
 
 ///|
@@ -608,51 +481,6 @@ fn collect_text(node : @dom.Node, parts : Array[String], strip : Bool) -> Unit {
       for child in node.children {
         collect_text(child, parts, strip)
       }
-  }
-}
-
-///|
-fn is_text_block_element(name : StringView) -> Bool {
-  match name {
-    "address"
-    | "article"
-    | "aside"
-    | "blockquote"
-    | "body"
-    | "dd"
-    | "div"
-    | "dl"
-    | "dt"
-    | "fieldset"
-    | "figcaption"
-    | "figure"
-    | "footer"
-    | "form"
-    | "h1"
-    | "h2"
-    | "h3"
-    | "h4"
-    | "h5"
-    | "h6"
-    | "header"
-    | "hr"
-    | "html"
-    | "li"
-    | "main"
-    | "nav"
-    | "ol"
-    | "p"
-    | "pre"
-    | "section"
-    | "table"
-    | "tbody"
-    | "td"
-    | "tfoot"
-    | "th"
-    | "thead"
-    | "tr"
-    | "ul" => true
-    _ => false
   }
 }
 

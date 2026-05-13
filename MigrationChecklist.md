@@ -241,6 +241,7 @@ reference implementation in `.repos/justhtml`.
       `serializer/rawtext.mbt`.
 - [x] Split serializer whitespace normalization and predicates into
       `serializer/whitespace.mbt`.
+- [x] Split serializer element-name policies into `serializer/elements.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
