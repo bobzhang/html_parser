@@ -10,7 +10,7 @@ if [[ "$#" -ne 0 ]]; then
   exit 2
 fi
 
-min_tests=610
+min_tests=612
 
 run_test_target() {
   local label="$1"

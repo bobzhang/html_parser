@@ -1284,6 +1284,18 @@ JustHTML from Python to MoonBit.
 - Python modules often make boundaries obvious through imports. In MoonBit,
   file names are organizational only; use cohesive helper names and focused
   tests to make shared behavior explicit.
+- When splitting a type into a new package, prefer `pub using @pkg { type T }`
+  from the compatibility package instead of redefining the type. The generated
+  interface will show signatures in terms of the owning package's type, but
+  callers can still use the re-exported name.
+- Public methods belong with the package that owns the type. A compatibility
+  package may keep private methods on a foreign type for staged internal
+  migration, but do not publicly export methods on types owned by another
+  package.
+- If a staged split still has cross-package internals that read DOM fields
+  directly, `pub(all)` can be a temporary bridge. Record it as technical debt
+  and replace it with narrower package APIs once parser, sanitizer, serializer,
+  and transform packages have moved.
 - Prefer one shared predicate/table for parser and tokenizer state categories
   when the HTML standard uses the same set. Duplicating lists such as raw-text
   element names quickly causes parser/tokenizer drift.

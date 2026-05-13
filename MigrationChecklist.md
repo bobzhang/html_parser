@@ -218,6 +218,26 @@ reference implementation in `.repos/justhtml`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
+
+## Semantics-Preserving Modular Refactor
+
+- [x] Extract diagnostics into `core`.
+- [x] Extract shared syntax helpers into `internal/syntax`.
+- [x] Add free `Node` feature APIs for serializer, selector, text, and Markdown
+      operations.
+- [x] Remove public feature methods from the root `Node` API.
+- [x] Extract DOM node types, builders, and DOM methods into `dom`, with root
+      compatibility builders and `pub using @dom { type Node }`.
+- [ ] Extract tokenizer data structures and tokenizer implementation.
+- [ ] Extract stream event API.
+- [ ] Extract selector parsing and matching.
+- [ ] Extract HTML serializer and text extraction.
+- [ ] Extract Markdown conversion.
+- [ ] Extract sanitizer policy and DOM sanitizer.
+- [ ] Extract linkify scanner and DOM linkifier.
+- [ ] Extract transform pipeline.
+- [ ] Extract parser package.
+- [ ] Extract CLI package.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and

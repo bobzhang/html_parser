@@ -1,13 +1,5 @@
 ///|
-/// Kind of DOM node represented by `Node`.
-pub(all) enum NodeKind {
-  Document
-  Fragment
-  Element
-  Text
-  Comment
-  Doctype
-} derive(Debug, Eq)
+pub using @dom {type NodeKind}
 
 ///|
 /// Output context used by HTML serialization.
@@ -78,30 +70,7 @@ fn default_selector_limits() -> SelectorLimits {
 }
 
 ///|
-/// DOM node used for documents, fragments, elements, text, comments, and
-/// doctypes.
-///
-/// Nodes are created with helpers such as `document`, `fragment`, `element`,
-/// `text`, `comment`, and `doctype`.
-pub struct Node {
-  priv kind : NodeKind
-  priv name : String
-  priv ns : String?
-  priv attrs : Map[String, String?]
-  priv data : String
-  priv public_id : String?
-  priv system_id : String?
-  priv force_quirks : Bool
-  priv mut parsed_from_source : Bool
-  priv mut source_start_tag : String?
-  priv mut source_end_tag : String?
-  priv mut sanitize_escape_only : Bool
-  priv mut origin_offset : Int?
-  priv mut origin_line : Int?
-  priv mut origin_col : Int?
-  priv mut parent : Node?
-  priv children : Array[Node]
-} derive(Debug)
+pub using @dom {type Node}
 
 ///|
 /// Context element used when parsing an HTML fragment.
