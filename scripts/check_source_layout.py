@@ -130,6 +130,22 @@ def main(argv: list[str]) -> int:
             error(f"expected linkify package test module is not tracked: {path}")
             ok = False
 
+    required_transform_modules = {
+        "transform/transform.mbt",
+    }
+    for path in sorted(required_transform_modules):
+        if path not in tracked:
+            error(f"expected transform package module is not tracked: {path}")
+            ok = False
+
+    required_transform_tests = {
+        "transform/transform_wbtest.mbt",
+    }
+    for path in sorted(required_transform_tests):
+        if path not in tracked:
+            error(f"expected transform package test module is not tracked: {path}")
+            ok = False
+
     required_root_tests = {
         "builder_public_regression_test.mbt",
         "cli_test.mbt",

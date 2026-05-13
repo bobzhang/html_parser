@@ -1320,6 +1320,11 @@ JustHTML from Python to MoonBit.
   Prefer direct DOM shape assertions over importing the serializer just to
   compare HTML strings; this keeps the dependency graph pointed upward through
   compatibility wrappers.
+- Moving transforms last among the DOM feature packages pays off: the pipeline
+  can depend directly on selector, sanitizer, serializer, and linkify packages
+  instead of keeping root-private bridge functions alive. Move transform
+  whitebox tests with the package, and delete temporary root wrappers once no
+  root code calls them.
 - A moved feature package cannot add methods to root-owned types such as
   `ParsedHtml`. Keep those methods in the compatibility package as thin
   wrappers over the new package-level function.

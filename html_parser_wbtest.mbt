@@ -836,69 +836,6 @@ test "template column group mode drops stale inner table state" {
 }
 
 ///|
-test "transform private helpers keep defensive no-op behavior" {
-  assert_eq(decide_action_label(Keep), "keep")
-  assert_eq(
-    node_has_foreign_namespace(
-      make_node(Element, "p", None, {}, "", None, None, false, []),
-    ),
-    false,
-  )
-  assert_eq(prune_empty_node_is_effectively_empty(text("x"), true), false)
-  let text_root = text("x")
-  apply_prune_empty_transform(
-    text_root,
-    TransformSpec::prune_empty("*"),
-    default_selector_limits(),
-  )
-  assert_eq(text_root.data, "x")
-  ignore(
-    apply_transform(
-      fragment(children=[element("p")]),
-      TransformSpec::prune_empty("p"),
-      default_selector_limits(),
-    ),
-  )
-  ignore(
-    apply_transform(
-      fragment(children=[element("p")]),
-      TransformSpec::stage([TransformSpec::drop("p")]),
-      default_selector_limits(),
-    ),
-  )
-  assert_true(
-    decide_transform_action(element("p"), make_transform_spec(DecideNode))
-    is Keep,
-  )
-  apply_edit_document_transform(
-    fragment(),
-    make_transform_spec(EditDocumentRoot),
-  )
-  apply_edit_transform(element("p"), make_transform_spec(EditElement))
-  assert_eq(
-    apply_edit_attrs_transform(
-      element("p"),
-      make_transform_spec(EditAttributes),
-    ),
-    false,
-  )
-  assert_eq(
-    apply_set_attrs_transform(element("p"), make_transform_spec(SetAttributes)),
-    false,
-  )
-  let mixed = fragment(children=[text("x")])
-  apply_drop_kind_transform(mixed, Text, TransformSpec::drop_comments())
-  assert_eq(mixed.children.length(), 0)
-  let unmatched_kind = fragment(children=[element("p")])
-  transform_children(
-    unmatched_kind,
-    make_transform_spec(SanitizeTree, selector="p"),
-    default_selector_limits(),
-  )
-  assert_eq(unmatched_kind.children.length(), 1)
-}
-
-///|
 test "sanitize_dom clears mixed-case style rawtext resource loads" {
   let policy = SanitizationPolicy::new(
     ["style"],

@@ -10,11 +10,12 @@ import {
   "bobzhang/html_parser/serializer",
   "bobzhang/html_parser/stream",
   "bobzhang/html_parser/tokenizer",
+  "bobzhang/html_parser/transform",
   "moonbitlang/core/debug",
 }
 
 // Values
-pub fn apply_transforms(@dom.Node, Array[TransformSpec]) -> @dom.Node raise @core.HtmlError
+pub fn apply_transforms(@dom.Node, Array[@transform.TransformSpec]) -> @dom.Node raise @core.HtmlError
 
 pub fn cli_help() -> String
 
@@ -96,14 +97,6 @@ pub(all) struct CliResult {
   file_output_content : String?
 } derive(Eq, @debug.Debug)
 
-pub(all) enum DecideAction {
-  Keep
-  Drop
-  Unwrap
-  Empty
-  Escape
-} derive(Eq, @debug.Debug)
-
 pub(all) struct FragmentContext {
   tag_name : String
   ns : String?
@@ -121,33 +114,9 @@ pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int, context? : 
 pub fn ParsedHtml::to_markdown(Self, html_passthrough? : Bool) -> String raise @core.HtmlError
 pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
 
-pub struct TransformSpec {
-  // private fields
-} derive(@debug.Debug)
-pub fn TransformSpec::allow_style_attrs(StringView, allowed_css_properties~ : Array[String], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::allowlist_attrs(StringView, Map[String, Array[String]], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::collapse_whitespace(skip_tags? : Array[String], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::decide(StringView, (@dom.Node) -> DecideAction, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::drop(StringView, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::drop_attrs(StringView, Array[String], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::drop_comments(enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::drop_doctype(enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::drop_foreign_namespaces(enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::drop_url_attrs(StringView, url_policy~ : @sanitize.UrlPolicy, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::edit(StringView, (@dom.Node) -> Unit, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::edit_attrs(StringView, (@dom.Node) -> Map[String, String?]?, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::edit_document((@dom.Node) -> Unit, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::empty(StringView, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::escape(StringView, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::linkify(config? : @linkify.LinkifyConfig, skip_tags? : Array[String], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::merge_attrs(StringView, attr~ : StringView, tokens~ : Array[String], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::prune_empty(StringView, strip_whitespace? : Bool, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::sanitize(policy? : @sanitize.SanitizationPolicy, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::set_attrs(StringView, Map[String, String?], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::stage(Array[Self], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-pub fn TransformSpec::unwrap(StringView, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
-
 // Type aliases
+pub using @transform {type DecideAction}
+
 pub using @sanitize {type DisallowedTagHandling}
 
 pub using @tokenizer {type DoctypeInfo}
@@ -187,6 +156,8 @@ pub using @tokenizer {type TagKind}
 pub using @tokenizer {type TagToken}
 
 pub using @tokenizer {type TokenizedHtml}
+
+pub using @transform {type TransformSpec}
 
 pub using @sanitize {type UnsafeHandling}
 

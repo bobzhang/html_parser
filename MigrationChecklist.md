@@ -246,7 +246,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Extract Markdown conversion.
 - [x] Extract sanitizer policy and DOM sanitizer.
 - [x] Extract linkify scanner and DOM linkifier.
-- [ ] Extract transform pipeline.
+- [x] Extract transform pipeline.
 - [ ] Extract parser package.
 - [ ] Extract CLI package.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,

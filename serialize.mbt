@@ -4,11 +4,6 @@ fn is_void_element(name : StringView) -> Bool {
 }
 
 ///|
-fn serialize_start_tag_unchecked(node : Node, quote : Char) -> String {
-  @ser.serialize_start_tag_unchecked(node, quote)
-}
-
-///|
 /// Serialize a node as HTML.
 pub fn to_html(
   node : Node,
@@ -29,14 +24,6 @@ pub fn to_text(
   separator_blocks_only? : Bool = false,
 ) -> String {
   @ser.to_text(node, separator~, strip~, separator_blocks_only~)
-}
-
-///|
-fn is_html_whitespace_char(ch : Char) -> Bool {
-  match ch {
-    ' ' | '\t' | '\n' | '\r' | '\u{000C}' => true
-    _ => false
-  }
 }
 
 ///|

@@ -16,6 +16,12 @@ fn parser_error_category(code : StringView) -> String {
 pub type HtmlError = @core.HtmlError
 
 ///|
+pub using @tr {type DecideAction}
+
+///|
+pub using @tr {type TransformSpec}
+
+///|
 pub using @link {type LinkifyConfig}
 
 ///|
@@ -53,11 +59,6 @@ pub using @san {type UrlProxy}
 
 ///|
 pub using @san {type UrlRule}
-
-///|
-fn default_selector_limits() -> SelectorLimits {
-  SelectorLimits::new()
-}
 
 ///|
 pub using @dom {type Node}

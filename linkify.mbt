@@ -30,18 +30,3 @@ pub fn linkify_dom(
     (None, None) => @link.linkify_dom(node)
   }
 }
-
-///|
-fn linkify_default_dom_skip_tags() -> Array[String] {
-  @link.linkify_default_dom_skip_tags()
-}
-
-///|
-fn linkify_text_child_at_matches(
-  parent : Node,
-  index : Int,
-  child : Node,
-  matches : Array[LinkMatch],
-) -> Int {
-  @link.linkify_text_child_at_matches(parent, index, child, matches)
-}
