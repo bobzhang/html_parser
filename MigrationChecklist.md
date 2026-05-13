@@ -237,6 +237,8 @@ reference implementation in `.repos/justhtml`.
       `serializer/escape.mbt`.
 - [x] Split serializer start-tag validation and construction into
       `serializer/start_tag.mbt`.
+- [x] Split serializer comment and raw-text guards into
+      `serializer/rawtext.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.

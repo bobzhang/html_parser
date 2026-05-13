@@ -261,6 +261,7 @@ def main(argv: list[str]) -> int:
 
     required_serializer_modules = {
         "serializer/escape.mbt",
+        "serializer/rawtext.mbt",
         "serializer/serializer.mbt",
         "serializer/start_tag.mbt",
     }
