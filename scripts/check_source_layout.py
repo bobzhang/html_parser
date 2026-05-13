@@ -263,6 +263,7 @@ def main(argv: list[str]) -> int:
         "serializer/compact.mbt",
         "serializer/elements.mbt",
         "serializer/escape.mbt",
+        "serializer/pretty.mbt",
         "serializer/rawtext.mbt",
         "serializer/serializer.mbt",
         "serializer/start_tag.mbt",
