@@ -191,16 +191,16 @@ test "entity helpers preserve unresolved names and attribute boundaries" {
 ///|
 test "doctype helpers keep empty eof and unquoted identifiers distinct" {
   assert_eq(eof_error_pos(""), 0)
-  assert_eq(doctype_eof_error_offset(""), 0)
-  let errors : Array[DoctypeExternalError] = []
-  let (value, next, closed) = parse_quoted_doctype_value_at(
+  assert_eq(@tok.doctype_eof_error_offset(""), 0)
+  let errors : Array[@tok.DoctypeExternalError] = []
+  let (value, next, closed) = @tok.parse_quoted_doctype_value_at(
     "identifier", 0, errors,
   )
   assert_true(value is None)
   assert_eq(next, 0)
   assert_eq(closed, false)
   assert_eq(errors.length(), 0)
-  let external = parse_doctype_external("", true)
+  let external = @tok.parse_doctype_external("", true)
   assert_true(external.public_id is None)
   assert_true(external.system_id is None)
   assert_eq(external.force_quirks, false)
@@ -1452,9 +1452,9 @@ test "scanner helpers fail closed on surrogate-split offsets" {
     eof_error_pos("x😀</script>"),
   )
 
-  let doctype_errors : Array[DoctypeExternalError] = []
+  let doctype_errors : Array[@tok.DoctypeExternalError] = []
   assert_eq(
-    normalize_doctype_value(
+    @tok.normalize_doctype_value(
       value,
       mid_surrogate,
       value.length(),
@@ -1463,7 +1463,7 @@ test "scanner helpers fail closed on surrogate-split offsets" {
     "",
   )
   assert_eq(doctype_errors.length(), 0)
-  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+  let (name, name_errors) = @tok.parse_lower_name_value_replacing_nulls(
     value,
     mid_surrogate,
     value.length(),

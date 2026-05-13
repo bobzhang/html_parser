@@ -7,6 +7,16 @@ import {
 }
 
 // Values
+pub fn doctype_eof_error_offset(StringView) -> Int
+
+pub fn normalize_doctype_value(StringView, Int, Int, Array[DoctypeExternalError]) -> String
+
+pub fn parse_doctype_external(StringView, Bool) -> DoctypeExternalParse
+
+pub fn parse_lower_name_value_replacing_nulls(StringView, Int, Int) -> (String, Array[DoctypeExternalError])
+
+pub fn parse_quoted_doctype_value_at(StringView, Int, Array[DoctypeExternalError]) -> (String?, Int, Bool)
+
 pub fn scan_comment_data(StringView, Int) -> CommentScan
 
 // Errors
@@ -22,6 +32,18 @@ pub(all) struct CommentScan {
 pub(all) struct CommentScanError {
   code : String
   offset : Int
+}
+
+pub(all) struct DoctypeExternalError {
+  code : String
+  offset : Int
+}
+
+pub(all) struct DoctypeExternalParse {
+  public_id : String?
+  system_id : String?
+  errors : Array[DoctypeExternalError]
+  force_quirks : Bool
 }
 
 pub(all) struct DoctypeInfo {

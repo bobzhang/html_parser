@@ -227,7 +227,7 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
       _ => ignore(self.advance_char())
     }
   }
-  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+  let (name, name_errors) = @tok.parse_lower_name_value_replacing_nulls(
     self.input,
     name_start,
     self.pos,
@@ -236,7 +236,7 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   while !self.is_eof() && !self.starts_with(">") {
     ignore(self.advance_char())
   }
-  let external = parse_doctype_external(
+  let external = @tok.parse_doctype_external(
     self.input[ids_start:self.pos],
     self.starts_with(">"),
   )
@@ -302,7 +302,7 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
       _ => ignore(self.advance_char())
     }
   }
-  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+  let (name, name_errors) = @tok.parse_lower_name_value_replacing_nulls(
     self.input,
     name_start,
     self.pos,
@@ -358,7 +358,7 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
           _ => break
         }
       }
-      let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+      let (name, name_errors) = @tok.parse_lower_name_value_replacing_nulls(
         self.input,
         name_start,
         self.pos,
@@ -482,7 +482,7 @@ fn SourceTokenizer::parse_attribute(
       _ => ignore(self.advance_char())
     }
   }
-  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+  let (name, name_errors) = @tok.parse_lower_name_value_replacing_nulls(
     self.input,
     name_start,
     self.pos,
