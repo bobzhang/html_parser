@@ -13,9 +13,9 @@ from collections import Counter
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 
-EXPECTED_COUNT = 588
+EXPECTED_COUNT = 591
 EXPECTED_SHA256 = (
-    "c604194445ed7864c9dbd43b560a2592534bd15636fbb2b89462cf49bd27e24b"
+    "58fb3ec96301670dca533379e8c8dcd34197e7dfec3f5c9a7ffc45bb5f98dabd"
 )
 TEST_DECLARATION = re.compile(
     r'^\s*(?:async\s+)?test\s+"((?:[^"\\]|\\.)*)"',

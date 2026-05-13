@@ -414,6 +414,8 @@ reference implementation in `.repos/justhtml`.
       attribute policy transforms, and callback/report event ordering.
 - [x] Added public serializer regression tests for pretty HTML, escaping
       contexts, URL context output, and invalid programmatic serialization.
+- [x] Added public text/Markdown regression tests for text extraction modes,
+      common Markdown output, and raw HTML passthrough behavior.
 
 ## Working Rule
 

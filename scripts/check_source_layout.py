@@ -99,6 +99,7 @@ def main(argv: list[str]) -> int:
         "serializer_public_regression_test.mbt",
         "selector_public_regression_test.mbt",
         "stream_test.mbt",
+        "text_markdown_public_regression_test.mbt",
         "token_stream_regression_test.mbt",
         "tokenizer_fixtures_test.mbt",
         "transform_public_regression_test.mbt",
