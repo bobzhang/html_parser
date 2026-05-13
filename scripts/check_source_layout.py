@@ -140,6 +140,7 @@ def main(argv: list[str]) -> int:
     required_selector_modules = {
         "selector/attributes.mbt",
         "selector/basic.mbt",
+        "selector/budget.mbt",
         "selector/limits.mbt",
         "selector/parse.mbt",
         "selector/pseudo.mbt",
