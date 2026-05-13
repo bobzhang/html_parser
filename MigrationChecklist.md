@@ -226,6 +226,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split simple selector matching and validation into `selector/simple.mbt`.
 - [x] Split selector-list and complex-selector parsing into
       `selector/parse.mbt`.
+- [x] Split normal selector traversal and selector-list matching into
+      `selector/traversal.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
