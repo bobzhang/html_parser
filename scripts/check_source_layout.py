@@ -139,6 +139,7 @@ def main(argv: list[str]) -> int:
 
     required_transform_modules = {
         "transform/builders.mbt",
+        "transform/normalization.mbt",
         "transform/pipeline.mbt",
         "transform/reporting.mbt",
         "transform/spec.mbt",
