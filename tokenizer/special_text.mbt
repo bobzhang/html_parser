@@ -1,11 +1,11 @@
 ///|
-priv struct SpecialTextError {
+pub(all) struct SpecialTextError {
   code : String
   offset : Int
 }
 
 ///|
-priv struct ScriptTextScan {
+pub(all) struct ScriptTextScan {
   data : String
   end_start : Int?
   errors : Array[SpecialTextError]
@@ -27,7 +27,7 @@ priv enum ScriptTextState {
 }
 
 ///|
-fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
+pub fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
   let out = StringBuilder::new(size_hint=input.length() - start)
   let errors : Array[SpecialTextError] = []
   let mut state = ScriptRawText
@@ -38,7 +38,7 @@ fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
       ScriptRawText =>
         if script_end_tag_at(input, pos) {
           return { data: out.to_string(), end_start: Some(pos), errors }
-        } else if view_starts_with_at(input, pos, "<!--") {
+        } else if @syn.view_starts_with_at(input, pos, "<!--") {
           out.write_string("<!--")
           pos += 4
           state = ScriptEscaped
@@ -123,7 +123,7 @@ fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
             } else {
               state = ScriptEscaped
             }
-            pos = write_normalized_char(input, pos, out)
+            pos = @syn.write_normalized_char(input, pos, out)
           }
           Some(ch) if ch.is_ascii_alphabetic() => {
             temp = temp + ch.to_string()
@@ -206,7 +206,7 @@ fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
             } else {
               state = ScriptDoubleEscaped
             }
-            pos = write_normalized_char(input, pos, out)
+            pos = @syn.write_normalized_char(input, pos, out)
           }
           Some(ch) if ch.is_ascii_alphabetic() => {
             temp = temp + ch.to_string()
@@ -236,7 +236,7 @@ fn write_script_text_char(
       out.write_char('\u{FFFD}')
       pos + 1
     }
-    Some(_) => write_normalized_char(input, pos, out)
+    Some(_) => @syn.write_normalized_char(input, pos, out)
     None => pos
   }
 }
@@ -244,7 +244,7 @@ fn write_script_text_char(
 ///|
 fn script_end_tag_at(input : StringView, pos : Int) -> Bool {
   let needle = "</script"
-  if starts_with_case_insensitive(input, pos, needle) {
+  if @syn.starts_with_case_insensitive(input, pos, needle) {
     script_end_tag_boundary(input.get_char(pos + needle.length()))
   } else {
     false
@@ -268,4 +268,61 @@ fn script_escape_boundary(ch : Char) -> Bool {
 ///|
 fn temp_is_script(temp : String) -> Bool {
   temp[:].compare_ignore_ascii_case("script") == 0
+}
+
+///|
+pub fn is_tag_name_start(ch : Char) -> Bool {
+  ch.is_ascii_alphabetic()
+}
+
+///|
+pub fn is_tag_name_end(ch : Char) -> Bool {
+  ch.is_ascii_whitespace() || ch == '/' || ch == '>'
+}
+
+///|
+pub fn special_text_decodes_entities(name : StringView) -> Bool {
+  match name {
+    "title" | "textarea" => true
+    _ => false
+  }
+}
+
+///|
+pub fn find_matching_end_tag(
+  input : StringView,
+  start : Int,
+  name : StringView,
+) -> Int? {
+  let needle = "</" + name.to_owned()
+  let mut pos = start
+  while pos < input.length() {
+    if @syn.starts_with_case_insensitive(input, pos, needle) {
+      let after_name = pos + needle.length()
+      match input.get_char(after_name) {
+        Some('>') => return Some(pos)
+        Some('/') => return Some(pos)
+        Some(ch) if ch.is_ascii_whitespace() => return Some(pos)
+        _ => ()
+      }
+    }
+    match input.get_char(pos) {
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  None
+}
+
+///|
+pub fn matching_end_tag_error_pos(input : StringView, start : Int) -> Int {
+  let mut pos = start
+  while pos < input.length() {
+    match input.get_char(pos) {
+      Some('>') => return pos
+      Some(ch) => pos += ch.utf16_len()
+      None => break
+    }
+  }
+  @syn.eof_error_pos(input)
 }

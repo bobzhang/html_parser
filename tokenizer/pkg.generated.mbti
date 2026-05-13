@@ -17,9 +17,17 @@ pub fn decode_entities_with_errors(StringView, in_attribute~ : Bool) -> EntityDe
 
 pub fn doctype_eof_error_offset(StringView) -> Int
 
+pub fn find_matching_end_tag(StringView, Int, StringView) -> Int?
+
 pub fn html_numeric_entity_replacement(Int) -> Int
 
+pub fn is_tag_name_end(Char) -> Bool
+
+pub fn is_tag_name_start(Char) -> Bool
+
 pub fn legacy_entity_blocked_in_attribute(StringView, Int, in_attribute~ : Bool) -> Bool
+
+pub fn matching_end_tag_error_pos(StringView, Int) -> Int
 
 pub fn normalize_doctype_value(StringView, Int, Int, Array[DoctypeExternalError]) -> String
 
@@ -30,6 +38,10 @@ pub fn parse_lower_name_value_replacing_nulls(StringView, Int, Int) -> (String, 
 pub fn parse_quoted_doctype_value_at(StringView, Int, Array[DoctypeExternalError]) -> (String?, Int, Bool)
 
 pub fn scan_comment_data(StringView, Int) -> CommentScan
+
+pub fn scan_script_text(StringView, Int) -> ScriptTextScan
+
+pub fn special_text_decodes_entities(StringView) -> Bool
 
 // Errors
 
@@ -88,6 +100,17 @@ pub(all) enum HtmlToken {
   DoctypeToken(DoctypeInfo)
   Eof
 } derive(Eq, @debug.Debug)
+
+pub(all) struct ScriptTextScan {
+  data : String
+  end_start : Int?
+  errors : Array[SpecialTextError]
+}
+
+pub(all) struct SpecialTextError {
+  code : String
+  offset : Int
+}
 
 pub(all) enum TagKind {
   StartTag

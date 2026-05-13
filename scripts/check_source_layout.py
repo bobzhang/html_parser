@@ -58,7 +58,6 @@ def main(argv: list[str]) -> int:
         "foreign_content.mbt",
         "serialize.mbt",
         "sanitize.mbt",
-        "script_text.mbt",
         "transforms.mbt",
         "markdown.mbt",
         "table_normalize.mbt",
@@ -73,6 +72,26 @@ def main(argv: list[str]) -> int:
     for path in sorted(required_root_modules):
         if path not in tracked:
             error(f"expected root package module is not tracked: {path}")
+            ok = False
+
+    required_tokenizer_modules = {
+        "tokenizer/comment_scan.mbt",
+        "tokenizer/doctype.mbt",
+        "tokenizer/entity.mbt",
+        "tokenizer/special_text.mbt",
+        "tokenizer/types.mbt",
+    }
+    for path in sorted(required_tokenizer_modules):
+        if path not in tracked:
+            error(f"expected tokenizer package module is not tracked: {path}")
+            ok = False
+
+    required_tokenizer_tests = {
+        "tokenizer/special_text_wbtest.mbt",
+    }
+    for path in sorted(required_tokenizer_tests):
+        if path not in tracked:
+            error(f"expected tokenizer package test module is not tracked: {path}")
             ok = False
 
     required_root_tests = {

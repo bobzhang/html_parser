@@ -1320,7 +1320,7 @@ fn assert_script_scan(
   expected : String,
   end_start : Int?,
 ) -> Unit raise {
-  let scan = scan_script_text(value, 0)
+  let scan = @tok.scan_script_text(value, 0)
   assert_eq(scan.data, expected)
   match end_start {
     Some(expected_end) => {
@@ -1431,26 +1431,18 @@ test "scanner helpers fail closed on surrogate-split offsets" {
 
   let normalized = StringBuilder::new()
   assert_eq(
-    write_normalized_char(value, mid_surrogate, normalized),
+    @syn.write_normalized_char(value, mid_surrogate, normalized),
     mid_surrogate,
   )
   assert_eq(normalized.to_string(), "")
 
-  let script_out = StringBuilder::new()
-  let script_errors : Array[SpecialTextError] = []
-  assert_eq(
-    write_script_text_char(value, mid_surrogate, script_out, script_errors),
-    mid_surrogate,
-  )
-  assert_eq(script_out.to_string(), "")
-  assert_eq(script_errors.length(), 0)
-
   assert_true(find_markup_close(value, mid_surrogate) is None)
   assert_true(
-    find_matching_end_tag("x😀</script>", mid_surrogate, "script") is None,
+    @tok.find_matching_end_tag("x😀</script>", mid_surrogate, "script")
+    is None,
   )
   assert_eq(
-    matching_end_tag_error_pos("x😀</script>", mid_surrogate),
+    @tok.matching_end_tag_error_pos("x😀</script>", mid_surrogate),
     eof_error_pos("x😀</script>"),
   )
 

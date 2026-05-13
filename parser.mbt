@@ -2022,7 +2022,7 @@ fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
         match find_markup_close(self.input, pos) {
           Some(close) => {
             let malformed = match self.input.get_char(pos + 2) {
-              Some(ch) if ch == '>' || !is_tag_name_start(ch) => true
+              Some(ch) if ch == '>' || !@tok.is_tag_name_start(ch) => true
               _ => false
             }
             if malformed {
@@ -2044,7 +2044,7 @@ fn Parser::report_initial_doctype_error(self : Parser) -> ParseError? {
         }
       '<' =>
         match self.input.get_char(pos + 1) {
-          Some(ch) if is_tag_name_start(ch) =>
+          Some(ch) if @tok.is_tag_name_start(ch) =>
             match find_markup_close(self.input, pos) {
               Some(close) => {
                 let error = self.make_error_at(
@@ -2371,7 +2371,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
       self.append_sanitize_escape_source_text(start, self.pos)
       return
     }
-    Some(ch) if !is_tag_name_start(ch) => {
+    Some(ch) if !@tok.is_tag_name_start(ch) => {
       self.error_at("invalid-first-character-of-tag-name", self.pos)
       self.parse_bogus_comment(start)
       self.append_sanitize_escape_source_text(start, self.pos)
@@ -4944,11 +4944,11 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
   let start = self.pos
   self.pos += 1
   match self.current() {
-    Some(ch) if is_tag_name_start(ch) => {
+    Some(ch) if @tok.is_tag_name_start(ch) => {
       let name_start = self.pos
       while !self.is_eof() {
         match self.current() {
-          Some(ch) if !is_tag_name_end(ch) => ignore(self.advance_char())
+          Some(ch) if !@tok.is_tag_name_end(ch) => ignore(self.advance_char())
           _ => break
         }
       }
@@ -5375,16 +5375,6 @@ fn Parser::parse_quoted_attribute_value(self : Parser, quote : Char) -> String {
 }
 
 ///|
-fn is_tag_name_start(ch : Char) -> Bool {
-  ch.is_ascii_alphabetic()
-}
-
-///|
-fn is_tag_name_end(ch : Char) -> Bool {
-  ch.is_ascii_whitespace() || ch == '/' || ch == '>'
-}
-
-///|
 fn Parser::is_special_text_element(self : Parser, name : StringView) -> Bool {
   if name == "noscript" {
     self.scripting_enabled
@@ -5406,14 +5396,6 @@ fn is_special_text_element(name : StringView) -> Bool {
     | "title"
     | "textarea"
     | "xmp" => true
-    _ => false
-  }
-}
-
-///|
-fn special_text_decodes_entities(name : StringView) -> Bool {
-  match name {
-    "title" | "textarea" => true
     _ => false
   }
 }
@@ -5446,7 +5428,7 @@ fn Parser::decoded_special_text(
     (raw, 0)
   }
   let raw = self.replace_null_characters(raw, start + offset)
-  let data = if special_text_decodes_entities(name) {
+  let data = if @tok.special_text_decodes_entities(name) {
     let decoded = @tok.decode_entities_with_errors(raw, in_attribute=false)
     for error in decoded.errors {
       self.error_at(error.code, error_pos)
@@ -5534,45 +5516,6 @@ fn is_known_doctype(
 }
 
 ///|
-fn find_matching_end_tag(
-  input : StringView,
-  start : Int,
-  name : StringView,
-) -> Int? {
-  let needle = "</" + name.to_owned()
-  let mut pos = start
-  while pos < input.length() {
-    if starts_with_case_insensitive(input, pos, needle) {
-      let after_name = pos + needle.length()
-      match input.get_char(after_name) {
-        Some('>') => return Some(pos)
-        Some('/') => return Some(pos)
-        Some(ch) if ch.is_ascii_whitespace() => return Some(pos)
-        _ => ()
-      }
-    }
-    match input.get_char(pos) {
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
-  }
-  None
-}
-
-///|
-fn matching_end_tag_error_pos(input : StringView, start : Int) -> Int {
-  let mut pos = start
-  while pos < input.length() {
-    match input.get_char(pos) {
-      Some('>') => return pos
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
-  }
-  eof_error_pos(input)
-}
-
-///|
 fn Parser::skip_matching_end_tag(self : Parser) -> Unit {
   self.pos += 2
   while !self.is_eof() {
@@ -5653,7 +5596,7 @@ fn Parser::consume_special_element_content(
     return
   }
   if name == "script" {
-    let scan = scan_script_text(self.input, self.pos)
+    let scan = @tok.scan_script_text(self.input, self.pos)
     for error in scan.errors {
       self.error_at(error.code, error.offset)
     }
@@ -5680,9 +5623,9 @@ fn Parser::consume_special_element_content(
     }
     return
   }
-  match find_matching_end_tag(self.input, self.pos, name) {
+  match @tok.find_matching_end_tag(self.input, self.pos, name) {
     Some(end_start) => {
-      let error_pos = matching_end_tag_error_pos(self.input, end_start)
+      let error_pos = @tok.matching_end_tag_error_pos(self.input, end_start)
       let view = self.input[content_start:end_start]
       parent.append_child(
         self.text_at(
@@ -5911,7 +5854,7 @@ fn Parser::parse_fragment_context(
     return true
   }
   if is_fragment_raw_text_context(name) {
-    match find_matching_end_tag(self.input, 0, name) {
+    match @tok.find_matching_end_tag(self.input, 0, name) {
       Some(end_start) => {
         self.append_fragment_context_text(self.input[0:end_start], 0)
         self.pos = end_start
@@ -5979,15 +5922,6 @@ fn normalize_newlines(input : StringView) -> String {
 ///|
 fn normalize_bogus_comment_data(input : StringView) -> String {
   @syn.normalize_bogus_comment_data(input)
-}
-
-///|
-fn write_normalized_char(
-  input : StringView,
-  pos : Int,
-  out : StringBuilder,
-) -> Int {
-  @syn.write_normalized_char(input, pos, out)
 }
 
 ///|

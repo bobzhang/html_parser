@@ -281,7 +281,7 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
       ignore(self.advance_char())
       return
     }
-    Some(ch) if !is_tag_name_start(ch) => {
+    Some(ch) if !@tok.is_tag_name_start(ch) => {
       self.error_at("invalid-first-character-of-tag-name", self.pos)
       self.parse_bogus_comment()
       return
@@ -350,11 +350,11 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
   let start = self.pos
   self.pos += 1
   match self.current() {
-    Some(ch) if is_tag_name_start(ch) => {
+    Some(ch) if @tok.is_tag_name_start(ch) => {
       let name_start = self.pos
       while !self.is_eof() {
         match self.current() {
-          Some(ch) if !is_tag_name_end(ch) => ignore(self.advance_char())
+          Some(ch) if !@tok.is_tag_name_end(ch) => ignore(self.advance_char())
           _ => break
         }
       }
@@ -588,7 +588,7 @@ fn SourceTokenizer::decoded_special_text(
   error_pos : Int,
 ) -> String {
   let raw = self.replace_special_text_nulls(raw, start)
-  let data = if special_text_decodes_entities(name) {
+  let data = if @tok.special_text_decodes_entities(name) {
     let decoded = @tok.decode_entities_with_errors(raw, in_attribute=false)
     for error in decoded.errors {
       self.error_at(error.code, error_pos)
@@ -649,7 +649,7 @@ fn SourceTokenizer::consume_special_text_tokens(
     return
   }
   if name == "script" {
-    let scan = scan_script_text(self.input, self.pos)
+    let scan = @tok.scan_script_text(self.input, self.pos)
     for error in scan.errors {
       self.error_at(error.code, error.offset)
     }
@@ -670,9 +670,9 @@ fn SourceTokenizer::consume_special_text_tokens(
     }
     return
   }
-  match find_matching_end_tag(self.input, self.pos, name) {
+  match @tok.find_matching_end_tag(self.input, self.pos, name) {
     Some(end_start) => {
-      let error_pos = matching_end_tag_error_pos(self.input, end_start)
+      let error_pos = @tok.matching_end_tag_error_pos(self.input, end_start)
       match self.input.get_view(start=content_start, end=end_start) {
         Some(view) if !view.is_empty() =>
           self.tokens.push(
