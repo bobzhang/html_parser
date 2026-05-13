@@ -279,6 +279,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split parser document frameset helpers into `parser/frameset.mbt`.
 - [x] Split parser active-formatting and adoption-agency helpers into
       `parser/active_formatting.mbt`.
+- [x] Split parser body tag classification and heading/table cell helpers into
+      `parser/body_tags.mbt`.
 - [x] Split parser document shell and head-handling helpers into
       `parser/document_shell.mbt`.
 - [x] Moved parser document/fragment end-tag shell helpers into
