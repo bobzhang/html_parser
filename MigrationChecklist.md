@@ -251,6 +251,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Extract CLI package.
 - [x] Split parser public entrypoints and `ParsedHtml` result methods into a
       focused `parser/api.mbt` file.
+- [x] Split parser attribute scanners into `parser/attributes.mbt`.
 - [x] Split document scaffolding and selected-content helpers into
       `parser/scaffold.mbt`.
 - [x] Split parser state, cursor helpers, and node-origin helpers into

@@ -145,6 +145,7 @@ def main(argv: list[str]) -> int:
     required_parser_modules = {
         "parser/active_formatting.mbt",
         "parser/api.mbt",
+        "parser/attributes.mbt",
         "parser/body_tags.mbt",
         "parser/caption.mbt",
         "parser/column_group.mbt",
