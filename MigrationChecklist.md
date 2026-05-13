@@ -659,6 +659,7 @@ reference implementation in `.repos/justhtml`.
       quote validation.
 - [x] Extended public CLI regressions for immediate help/version plans,
       selector no-match/first-match behavior, and text whitespace options.
+- [x] Split tokenizer script raw-text scanning into `tokenizer/script_text.mbt`.
 
 ## Working Rule
 
