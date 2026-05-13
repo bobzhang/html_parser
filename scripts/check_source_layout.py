@@ -267,6 +267,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_markdown_modules = {
+        "markdown/blocks.mbt",
         "markdown/builder.mbt",
         "markdown/code.mbt",
         "markdown/link.mbt",

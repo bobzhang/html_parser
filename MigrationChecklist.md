@@ -260,6 +260,8 @@ reference implementation in `.repos/justhtml`.
       `markdown/code.mbt`.
 - [x] Split Markdown link destination and anchor rendering helpers into
       `markdown/link.mbt`.
+- [x] Split Markdown pre/list/blockquote block walkers into
+      `markdown/blocks.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
