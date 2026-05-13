@@ -94,6 +94,7 @@ def main(argv: list[str]) -> int:
         "sanitize/attributes.mbt",
         "sanitize/content.mbt",
         "sanitize/css.mbt",
+        "sanitize/namespaces.mbt",
         "sanitize/nodes.mbt",
         "sanitize/observer.mbt",
         "sanitize/policy.mbt",

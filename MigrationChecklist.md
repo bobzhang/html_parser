@@ -323,6 +323,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split sanitizer rawtext and foreign integration child sanitizers into
       `sanitize/content.mbt`.
 - [x] Split sanitizer shared syntax helpers into `sanitize/syntax.mbt`.
+- [x] Split sanitizer namespace and node-name classifiers into
+      `sanitize/namespaces.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
