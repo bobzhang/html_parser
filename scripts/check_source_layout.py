@@ -50,22 +50,18 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_root_modules = {
-        "comment_scan.mbt",
         "html_parser.mbt",
         "parser.mbt",
         "tokens.mbt",
         "dom.mbt",
-        "foreign_content.mbt",
         "serialize.mbt",
         "sanitize.mbt",
         "transforms.mbt",
         "markdown.mbt",
-        "table_normalize.mbt",
         "linkify.mbt",
         "stream.mbt",
         "cli.mbt",
         "types.mbt",
-        "xml_coercion.mbt",
     }
     for path in sorted(required_root_modules):
         if path not in tracked:
@@ -146,6 +142,26 @@ def main(argv: list[str]) -> int:
             error(f"expected transform package test module is not tracked: {path}")
             ok = False
 
+    required_parser_modules = {
+        "parser/foreign_content.mbt",
+        "parser/parser.mbt",
+        "parser/table_normalize.mbt",
+        "parser/types.mbt",
+        "parser/xml_coercion.mbt",
+    }
+    for path in sorted(required_parser_modules):
+        if path not in tracked:
+            error(f"expected parser package module is not tracked: {path}")
+            ok = False
+
+    required_parser_tests = {
+        "parser/parser_wbtest.mbt",
+    }
+    for path in sorted(required_parser_tests):
+        if path not in tracked:
+            error(f"expected parser package test module is not tracked: {path}")
+            ok = False
+
     required_root_tests = {
         "builder_public_regression_test.mbt",
         "cli_test.mbt",
@@ -157,7 +173,6 @@ def main(argv: list[str]) -> int:
         "encoding_public_regression_test.mbt",
         "golden_output_regression_test.mbt",
         "html_parser_test.mbt",
-        "html_parser_wbtest.mbt",
         "linkify_dom_test.mbt",
         "linkify_fixtures_test.mbt",
         "linkify_public_regression_test.mbt",

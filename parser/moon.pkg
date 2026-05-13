@@ -3,17 +3,9 @@ import {
   "bobzhang/html_parser/dom" @dom,
   "bobzhang/html_parser/internal/encoding" @enc,
   "bobzhang/html_parser/internal/syntax" @syn,
-  "bobzhang/html_parser/linkify" @link,
   "bobzhang/html_parser/markdown" @md,
-  "bobzhang/html_parser/parser" @p,
   "bobzhang/html_parser/sanitize" @san,
   "bobzhang/html_parser/selector" @sel,
   "bobzhang/html_parser/serializer" @ser,
-  "bobzhang/html_parser/stream" @stream,
   "bobzhang/html_parser/tokenizer" @tok,
-  "bobzhang/html_parser/transform" @tr,
 }
-
-import {
-  "moonbitlang/core/encoding/utf8" @utf8,
-} for "test"

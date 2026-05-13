@@ -4,10 +4,13 @@ fn is_foreign_namespace(ns : StringView) -> Bool {
 }
 
 ///|
-fn node_attribute_value_ignore_case(node : Node, name : StringView) -> String? {
-  let wanted = lower_ascii(name)
+fn node_attribute_value_ignore_case(
+  node : @dom.Node,
+  name : StringView,
+) -> String? {
+  let wanted = @syn.lower_ascii(name)
   for attr_name, attr_value in node.attrs {
-    if lower_ascii(attr_name) == wanted {
+    if @syn.lower_ascii(attr_name) == wanted {
       return Some(
         match attr_value {
           Some(value) => value
@@ -20,7 +23,7 @@ fn node_attribute_value_ignore_case(node : Node, name : StringView) -> String? {
 }
 
 ///|
-fn node_is_html_integration_point(node : Node) -> Bool {
+fn node_is_html_integration_point(node : @dom.Node) -> Bool {
   match node.ns {
     Some("math") =>
       if node.name == "annotation-xml" {
@@ -43,7 +46,7 @@ fn node_is_html_integration_point(node : Node) -> Bool {
 }
 
 ///|
-fn node_is_mathml_text_integration_point(node : Node) -> Bool {
+fn node_is_mathml_text_integration_point(node : @dom.Node) -> Bool {
   node.ns is Some("math") &&
   (
     node.name == "mi" ||
@@ -355,7 +358,10 @@ fn Parser::current_node_is_foreign_namespace(self : Parser) -> Bool {
 }
 
 ///|
-fn Parser::node_is_foreign_fragment_context(self : Parser, node : Node) -> Bool {
+fn Parser::node_is_foreign_fragment_context(
+  self : Parser,
+  node : @dom.Node,
+) -> Bool {
   match self.fragment_context_foreign {
     Some(context) => physical_equal(node, context)
     None => false
@@ -403,7 +409,7 @@ fn Parser::pop_until_html_or_integration_point(self : Parser) -> Unit {
 }
 
 ///|
-fn node_is_html_namespace(node : Node) -> Bool {
+fn node_is_html_namespace(node : @dom.Node) -> Bool {
   !(node.ns is Some(ns) && is_foreign_namespace(ns))
 }
 
@@ -429,7 +435,7 @@ fn Parser::handle_foreign_content_start_tag(
   let adjusted_name = adjusted_start_tag_name_for_namespace(ns, name)
   let adjusted_attrs = prepare_foreign_attrs(ns, attrs)
   let node = self.node_with_origin(
-    element(adjusted_name, attrs=adjusted_attrs, ns~),
+    @dom.element(adjusted_name, attrs=adjusted_attrs, ns~),
     start,
   )
   self.current_node().append_child(node)
@@ -491,7 +497,7 @@ fn Parser::parse_foreign_fragment_context(
   ns : String,
 ) -> Unit {
   let name = adjusted_start_tag_name_for_namespace(ns, context.tag_name)
-  let wrapper = element(name, ns~)
+  let wrapper = @dom.element(name, ns~)
   self.fragment_context_foreign = Some(wrapper)
   self.root.append_child(wrapper)
   self.stack.push(wrapper)
@@ -501,11 +507,11 @@ fn Parser::parse_foreign_fragment_context(
 }
 
 ///|
-fn names_match_end_tag(node : Node, name : StringView) -> Bool {
+fn names_match_end_tag(node : @dom.Node, name : StringView) -> Bool {
   node.name[:] == name ||
   (
     node.kind == Element &&
     !(node.ns is Some("html")) &&
-    lower_ascii(node.name) == name.to_owned()
+    @syn.lower_ascii(node.name) == name.to_owned()
   )
 }

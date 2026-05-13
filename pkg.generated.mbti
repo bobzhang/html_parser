@@ -5,6 +5,7 @@ import {
   "bobzhang/html_parser/core",
   "bobzhang/html_parser/dom",
   "bobzhang/html_parser/linkify",
+  "bobzhang/html_parser/parser",
   "bobzhang/html_parser/sanitize",
   "bobzhang/html_parser/selector",
   "bobzhang/html_parser/serializer",
@@ -45,11 +46,11 @@ pub fn linkify_dom(@dom.Node, config? : @linkify.LinkifyConfig, skip_tags? : Arr
 
 pub fn matches(@dom.Node, StringView) -> Bool
 
-pub fn parse(StringView, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> ParsedHtml raise @core.HtmlError
+pub fn parse(StringView, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> @parser.ParsedHtml raise @core.HtmlError
 
-pub fn parse_bytes(BytesView, encoding? : String, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> ParsedHtml raise @core.HtmlError
+pub fn parse_bytes(BytesView, encoding? : String, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> @parser.ParsedHtml raise @core.HtmlError
 
-pub fn parse_fragment(StringView, context? : FragmentContext, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> ParsedHtml raise @core.HtmlError
+pub fn parse_fragment(StringView, context? : @parser.FragmentContext, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> @parser.ParsedHtml raise @core.HtmlError
 
 pub fn query(@dom.Node, StringView) -> Array[@dom.Node]
 
@@ -97,29 +98,14 @@ pub(all) struct CliResult {
   file_output_content : String?
 } derive(Eq, @debug.Debug)
 
-pub(all) struct FragmentContext {
-  tag_name : String
-  ns : String?
-} derive(Eq, @debug.Debug)
-pub fn FragmentContext::new(StringView, ns? : String) -> Self
-
-pub struct ParsedHtml {
-  root : @dom.Node
-  errors : Array[@core.ParseError]
-  encoding : String?
-} derive(@debug.Debug)
-pub fn ParsedHtml::query(Self, StringView) -> Array[@dom.Node]
-pub fn ParsedHtml::query_one(Self, StringView) -> @dom.Node?
-pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int, context? : @serializer.HtmlContext, quote? : Char) -> String raise @core.HtmlError
-pub fn ParsedHtml::to_markdown(Self, html_passthrough? : Bool) -> String raise @core.HtmlError
-pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
-
 // Type aliases
 pub using @transform {type DecideAction}
 
 pub using @sanitize {type DisallowedTagHandling}
 
 pub using @tokenizer {type DoctypeInfo}
+
+pub using @parser {type FragmentContext}
 
 pub using @serializer {type HtmlContext}
 
@@ -136,6 +122,8 @@ pub using @dom {type Node}
 pub using @dom {type NodeKind}
 
 pub using @core {type ParseError}
+
+pub using @parser {type ParsedHtml}
 
 pub using @sanitize {type SanitizationPolicy}
 

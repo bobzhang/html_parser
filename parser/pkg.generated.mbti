@@ -1,0 +1,41 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/html_parser/parser"
+
+import {
+  "bobzhang/html_parser/core",
+  "bobzhang/html_parser/dom",
+  "bobzhang/html_parser/serializer",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn parse(StringView, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> ParsedHtml raise @core.HtmlError
+
+pub fn parse_bytes(BytesView, encoding? : String, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> ParsedHtml raise @core.HtmlError
+
+pub fn parse_fragment(StringView, context? : FragmentContext, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> ParsedHtml raise @core.HtmlError
+
+// Errors
+
+// Types and methods
+pub(all) struct FragmentContext {
+  tag_name : String
+  ns : String?
+} derive(Eq, @debug.Debug)
+pub fn FragmentContext::new(StringView, ns? : String) -> Self
+
+pub struct ParsedHtml {
+  root : @dom.Node
+  errors : Array[@core.ParseError]
+  encoding : String?
+} derive(@debug.Debug)
+pub fn ParsedHtml::query(Self, StringView) -> Array[@dom.Node]
+pub fn ParsedHtml::query_one(Self, StringView) -> @dom.Node?
+pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int, context? : @serializer.HtmlContext, quote? : Char) -> String raise @core.HtmlError
+pub fn ParsedHtml::to_markdown(Self, html_passthrough? : Bool) -> String raise @core.HtmlError
+pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
+
+// Type aliases
+
+// Traits
+

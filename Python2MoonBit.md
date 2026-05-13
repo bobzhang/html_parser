@@ -1325,9 +1325,11 @@ JustHTML from Python to MoonBit.
   instead of keeping root-private bridge functions alive. Move transform
   whitebox tests with the package, and delete temporary root wrappers once no
   root code calls them.
-- A moved feature package cannot add methods to root-owned types such as
-  `ParsedHtml`. Keep those methods in the compatibility package as thin
-  wrappers over the new package-level function.
+- A moved feature package should own the public methods for the types it
+  exports. When the parser moved, `ParsedHtml` and `FragmentContext` moved with
+  it so `ParsedHtml::to_html`, `to_text`, `to_markdown`, and selector helpers
+  stayed methods on the owning package. The root package only re-exports the
+  types and keeps free-function compatibility wrappers.
 - If an enum is part of a moved feature, move the enum with the owning feature
   and re-export it from root. For example, `HtmlContext` belongs to the
   serializer package; root signatures can keep accepting `HtmlContext` through

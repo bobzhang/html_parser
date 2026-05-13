@@ -1,9 +1,4 @@
 ///|
-fn is_void_element(name : StringView) -> Bool {
-  @ser.is_void_element(name)
-}
-
-///|
 /// Serialize a node as HTML.
 pub fn to_html(
   node : Node,

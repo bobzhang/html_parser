@@ -3,45 +3,48 @@
 // Keep them focused; public behavior belongs in `_test.mbt`.
 
 ///|
-test "dom insert_child_before moves appends and rejects cycles" {
-  let parent = element("div")
-  let first = element("p", children=[text("first")])
-  let second = element("span", children=[text("second")])
+test "dom insert_before moves appends and rejects cycles" {
+  let parent = @dom.element("div")
+  let first = @dom.element("p", children=[@dom.text("first")])
+  let second = @dom.element("span", children=[@dom.text("second")])
   parent.append_child(first)
   parent.append_child(second)
-  let inserted = element("em", children=[text("mid")])
-  parent.insert_child_before(inserted, second)
+  let inserted = @dom.element("em", children=[@dom.text("mid")])
+  parent.insert_before(inserted, Some(second))
   assert_eq(
-    parent.to_html(pretty=false),
+    @ser.to_html(parent, pretty=false),
     "<div><p>first</p><em>mid</em><span>second</span></div>",
   )
-  let fallback = element("strong", children=[text("end")])
-  parent.insert_child_before(fallback, element("missing"))
+  let fallback = @dom.element("strong", children=[@dom.text("end")])
+  parent.insert_before(fallback, Some(@dom.element("missing")))
   assert_eq(
-    parent.to_html(pretty=false),
+    @ser.to_html(parent, pretty=false),
     "<div><p>first</p><em>mid</em><span>second</span><strong>end</strong></div>",
   )
-  let other = element("section")
+  let other = @dom.element("section")
   other.append_child(inserted)
   assert_eq(
-    parent.to_html(pretty=false),
+    @ser.to_html(parent, pretty=false),
     "<div><p>first</p><span>second</span><strong>end</strong></div>",
   )
-  assert_eq(other.to_html(pretty=false), "<section><em>mid</em></section>")
+  assert_eq(
+    @ser.to_html(other, pretty=false),
+    "<section><em>mid</em></section>",
+  )
   inserted.append_child(other)
-  assert_eq(inserted.to_html(pretty=false), "<em>mid</em>")
-  let non_container = comment("x")
-  non_container.insert_child_before(text("ignored"), first)
+  assert_eq(@ser.to_html(inserted, pretty=false), "<em>mid</em>")
+  let non_container = @dom.comment("x")
+  non_container.insert_before(@dom.text("ignored"), Some(first))
   assert_eq(non_container.children().length(), 0)
   non_container.remove_child(first)
-  assert_eq(first.to_html(pretty=false), "<p>first</p>")
+  assert_eq(@ser.to_html(first, pretty=false), "<p>first</p>")
 }
 
 ///|
 test "append_child clears stale parent links" {
-  let parent = element("div")
-  let child = element("span")
-  child.parent = Some(comment("stale"))
+  let parent = @dom.element("div")
+  let child = @dom.element("span")
+  child.parent = Some(@dom.comment("stale"))
   parent.append_child(child)
   assert_eq(parent.children.length(), 1)
   assert_true(physical_equal(parent.children[0], child))
@@ -53,36 +56,36 @@ test "append_child clears stale parent links" {
 
 ///|
 test "query deduplicates shared nodes and ignores traversal cycles" {
-  let shared_root = element("div")
-  let shared = element("span", attrs={ "class": Some("target") })
+  let shared_root = @dom.element("div")
+  let shared = @dom.element("span", attrs={ "class": Some("target") })
   shared_root.append_child(shared)
   shared_root.children.push(shared)
-  assert_eq(shared_root.query("span").length(), 1)
-  assert_eq(shared_root.query(".target").length(), 1)
-  assert_eq(shared_root.query("*").length(), 1)
-  let cyclic_root = element("div")
-  let child = element("span", attrs={ "class": Some("cycle") })
+  assert_eq(@sel.query(shared_root, "span").length(), 1)
+  assert_eq(@sel.query(shared_root, ".target").length(), 1)
+  assert_eq(@sel.query(shared_root, "*").length(), 1)
+  let cyclic_root = @dom.element("div")
+  let child = @dom.element("span", attrs={ "class": Some("cycle") })
   cyclic_root.append_child(child)
   child.children.push(cyclic_root)
-  child.children.push(text("needle"))
+  child.children.push(@dom.text("needle"))
   cyclic_root.parent = Some(child)
-  assert_eq(cyclic_root.query("span").length(), 1)
-  assert_eq(cyclic_root.query(".cycle").length(), 1)
-  assert_eq(cyclic_root.query("*").length(), 1)
-  assert_true(matches(child, "div span"))
-  assert_eq(matches(child, "em span"), false)
-  assert_eq(matches(cyclic_root, "div:contains(needle)"), false)
-  assert_eq(matches(child, "span:contains(needle)"), false)
-  assert_eq(cyclic_root.query("div span").length(), 1)
-  assert_eq(cyclic_root.query("em span").length(), 0)
-  assert_eq(cyclic_root.query("span:contains(needle)").length(), 0)
+  assert_eq(@sel.query(cyclic_root, "span").length(), 1)
+  assert_eq(@sel.query(cyclic_root, ".cycle").length(), 1)
+  assert_eq(@sel.query(cyclic_root, "*").length(), 1)
+  assert_true(@sel.matches(child, "div span"))
+  assert_eq(@sel.matches(child, "em span"), false)
+  assert_eq(@sel.matches(cyclic_root, "div:contains(needle)"), false)
+  assert_eq(@sel.matches(child, "span:contains(needle)"), false)
+  assert_eq(@sel.query(cyclic_root, "div span").length(), 1)
+  assert_eq(@sel.query(cyclic_root, "em span").length(), 0)
+  assert_eq(@sel.query(cyclic_root, "span:contains(needle)").length(), 0)
 }
 
 ///|
 test "parser cursor helpers use utf16 offsets and safe fallbacks" {
   let parser = Parser::new(
     "😀",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
@@ -100,7 +103,7 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
   assert_eq(root.children.length(), 0)
   let source_parser = Parser::new(
     "<p😀>",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
@@ -110,7 +113,7 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
   assert_eq(source_parser.root.children[0].data, "<p😀")
   let text_parser = Parser::new(
     "a😀\u{0000}b",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
@@ -122,13 +125,13 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
   )
   assert_eq(text_parser.errors.length(), 2)
   assert_eq(eof_error_pos("a😀"), 1)
-  guard text_node_without_leading_ascii_whitespace(text(" \t😀body"))
+  guard text_node_without_leading_ascii_whitespace(@dom.text(" \t😀body"))
     is Some(stripped) else {
     fail("expected stripped text node")
   }
   assert_eq(stripped.data, "😀body")
   let (leading, rest) = split_text_node_leading_ascii_whitespace(
-    text(" \t😀body"),
+    @dom.text(" \t😀body"),
   )
   guard leading is Some(leading_node) else {
     fail("expected leading whitespace node")
@@ -183,7 +186,7 @@ test "entity helpers preserve unresolved names and attribute boundaries" {
     @tok.legacy_entity_blocked_in_attribute("&copy.", 5, in_attribute=true),
     false,
   )
-  let unresolved = tokenize("&unknown; &unknown", collect_errors=true)
+  let unresolved = @tok.tokenize("&unknown; &unknown", collect_errors=true)
   guard unresolved.tokens[0] is Characters("&unknown; &unknown") else {
     fail("expected unresolved named references to stay literal")
   }
@@ -213,7 +216,7 @@ test "doctype helpers keep empty eof and unquoted identifiers distinct" {
 test "parser insertion helpers keep omitted origins optional" {
   let parser = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
@@ -240,11 +243,11 @@ test "parser insertion helpers keep omitted origins optional" {
 test "parser private defensive branches keep no-op behavior" {
   let template_parser = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
-  let template = element("template")
+  let template = @dom.element("template")
   template_parser.stack.push(template)
   assert_true(template_parser.handle_template_end_tag("template", 0))
   assert_true(template.source_end_tag is None)
@@ -252,7 +255,7 @@ test "parser private defensive branches keep no-op behavior" {
 
   let attr_parser = Parser::new(
     ">",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
@@ -266,19 +269,19 @@ test "parser private defensive branches keep no-op behavior" {
 test "detached recovery helpers ignore stale parser state" {
   let parser = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
-  let div = element("div")
+  let div = @dom.element("div")
   parser.stack.push(div)
   parser.foreign_table_row_recovery_mode = true
   parser.report_foreign_table_row_recovery_text("x", 0)
   assert_eq(parser.errors.length(), 0)
 
-  let parent = element("frameset")
-  let stale = element("div")
-  let child = element("frame")
+  let parent = @dom.element("frameset")
+  let stale = @dom.element("div")
+  let child = @dom.element("frame")
   child.parent = Some(stale)
   detach_removed_frameset_replacement_child(parent, child)
   guard child.parent is Some(actual_parent) else {
@@ -289,19 +292,21 @@ test "detached recovery helpers ignore stale parser state" {
 
 ///|
 test "document scaffold text helpers preserve whitespace boundaries" {
-  assert_true(text_node_without_leading_ascii_whitespace(text(" \t\n")) is None)
-  guard text_node_without_leading_ascii_whitespace(text(" \tbody"))
+  assert_true(
+    text_node_without_leading_ascii_whitespace(@dom.text(" \t\n")) is None,
+  )
+  guard text_node_without_leading_ascii_whitespace(@dom.text(" \tbody"))
     is Some(stripped) else {
     fail("expected stripped body text")
   }
   assert_eq(stripped.data, "body")
-  let body = text("body")
+  let body = @dom.text("body")
   let (no_leading, unchanged) = split_text_node_leading_ascii_whitespace(body)
   assert_true(no_leading is None)
   guard unchanged is Some(actual) else { fail("expected original body text") }
   assert_true(physical_equal(actual, body))
   let (all_leading, empty_rest) = split_text_node_leading_ascii_whitespace(
-    text(" \n"),
+    @dom.text(" \n"),
   )
   guard all_leading is Some(leading_only) else {
     fail("expected all-whitespace leading node")
@@ -309,7 +314,7 @@ test "document scaffold text helpers preserve whitespace boundaries" {
   assert_eq(leading_only.data, " \n")
   assert_true(empty_rest is None)
   let (leading, rest) = split_text_node_leading_ascii_whitespace(
-    text(" \nBody"),
+    @dom.text(" \nBody"),
   )
   guard leading is Some(leading_node) else {
     fail("expected leading whitespace node")
@@ -323,20 +328,24 @@ test "document scaffold text helpers preserve whitespace boundaries" {
 
 ///|
 test "document scaffold merges repeated html helper trees" {
-  let primary = element("html", attrs={ "lang": Some("en") }, children=[
-    element("head", children=[element("title", children=[text("T")])]),
-    element("body", children=[text("A")]),
+  let primary = @dom.element("html", attrs={ "lang": Some("en") }, children=[
+    @dom.element("head", children=[
+      @dom.element("title", children=[@dom.text("T")]),
+    ]),
+    @dom.element("body", children=[@dom.text("A")]),
   ])
-  let sibling = element(
+  let sibling = @dom.element(
     "html",
     attrs={ "dir": Some("ltr"), "lang": Some("fr") },
     children=[
-      element("html", attrs={ "data-root": Some("sibling") }, children=[
-        element("body", attrs={ "id": Some("merged") }, children=[text("B")]),
+      @dom.element("html", attrs={ "data-root": Some("sibling") }, children=[
+        @dom.element("body", attrs={ "id": Some("merged") }, children=[
+          @dom.text("B"),
+        ]),
       ]),
     ],
   )
-  let root = document(children=[primary, sibling])
+  let root = @dom.document(children=[primary, sibling])
   scaffold_document(root)
   assert_eq(root.children.length(), 1)
   let html = root.children[0]
@@ -355,18 +364,18 @@ test "document scaffold merges repeated html helper trees" {
   guard body.attrs["id"] is Some("merged") else {
     fail("expected nested body attrs to merge")
   }
-  assert_eq(body.to_html(pretty=false), "<body id=\"merged\">AB</body>")
+  assert_eq(@ser.to_html(body, pretty=false), "<body id=\"merged\">AB</body>")
 }
 
 ///|
 test "fragment context unwrap helper preserves sibling nodes" {
-  let leading = comment("before")
-  let wrapper_child = element("tbody", children=[
-    element("tr", children=[element("td", children=[text("x")])]),
+  let leading = @dom.comment("before")
+  let wrapper_child = @dom.element("tbody", children=[
+    @dom.element("tr", children=[@dom.element("td", children=[@dom.text("x")])]),
   ])
-  let wrapper = element("table", children=[wrapper_child])
-  let trailing = text("after")
-  let root = fragment(children=[leading, wrapper, trailing])
+  let wrapper = @dom.element("table", children=[wrapper_child])
+  let trailing = @dom.text("after")
+  let root = @dom.fragment(children=[leading, wrapper, trailing])
   unwrap_fragment_context_element(root, wrapper)
   assert_eq(root.children.length(), 3)
   assert_true(physical_equal(root.children[0], leading))
@@ -380,14 +389,14 @@ test "fragment context unwrap helper preserves sibling nodes" {
 test "document and fragment helpers tolerate missing shells" {
   let parser = Parser::new(
     "",
-    document(),
+    @dom.document(),
     scripting_enabled=true,
     xml_coercion=false,
   )
   parser.pending_document_html_attrs["lang"] = Some("en")
   parser.apply_pending_document_html_attrs()
   assert_eq(parser.root.children.length(), 0)
-  let html = element("html", attrs={ "dir": Some("ltr") })
+  let html = @dom.element("html", attrs={ "dir": Some("ltr") })
   parser.root.append_child(html)
   parser.apply_pending_document_html_attrs()
   guard html.attrs["lang"] is Some("en") else {
@@ -396,26 +405,28 @@ test "document and fragment helpers tolerate missing shells" {
   guard html.attrs["dir"] is Some("ltr") else {
     fail("expected existing html attrs to survive pending merge")
   }
-  let root = document(children=[comment("tail")])
-  let paragraph = element("p", children=[text("x")])
+  let root = @dom.document(children=[@dom.comment("tail")])
+  let paragraph = @dom.element("p", children=[@dom.text("x")])
   append_post_body_html_children(root, [paragraph])
-  assert_eq(root.to_html(pretty=false), "<!--tail--><p>x</p>")
+  assert_eq(@ser.to_html(root, pretty=false), "<!--tail--><p>x</p>")
   guard paragraph.parent() is Some(parent) else {
     fail("expected appended post-body child parent")
   }
   assert_true(physical_equal(parent, root))
-  let nested_before_body = element("html", children=[
-    comment("c"),
-    element("html", children=[element("meta", attrs={ "name": Some("x") })]),
+  let nested_before_body = @dom.element("html", children=[
+    @dom.comment("c"),
+    @dom.element("html", children=[
+      @dom.element("meta", attrs={ "name": Some("x") }),
+    ]),
   ])
   assert_true(html_fragment_child_is_before_body(nested_before_body))
-  let nested_after_body = element("html", children=[
-    element("html", children=[element("body")]),
+  let nested_after_body = @dom.element("html", children=[
+    @dom.element("html", children=[@dom.element("body")]),
   ])
   assert_eq(html_fragment_child_is_before_body(nested_after_body), false)
   let fragment_parser = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
@@ -431,12 +442,12 @@ test "document and fragment helpers tolerate missing shells" {
 test "document head helpers tolerate detached parser stacks" {
   let document_parser = Parser::new(
     "",
-    document(children=[element("html")]),
+    @dom.document(children=[@dom.element("html")]),
     scripting_enabled=true,
     xml_coercion=false,
   )
   assert_true(document_parser.document_has_element_child())
-  let head = element("head")
+  let head = @dom.element("head")
   let head_parser = Parser::new(
     "",
     head,
@@ -444,7 +455,7 @@ test "document head helpers tolerate detached parser stacks" {
     xml_coercion=false,
   )
   assert_eq(head_parser.current_is_document_head(), false)
-  let shell = fragment()
+  let shell = @dom.fragment()
   shell.append_child(head)
   head_parser.stack.clear()
   assert_true(head_parser.current_is_document_head())
@@ -453,12 +464,12 @@ test "document head helpers tolerate detached parser stacks" {
 
   let noscript_parser = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=false,
     xml_coercion=false,
   )
-  let body = element("body")
-  let noscript = element("noscript")
+  let body = @dom.element("body")
+  let noscript = @dom.element("noscript")
   noscript_parser.stack.push(body)
   noscript_parser.stack.push(noscript)
   noscript_parser.pop_disabled_head_noscript_for_reprocess()
@@ -470,11 +481,11 @@ test "document head helpers tolerate detached parser stacks" {
 
 ///|
 test "document frameset helpers preserve reprocess state" {
-  let explicit_html = element("html", children=[
-    element("head"),
-    element("body"),
+  let explicit_html = @dom.element("html", children=[
+    @dom.element("head"),
+    @dom.element("body"),
   ])
-  let explicit_root = document(children=[explicit_html])
+  let explicit_root = @dom.document(children=[explicit_html])
   let blocked = Parser::new(
     "",
     explicit_root,
@@ -488,13 +499,13 @@ test "document frameset helpers preserve reprocess state" {
   assert_eq(blocked.errors.length(), 1)
   assert_eq(blocked.errors[0].code, "unexpected-start-tag-ignored")
   assert_eq(
-    explicit_root.to_html(pretty=false),
+    @ser.to_html(explicit_root, pretty=false),
     "<html><head></head><body></body></html>",
   )
-  let html = element("html")
-  let frameset = element("frameset")
+  let html = @dom.element("html")
+  let frameset = @dom.element("frameset")
   html.append_child(frameset)
-  let root = document(children=[html])
+  let root = @dom.document(children=[html])
   let parser = Parser::new("", root, scripting_enabled=true, xml_coercion=false)
   parser.stack.clear()
   parser.stack.push(root)
@@ -526,16 +537,16 @@ test "document frameset helpers preserve reprocess state" {
 test "active formatting helpers respect marker boundaries" {
   let parser = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
-  parser.append_active_formatting_entry(comment("ignored"))
+  parser.append_active_formatting_entry(@dom.comment("ignored"))
   assert_eq(parser.active_formatting.length(), 0)
-  let before_marker = element("a", attrs={ "href": Some("x") })
+  let before_marker = @dom.element("a", attrs={ "href": Some("x") })
   parser.append_active_formatting_entry(before_marker)
   parser.push_active_formatting_marker()
-  let after_marker = element("b", attrs={ "class": Some("fresh") })
+  let after_marker = @dom.element("b", attrs={ "class": Some("fresh") })
   parser.append_active_formatting_entry(after_marker)
   assert_eq(parser.active_formatting.length(), 3)
   assert_eq(parser.active_formatting_index("a"), -1)
@@ -545,7 +556,7 @@ test "active formatting helpers respect marker boundaries" {
   parser.remove_last_active_formatting_by_name("b")
   assert_eq(parser.active_formatting.length(), 2)
   assert_eq(parser.active_formatting_orphan_anchor_index(), -1)
-  let orphan_anchor = element("a", attrs={ "href": Some("later") })
+  let orphan_anchor = @dom.element("a", attrs={ "href": Some("later") })
   parser.active_formatting.push({
     marker: false,
     name: "a",
@@ -557,14 +568,14 @@ test "active formatting helpers respect marker boundaries" {
   parser.clear_active_formatting_to_marker()
   assert_eq(parser.active_formatting.length(), 1)
   assert_eq(parser.active_formatting_index("a"), 0)
-  let transient = element("span")
+  let transient = @dom.element("span")
   parser.stack.push(transient)
   parser.remove_last_open_element_by_name("span")
   assert_eq(parser.stack.length(), 1)
-  let parent = element("div")
+  let parent = @dom.element("div")
   parser.root.append_child(parent)
   parser.stack.push(parent)
-  let orphan_strong = element("strong", attrs={ "id": Some("orphan") })
+  let orphan_strong = @dom.element("strong", attrs={ "id": Some("orphan") })
   parser.active_formatting.clear()
   parser.active_formatting.push({
     marker: false,
@@ -582,7 +593,7 @@ test "active formatting helpers respect marker boundaries" {
   })
   parser.reconstruct_active_formatting_elements()
   assert_eq(
-    parent.to_html(pretty=false),
+    @ser.to_html(parent, pretty=false),
     "<div><strong id=\"orphan\"></strong></div>",
   )
   assert_eq(parser.stack.length(), 3)
@@ -593,11 +604,11 @@ test "active formatting helpers respect marker boundaries" {
 
   let current_only = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
-  let current_b = element("b")
+  let current_b = @dom.element("b")
   current_only.stack.push(current_b)
   current_only.adoption_agency("b", 4)
   assert_eq(current_only.stack.length(), 1)
@@ -605,13 +616,13 @@ test "active formatting helpers respect marker boundaries" {
 
   let scoped = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
-  let scoped_b = element("b")
+  let scoped_b = @dom.element("b")
   scoped.stack.push(scoped_b)
-  scoped.stack.push(element("table"))
+  scoped.stack.push(@dom.element("table"))
   scoped.active_formatting.push({
     marker: false,
     name: "b",
@@ -630,13 +641,13 @@ test "active formatting helpers respect marker boundaries" {
 test "adoption agency removes non-formatting inner stack nodes" {
   let parser = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
-  let original_b = element("b", attrs={ "data-origin": Some("start") })
-  let loose_span = element("span")
-  let furthest_block = element("p")
+  let original_b = @dom.element("b", attrs={ "data-origin": Some("start") })
+  let loose_span = @dom.element("span")
+  let furthest_block = @dom.element("p")
   parser.stack.push(original_b)
   parser.stack.push(loose_span)
   parser.stack.push(furthest_block)
@@ -655,7 +666,7 @@ test "adoption agency removes non-formatting inner stack nodes" {
   assert_eq(parser.stack.length(), 2)
   assert_eq(parser.stack_index_by_node(furthest_block), 1)
   assert_eq(
-    parser.root.to_html(pretty=false),
+    @ser.to_html(parser.root, pretty=false),
     "<p><b data-origin=\"start\"></b></p>",
   )
   assert_eq(parser.active_formatting.length(), 0)
@@ -675,16 +686,16 @@ test "adoption agency removes non-formatting inner stack nodes" {
 test "adoption agency prunes late active inner nodes" {
   let parser = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
-  let original_b = element("b", attrs={ "data-origin": Some("start") })
-  let late_i = element("i", attrs={ "data-late": Some("drop") })
-  let loose_one = element("span")
-  let loose_two = element("span")
-  let top_em = element("em", attrs={ "data-top": Some("keep") })
-  let furthest_block = element("p")
+  let original_b = @dom.element("b", attrs={ "data-origin": Some("start") })
+  let late_i = @dom.element("i", attrs={ "data-late": Some("drop") })
+  let loose_one = @dom.element("span")
+  let loose_two = @dom.element("span")
+  let top_em = @dom.element("em", attrs={ "data-top": Some("keep") })
+  let furthest_block = @dom.element("p")
   parser.stack.push(original_b)
   parser.stack.push(late_i)
   parser.stack.push(loose_one)
@@ -720,7 +731,7 @@ test "adoption agency prunes late active inner nodes" {
   assert_eq(parser.stack_index_by_node(loose_two), -1)
   assert_eq(parser.stack_index_by_node(original_b), -1)
   assert_eq(
-    parser.root.to_html(pretty=false),
+    @ser.to_html(parser.root, pretty=false),
     "<em data-top=\"keep\"><p><b data-origin=\"start\"></b></p></em>",
   )
   assert_eq(parser.active_formatting.length(), 1)
@@ -731,31 +742,31 @@ test "adoption agency prunes late active inner nodes" {
 
 ///|
 test "table foster helpers handle detached helper state" {
-  let root = fragment()
+  let root = @dom.fragment()
   let parser = Parser::new("", root, scripting_enabled=true, xml_coercion=false)
-  let table = element("table")
-  let tbody = element("tbody")
+  let table = @dom.element("table")
+  let tbody = @dom.element("tbody")
   parser.stack.clear()
   parser.stack.push(root)
   parser.stack.push(table)
   parser.stack.push(tbody)
   assert_true(parser.foster_parent_table_text("x", 0))
-  assert_eq(root.to_html(pretty=false), "x")
+  assert_eq(@ser.to_html(root, pretty=false), "x")
   assert_eq(parser.errors.length(), 1)
   assert_eq(parser.errors[0].code, "foster-parenting-character")
   parser.report_foster_parented_table_context_text("z", 1)
   assert_eq(parser.errors.length(), 1)
-  parser.insert_node_before_open_table(text("y"), 1)
-  assert_eq(root.to_html(pretty=false), "xy")
+  parser.insert_node_before_open_table(@dom.text("y"), 1)
+  assert_eq(@ser.to_html(root, pretty=false), "xy")
 
   let blocked = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
-  let blocked_table = element("table")
-  let div = element("div")
+  let blocked_table = @dom.element("table")
+  let div = @dom.element("div")
   blocked.stack.clear()
   blocked.stack.push(blocked.root)
   blocked.stack.push(blocked_table)
@@ -765,12 +776,12 @@ test "table foster helpers handle detached helper state" {
 
   let open_section = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
-  let section_table = element("table")
-  let section = element("tbody")
+  let section_table = @dom.element("table")
+  let section = @dom.element("tbody")
   open_section.stack.push(section_table)
   open_section.stack.push(section)
   assert_eq(
@@ -785,15 +796,15 @@ test "table foster helpers handle detached helper state" {
 }
 
 ///|
-fn stale_template_column_group_parser() -> (Parser, Node) {
+fn stale_template_column_group_parser() -> (Parser, @dom.Node) {
   let parser = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
-  let template = element("template")
-  let table = element("table")
+  let template = @dom.element("template")
+  let table = @dom.element("table")
   parser.root.append_child(template)
   template.append_child(table)
   parser.stack.push(template)
@@ -826,7 +837,7 @@ test "template column group mode drops stale inner table state" {
 
   let detached = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
@@ -837,24 +848,16 @@ test "template column group mode drops stale inner table state" {
 
 ///|
 test "sanitize_dom clears mixed-case style rawtext resource loads" {
-  let policy = SanitizationPolicy::new(
+  let policy = @san.SanitizationPolicy::new(
     ["style"],
     allowed_attributes={ "style": [] },
     drop_content_tags=[],
   )
-  let style = make_node(
-    Element,
-    "StYlE",
-    Some("html"),
-    {},
-    "",
-    None,
-    None,
-    false,
-    [text("@import 'https://evil.example/x.css';")],
-  )
-  let clean = sanitize_dom(style, policy~)
-  assert_eq(clean.to_html(pretty=false), "<StYlE></StYlE>")
+  let style = @dom.element("StYlE", children=[
+    @dom.text("@import 'https://evil.example/x.css';"),
+  ])
+  let clean = @san.sanitize_dom(style, policy~)
+  assert_eq(@ser.to_html(clean, pretty=false), "<StYlE></StYlE>")
   assert_eq(clean.children.length(), 0)
 }
 
@@ -966,7 +969,7 @@ test "script text scanner covers escaped and double escaped edge states" {
 test "scanner helpers fail closed on surrogate-split offsets" {
   let value = "x😀>"
   let mid_surrogate = 2
-  let comment_scan = scan_comment_data(value, mid_surrogate)
+  let comment_scan = @tok.scan_comment_data(value, mid_surrogate)
   assert_eq(comment_scan.data, "")
   assert_eq(comment_scan.end, value.length())
   assert_true(comment_scan.eof)
@@ -1122,10 +1125,10 @@ test "foreign adjustment helper tables match spec names" {
   }
   let parser = Parser::new(
     "",
-    fragment(),
+    @dom.fragment(),
     scripting_enabled=true,
     xml_coercion=false,
   )
-  parser.stack.push(element("svg", ns="svg"))
+  parser.stack.push(@dom.element("svg", ns="svg"))
   assert_eq(parser.start_tag_namespace("g"), "svg")
 }
