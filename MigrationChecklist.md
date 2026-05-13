@@ -327,6 +327,8 @@ reference implementation in `.repos/justhtml`.
       `sanitize/namespaces.mbt`.
 - [x] Split transform spec types and callback wrappers into
       `transform/spec.mbt`.
+- [x] Split transform public builder methods into
+      `transform/builders.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and

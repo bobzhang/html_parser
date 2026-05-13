@@ -138,6 +138,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_transform_modules = {
+        "transform/builders.mbt",
         "transform/spec.mbt",
         "transform/transform.mbt",
     }
