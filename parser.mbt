@@ -6918,11 +6918,7 @@ fn is_character_reference_control(value : Int) -> Bool {
 
 ///|
 fn is_xml_noncharacter_code(code : Int) -> Bool {
-  if code >= 0xFDD0 && code <= 0xFDEF {
-    return true
-  }
-  let low = code % 0x10000
-  low == 0xFFFE || low == 0xFFFF
+  @syn.is_xml_noncharacter_code(code)
 }
 
 ///|

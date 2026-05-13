@@ -2,11 +2,19 @@
 package "bobzhang/html_parser/internal/syntax"
 
 // Values
+pub fn coerce_comment_for_xml(StringView) -> String
+
+pub fn coerce_text_for_xml(StringView) -> String
+
 pub fn eof_error_pos(StringView) -> Int
 
 pub fn eof_line_col(StringView) -> (Int, Int)
 
 pub fn input_ends_with_newline(StringView) -> Bool
+
+pub fn is_xml_noncharacter(Char) -> Bool
+
+pub fn is_xml_noncharacter_code(Int) -> Bool
 
 pub fn line_col_at(StringView, Int) -> (Int, Int)
 
