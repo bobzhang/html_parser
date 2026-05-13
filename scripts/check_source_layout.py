@@ -259,6 +259,23 @@ def main(argv: list[str]) -> int:
             error(f"expected cli package test module is not tracked: {path}")
             ok = False
 
+    required_serializer_modules = {
+        "serializer/escape.mbt",
+        "serializer/serializer.mbt",
+    }
+    for path in sorted(required_serializer_modules):
+        if path not in tracked:
+            error(f"expected serializer package module is not tracked: {path}")
+            ok = False
+
+    required_serializer_tests = {
+        "serializer/serializer_wbtest.mbt",
+    }
+    for path in sorted(required_serializer_tests):
+        if path not in tracked:
+            error(f"expected serializer package test module is not tracked: {path}")
+            ok = False
+
     required_root_tests = {
         "builder_public_regression_test.mbt",
         "cli_test.mbt",

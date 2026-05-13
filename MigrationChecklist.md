@@ -233,6 +233,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split context-aware selector matching into `selector/limited.mbt`.
 - [x] Split shared selector node identity checks into `selector/identity.mbt`.
 - [x] Split selector query traversal into `selector/query.mbt`.
+- [x] Split serializer escaping and percent-encoding helpers into
+      `serializer/escape.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
