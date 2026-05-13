@@ -70,3 +70,69 @@ test "public serializer rejects unsafe programmatic output" {
     _ => fail("expected invalid quote to raise InvalidSerialization")
   }
 }
+
+///|
+test "public serializer doctype edge output stays stable" {
+  assert_eq(@html_parser.doctype().to_html(pretty=false), "<!DOCTYPE html>")
+  let svg = @html_parser.doctype(
+    name="svg",
+    public_id="-//W3C//DTD SVG 1.1//EN",
+    system_id="https://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd",
+  )
+  assert_eq(
+    svg.to_html(pretty=false),
+    "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"https://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">",
+  )
+  assert_eq(
+    @html_parser.doctype(name="", system_id="about:legacy-compat").to_html(
+      pretty=false,
+    ),
+    "<!DOCTYPE SYSTEM \"about:legacy-compat\">",
+  )
+
+  let bad_doctype = @html_parser.doctype(name="html><img")
+  let result : Result[String, @html_parser.HtmlError] = try? bad_doctype.to_html(
+    pretty=false,
+  )
+  match result {
+    Err(InvalidSerialization(message)) =>
+      assert_true(message.contains("Unsafe element name"))
+    _ => fail("expected unsafe doctype name to raise InvalidSerialization")
+  }
+}
+
+///|
+test "public serializer top-level helper and single quote output stay stable" {
+  let node = @html_parser.element("div", attrs={ "title": Some("a>b'c") }, children=[
+    @html_parser.text("x>y"),
+    @html_parser.element("br"),
+  ])
+  assert_eq(
+    node.to_html(pretty=false, quote='\''),
+    "<div title='a&gt;b&#39;c'>x&gt;y<br></div>",
+  )
+  assert_eq(
+    @html_parser.to_html(node, pretty=true, indent_size=4, quote='\''),
+    "<div title='a&gt;b&#39;c'>\n    x&gt;y\n    <br>\n</div>",
+  )
+  assert_eq(
+    node.to_html(pretty=false, context=HtmlAttrValue, quote='\''),
+    "&lt;div title=&#39;a&amp;gt;b&amp;#39;c&#39;&gt;x&amp;gt;y&lt;br&gt;&lt;/div&gt;",
+  )
+}
+
+///|
+test "public serializer quote validation is context sensitive" {
+  assert_eq(
+    @html_parser.text("x").to_html(pretty=false, context=Html, quote='x'),
+    "x",
+  )
+  let js_quote : Result[String, @html_parser.HtmlError] = try? @html_parser.text(
+    "x",
+  ).to_html(pretty=false, context=JsString, quote='x')
+  match js_quote {
+    Err(InvalidSerialization(message)) =>
+      assert_eq(message, "quote must be ' or \"")
+    _ => fail("expected invalid JavaScript quote to raise InvalidSerialization")
+  }
+}

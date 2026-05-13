@@ -425,6 +425,9 @@ reference implementation in `.repos/justhtml`.
       preset copy semantics.
 - [x] Added public constructor/default regressions for parse errors, fragment
       contexts, selector limits, and linkify configuration copying.
+- [x] Extended public serializer regressions for doctype edge output,
+      top-level `to_html`, single-quote serialization, and context-sensitive
+      quote validation.
 
 ## Working Rule
 
