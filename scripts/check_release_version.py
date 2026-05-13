@@ -18,12 +18,14 @@ def main(argv: list[str]) -> int:
         return 2
 
     version = json.loads((ROOT / "moon.mod.json").read_text())["version"]
-    cli = (ROOT / "cli" / "cli.mbt").read_text()
+    cli_sources = "\n".join(
+        path.read_text() for path in sorted((ROOT / "cli").glob("*.mbt"))
+    )
     cli_test = (ROOT / "cli_test.mbt").read_text()
 
     cli_match = re.search(
         r'fn cli_version\(\) -> String \{\s*"([^"]+)"\s*\}',
-        cli,
+        cli_sources,
     )
     if cli_match is None:
         print("could not find cli_version()", file=sys.stderr)
