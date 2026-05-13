@@ -275,6 +275,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split parser generic stack and insertion helpers into
       `parser/stack.mbt`.
 - [x] Split parser document frameset helpers into `parser/frameset.mbt`.
+- [x] Split parser active-formatting and adoption-agency helpers into
+      `parser/active_formatting.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
