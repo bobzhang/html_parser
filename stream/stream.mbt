@@ -1,7 +1,4 @@
 ///|
-using @tok {type HtmlToken}
-
-///|
 /// Start-tag event emitted by the streaming tokenizer facade.
 ///
 /// `name` is the normalized tag name and `attrs` contains the decoded
@@ -31,6 +28,25 @@ pub(all) enum StreamEvent {
   StreamComment(String)
   StreamDoctype(StreamDoctypeEvent)
 } derive(Debug, Eq)
+
+///|
+/// Parse an HTML string into streaming events.
+pub fn stream(html : StringView) -> Array[StreamEvent] {
+  let events : Array[StreamEvent] = []
+  stream_each(html, fn(event) { events.push(event) })
+  events
+}
+
+///|
+/// Parse an HTML string and emit streaming events incrementally.
+pub fn stream_each(html : StringView, emit : (StreamEvent) -> Unit) -> Unit {
+  let sink = StreamSink::new()
+  @tok.tokenize_each(html, fn(token) {
+    sink.process_token(token)
+    sink.drain_each(emit)
+  })
+  sink.drain_each(emit)
+}
 
 ///|
 /// Mutable sink that converts tokenizer tokens into coalesced stream events.
@@ -64,7 +80,10 @@ pub fn StreamSink::process_characters(self : StreamSink, data : String) -> Unit 
 ///
 /// Character tokens are buffered and adjacent text is emitted as a single
 /// `StreamText` event. Non-text tokens flush pending text first.
-pub fn StreamSink::process_token(self : StreamSink, token : HtmlToken) -> Unit {
+pub fn StreamSink::process_token(
+  self : StreamSink,
+  token : @tok.HtmlToken,
+) -> Unit {
   match token {
     Characters(data) => self.process_characters(data)
     Tag(tag) => {

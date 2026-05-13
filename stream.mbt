@@ -13,20 +13,13 @@ pub using @stream {type StreamSink}
 ///|
 /// Parse an HTML string into streaming events.
 pub fn stream(html : StringView) -> Array[StreamEvent] {
-  let events : Array[StreamEvent] = []
-  stream_each(html, fn(event) { events.push(event) })
-  events
+  @stream.stream(html)
 }
 
 ///|
 /// Parse an HTML string and emit streaming events incrementally.
 pub fn stream_each(html : StringView, emit : (StreamEvent) -> Unit) -> Unit {
-  let sink = StreamSink::new()
-  @tok.tokenize_each(html, fn(token) {
-    sink.process_token(token)
-    sink.drain_each(emit)
-  })
-  sink.drain_each(emit)
+  @stream.stream_each(html, emit)
 }
 
 ///|

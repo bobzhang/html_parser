@@ -238,7 +238,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Move tokenizer special-text scanners into `tokenizer`.
 - [x] Move tokenizer implementation into `tokenizer`.
 - [x] Extract stream event API and sink.
-- [ ] Move stream parser/byte facade into `stream`.
+- [x] Move string stream facade into `stream`.
+- [ ] Move stream byte facade into `stream`.
 - [ ] Extract selector parsing and matching.
 - [ ] Extract HTML serializer and text extraction.
 - [ ] Extract Markdown conversion.
