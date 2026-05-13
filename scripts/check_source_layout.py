@@ -106,6 +106,7 @@ def main(argv: list[str]) -> int:
         "sanitize/url_host.mbt",
         "sanitize/url_lists.mbt",
         "sanitize/url_proxy.mbt",
+        "sanitize/url_scheme.mbt",
     }
     for path in sorted(required_sanitize_modules):
         if path not in tracked:

@@ -375,6 +375,8 @@ reference implementation in `.repos/justhtml`.
       `sanitize/url_lists.mbt`.
 - [x] Split sanitizer URL host and authority extraction helpers into
       `sanitize/url_host.mbt`.
+- [x] Split sanitizer URL scheme normalization and prefix helpers into
+      `sanitize/url_scheme.mbt`.
 - [x] Split sanitizer CSS/style value sanitation helpers into
       `sanitize/css.mbt`.
 - [x] Split sanitizer element-attribute sanitation helpers into
