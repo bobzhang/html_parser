@@ -343,6 +343,8 @@ reference implementation in `.repos/justhtml`.
       `transform/attributes.mbt`.
 - [x] Split transform URL and inline-style attribute helpers into
       `transform/url_style.mbt`.
+- [x] Split transform node edit and escape helpers into
+      `transform/node_edit.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
