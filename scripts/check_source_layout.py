@@ -266,6 +266,23 @@ def main(argv: list[str]) -> int:
             error(f"expected cli package test module is not tracked: {path}")
             ok = False
 
+    required_markdown_modules = {
+        "markdown/builder.mbt",
+        "markdown/markdown.mbt",
+    }
+    for path in sorted(required_markdown_modules):
+        if path not in tracked:
+            error(f"expected markdown package module is not tracked: {path}")
+            ok = False
+
+    required_markdown_tests = {
+        "markdown/markdown_wbtest.mbt",
+    }
+    for path in sorted(required_markdown_tests):
+        if path not in tracked:
+            error(f"expected markdown package test module is not tracked: {path}")
+            ok = False
+
     required_serializer_modules = {
         "serializer/compact.mbt",
         "serializer/elements.mbt",
