@@ -376,6 +376,8 @@ reference implementation in `.repos/justhtml`.
       `parser/adoption_agency.mbt`.
 - [x] Split parser body tag classification and heading/table cell helpers into
       `parser/body_tags.mbt`.
+- [x] Split parser table start-tag closure helpers into
+      `parser/table_start_closure.mbt`.
 - [x] Split parser document shell and head-handling helpers into
       `parser/document_shell.mbt`.
 - [x] Moved parser document/fragment end-tag shell helpers into
