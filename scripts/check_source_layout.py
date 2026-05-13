@@ -145,6 +145,7 @@ def main(argv: list[str]) -> int:
         "transform/node_edit.mbt",
         "transform/normalization.mbt",
         "transform/pipeline.mbt",
+        "transform/prune.mbt",
         "transform/reporting.mbt",
         "transform/selectors.mbt",
         "transform/spec.mbt",
