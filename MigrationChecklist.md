@@ -402,6 +402,8 @@ reference implementation in `.repos/justhtml`.
       clones, child/attribute copies, and UTF-16 source-location metadata.
 - [x] Added public token/stream regression tests for structured tokens,
       malformed-token diagnostics, streaming events, and stream-sink copying.
+- [x] Added public selector regression tests for combinators, attribute
+      operators, selector lists, pseudos, `query_one`, and `matches`.
 
 ## Working Rule
 
