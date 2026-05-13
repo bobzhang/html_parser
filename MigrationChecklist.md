@@ -369,6 +369,8 @@ reference implementation in `.repos/justhtml`.
       `sanitize/policy.mbt`.
 - [x] Split sanitizer URL attribute normalization and validation helpers into
       `sanitize/url.mbt`.
+- [x] Split sanitizer URL proxy encoding and rewrite helpers into
+      `sanitize/url_proxy.mbt`.
 - [x] Split sanitizer CSS/style value sanitation helpers into
       `sanitize/css.mbt`.
 - [x] Split sanitizer element-attribute sanitation helpers into
