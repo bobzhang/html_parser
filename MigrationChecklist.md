@@ -235,6 +235,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split selector query traversal into `selector/query.mbt`.
 - [x] Split serializer escaping and percent-encoding helpers into
       `serializer/escape.mbt`.
+- [x] Split serializer start-tag validation and construction into
+      `serializer/start_tag.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.

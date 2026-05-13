@@ -262,6 +262,7 @@ def main(argv: list[str]) -> int:
     required_serializer_modules = {
         "serializer/escape.mbt",
         "serializer/serializer.mbt",
+        "serializer/start_tag.mbt",
     }
     for path in sorted(required_serializer_modules):
         if path not in tracked:
