@@ -270,6 +270,8 @@ reference implementation in `.repos/justhtml`.
       `parser/scope.mbt`.
 - [x] Split parser select insertion-mode helpers and select tag handling into
       `parser/select.mbt`.
+- [x] Split parser template context mode bookkeeping into
+      `parser/template_context.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
