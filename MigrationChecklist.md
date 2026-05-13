@@ -428,6 +428,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Extended public serializer regressions for doctype edge output,
       top-level `to_html`, single-quote serialization, and context-sensitive
       quote validation.
+- [x] Extended public CLI regressions for immediate help/version plans,
+      selector no-match/first-match behavior, and text whitespace options.
 
 ## Working Rule
 

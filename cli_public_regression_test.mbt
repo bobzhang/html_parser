@@ -83,3 +83,69 @@ test "public CLI strict and argument errors stay stable" {
   )
   assert_true(bad_format.stderr.contains("--selector CSS"))
 }
+
+///|
+test "public CLI immediate help and version plans stay stable" {
+  guard @html_parser.cli_read_plan(["--help"]) is CliImmediate(help_plan) else {
+    fail("expected help to be immediate")
+  }
+  assert_eq(help_plan.exit_code, 0)
+  assert_true(help_plan.stdout.has_prefix("usage: justhtml"))
+  assert_true(help_plan.stdout.contains("--version"))
+  assert_eq(help_plan.stderr, "")
+
+  let read_paths : Array[String] = []
+  let version = @html_parser.run_cli_with_reader(["--version"], fn(path) {
+    read_paths.push(path)
+    b"unused"
+  })
+  assert_eq(read_paths.length(), 0)
+  assert_eq(version.exit_code, 0)
+  assert_eq(version.stdout, "justhtml 0.1.2\n")
+  assert_eq(version.stderr, "")
+}
+
+///|
+test "public CLI selector no-match and first-match output stay stable" {
+  let selected = @html_parser.run_cli_bytes(
+    ["-", "--fragment", "--selector", "p", "--first", "--format", "text"],
+    b"<article><p>One <b>two</b></p><p>Three</p></article>",
+  )
+  assert_eq(selected.exit_code, 0)
+  assert_eq(selected.stdout, "One two\n")
+  assert_eq(selected.stderr, "")
+
+  let no_match = @html_parser.run_cli_bytes(
+    ["-", "--fragment", "--selector", ".missing"],
+    b"<p>One</p>",
+  )
+  assert_eq(no_match.exit_code, 1)
+  assert_eq(no_match.stdout, "")
+  assert_eq(no_match.stderr, "")
+}
+
+///|
+test "public CLI text whitespace options stay stable" {
+  let separator = @html_parser.run_cli_bytes(
+    ["-", "--fragment", "--format", "text", "--separator", "|"],
+    b"<p>Hello <b>world</b></p><p>Again</p>",
+  )
+  assert_eq(separator.exit_code, 0)
+  assert_eq(separator.stdout, "Hello|world|Again\n")
+
+  let no_strip = @html_parser.run_cli_bytes(
+    ["-", "--fragment", "--format", "text", "--separator", "|", "--no-strip"],
+    b"<p>  Hello  <b>world</b>  </p>",
+  )
+  assert_eq(no_strip.exit_code, 0)
+  assert_eq(no_strip.stdout, "  Hello  |world|  \n")
+
+  let blocks_only = @html_parser.run_cli_bytes(
+    [
+      "-", "--fragment", "--format", "text", "--separator", "\n", "--separator-blocks-only",
+    ],
+    b"<p>hi</p><p>Hello <b>world</b></p>",
+  )
+  assert_eq(blocks_only.exit_code, 0)
+  assert_eq(blocks_only.stdout, "hi\nHello world\n")
+}
