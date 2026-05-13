@@ -318,6 +318,8 @@ reference implementation in `.repos/justhtml`.
       `sanitize/observer.mbt`.
 - [x] Split sanitizer DOM node mutation and escaping helpers into
       `sanitize/nodes.mbt`.
+- [x] Split sanitizer invisible-Unicode text helpers into
+      `sanitize/text.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
