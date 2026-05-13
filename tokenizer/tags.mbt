@@ -36,39 +36,19 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
   for error in name_errors {
     self.error_at(error.code, error.offset)
   }
-  let attrs : Map[String, String?] = {}
-  let mut self_closing = false
-  let mut closed = false
-  while !self.is_eof() {
-    self.skip_ascii_whitespace()
-    if self.is_eof() {
-      break
-    }
-    match self.current().unwrap() {
-      '>' => {
-        ignore(self.advance_char())
-        closed = true
-        break
-      }
-      '/' => {
-        ignore(self.advance_char())
-        if self.current() == Some('>') {
-          ignore(self.advance_char())
-          self_closing = true
-          closed = true
-          break
-        } else {
-          self.error_at("unexpected-character-after-solidus-in-tag", self.pos)
-        }
-      }
-      _ => self.parse_attribute(attrs)
-    }
-  }
-  if !closed {
+  let tail = self.parse_tag_tail()
+  if !tail.closed {
     self.error_at_eof("eof-in-tag")
     return
   }
-  self.tokens.push(Tag({ kind: EndTag, name, attrs, self_closing }))
+  self.tokens.push(
+    Tag({
+      kind: EndTag,
+      name,
+      attrs: tail.attrs,
+      self_closing: tail.self_closing,
+    }),
+  )
 }
 
 ///|
@@ -92,43 +72,20 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
       for error in name_errors {
         self.error_at(error.code, error.offset)
       }
-      let attrs : Map[String, String?] = {}
-      let mut self_closing = false
-      let mut closed = false
-      while !self.is_eof() {
-        self.skip_ascii_whitespace()
-        if self.is_eof() {
-          break
-        }
-        match self.current().unwrap() {
-          '>' => {
-            ignore(self.advance_char())
-            closed = true
-            break
-          }
-          '/' => {
-            ignore(self.advance_char())
-            if self.current() == Some('>') {
-              ignore(self.advance_char())
-              self_closing = true
-              closed = true
-              break
-            } else {
-              self.error_at(
-                "unexpected-character-after-solidus-in-tag",
-                self.pos,
-              )
-            }
-          }
-          _ => self.parse_attribute(attrs)
-        }
-      }
-      if !closed {
+      let tail = self.parse_tag_tail()
+      if !tail.closed {
         self.error_at_eof("eof-in-tag")
         return
       }
-      self.tokens.push(Tag({ kind: StartTag, name, attrs, self_closing }))
-      if !self_closing && is_special_text_element(name) {
+      self.tokens.push(
+        Tag({
+          kind: StartTag,
+          name,
+          attrs: tail.attrs,
+          self_closing: tail.self_closing,
+        }),
+      )
+      if !tail.self_closing && is_special_text_element(name) {
         self.consume_special_text_tokens(name)
       }
     }

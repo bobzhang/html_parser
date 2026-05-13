@@ -90,6 +90,7 @@ def main(argv: list[str]) -> int:
         "tokenizer/special_text.mbt",
         "tokenizer/special_text_tokens.mbt",
         "tokenizer/state.mbt",
+        "tokenizer/tag_tail.mbt",
         "tokenizer/tags.mbt",
         "tokenizer/text.mbt",
         "tokenizer/types.mbt",
