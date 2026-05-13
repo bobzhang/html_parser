@@ -410,6 +410,8 @@ reference implementation in `.repos/justhtml`.
       cleanup security modes, strict errors, and argument diagnostics.
 - [x] Added public byte-decoding regression tests for transport labels,
       meta-charset sniffing, UTF-16 BOMs, and fail-closed prescan behavior.
+- [x] Added public transform regression tests for structural pipelines,
+      attribute policy transforms, and callback/report event ordering.
 
 ## Working Rule
 

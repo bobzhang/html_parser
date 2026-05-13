@@ -100,6 +100,7 @@ def main(argv: list[str]) -> int:
         "stream_test.mbt",
         "token_stream_regression_test.mbt",
         "tokenizer_fixtures_test.mbt",
+        "transform_public_regression_test.mbt",
         "transforms_test.mbt",
         "treebuilder_fixtures_test.mbt",
     }
