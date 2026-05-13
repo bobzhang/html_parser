@@ -239,6 +239,7 @@ def main(argv: list[str]) -> int:
         "parser/caption.mbt",
         "parser/column_group.mbt",
         "parser/diagnostics.mbt",
+        "parser/document_attrs.mbt",
         "parser/document_shell.mbt",
         "parser/end_tags.mbt",
         "parser/fragment_shell.mbt",

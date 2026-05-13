@@ -378,6 +378,8 @@ reference implementation in `.repos/justhtml`.
       `parser/head_noscript.mbt`.
 - [x] Split parser document-head recovery helpers into
       `parser/document_head.mbt`.
+- [x] Split parser document attribute merge helpers into
+      `parser/document_attrs.mbt`.
 - [x] Split parser end-tag scanner and remaining body end-tag helpers into
       `parser/end_tags.mbt`.
 - [x] Split parser start-tag scanner and invalid-start fallback into
