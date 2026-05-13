@@ -355,6 +355,8 @@ reference implementation in `.repos/justhtml`.
       `parser/fragment_context.mbt`.
 - [x] Moved parser foreign table recovery helpers into
       `parser/foreign_content.mbt`.
+- [x] Split parser foreign table recovery helpers into
+      `parser/foreign_table_recovery.mbt`.
 - [x] Split parser tree-builder scope and open-element helpers into
       `parser/scope.mbt`.
 - [x] Split parser select insertion-mode helpers and select tag handling into
