@@ -145,6 +145,7 @@ def main(argv: list[str]) -> int:
     required_parser_modules = {
         "parser/api.mbt",
         "parser/diagnostics.mbt",
+        "parser/fragment_context.mbt",
         "parser/foreign_content.mbt",
         "parser/markup.mbt",
         "parser/parser.mbt",

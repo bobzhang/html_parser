@@ -264,6 +264,8 @@ reference implementation in `.repos/justhtml`.
       into `parser/markup.mbt`.
 - [x] Split parser special text, raw-text, RCDATA, and initial-LF helpers into
       `parser/special_text.mbt`.
+- [x] Split parser fragment-context parsing and wrapper unwrapping into
+      `parser/fragment_context.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
