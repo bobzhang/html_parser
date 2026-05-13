@@ -148,6 +148,7 @@ def main(argv: list[str]) -> int:
         "parser/parser.mbt",
         "parser/scaffold.mbt",
         "parser/state.mbt",
+        "parser/syntax.mbt",
         "parser/table_normalize.mbt",
         "parser/types.mbt",
         "parser/xml_coercion.mbt",
