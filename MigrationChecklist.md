@@ -347,6 +347,8 @@ reference implementation in `.repos/justhtml`.
       `transform/node_edit.mbt`.
 - [x] Split transform node-kind and foreign-namespace drop helpers into
       `transform/node_drop.mbt`.
+- [x] Split transform whitespace collapse helpers into
+      `transform/whitespace.mbt`.
 - [x] Added linkify helper whitebox regressions for trailing bracket trimming,
       broken-scheme contexts, edge-dot TLD splitting, and empty numeric hosts.
 - [x] Added linkify DOM whitebox regressions for empty replacement lists and
