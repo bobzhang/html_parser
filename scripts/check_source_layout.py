@@ -255,6 +255,7 @@ def main(argv: list[str]) -> int:
         "cli/cli.mbt",
         "cli/model.mbt",
         "cli/parse.mbt",
+        "cli/pipeline.mbt",
         "cli/render.mbt",
         "cli/safety.mbt",
         "cli/select.mbt",

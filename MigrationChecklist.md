@@ -273,6 +273,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Split CLI render, output, and HTML error formatting helpers into
       `cli/render.mbt`.
 - [x] Split CLI input-byte document parsing into `cli/parse.mbt`.
+- [x] Split CLI post-parse pipeline orchestration into `cli/pipeline.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
