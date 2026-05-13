@@ -62,6 +62,7 @@ def main(argv: list[str]) -> int:
             "tracked workflow inventory",
             "Copilot setup workflow",
             "source layout",
+            "test-name inventory",
             "migration docs",
             "local Git hook wiring",
             "helper suffix/shebang conventions",

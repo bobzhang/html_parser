@@ -80,6 +80,7 @@ fixture_manifest_arg_err="$(mktemp)"
 workflow_arg_err="$(mktemp)"
 validation_inventory_arg_err="$(mktemp)"
 source_layout_arg_err="$(mktemp)"
+test_inventory_arg_err="$(mktemp)"
 moonbit_style_arg_err="$(mktemp)"
 gitignore_arg_err="$(mktemp)"
 githooks_arg_err="$(mktemp)"
@@ -97,6 +98,7 @@ trap '
   rm -f "$workflow_arg_err"
   rm -f "$validation_inventory_arg_err"
   rm -f "$source_layout_arg_err"
+  rm -f "$test_inventory_arg_err"
   rm -f "$moonbit_style_arg_err"
   rm -f "$gitignore_arg_err"
   rm -f "$githooks_arg_err"
@@ -181,6 +183,9 @@ validation_inventory_arg_code=$?
 python3 scripts/check_source_layout.py \
   --bad-option > "$tmp_out" 2> "$source_layout_arg_err"
 source_layout_arg_code=$?
+python3 scripts/check_test_inventory.py \
+  --bad-option > "$tmp_out" 2> "$test_inventory_arg_err"
+test_inventory_arg_code=$?
 python3 scripts/check_moonbit_style.py \
   --bad-option > "$tmp_out" 2> "$moonbit_style_arg_err"
 moonbit_style_arg_code=$?
@@ -220,6 +225,9 @@ grep -F "usage: python3 scripts/check_validation_inventory.py" \
 test "$source_layout_arg_code" -eq 2
 grep -F "usage: python3 scripts/check_source_layout.py" \
   "$source_layout_arg_err" > /dev/null
+test "$test_inventory_arg_code" -eq 2
+grep -F "usage: python3 scripts/check_test_inventory.py" \
+  "$test_inventory_arg_err" > /dev/null
 test "$moonbit_style_arg_code" -eq 2
 grep -F "usage: python3 scripts/check_moonbit_style.py" \
   "$moonbit_style_arg_err" > /dev/null

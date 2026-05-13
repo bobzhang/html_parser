@@ -59,6 +59,9 @@ python3 scripts/check_github_workflows.py
 step "Check source layout"
 python3 scripts/check_source_layout.py
 
+step "Check MoonBit test inventory"
+python3 scripts/check_test_inventory.py
+
 step "Check MoonBit source style"
 python3 scripts/check_moonbit_style.py
 

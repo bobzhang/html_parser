@@ -390,6 +390,8 @@ reference implementation in `.repos/justhtml`.
       paths covered by `.gitignore`.
 - [x] Added a Mooncakes archive duplicate-path guard so packaged files cannot
       appear more than once.
+- [x] Added a MoonBit test-name inventory guard so refactors cannot silently
+      delete, rename, or skip tracked test declarations.
 
 ## Working Rule
 
