@@ -74,6 +74,7 @@ def main(argv: list[str]) -> int:
         "tokenizer/comment_scan.mbt",
         "tokenizer/doctype.mbt",
         "tokenizer/doctype_tokens.mbt",
+        "tokenizer/driver.mbt",
         "tokenizer/entity.mbt",
         "tokenizer/source.mbt",
         "tokenizer/special_text.mbt",
