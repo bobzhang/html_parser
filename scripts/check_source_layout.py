@@ -118,6 +118,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_linkify_modules = {
+        "linkify/config.mbt",
         "linkify/dom.mbt",
         "linkify/linkify.mbt",
         "linkify/punycode.mbt",

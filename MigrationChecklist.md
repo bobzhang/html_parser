@@ -246,6 +246,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Split serializer test-format rendering into `serializer/test_format.mbt`.
 - [x] Split serializer compact HTML rendering into `serializer/compact.mbt`.
 - [x] Split serializer pretty HTML rendering into `serializer/pretty.mbt`.
+- [x] Split linkify public match/config types into `linkify/config.mbt`.
 - [x] Added linkify public-edge regressions for malformed `mailto:` addresses,
       fuzzy underscore hosts, invalid ports, leading-dot email domains,
       empty protocol-relative hosts, and punycode TLDs.
