@@ -312,6 +312,8 @@ reference implementation in `.repos/justhtml`.
       focused `parser/api.mbt` file.
 - [x] Split tokenizer attribute name and value scanners into
       `tokenizer/attributes.mbt`.
+- [x] Split tokenizer special-text token emission helpers into
+      `tokenizer/special_text_tokens.mbt`.
 - [x] Split parser attribute scanners into `parser/attributes.mbt`.
 - [x] Split document scaffolding and selected-content helpers into
       `parser/scaffold.mbt`.
