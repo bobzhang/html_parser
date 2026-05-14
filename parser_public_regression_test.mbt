@@ -895,6 +895,93 @@ test "public parser fragment contexts stay stable" {
 }
 
 ///|
+test "nodes expose empty origin metadata by default" {
+  let text = @html_parser.text("hello")
+  assert_true(text.origin_offset() is None)
+  assert_true(text.origin_line() is None)
+  assert_true(text.origin_col() is None)
+  assert_true(text.origin_location() is None)
+  let parent = @html_parser.element("p", children=[text])
+  assert_true(parent.origin_offset() is None)
+  assert_true(parent.origin_location() is None)
+  let clone = parent.clone_node(deep=true)
+  assert_true(clone.origin_offset() is None)
+  assert_true(clone.origin_location() is None)
+  let doc = @html_parser.parse_fragment("<p>hi</p>")
+  guard doc.query_one("p") is Some(parsed_p) else {
+    fail("expected parsed paragraph")
+  }
+  assert_true(parsed_p.origin_offset() is None)
+  assert_true(parsed_p.origin_location() is None)
+  let parsed_children = parsed_p.children()
+  assert_eq(parsed_children.length(), 1)
+  assert_true(parsed_children[0].origin_location() is None)
+}
+
+///|
+test "parser tracks simple element and text origins when requested" {
+  let doc = @html_parser.parse_fragment("<p>hi</p>", track_node_locations=true)
+  guard doc.query_one("p") is Some(paragraph) else {
+    fail("expected parsed paragraph")
+  }
+  assert_node_origin(paragraph, 0, 1, 1)
+  let children = paragraph.children()
+  assert_eq(children.length(), 1)
+  assert_eq(children[0].data(), "hi")
+  assert_node_origin(children[0], 3, 1, 4)
+  let multiline = @html_parser.parse_fragment(
+    "lead\n<p>x</p>",
+    track_node_locations=true,
+  )
+  guard multiline.query_one("p") is Some(multiline_p) else {
+    fail("expected multiline paragraph")
+  }
+  assert_node_origin(multiline_p, 5, 2, 1)
+  let multiline_children = multiline_p.children()
+  assert_eq(multiline_children.length(), 1)
+  assert_node_origin(multiline_children[0], 8, 2, 4)
+}
+
+///|
+test "parser tracks comment and doctype origins when requested" {
+  let fragment = @html_parser.parse_fragment(
+    "<!--x--><p><!--y--></p>",
+    track_node_locations=true,
+  )
+  let root_children = fragment.root.children()
+  assert_eq(root_children.length(), 2)
+  assert_true(root_children[0].kind() is Comment)
+  assert_node_origin(root_children[0], 0, 1, 1)
+  guard fragment.query_one("p") is Some(paragraph) else {
+    fail("expected parsed paragraph")
+  }
+  assert_node_origin(paragraph, 8, 1, 9)
+  let paragraph_children = paragraph.children()
+  assert_eq(paragraph_children.length(), 1)
+  assert_true(paragraph_children[0].kind() is Comment)
+  assert_node_origin(paragraph_children[0], 11, 1, 12)
+  let doc = @html_parser.parse(
+    "<!doctype html><p>x</p>",
+    track_node_locations=true,
+  )
+  let doc_children = doc.root.children()
+  assert_true(doc_children[0].kind() is Doctype)
+  assert_node_origin(doc_children[0], 0, 1, 1)
+}
+
+///|
+test "parse_bytes forwards node origin tracking" {
+  let doc = @html_parser.parse_bytes(b"<p>x</p>", track_node_locations=true)
+  guard doc.query_one("p") is Some(paragraph) else {
+    fail("expected parsed paragraph")
+  }
+  assert_node_origin(paragraph, 0, 1, 1)
+  let children = paragraph.children()
+  assert_eq(children.length(), 1)
+  assert_node_origin(children[0], 3, 1, 4)
+}
+
+///|
 test "public parser source locations and scripting mode stay stable" {
   let located = @html_parser.parse_fragment(
     "lead\n<p id=x>Hi</p>",
