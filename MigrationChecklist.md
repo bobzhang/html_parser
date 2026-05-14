@@ -787,6 +787,8 @@ reference implementation in `.repos/justhtml`.
       `selector_public_regression_test.mbt`.
 - [x] Split public selector nth-of-type pseudo regressions into
       `selector_public_regression_test.mbt`.
+- [x] Split public selector detached-node structural regressions into
+      `selector_public_regression_test.mbt`.
 
 ## Working Rule
 
