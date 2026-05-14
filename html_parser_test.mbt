@@ -7561,40 +7561,6 @@ test "parser tracks origins for fragment colgroup starts" {
 }
 
 ///|
-test "query supports nth child pseudo selector" {
-  let doc = @html_parser.parse_fragment(
-    "<ul><li>1</li><li class='special'>2</li><li>3</li><li>4</li><li>5</li></ul>",
-  )
-  assert_eq(doc.query("li:nth-child(2)").length(), 1)
-  assert_eq(doc.query("li:nth-child(odd)").length(), 3)
-  assert_eq(doc.query("li:nth-child(even)").length(), 2)
-  assert_eq(doc.query("li:nth-child(2n+1)").length(), 3)
-  assert_eq(doc.query("li:nth-child(2n)").length(), 2)
-  assert_eq(doc.query("li:nth-child(n)").length(), 5)
-  assert_eq(doc.query("li:nth-child(-n+3)").length(), 3)
-  assert_eq(doc.query("li:nth-child(ODD)").length(), 3)
-  assert_eq(doc.query("li:nth-child(+n)").length(), 5)
-  assert_eq(doc.query("li:nth-child(-2n+5)").length(), 3)
-  assert_eq(doc.query("li:nth-child(-2n+4)").length(), 2)
-  assert_eq(doc.query("li:nth-child( 2n + 1 )").length(), 3)
-  assert_eq(doc.query("li:nth-child(0)").length(), 0)
-  assert_eq(doc.query("li:nth-child(-1)").length(), 0)
-  assert_eq(doc.query("li:nth-child(100)").length(), 0)
-  assert_eq(doc.query("li:nth-child(abc)").length(), 0)
-  assert_eq(doc.query("li:nth-child(+)").length(), 0)
-  assert_eq(doc.query("li:nth-child(xn+1)").length(), 0)
-  assert_eq(doc.query("li:nth-child(2n+)").length(), 0)
-  assert_eq(doc.query("li:nth-child(2n+n)").length(), 0)
-  assert_eq(doc.query("li:nth-child(2n+x)").length(), 0)
-  assert_eq(doc.query("li:nth-child()").length(), 0)
-  guard doc.query_one(".special") is Some(special) else {
-    fail("expected special list item")
-  }
-  assert_true(@html_parser.matches(special, "li:nth-child(2)"))
-  assert_eq(@html_parser.matches(special, "li:nth-child(odd)"), false)
-}
-
-///|
 test "query supports nth of type pseudo selector" {
   let doc = @html_parser.parse_fragment(
     "<div><h1>Heading</h1><p class='first'>First</p><p class='second'>Second</p><span>Other</span><p class='third'>Third</p></div>",
