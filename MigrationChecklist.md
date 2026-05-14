@@ -732,6 +732,8 @@ reference implementation in `.repos/justhtml`.
       `parser/tokenizer_helpers_wbtest.mbt`.
 - [x] Split parser scanner whitebox coverage into
       `parser/scanner_wbtest.mbt`.
+- [x] Split parser active-formatting and adoption-agency whitebox coverage into
+      `parser/active_formatting_wbtest.mbt`.
 
 ## Working Rule
 
