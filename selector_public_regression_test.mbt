@@ -365,6 +365,24 @@ test "query supports root pseudo selector" {
 }
 
 ///|
+test "query supports first and last of type pseudo selectors" {
+  let doc = @html_parser.parse_fragment(
+    "<div><h1>Heading</h1><p class='first'>First</p><p class='second'>Second</p><span>Other</span><p class='third'>Third</p></div>",
+  )
+  assert_eq(doc.query("p:first-of-type").length(), 1)
+  assert_eq(doc.query("p:last-of-type").length(), 1)
+  assert_eq(doc.query("h1:first-of-type").length(), 1)
+  assert_eq(doc.query("h1:last-of-type").length(), 1)
+  assert_eq(doc.query(".second:first-of-type").length(), 0)
+  assert_eq(doc.query(".second:last-of-type").length(), 0)
+  guard doc.query_one(".first") is Some(first) else {
+    fail("expected first paragraph")
+  }
+  assert_true(@html_parser.matches(first, "p:first-of-type"))
+  assert_eq(@html_parser.matches(first, "p:last-of-type"), false)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(
