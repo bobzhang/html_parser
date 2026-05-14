@@ -134,6 +134,91 @@ test "to_markdown renders code spans blocks lists and blockquotes" {
 }
 
 ///|
+test "to_markdown renders empty blocks headings and horizontal rules" {
+  let empty_blocks = @html_parser.parse_fragment(
+    "<hr><h2></h2><p></p><pre></pre><blockquote></blockquote>",
+  )
+  assert_eq(empty_blocks.to_markdown(), "---\n\n##\n\n```\n```")
+  let deep_heading = @html_parser.parse_fragment("<h4>Deep</h4>")
+  assert_eq(deep_heading.to_markdown(), "#### Deep")
+  let deeper_headings = @html_parser.fragment(children=[
+    @html_parser.element("h5", children=[@html_parser.text("Small")]),
+    @html_parser.element("h6", children=[@html_parser.text("Tiny")]),
+  ])
+  assert_eq(deeper_headings.to_markdown(), "##### Small\n\n###### Tiny")
+  let head = @html_parser.fragment(children=[
+    @html_parser.element("h3", children=[@html_parser.text("Sub")]),
+    @html_parser.element("head", children=[@html_parser.text("X")]),
+    @html_parser.element("p", children=[@html_parser.text("body")]),
+  ])
+  assert_eq(head.to_markdown(), "### Sub\n\nbody")
+  let empty_quote = @html_parser.parse_fragment("<blockquote></blockquote><hr>")
+  assert_eq(empty_quote.to_markdown(), "---")
+}
+
+///|
+test "to_markdown indents nested lists like reference" {
+  let unordered = @html_parser.element("ul", children=[
+    @html_parser.element("li", children=[
+      @html_parser.text("One"),
+      @html_parser.element("ul", children=[
+        @html_parser.element("li", children=[@html_parser.text("Sub")]),
+      ]),
+    ]),
+    @html_parser.element("li", children=[@html_parser.text("Two")]),
+  ])
+  assert_eq(unordered.to_markdown(), "- One\n\n  - Sub\n\n\n- Two")
+  let parsed_unordered = @html_parser.parse_fragment(
+    "<ul><li>One<ul><li>Sub</li></ul></li><li>Two</li></ul>",
+  )
+  assert_eq(parsed_unordered.to_markdown(), "- One\n\n  - Sub\n\n\n- Two")
+  let ordered = @html_parser.element("ol", children=[
+    @html_parser.element("li", children=[
+      @html_parser.text("A"),
+      @html_parser.element("ol", children=[
+        @html_parser.element("li", children=[@html_parser.text("B")]),
+      ]),
+    ]),
+    @html_parser.element("li", children=[@html_parser.text("C")]),
+  ])
+  assert_eq(ordered.to_markdown(), "1. A\n\n  1. B\n\n\n2. C")
+  let parsed_ordered = @html_parser.parse_fragment(
+    "<ol><li>A<ol><li>B</li></ol></li><li>C</li></ol>",
+  )
+  assert_eq(parsed_ordered.to_markdown(), "1. A\n\n  1. B\n\n\n2. C")
+  let mixed = @html_parser.element("ul", children=[
+    @html_parser.element("li", children=[
+      @html_parser.text("One"),
+      @html_parser.element("ol", children=[
+        @html_parser.element("li", children=[@html_parser.text("A")]),
+        @html_parser.element("li", children=[@html_parser.text("B")]),
+      ]),
+    ]),
+  ])
+  assert_eq(mixed.to_markdown(), "- One\n\n  1. A\n  2. B")
+  let empty = @html_parser.element("ul", children=[@html_parser.element("li")])
+  assert_eq(empty.to_markdown(), "-")
+  let paragraph = @html_parser.element("ul", children=[
+    @html_parser.element("li", children=[
+      @html_parser.text("one"),
+      @html_parser.element("p", children=[@html_parser.text("two")]),
+    ]),
+  ])
+  assert_eq(paragraph.to_markdown(), "- one\n\ntwo")
+  let block = @html_parser.element("ul", children=[
+    @html_parser.element("li", children=[
+      @html_parser.element("div", children=[@html_parser.text("one")]),
+    ]),
+    @html_parser.element("li", children=[@html_parser.text("two")]),
+  ])
+  assert_eq(block.to_markdown(), "- one\n\n\n- two")
+  let skips_non_items = @html_parser.parse_fragment(
+    "<ul><div>skip</div><li>One</li><span>skip</span></ul>",
+  )
+  assert_eq(skips_non_items.to_markdown(), "- One")
+}
+
+///|
 test "public markdown passthrough mode stays stable" {
   let doc = @html_parser.parse_fragment(
     "<p>Before</p><table><tr><td>A</td></tr></table><script data-x='1&2'>if (a < b) alert(1)</script><p>After</p>",

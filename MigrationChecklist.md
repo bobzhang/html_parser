@@ -925,6 +925,10 @@ reference implementation in `.repos/justhtml`.
       `text_markdown_public_regression_test.mbt`.
 - [x] Split markdown code/list/blockquote rendering regression into
       `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown empty block and heading edge regressions into
+      `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown nested list indentation regression into
+      `text_markdown_public_regression_test.mbt`.
 
 ## Working Rule
 
