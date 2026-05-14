@@ -622,3 +622,102 @@ test "parser reports doctype keyword spacing edge recovery" {
   }
   assert_eq(immediate_system_quote.errors[1].code, "unknown-doctype")
 }
+
+///|
+test "parser and tokenizer report post-public-identifier errors" {
+  let missing_space = @html_parser.parse(
+    "<!doctype html PUBLIC \"x\"",
+    collect_errors=true,
+  )
+  assert_eq(
+    missing_space.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(missing_space.errors.length(), 2)
+  assert_eq(
+    missing_space.errors[0].code,
+    "missing-whitespace-between-doctype-public-and-system-identifiers",
+  )
+  assert_eq(missing_space.errors[1].code, "unknown-doctype")
+  guard missing_space.errors[0].column is Some(25) else {
+    fail("expected missing whitespace error at EOF")
+  }
+  let missing_system_after_space = @html_parser.parse(
+    "<!doctype html PUBLIC \"x\" ",
+    collect_errors=true,
+  )
+  assert_eq(
+    missing_system_after_space.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(missing_system_after_space.errors.length(), 2)
+  assert_eq(
+    missing_system_after_space.errors[0].code,
+    "missing-quote-before-doctype-system-identifier",
+  )
+  assert_eq(missing_system_after_space.errors[1].code, "unknown-doctype")
+  guard missing_system_after_space.errors[0].column is Some(26) else {
+    fail("expected missing system quote at trailing whitespace EOF")
+  }
+  let missing_system_after_newline = @html_parser.parse(
+    "<!doctype html PUBLIC \"x\" \n",
+    collect_errors=true,
+  )
+  assert_eq(missing_system_after_newline.errors.length(), 2)
+  assert_eq(
+    missing_system_after_newline.errors[0].code,
+    "missing-quote-before-doctype-system-identifier",
+  )
+  guard missing_system_after_newline.errors[0].line is Some(2) else {
+    fail("expected missing system quote newline EOF on line 2")
+  }
+  guard missing_system_after_newline.errors[0].column is Some(0) else {
+    fail("expected missing system quote newline EOF at column 0")
+  }
+  assert_eq(missing_system_after_newline.errors[1].code, "unknown-doctype")
+  let unexpected = @html_parser.tokenize(
+    "<!doctype html PUBLIC \"x\"x>",
+    collect_errors=true,
+  )
+  assert_eq(
+    unexpected.errors[0].code,
+    "unexpected-character-after-doctype-public-identifier",
+  )
+  guard unexpected.tokens[0] is DoctypeToken(info) else {
+    fail("expected doctype token")
+  }
+  assert_eq(info.name, "html")
+  guard info.public_id is Some("x") else { fail("expected public id") }
+  assert_eq(info.force_quirks, true)
+  let missing_quote = @html_parser.tokenize(
+    "<!doctype html PUBLIC \"x\" foo>",
+    collect_errors=true,
+  )
+  assert_eq(missing_quote.errors.length(), 1)
+  assert_eq(
+    missing_quote.errors[0].code,
+    "missing-quote-before-doctype-system-identifier",
+  )
+  guard missing_quote.errors[0].column is Some(27) else {
+    fail("expected missing system quote after public-id whitespace")
+  }
+  guard missing_quote.tokens[0] is DoctypeToken(missing_quote_info) else {
+    fail("expected doctype token after missing system quote")
+  }
+  guard missing_quote_info.public_id is Some("x") else {
+    fail("expected public id before missing system quote")
+  }
+  guard missing_quote_info.system_id is None else {
+    fail("expected no system id after missing quote")
+  }
+  assert_eq(missing_quote_info.force_quirks, true)
+  let known = @html_parser.parse(
+    "<!doctype html PUBLIC \"-//W3C//DTD HTML 4.01//EN\"x>",
+    collect_errors=true,
+  )
+  assert_eq(known.errors.length(), 1)
+  assert_eq(
+    known.errors[0].code,
+    "unexpected-character-after-doctype-public-identifier",
+  )
+}

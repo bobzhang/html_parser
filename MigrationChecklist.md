@@ -995,6 +995,8 @@ reference implementation in `.repos/justhtml`.
       `doctype_public_regression_test.mbt`.
 - [x] Split doctype keyword spacing edge-recovery regression into
       `doctype_public_regression_test.mbt`.
+- [x] Split doctype post-public-identifier regression into
+      `doctype_public_regression_test.mbt`.
 
 ## Working Rule
 
