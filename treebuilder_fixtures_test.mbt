@@ -562,6 +562,27 @@ test "tree builder matches Python reference select plaintext branch fixture" {
 }
 
 ///|
+test "tree builder matches Python reference hidden input in table branch fixture" {
+  let document_hidden = @html_parser.parse(
+    "<table><input id=\"x\" class=\"y\" type=\"hidden\"></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(document_hidden.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <table>\n|       <input>\n|         class=\"y\"\n|         id=\"x\"\n|         type=\"hidden\"",
+  )
+  assert_eq(document_hidden.errors.length(), 2)
+  assert_eq(
+    document_hidden.errors[0].code,
+    "expected-doctype-but-got-start-tag",
+  )
+  assert_eq(document_hidden.errors[1].code, "unexpected-hidden-input-in-table")
+  guard document_hidden.errors[1].column is Some(45) else {
+    fail("expected hidden input table error at input start close")
+  }
+}
+
+///|
 test "tree builder matches vendored empty stack edge fixtures" {
   for case in empty_stack_edge_fixture_cases() {
     assert_tree_fixture(case)

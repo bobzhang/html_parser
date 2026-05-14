@@ -873,6 +873,8 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_fixtures_test.mbt`.
 - [x] Split tree-builder select plaintext regression into
       `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder hidden input in table regression into
+      `treebuilder_fixtures_test.mbt`.
 
 ## Working Rule
 
