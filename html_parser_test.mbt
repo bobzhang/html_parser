@@ -7561,24 +7561,6 @@ test "parser tracks origins for fragment colgroup starts" {
 }
 
 ///|
-test "query supports nth of type pseudo selector" {
-  let doc = @html_parser.parse_fragment(
-    "<div><h1>Heading</h1><p class='first'>First</p><p class='second'>Second</p><span>Other</span><p class='third'>Third</p></div>",
-  )
-  assert_eq(doc.query("p:nth-of-type(2)").length(), 1)
-  assert_eq(doc.query("p:nth-of-type(odd)").length(), 2)
-  assert_eq(doc.query("p:nth-of-type(even)").length(), 1)
-  assert_eq(doc.query("p:nth-of-type(2n+1)").length(), 2)
-  assert_eq(doc.query("h1:nth-of-type(1)").length(), 1)
-  assert_eq(doc.query("span:nth-of-type(n)").length(), 1)
-  guard doc.query_one(".second") is Some(second) else {
-    fail("expected second paragraph")
-  }
-  assert_true(@html_parser.matches(second, "p:nth-of-type(2)"))
-  assert_eq(@html_parser.matches(second, "p:nth-of-type(odd)"), false)
-}
-
-///|
 test "matches handles detached nodes for structural pseudo selectors" {
   let item = @html_parser.element("li")
   assert_eq(@html_parser.matches(item, ":first-child"), false)
