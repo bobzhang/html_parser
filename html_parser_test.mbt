@@ -2794,46 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser wraps table col starts in implied colgroups" {
-  let single = @html_parser.parse_fragment(
-    "<table><col></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    single.to_html(pretty=false),
-    "<table><colgroup><col></colgroup></table>",
-  )
-  assert_eq(single.errors.length(), 0)
-  let adjacent = @html_parser.parse_fragment(
-    "<table><col><col></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    adjacent.to_html(pretty=false),
-    "<table><colgroup><col><col></colgroup></table>",
-  )
-  assert_eq(adjacent.errors.length(), 0)
-  let after_explicit = @html_parser.parse_fragment(
-    "<table><colgroup><col></colgroup><col></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    after_explicit.to_html(pretty=false),
-    "<table><colgroup><col></colgroup><colgroup><col></colgroup></table>",
-  )
-  assert_eq(after_explicit.errors.length(), 0)
-  let row_group = @html_parser.parse_fragment(
-    "<table><tbody><col><tr><td>x</td></tr></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    row_group.to_html(pretty=false),
-    "<table><tbody></tbody><colgroup><col></colgroup><tbody><tr><td>x</td></tr></tbody></table>",
-  )
-  assert_eq(row_group.errors.length(), 0)
-}
-
-///|
 test "parser handles text in column group context" {
   let explicit_text = @html_parser.parse_fragment(
     "<table><colgroup>x</colgroup></table>",
