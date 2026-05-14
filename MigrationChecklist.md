@@ -895,6 +895,10 @@ reference implementation in `.repos/justhtml`.
       `serializer_public_regression_test.mbt`.
 - [x] Split pretty serializer block-descendant multiline regression into
       `serializer_public_regression_test.mbt`.
+- [x] Split pretty serializer inline whitespace separator regression into
+      `serializer_public_regression_test.mbt`.
+- [x] Split pretty serializer formatted inline-run regression into
+      `serializer_public_regression_test.mbt`.
 
 ## Working Rule
 
