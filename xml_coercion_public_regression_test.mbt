@@ -51,3 +51,15 @@ test "parser and tokenizer optionally coerce XML-invalid text" {
   )
   assert_eq(foreign_cdata.to_html(pretty=false), "<svg> �</svg>")
 }
+
+///|
+test "tokenize matches upstream XML violation coverage fixtures" {
+  let form_feed = @html_parser.tokenize("\u{000C}", xml_coercion=true)
+  guard form_feed.tokens[0] is Characters(" ") else {
+    fail("expected XML coercion to replace form feed with space")
+  }
+  let noncharacter = @html_parser.tokenize("\u{FDD0}", xml_coercion=true)
+  guard noncharacter.tokens[0] is Characters("\u{FFFD}") else {
+    fail("expected XML coercion to replace noncharacter")
+  }
+}
