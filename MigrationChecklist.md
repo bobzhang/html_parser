@@ -419,6 +419,8 @@ reference implementation in `.repos/justhtml`.
       `parser/template_table_context.mbt`.
 - [x] Split parser table end-tag and fragment-table guards into
       `parser/table_end_tags.mbt`.
+- [x] Split parser table-fragment context guards into
+      `parser/table_fragment_context.mbt`.
 - [x] Split sanitizer policy/data type declarations into
       `sanitize/types.mbt`.
 - [x] Split sanitizer policy constructors and default policy builders into
