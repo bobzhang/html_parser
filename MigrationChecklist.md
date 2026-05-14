@@ -955,6 +955,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Start document parser regression file with explicit html shell scaffolding
       coverage in `document_parser_public_regression_test.mbt`.
+- [x] Split document parser initial head-routing regression into
+      `document_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
