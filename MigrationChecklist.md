@@ -1035,6 +1035,8 @@ reference implementation in `.repos/justhtml`.
       `foreign_content_public_regression_test.mbt`.
 - [x] Split foreign content parser CDATA text regression into
       `foreign_content_public_regression_test.mbt`.
+- [x] Start XML coercion regression file with parser/tokenizer opt-in coverage
+      in `xml_coercion_public_regression_test.mbt`.
 - [x] Start template parser regression file with table structural child
       coverage in `template_parser_public_regression_test.mbt`.
 - [x] Split template parser structural end-recovery regression into

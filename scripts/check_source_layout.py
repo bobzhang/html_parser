@@ -409,6 +409,7 @@ def main(argv: list[str]) -> int:
         "transform_public_regression_test.mbt",
         "transforms_test.mbt",
         "treebuilder_fixtures_test.mbt",
+        "xml_coercion_public_regression_test.mbt",
     }
     for path in sorted(required_root_tests):
         if path not in tracked:
