@@ -985,6 +985,8 @@ reference implementation in `.repos/justhtml`.
       `doctype_public_regression_test.mbt`.
 - [x] Split doctype name whitespace-error regression into
       `doctype_public_regression_test.mbt`.
+- [x] Split doctype null-character regression into
+      `doctype_public_regression_test.mbt`.
 
 ## Working Rule
 

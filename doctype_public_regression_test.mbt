@@ -213,3 +213,63 @@ test "parser and tokenizer report doctype name whitespace errors" {
   )
   assert_eq(fused_public.errors[1].code, "unknown-doctype")
 }
+
+///|
+test "parser and tokenizer replace null characters in doctypes" {
+  let name_null = @html_parser.tokenize(
+    "<!doctype h\u{0000}tml>",
+    collect_errors=true,
+  )
+  assert_eq(name_null.errors.length(), 1)
+  assert_eq(name_null.errors[0].code, "unexpected-null-character")
+  guard name_null.errors[0].column is Some(12) else {
+    fail("expected null error inside doctype name")
+  }
+  guard name_null.tokens[0] is DoctypeToken(name_info) else {
+    fail("expected doctype token")
+  }
+  assert_eq(name_info.name, "h�tml")
+  assert_eq(name_info.force_quirks, false)
+  let parsed_name_null = @html_parser.parse(
+    "<!doctype h\u{0000}tml><p>x",
+    collect_errors=true,
+  )
+  assert_eq(parsed_name_null.errors.length(), 2)
+  assert_eq(parsed_name_null.errors[0].code, "unexpected-null-character")
+  guard parsed_name_null.errors[0].column is Some(12) else {
+    fail("expected parser null error inside doctype name")
+  }
+  assert_eq(parsed_name_null.errors[1].code, "unknown-doctype")
+  let children = parsed_name_null.root.children()
+  assert_eq(@html_parser.to_test_format(children[0]), "| <!DOCTYPE h�tml>")
+  let public_null = @html_parser.tokenize(
+    "<!doctype html PUBLIC \"x\u{0000}y\">",
+    collect_errors=true,
+  )
+  assert_eq(public_null.errors.length(), 1)
+  assert_eq(public_null.errors[0].code, "unexpected-null-character")
+  guard public_null.errors[0].column is Some(25) else {
+    fail("expected null error inside public identifier")
+  }
+  guard public_null.tokens[0] is DoctypeToken(public_info) else {
+    fail("expected doctype token")
+  }
+  guard public_info.public_id is Some("x�y") else {
+    fail("expected replacement character in public id")
+  }
+  assert_eq(public_info.force_quirks, false)
+  let system_null = @html_parser.parse(
+    "<!doctype html SYSTEM \"x\u{0000}y\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    system_null.to_html(pretty=false),
+    "<!DOCTYPE html SYSTEM \"x�y\"><html><head></head><body></body></html>",
+  )
+  assert_eq(system_null.errors.length(), 2)
+  assert_eq(system_null.errors[0].code, "unexpected-null-character")
+  guard system_null.errors[0].column is Some(25) else {
+    fail("expected null error inside system identifier")
+  }
+  assert_eq(system_null.errors[1].code, "unknown-doctype")
+}
