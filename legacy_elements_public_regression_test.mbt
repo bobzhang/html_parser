@@ -25,6 +25,31 @@ test "parser inserts keygen and fragment frame as empty non-void elements" {
 }
 
 ///|
+test "document parser ignores frame starts in body mode" {
+  let paragraph = @html_parser.parse(
+    "<!doctype html><p>a<frame>b</p>",
+    collect_errors=true,
+  )
+  assert_eq(
+    paragraph.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body><p>ab</p></body></html>",
+  )
+  assert_eq(paragraph.errors.length(), 1)
+  assert_eq(paragraph.errors[0].code, "unexpected-start-tag-ignored")
+  let root = @html_parser.parse(
+    "<!doctype html><frame>x</frame>",
+    collect_errors=true,
+  )
+  assert_eq(
+    root.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body>x</body></html>",
+  )
+  assert_eq(root.errors.length(), 2)
+  assert_eq(root.errors[0].code, "unexpected-start-tag-ignored")
+  assert_eq(root.errors[1].code, "unexpected-end-tag")
+}
+
+///|
 test "parser handles keygen and frame starts in select mode" {
   let keygen = @html_parser.parse_fragment(
     "<select><keygen>x</keygen></select>",
