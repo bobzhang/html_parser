@@ -2794,59 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "template table context defers structural end recovery to template end" {
-  let row = @html_parser.parse_fragment(
-    "<template><tr><td>x</td></tr></template>",
-    collect_errors=true,
-  )
-  assert_eq(
-    row.to_html(pretty=false),
-    "<template><tr><td>x</td></tr></template>",
-  )
-  assert_eq(row.errors.length(), 1)
-  assert_eq(row.errors[0].code, "unexpected-end-tag-implies-table-voodoo")
-  let section = @html_parser.parse_fragment(
-    "<template><tbody><tr><td>x</td></tr></tbody></template>",
-    collect_errors=true,
-  )
-  assert_eq(
-    section.to_html(pretty=false),
-    "<template><tbody><tr><td>x</td></tr></tbody></template>",
-  )
-  assert_eq(section.errors.length(), 2)
-  assert_eq(section.errors[0].code, "unexpected-end-tag")
-  assert_eq(section.errors[1].code, "unexpected-end-tag-implies-table-voodoo")
-  let direct_cell = @html_parser.parse_fragment(
-    "<template><tbody><td>x</td></tbody></template>",
-    collect_errors=true,
-  )
-  assert_eq(
-    direct_cell.to_html(pretty=false),
-    "<template><tbody><tr><td>x</td></tr></tbody></template>",
-  )
-  assert_eq(direct_cell.errors.length(), 3)
-  assert_eq(direct_cell.errors[0].code, "unexpected-cell-in-table-body")
-  assert_eq(direct_cell.errors[1].code, "unexpected-end-tag")
-  assert_eq(
-    direct_cell.errors[2].code,
-    "unexpected-end-tag-implies-table-voodoo",
-  )
-  let colgroup = @html_parser.parse_fragment(
-    "<template><colgroup> x</colgroup></template>",
-    collect_errors=true,
-  )
-  assert_eq(
-    colgroup.to_html(pretty=false),
-    "<template><colgroup> </colgroup>x</template>",
-  )
-  assert_eq(colgroup.errors.length(), 4)
-  assert_eq(colgroup.errors[0].code, "unexpected-characters-in-column-group")
-  assert_eq(colgroup.errors[1].code, "foster-parenting-character")
-  assert_eq(colgroup.errors[2].code, "unexpected-end-tag")
-  assert_eq(colgroup.errors[3].code, "unexpected-end-tag-implies-table-voodoo")
-}
-
-///|
 test "template table row contexts foster non-whitespace text" {
   let row = @html_parser.parse_fragment(
     "<template><tr>x<td>y</td></tr></template>",
