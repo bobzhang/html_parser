@@ -459,3 +459,18 @@ test "nested templates suspend hidden template table modes" {
   assert_eq(detached_then_nested.errors[1].code, "unexpected-end-tag")
   assert_eq(detached_then_nested.errors[2].code, "unexpected-end-tag")
 }
+
+///|
+test "parser tracks origins for template column group starts" {
+  let parsed = @html_parser.parse_fragment(
+    "<template><col>x<col></template>",
+    track_node_locations=true,
+  )
+  guard parsed.query_one("template") is Some(template) else {
+    fail("expected template")
+  }
+  let children = template.children()
+  assert_eq(children.length(), 2)
+  assert_node_origin(children[0], 10, 1, 11)
+  assert_node_origin(children[1], 16, 1, 17)
+}
