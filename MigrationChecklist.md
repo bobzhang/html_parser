@@ -839,6 +839,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split public parser stored-form end-tag regressions into
       `parser_public_regression_test.mbt`.
+- [x] Split public parser ruby annotation implied-end regressions into
+      `parser_public_regression_test.mbt`.
 
 ## Working Rule
 
