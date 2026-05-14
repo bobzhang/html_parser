@@ -875,6 +875,8 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_fixtures_test.mbt`.
 - [x] Split tree-builder hidden input in table regression into
       `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder empty-stack foreign select regression into
+      `treebuilder_fixtures_test.mbt`.
 - [x] Split builder compact serialization regression into
       `builder_public_regression_test.mbt`.
 - [x] Split builder test-format line regression into
