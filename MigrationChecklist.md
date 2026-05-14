@@ -775,6 +775,8 @@ reference implementation in `.repos/justhtml`.
       `selector_public_regression_test.mbt`.
 - [x] Split public selector only-child pseudo regressions into
       `selector_public_regression_test.mbt`.
+- [x] Split public selector empty pseudo regressions into
+      `selector_public_regression_test.mbt`.
 
 ## Working Rule
 
