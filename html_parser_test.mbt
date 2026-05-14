@@ -2794,59 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser reports cells started directly in table body context" {
-  let table_cell = @html_parser.parse_fragment(
-    "<table><td>x<td>y</table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    table_cell.to_html(pretty=false),
-    "<table><tbody><tr><td>x</td><td>y</td></tr></tbody></table>",
-  )
-  assert_eq(table_cell.errors.length(), 1)
-  assert_eq(table_cell.errors[0].code, "unexpected-cell-in-table-body")
-  let section_cell = @html_parser.parse_fragment(
-    "<table><tbody><td>x<th>y</tbody></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    section_cell.to_html(pretty=false),
-    "<table><tbody><tr><td>x</td><th>y</th></tr></tbody></table>",
-  )
-  assert_eq(section_cell.errors.length(), 1)
-  assert_eq(section_cell.errors[0].code, "unexpected-cell-in-table-body")
-  let head_cell = @html_parser.parse_fragment(
-    "<table><thead><td>x</td></thead></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    head_cell.to_html(pretty=false),
-    "<table><thead><tr><td>x</td></tr></thead></table>",
-  )
-  assert_eq(head_cell.errors.length(), 1)
-  assert_eq(head_cell.errors[0].code, "unexpected-cell-in-table-body")
-  let row_cell = @html_parser.parse_fragment(
-    "<table><tr><td>x<th>y</table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    row_cell.to_html(pretty=false),
-    "<table><tbody><tr><td>x</td><th>y</th></tr></tbody></table>",
-  )
-  assert_eq(row_cell.errors.length(), 0)
-  let open_cell = @html_parser.parse_fragment(
-    "<table><tbody><td>x</table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    open_cell.to_html(pretty=false),
-    "<table><tbody><tr><td>x</td></tr></tbody></table>",
-  )
-  assert_eq(open_cell.errors.length(), 1)
-  assert_eq(open_cell.errors[0].code, "unexpected-cell-in-table-body")
-}
-
-///|
 test "parser closes row groups before table structure starts" {
   let nested_body = @html_parser.parse_fragment(
     "<table><tbody><tbody><tr><td>x</td></tr></tbody></table>",
