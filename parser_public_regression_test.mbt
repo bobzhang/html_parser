@@ -203,6 +203,20 @@ test "parser reports EOF in unfinished tables" {
 }
 
 ///|
+test "parser closes open paragraphs before paragraph and block starts" {
+  let fragment = @html_parser.parse_fragment("<p>one<p>two<div>three</div>")
+  assert_eq(
+    fragment.to_html(pretty=false),
+    "<p>one</p><p>two</p><div>three</div>",
+  )
+  let doc = @html_parser.parse("<p>one<div>two</div>")
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<html><head></head><body><p>one</p><div>two</div></body></html>",
+  )
+}
+
+///|
 test "public parser fragment contexts stay stable" {
   let table = @html_parser.parse_fragment(
     "<tr><td>A</td></tr>",

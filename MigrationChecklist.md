@@ -815,6 +815,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split public parser unfinished-table EOF regressions into
       `parser_public_regression_test.mbt`.
+- [x] Split public parser paragraph auto-close regressions into
+      `parser_public_regression_test.mbt`.
 
 ## Working Rule
 
