@@ -751,6 +751,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split parser sanitizer/rawtext whitebox coverage into
       `parser/sanitize_rawtext_wbtest.mbt` and retire the catch-all
       `parser/parser_wbtest.mbt`.
+- [x] Split public DOM mutation edge-case regressions into
+      `dom_public_regression_test.mbt`.
 
 ## Working Rule
 
