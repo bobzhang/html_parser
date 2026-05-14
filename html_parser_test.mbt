@@ -2794,19 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "to_markdown handles deeply nested programmatic trees" {
-  let root = @html_parser.element("div")
-  let mut parent = root
-  for _ in 0..<1200 {
-    let child = @html_parser.element("div")
-    parent.append_child(child)
-    parent = child
-  }
-  parent.append_child(@html_parser.text("x"))
-  assert_eq(root.to_markdown(), "x")
-}
-
-///|
 test "parser handles nested tags attributes comments and doctype" {
   let doc = @html_parser.parse(
     "<!doctype html><p id='x' class=\"intro lead\">Hi &amp; bye<!--ok--></p>",

@@ -611,6 +611,19 @@ test "to_markdown dispatches mixed-case builder tag names like Python" {
 }
 
 ///|
+test "to_markdown handles deeply nested programmatic trees" {
+  let root = @html_parser.element("div")
+  let mut parent = root
+  for _ in 0..<1200 {
+    let child = @html_parser.element("div")
+    parent.append_child(child)
+    parent = child
+  }
+  parent.append_child(@html_parser.text("x"))
+  assert_eq(root.to_markdown(), "x")
+}
+
+///|
 test "public markdown passthrough mode stays stable" {
   let doc = @html_parser.parse_fragment(
     "<p>Before</p><table><tr><td>A</td></tr></table><script data-x='1&2'>if (a < b) alert(1)</script><p>After</p>",

@@ -949,6 +949,8 @@ reference implementation in `.repos/justhtml`.
       `text_markdown_public_regression_test.mbt`.
 - [x] Split markdown mixed-case builder tag regression into
       `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown deeply nested programmatic tree regression into
+      `text_markdown_public_regression_test.mbt`.
 
 ## Working Rule
 
