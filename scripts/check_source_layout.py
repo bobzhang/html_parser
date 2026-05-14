@@ -248,6 +248,7 @@ def main(argv: list[str]) -> int:
         "parser/frameset.mbt",
         "parser/foreign_adjustments.mbt",
         "parser/foreign_content.mbt",
+        "parser/form.mbt",
         "parser/foreign_namespace.mbt",
         "parser/foreign_table_recovery.mbt",
         "parser/document_head.mbt",

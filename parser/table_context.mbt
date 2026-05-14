@@ -144,17 +144,6 @@ fn Parser::report_unexpected_table_body_cell_start(
 }
 
 ///|
-fn Parser::report_form_end_tag_table_voodoo(
-  self : Parser,
-  name : String,
-  start : Int,
-) -> Unit {
-  if name == "form" && self.current_is_table_or_section_context() {
-    self.error_at("unexpected-end-tag-implies-table-voodoo", start)
-  }
-}
-
-///|
 fn Parser::table_context_without_cell_or_caption(self : Parser) -> Int {
   let table_index = self.last_open_table_index()
   if table_index < 0 || self.table_text_is_inside_cell_or_caption(table_index) {
