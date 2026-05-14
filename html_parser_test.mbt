@@ -2794,36 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser treats foreign integration points as HTML islands" {
-  let svg = @html_parser.parse_fragment(
-    "<svg><foreignobject><div><span>x</span></div></foreignobject></svg>",
-    collect_errors=true,
-  )
-  assert_eq(
-    svg.to_html(pretty=false),
-    "<svg><foreignObject><div><span>x</span></div></foreignObject></svg>",
-  )
-  assert_eq(svg.errors.length(), 0)
-  guard svg.query_one("div") is Some(div) else { fail("expected div") }
-  assert_true(div.namespace_uri() is Some("html"))
-  guard svg.query_one("span") is Some(span) else { fail("expected span") }
-  assert_true(span.namespace_uri() is Some("html"))
-  let math = @html_parser.parse_fragment(
-    "<math><annotation-xml encoding='application/xhtml+xml'><section>x</section></annotation-xml></math>",
-    collect_errors=true,
-  )
-  assert_eq(
-    math.to_html(pretty=false),
-    "<math><annotation-xml encoding=\"application/xhtml+xml\"><section>x</section></annotation-xml></math>",
-  )
-  assert_eq(math.errors.length(), 0)
-  guard math.query_one("section") is Some(section) else {
-    fail("expected integrated section")
-  }
-  assert_true(section.namespace_uri() is Some("html"))
-}
-
-///|
 test "parser handles foreign content end tag recovery" {
   let ancestor_end = @html_parser.parse_fragment(
     "<svg><lineargradient></svg>",
