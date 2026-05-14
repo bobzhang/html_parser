@@ -239,6 +239,25 @@ test "query treats malformed selector pieces as no match" {
 }
 
 ///|
+test "query supports descendant selectors" {
+  let doc = @html_parser.parse_fragment(
+    "<div id='main'><p class='intro'>One</p><section><a href='x'>Link</a><span data-name='a b'>Span</span></section></div><aside><p>Two</p></aside>",
+  )
+  assert_eq(doc.query("div p").length(), 1)
+  assert_eq(doc.query("div   p").length(), 1)
+  assert_eq(doc.query("#main a").length(), 1)
+  assert_eq(doc.query("div [href]").length(), 1)
+  assert_eq(doc.query("div [data-name='a b']").length(), 1)
+  assert_eq(doc.query("aside a").length(), 0)
+  assert_eq(doc.query("#main p, aside p").length(), 2)
+  guard doc.query_one("p.intro") is Some(intro) else {
+    fail("expected intro paragraph")
+  }
+  assert_true(@html_parser.matches(intro, "div p"))
+  assert_eq(@html_parser.matches(intro, "aside p"), false)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(
