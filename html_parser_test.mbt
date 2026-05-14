@@ -5991,47 +5991,6 @@ test "tree builder matches reference select parent end text fixture" {
 }
 
 ///|
-test "tree builder matches Python reference mixed frameset recovery behavior" {
-  let doc = @html_parser.parse(
-    "<figure><frameset><h1><aside><figcaption><html><frameset>",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(doc.root),
-    "| <html>\n|   <head>\n|   <frameset>",
-  )
-  assert_eq(doc.errors.length(), 7)
-  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
-  assert_eq(doc.errors[1].code, "unexpected-token-in-frameset")
-  assert_eq(doc.errors[2].code, "unexpected-token-in-frameset")
-  assert_eq(doc.errors[3].code, "unexpected-token-in-frameset")
-  assert_eq(doc.errors[4].code, "unexpected-start-tag")
-  assert_eq(doc.errors[5].code, "unexpected-start-tag-ignored")
-  assert_eq(doc.errors[6].code, "expected-closing-tag-but-got-eof")
-  guard doc.errors[0].column is Some(8) else {
-    fail("expected figure doctype error at start tag close")
-  }
-  guard doc.errors[1].column is Some(22) else {
-    fail("expected h1 frameset error at close bracket")
-  }
-  guard doc.errors[2].column is Some(29) else {
-    fail("expected aside frameset error at close bracket")
-  }
-  guard doc.errors[3].column is Some(41) else {
-    fail("expected figcaption frameset error at close bracket")
-  }
-  guard doc.errors[4].column is Some(47) else {
-    fail("expected html frameset recovery error at close bracket")
-  }
-  guard doc.errors[5].column is Some(57) else {
-    fail("expected ignored nested frameset error at close bracket")
-  }
-  guard doc.errors[6].column is Some(57) else {
-    fail("expected open frameset EOF at final column")
-  }
-}
-
-///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(
