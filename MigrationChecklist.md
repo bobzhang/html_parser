@@ -941,6 +941,8 @@ reference implementation in `.repos/justhtml`.
       `text_markdown_public_regression_test.mbt`.
 - [x] Split markdown table/image/title parity regression into
       `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown unsafe-link and raw passthrough regression into
+      `text_markdown_public_regression_test.mbt`.
 
 ## Working Rule
 

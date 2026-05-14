@@ -358,6 +358,100 @@ test "to_markdown preserves table image HTML and title text parity" {
 }
 
 ///|
+test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
+  let links = @html_parser.parse_fragment(
+    "<p><a href='https://e.com/a(b)c'>x</a> <a href='https://e.com/a b'>y</a></p>",
+  )
+  assert_eq(
+    links.to_markdown(),
+    "[x](<https://e.com/a(b)c>) [y](<https://e.com/a%20b>)",
+  )
+  let no_href = @html_parser.parse_fragment("<p><a>text</a></p>")
+  assert_eq(no_href.to_markdown(), "[text]")
+  let empty_href = @html_parser.parse_fragment("<p><a href=''>text</a></p>")
+  assert_eq(empty_href.to_markdown(), "[text]")
+  let whitespace_href = @html_parser.parse_fragment(
+    "<p><a href='   '>text</a></p>",
+  )
+  assert_eq(whitespace_href.to_markdown(), "[text]()")
+  let encoded = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com/a <b>\"q\"\\x") },
+    children=[@html_parser.text("x")],
+  )
+  assert_eq(
+    encoded.to_markdown(),
+    "[x](<https://e.com/a%20%3Cb%3E%22q%22%5Cx>)",
+  )
+  let control_destinations = @html_parser.element("p", children=[
+    @html_parser.element("a", attrs={ "href": Some("https://e.com/a\tb") }, children=[
+      @html_parser.text("tab"),
+    ]),
+    @html_parser.text(" "),
+    @html_parser.element("a", attrs={ "href": Some("https://e.com/a\nb") }, children=[
+      @html_parser.text("lf"),
+    ]),
+    @html_parser.text(" "),
+    @html_parser.element("a", attrs={ "href": Some("https://e.com/a\rb") }, children=[
+      @html_parser.text("cr"),
+    ]),
+    @html_parser.text(" "),
+    @html_parser.element(
+      "a",
+      attrs={ "href": Some("https://e.com/a\u{000C}b") },
+      children=[@html_parser.text("ff")],
+    ),
+    @html_parser.text(" "),
+    @html_parser.element(
+      "a",
+      attrs={ "href": Some("https://e.com/a\u{000B}b") },
+      children=[@html_parser.text("vt")],
+    ),
+  ])
+  assert_eq(
+    control_destinations.to_markdown(),
+    "[tab](<https://e.com/a%09b>) [lf](<https://e.com/a%0Ab>) [cr](<https://e.com/a%0Db>) [ff](https://e.com/a\u{000C}b) [vt](https://e.com/a\u{000B}b)",
+  )
+  let script = @html_parser.element("div", children=[
+    @html_parser.element("script", attrs={ "data-x": Some("1&2") }),
+  ])
+  assert_eq(script.to_markdown(), "")
+  assert_eq(
+    script.to_markdown(html_passthrough=true),
+    "<script data-x=\"1&amp;2\"></script>",
+  )
+  let script_content = @html_parser.element("div", children=[
+    @html_parser.element("script", children=[
+      @html_parser.text("var x = 1;\nvar y = 2;\n"),
+    ]),
+  ])
+  assert_eq(script_content.to_markdown(), "")
+  assert_eq(
+    script_content.to_markdown(html_passthrough=true),
+    "<script>var x = 1;\nvar y = 2;\n</script>",
+  )
+  let inline_script = @html_parser.element("span", children=[
+    @html_parser.text("A"),
+    @html_parser.element("script", children=[@html_parser.text("alert(1);")]),
+    @html_parser.text("B"),
+  ])
+  assert_eq(inline_script.to_markdown(), "A\n\nB")
+  assert_eq(
+    inline_script.to_markdown(html_passthrough=true),
+    "A\n\n<script>alert(1);</script>\n\nB",
+  )
+  let textarea = @html_parser.element(
+    "textarea",
+    attrs={ "data-x": Some("1&2") },
+    children=[@html_parser.text("</textarea><img src=x onerror=alert(1)>")],
+  )
+  assert_eq(
+    textarea.to_markdown(html_passthrough=true),
+    "<textarea data-x=\"1&amp;2\">&lt;/textarea&gt;&lt;img src=x onerror=alert(1)&gt;</textarea>",
+  )
+}
+
+///|
 test "public markdown passthrough mode stays stable" {
   let doc = @html_parser.parse_fragment(
     "<p>Before</p><table><tr><td>A</td></tr></table><script data-x='1&2'>if (a < b) alert(1)</script><p>After</p>",
