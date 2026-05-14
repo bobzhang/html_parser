@@ -730,6 +730,8 @@ reference implementation in `.repos/justhtml`.
       `parser/dom_selector_wbtest.mbt`.
 - [x] Split parser tokenizer-helper whitebox coverage into
       `parser/tokenizer_helpers_wbtest.mbt`.
+- [x] Split parser scanner whitebox coverage into
+      `parser/scanner_wbtest.mbt`.
 
 ## Working Rule
 
