@@ -871,6 +871,8 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_fixtures_test.mbt`.
 - [x] Split tree-builder select formatting-stray regressions into
       `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder select plaintext regression into
+      `treebuilder_fixtures_test.mbt`.
 
 ## Working Rule
 
