@@ -979,6 +979,8 @@ reference implementation in `.repos/justhtml`.
       `document_parser_public_regression_test.mbt`.
 - [x] Split document parser leading-comment doctype regression into
       `document_parser_public_regression_test.mbt`.
+- [x] Start doctype public regression file with external identifier coverage in
+      `doctype_public_regression_test.mbt`.
 
 ## Working Rule
 
