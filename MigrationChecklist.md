@@ -1043,6 +1043,8 @@ reference implementation in `.repos/justhtml`.
       `xml_coercion_public_regression_test.mbt`.
 - [x] Split ruby annotation start exclusion parser regression into
       `parser_public_regression_test.mbt`.
+- [x] Start legacy element regression file with fragment keygen/frame empty
+      non-void coverage in `legacy_elements_public_regression_test.mbt`.
 - [x] Start template parser regression file with table structural child
       coverage in `template_parser_public_regression_test.mbt`.
 - [x] Split template parser structural end-recovery regression into

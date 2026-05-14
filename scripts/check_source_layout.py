@@ -396,6 +396,7 @@ def main(argv: list[str]) -> int:
         "linkify_fixtures_test.mbt",
         "linkify_public_regression_test.mbt",
         "linkify_test.mbt",
+        "legacy_elements_public_regression_test.mbt",
         "parser_public_regression_test.mbt",
         "public_api_regression_test.mbt",
         "sanitize_fixtures_test.mbt",
