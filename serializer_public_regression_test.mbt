@@ -102,6 +102,52 @@ test "public serializer doctype edge output stays stable" {
 }
 
 ///|
+test "builder serializes doctype identifiers" {
+  assert_eq(@html_parser.doctype().to_html(pretty=false), "<!DOCTYPE html>")
+  let svg = @html_parser.doctype(
+    name="svg",
+    public_id="-//W3C//DTD SVG 1.1//EN",
+    system_id="https://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd",
+  )
+  assert_eq(
+    svg.to_html(pretty=false),
+    "<!DOCTYPE svg PUBLIC \"-//W3C//DTD SVG 1.1//EN\" \"https://www.w3.org/Graphics/SVG/1.1/DTD/svg11.dtd\">",
+  )
+  assert_eq(
+    @html_parser.doctype(name="", system_id="about:legacy-compat").to_html(
+      pretty=false,
+    ),
+    "<!DOCTYPE SYSTEM \"about:legacy-compat\">",
+  )
+}
+
+///|
+test "builder serializes minimized and quoted attributes like reference" {
+  let disabled = @html_parser.element("input", attrs={
+    "disabled": Some("DISABLED"),
+  })
+  assert_eq(disabled.to_html(pretty=false), "<input disabled>")
+  let empty = @html_parser.element("div", attrs={ "data-val": Some("") })
+  assert_eq(empty.to_html(pretty=false), "<div data-val></div>")
+  let none = @html_parser.element("div", attrs={ "data-test": None })
+  assert_eq(none.to_html(pretty=false), "<div data-test></div>")
+  let single_quote = @html_parser.element("span", attrs={
+    "title": Some("foo\"bar"),
+  })
+  assert_eq(
+    single_quote.to_html(pretty=false),
+    "<span title='foo\"bar'></span>",
+  )
+  let escaped_double = @html_parser.element("span", attrs={
+    "title": Some("foo'bar\"baz"),
+  })
+  assert_eq(
+    escaped_double.to_html(pretty=false),
+    "<span title=\"foo'bar&quot;baz\"></span>",
+  )
+}
+
+///|
 test "public serializer top-level helper and single quote output stay stable" {
   let node = @html_parser.element("div", attrs={ "title": Some("a>b'c") }, children=[
     @html_parser.text("x>y"),

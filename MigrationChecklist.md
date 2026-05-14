@@ -879,6 +879,10 @@ reference implementation in `.repos/justhtml`.
       `builder_public_regression_test.mbt`.
 - [x] Split builder test-format line regression into
       `builder_public_regression_test.mbt`.
+- [x] Split serializer doctype identifier regression into
+      `serializer_public_regression_test.mbt`.
+- [x] Split serializer minimized/quoted attribute regression into
+      `serializer_public_regression_test.mbt`.
 
 ## Working Rule
 
