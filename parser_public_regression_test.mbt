@@ -397,6 +397,69 @@ test "parser handles active formatting duplicate starts" {
 }
 
 ///|
+test "parser clears active formatting at applet-like markers" {
+  let stray = @html_parser.parse_fragment("</applet>", collect_errors=true)
+  assert_eq(stray.to_html(pretty=false), "")
+  assert_eq(stray.errors.length(), 1)
+  assert_eq(stray.errors[0].code, "unexpected-end-tag")
+  guard stray.errors[0].column is Some(9) else {
+    fail("expected stray applet end tag error at tag close")
+  }
+  let nested_stray = @html_parser.parse_fragment(
+    "<p>x</object>y",
+    collect_errors=true,
+  )
+  assert_eq(nested_stray.to_html(pretty=false), "<p>xy</p>")
+  assert_eq(nested_stray.errors.length(), 1)
+  assert_eq(nested_stray.errors[0].code, "unexpected-end-tag")
+  guard nested_stray.errors[0].column is Some(13) else {
+    fail("expected stray object end tag error at tag close")
+  }
+  let object = @html_parser.parse_fragment(
+    "<p><object><b>x</object>y",
+    track_node_locations=true,
+  )
+  assert_eq(object.to_html(pretty=false), "<p><object><b>x</b></object>y</p>")
+  let object_bold = object.root.query("b")
+  guard object_bold.length() == 1 else {
+    fail("expected object-local bold only")
+  }
+  assert_node_origin(object_bold[0], 11, 1, 12)
+  let marquee = @html_parser.parse_fragment(
+    "<p><marquee><b>x</marquee>y",
+    track_node_locations=true,
+  )
+  assert_eq(
+    marquee.to_html(pretty=false),
+    "<p><marquee><b>x</b></marquee>y</p>",
+  )
+  let marquee_bold = marquee.root.query("b")
+  guard marquee_bold.length() == 1 else {
+    fail("expected marquee-local bold only")
+  }
+  assert_node_origin(marquee_bold[0], 12, 1, 13)
+  let mixed = @html_parser.parse_fragment(
+    "<p><b>before<object><i>in</object>after</p>tail",
+    track_node_locations=true,
+  )
+  assert_eq(
+    mixed.to_html(pretty=false),
+    "<p><b>before<object><i>in</i></object>after</b></p><b>tail</b>",
+  )
+  let mixed_bold = mixed.root.query("b")
+  guard mixed_bold.length() == 2 else {
+    fail("expected outer bold reconstruction")
+  }
+  assert_node_origin(mixed_bold[0], 3, 1, 4)
+  assert_node_origin(mixed_bold[1], 3, 1, 4)
+  let mixed_italic = mixed.root.query("i")
+  guard mixed_italic.length() == 1 else {
+    fail("expected object-local italic only")
+  }
+  assert_node_origin(mixed_italic[0], 20, 1, 21)
+}
+
+///|
 test "public parser fragment contexts stay stable" {
   let table = @html_parser.parse_fragment(
     "<tr><td>A</td></tr>",
