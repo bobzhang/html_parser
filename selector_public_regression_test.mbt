@@ -106,6 +106,30 @@ test "query supports tag class id and tag class selectors" {
 }
 
 ///|
+test "query supports attribute presence and exact selectors" {
+  let doc = @html_parser.parse_fragment(
+    "<div id='main' data-id='123'><a href='http://example.com' data-id='link'>Link</a><button disabled>Push</button></div>",
+  )
+  assert_eq(doc.query("[href]").length(), 1)
+  assert_eq(doc.query("a[href]").length(), 1)
+  assert_eq(doc.query("[id]").length(), 1)
+  assert_eq(doc.query("[data-id]").length(), 2)
+  assert_eq(doc.query("[id=\"main\"]").length(), 1)
+  assert_eq(doc.query("[id='main']").length(), 1)
+  assert_eq(doc.query("[id=main]").length(), 1)
+  assert_eq(doc.query("[ id = 'main' ]").length(), 1)
+  assert_eq(doc.query("[id=wrong]").length(), 0)
+  assert_eq(doc.query("[]").length(), 0)
+  assert_eq(doc.query("[=main]").length(), 0)
+  assert_eq(doc.query("a[href][data-id='link']").length(), 1)
+  assert_eq(doc.query("button[disabled='']").length(), 1)
+  let upper = @html_parser.fragment(children=[
+    @html_parser.element("a", attrs={ "DATA-ID": Some("42") }),
+  ])
+  assert_eq(upper.query("[data-id='42']").length(), 1)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(

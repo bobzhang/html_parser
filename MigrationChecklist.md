@@ -755,6 +755,8 @@ reference implementation in `.repos/justhtml`.
       `dom_public_regression_test.mbt`.
 - [x] Split public selector tag/class/id regressions into
       `selector_public_regression_test.mbt`.
+- [x] Split public selector attribute presence/exact regressions into
+      `selector_public_regression_test.mbt`.
 
 ## Working Rule
 
