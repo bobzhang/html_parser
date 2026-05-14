@@ -363,6 +363,104 @@ test "fragment context seeds html insertion mode" {
 }
 
 ///|
+test "fragment context seeds table insertion mode" {
+  let row = @html_parser.parse_fragment(
+    "<tr><td>x</td></tr>",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(row.to_html(pretty=false), "<tbody><tr><td>x</td></tr></tbody>")
+  assert_eq(row.errors.length(), 0)
+  let direct_cell = @html_parser.parse_fragment(
+    "<td>x</td>",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(
+    direct_cell.to_html(pretty=false),
+    "<tbody><tr><td>x</td></tr></tbody>",
+  )
+  assert_eq(direct_cell.errors.length(), 1)
+  assert_eq(direct_cell.errors[0].code, "unexpected-cell-in-table-body")
+  let explicit_html_ns_cell = @html_parser.parse_fragment(
+    "<td>x</td>",
+    context=@html_parser.FragmentContext::new("table", ns="html"),
+    collect_errors=true,
+  )
+  assert_eq(
+    explicit_html_ns_cell.to_html(pretty=false),
+    "<tbody><tr><td>x</td></tr></tbody>",
+  )
+  assert_eq(explicit_html_ns_cell.errors.length(), 1)
+  assert_eq(
+    explicit_html_ns_cell.errors[0].code,
+    "unexpected-cell-in-table-body",
+  )
+  let after_caption_text = @html_parser.parse_fragment(
+    "<caption>c</caption>x",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(after_caption_text.to_html(pretty=false), "<caption>c</caption>x")
+  assert_eq(after_caption_text.errors.length(), 1)
+  assert_eq(after_caption_text.errors[0].code, "foster-parenting-character")
+  let fostered_start = @html_parser.parse_fragment(
+    "<div>x</div>",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(fostered_start.to_html(pretty=false), "<div>x</div>")
+  assert_eq(fostered_start.errors.length(), 3)
+  assert_eq(fostered_start.errors[0].code, "foster-parenting-start-tag")
+  assert_eq(fostered_start.errors[1].code, "foster-parenting-character")
+  assert_eq(
+    fostered_start.errors[2].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+  let ignored_table_end = @html_parser.parse_fragment(
+    "<tr><td>x</table>y",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(
+    ignored_table_end.to_html(pretty=false),
+    "<tbody><tr><td>xy</td></tr></tbody>",
+  )
+  assert_eq(ignored_table_end.errors.length(), 1)
+  assert_eq(ignored_table_end.errors[0].code, "unexpected-end-tag")
+  let br_end = @html_parser.parse_fragment(
+    "</br>x",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(br_end.to_html(pretty=false), "<br>x")
+  assert_eq(br_end.errors.length(), 3)
+  assert_eq(br_end.errors[0].code, "unexpected-end-tag")
+  assert_eq(br_end.errors[1].code, "unexpected-end-tag-implies-table-voodoo")
+  assert_eq(br_end.errors[2].code, "foster-parenting-character")
+  guard br_end.errors[0].column is Some(1) else {
+    fail("expected table fragment br end tag error at opener")
+  }
+  guard br_end.errors[1].column is Some(5) else {
+    fail("expected table fragment br voodoo error at tag close")
+  }
+  guard br_end.errors[2].column is Some(6) else {
+    fail("expected table fragment fostered text after br")
+  }
+  let nested_table = @html_parser.parse_fragment(
+    "<table>x</table>",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(nested_table.to_html(pretty=false), "x")
+  assert_eq(nested_table.errors.length(), 4)
+  assert_eq(nested_table.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(nested_table.errors[1].code, "unexpected-end-tag")
+  assert_eq(nested_table.errors[2].code, "foster-parenting-character")
+  assert_eq(nested_table.errors[3].code, "unexpected-end-tag")
+}
+
+///|
 test "fragment context seeds foreign namespaces" {
   let svg = @html_parser.parse_fragment(
     "<lineargradient><stop/></lineargradient>",
