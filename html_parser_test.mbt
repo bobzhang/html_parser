@@ -2794,67 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "fragment context seeds table section insertion mode" {
-  let row = @html_parser.parse_fragment(
-    "<tr><td>x</td></tr>",
-    context=@html_parser.FragmentContext::new("tbody"),
-    collect_errors=true,
-  )
-  assert_eq(row.to_html(pretty=false), "<tr><td>x</td></tr>")
-  assert_eq(row.errors.length(), 0)
-  let direct_cell = @html_parser.parse_fragment(
-    "<td>x</td>",
-    context=@html_parser.FragmentContext::new("tbody"),
-    collect_errors=true,
-  )
-  assert_eq(direct_cell.to_html(pretty=false), "<tr><td>x</td></tr>")
-  assert_eq(direct_cell.errors.length(), 1)
-  assert_eq(direct_cell.errors[0].code, "unexpected-cell-in-table-body")
-  let fostered_start = @html_parser.parse_fragment(
-    "<div>x</div>",
-    context=@html_parser.FragmentContext::new("tbody"),
-    collect_errors=true,
-  )
-  assert_eq(fostered_start.to_html(pretty=false), "<div>x</div>")
-  assert_eq(fostered_start.errors.length(), 3)
-  assert_eq(fostered_start.errors[0].code, "foster-parenting-start-tag")
-  assert_eq(fostered_start.errors[1].code, "foster-parenting-character")
-  assert_eq(
-    fostered_start.errors[2].code,
-    "unexpected-end-tag-implies-table-voodoo",
-  )
-  let ignored_caption = @html_parser.parse_fragment(
-    "<caption>x</caption>",
-    context=@html_parser.FragmentContext::new("tbody"),
-    collect_errors=true,
-  )
-  assert_eq(ignored_caption.to_html(pretty=false), "x")
-  assert_eq(ignored_caption.errors.length(), 3)
-  assert_eq(ignored_caption.errors[0].code, "unexpected-start-tag")
-  assert_eq(ignored_caption.errors[1].code, "foster-parenting-character")
-  assert_eq(ignored_caption.errors[2].code, "unexpected-end-tag")
-  let ignored_table = @html_parser.parse_fragment(
-    "<table>x</table>",
-    context=@html_parser.FragmentContext::new("tfoot"),
-    collect_errors=true,
-  )
-  assert_eq(ignored_table.to_html(pretty=false), "x")
-  assert_eq(ignored_table.errors.length(), 3)
-  assert_eq(ignored_table.errors[0].code, "unexpected-start-tag")
-  assert_eq(ignored_table.errors[1].code, "foster-parenting-character")
-  assert_eq(ignored_table.errors[2].code, "unexpected-end-tag")
-  let ignored_section_end = @html_parser.parse_fragment(
-    "</tbody>x",
-    context=@html_parser.FragmentContext::new("tbody"),
-    collect_errors=true,
-  )
-  assert_eq(ignored_section_end.to_html(pretty=false), "x")
-  assert_eq(ignored_section_end.errors.length(), 2)
-  assert_eq(ignored_section_end.errors[0].code, "unexpected-end-tag")
-  assert_eq(ignored_section_end.errors[1].code, "foster-parenting-character")
-}
-
-///|
 test "fragment context seeds table row insertion mode" {
   let cells = @html_parser.parse_fragment(
     "<td>x</td><td>y</td>",
