@@ -385,6 +385,46 @@ test "tree builder matches Python reference select optgroup branch fixtures" {
 }
 
 ///|
+test "tree builder matches Python reference selectedcontent branch fixtures" {
+  let selected = @html_parser.parse(
+    "<select><selectedcontent></selectedcontent><option>A</option><option selected>B</option></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(selected.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       <selectedcontent>\n|         \"B\"\n|       <option>\n|         \"A\"\n|       <option>\n|         selected=\"\"\n|         \"B\"",
+  )
+  assert_eq(selected.errors.length(), 3)
+  assert_eq(selected.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(selected.errors[1].code, "unexpected-start-tag-in-select")
+  assert_eq(selected.errors[2].code, "unexpected-end-tag-in-select")
+  guard selected.errors[1].column is Some(25) else {
+    fail("expected selectedcontent start error at start tag close")
+  }
+  guard selected.errors[2].column is Some(43) else {
+    fail("expected selectedcontent end error at end tag close")
+  }
+  let default_first = @html_parser.parse(
+    "<select><selectedcontent></selectedcontent><option>A</option><option>B</option></select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(default_first.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       <selectedcontent>\n|         \"A\"\n|       <option>\n|         \"A\"\n|       <option>\n|         \"B\"",
+  )
+  assert_eq(default_first.errors.length(), 3)
+  assert_eq(default_first.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(default_first.errors[1].code, "unexpected-start-tag-in-select")
+  assert_eq(default_first.errors[2].code, "unexpected-end-tag-in-select")
+  guard default_first.errors[1].column is Some(25) else {
+    fail("expected default selectedcontent start error at start tag close")
+  }
+  guard default_first.errors[2].column is Some(43) else {
+    fail("expected default selectedcontent end error at end tag close")
+  }
+}
+
+///|
 test "tree builder matches vendored empty stack edge fixtures" {
   for case in empty_stack_edge_fixture_cases() {
     assert_tree_fixture(case)
