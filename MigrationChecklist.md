@@ -369,6 +369,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Split parser special-element and ruby end-tag helpers into
       `parser/special_elements.mbt`.
 - [x] Split parser form end-tag helpers into `parser/form.mbt`.
+- [x] Moved parser form start-tag bookkeeping into `parser/form.mbt`.
 - [x] Split parser generic stack and insertion helpers into
       `parser/stack.mbt`.
 - [x] Moved remaining parser stack lookup/removal helpers into

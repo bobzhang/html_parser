@@ -22,3 +22,28 @@ fn Parser::handle_form_end_tag(self : Parser, start : Int) -> Unit {
     None => self.error_at("unexpected-end-tag", start)
   }
 }
+
+///|
+fn Parser::handle_duplicate_form_start_tag(
+  self : Parser,
+  name : StringView,
+  start : Int,
+) -> Bool {
+  if name == "form" && self.form_element is Some(_) {
+    self.error_at("unexpected-start-tag", start)
+    true
+  } else {
+    false
+  }
+}
+
+///|
+fn Parser::track_form_start_element(
+  self : Parser,
+  name : StringView,
+  node : @dom.Node,
+) -> Unit {
+  if name == "form" {
+    self.form_element = Some(node)
+  }
+}

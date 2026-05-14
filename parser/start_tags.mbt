@@ -183,8 +183,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if !closed_table_cell {
         self.report_unexpected_table_body_cell_start(name, tag_close_pos)
       }
-      if name == "form" && self.form_element is Some(_) {
-        self.error_at("unexpected-start-tag", start)
+      if self.handle_duplicate_form_start_tag(name, start) {
         return
       }
       if name == "rp" || name == "rt" {
@@ -249,9 +248,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         start,
         tag_close_pos,
       )
-      if adjusted_name == "form" {
-        self.form_element = Some(node)
-      }
+      self.track_form_start_element(adjusted_name, node)
       self.append_start_tag_node(node, adjusted_name, start)
       if node_ns == "html" && adjusted_name == "select" {
         self.select_insertion_mode = true
