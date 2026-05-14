@@ -795,6 +795,8 @@ reference implementation in `.repos/justhtml`.
       `selector_public_regression_test.mbt`.
 - [x] Split public selector case-insensitive pseudo name regressions into
       `selector_public_regression_test.mbt`.
+- [x] Split public selector `:contains(...)` pseudo regressions into
+      `selector_public_regression_test.mbt`.
 
 ## Working Rule
 
