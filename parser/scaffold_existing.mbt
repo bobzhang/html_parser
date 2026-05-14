@@ -1,58 +1,104 @@
 ///|
-fn is_document_head_element_name(name : StringView) -> Bool {
-  match name {
-    "base"
-    | "basefont"
-    | "bgsound"
-    | "link"
-    | "meta"
-    | "noframes"
-    | "noscript"
-    | "script"
-    | "style"
-    | "template"
-    | "title" => true
-    _ => false
+fn document_html_element(root : @dom.Node) -> @dom.Node? {
+  for child in root.children {
+    if child.kind == Element && child.name == "html" {
+      return Some(child)
+    }
+  }
+  None
+}
+
+///|
+fn append_children_to(target : @dom.Node, children : Array[@dom.Node]) -> Unit {
+  for child in children {
+    target.append_child(child)
   }
 }
 
 ///|
-fn Parser::document_doctype_is_initial(self : Parser) -> Bool {
-  for child in self.root.children {
-    if child.kind == Comment {
-      ()
-    } else if child.kind == Text && is_whitespace_text_node(child) {
-      ()
+fn append_body_node_contents(
+  body_node : @dom.Node,
+  source : @dom.Node,
+  body_children : Array[@dom.Node],
+) -> Unit {
+  merge_missing_attrs(body_node, source)
+  let existing = source.children.copy()
+  source.children.clear()
+  for child in existing {
+    if child.kind == Element && child.name == "body" {
+      append_body_node_contents(body_node, child, body_children)
     } else {
-      return false
+      body_children.push(child)
     }
   }
-  true
 }
 
 ///|
-fn scaffold_document(root : @dom.Node) -> Unit {
-  match document_html_element(root) {
-    Some(html) => {
-      absorb_root_html_siblings(root, html)
-      scaffold_existing_html_element(html)
-      return
+fn append_html_node_contents(
+  html_node : @dom.Node,
+  source : @dom.Node,
+  html_children : Array[@dom.Node],
+) -> Unit {
+  merge_missing_attrs(html_node, source)
+  let existing = source.children.copy()
+  source.children.clear()
+  for child in existing {
+    if child.kind == Element && child.name == "html" {
+      append_html_node_contents(html_node, child, html_children)
+    } else {
+      html_children.push(child)
     }
-    None => ()
   }
+}
+
+///|
+fn absorb_root_html_siblings(root : @dom.Node, html : @dom.Node) -> Unit {
   let original = root.children.copy()
   root.children.clear()
+  let mut saw_html = false
+  for child in original {
+    if child.kind == Element && child.name == "html" {
+      if saw_html {
+        append_html_node_contents(html, child, html.children)
+      } else {
+        root.append_child(child)
+        saw_html = true
+      }
+    } else {
+      root.append_child(child)
+    }
+  }
+}
+
+///|
+fn scaffold_existing_html_element(html : @dom.Node) -> Unit {
+  let raw_original = html.children.copy()
+  html.children.clear()
+  let original : Array[@dom.Node] = []
+  for child in raw_original {
+    if child.kind == Element && child.name == "html" {
+      append_html_node_contents(html, child, original)
+    } else {
+      original.push(child)
+    }
+  }
   let mut head : @dom.Node? = None
   let mut body : @dom.Node? = None
   let mut frameset : @dom.Node? = None
+  let before_head_children : Array[@dom.Node] = []
   let between_head_body_children : Array[@dom.Node] = []
   let head_children : Array[@dom.Node] = []
   let body_children : Array[@dom.Node] = []
   let after_frameset_children : Array[@dom.Node] = []
   let mut body_started = false
   for child in original {
-    if child.kind == Doctype {
-      root.append_child(child)
+    if child.kind == Comment &&
+      !body_started &&
+      head is None &&
+      head_children.is_empty() {
+      before_head_children.push(child)
+    } else if child.kind == Comment && !body_started && head is Some(_) {
+      between_head_body_children.push(child)
     } else if child.kind == Element &&
       child.name == "head" &&
       head is None &&
@@ -74,10 +120,6 @@ fn scaffold_document(root : @dom.Node) -> Unit {
       body_started = true
     } else if frameset is Some(_) && body is None {
       after_frameset_children.push(child)
-    } else if child.kind == Comment && !body_started && head is Some(_) {
-      between_head_body_children.push(child)
-    } else if child.kind == Comment && !body_started && head_children.is_empty() {
-      root.append_child(child)
     } else if child.kind == Element && child.name == "head" {
       let existing = child.children.copy()
       for grandchild in existing {
@@ -119,8 +161,8 @@ fn scaffold_document(root : @dom.Node) -> Unit {
       body_children.push(child)
     }
   }
-  let html = @dom.element("html")
   let head_node = head.unwrap_or(@dom.element("head"))
+  append_children_to(html, before_head_children)
   html.append_child(head_node)
   append_children_to(head_node, head_children)
   append_children_to(html, between_head_body_children)
@@ -134,20 +176,5 @@ fn scaffold_document(root : @dom.Node) -> Unit {
       append_children_to(body_node, body_children)
       html.append_child(body_node)
     }
-  }
-  root.append_child(html)
-}
-
-///|
-fn append_post_body_html_children(
-  root : @dom.Node,
-  children : Array[@dom.Node],
-) -> Unit {
-  if children.is_empty() {
-    return
-  }
-  match document_html_element(root) {
-    Some(html) => append_children_to(html, children)
-    None => append_children_to(root, children)
   }
 }

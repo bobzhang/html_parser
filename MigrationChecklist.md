@@ -336,6 +336,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split parser attribute scanners into `parser/attributes.mbt`.
 - [x] Split document scaffolding and selected-content helpers into
       `parser/scaffold.mbt`.
+- [x] Split parser existing-document scaffold merge helpers into
+      `parser/scaffold_existing.mbt`.
 - [x] Split parser scaffold text/whitespace helpers into
       `parser/scaffold_text.mbt`.
 - [x] Split parser selected-content population helpers into
