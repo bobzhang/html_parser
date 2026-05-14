@@ -883,6 +883,10 @@ reference implementation in `.repos/justhtml`.
       `serializer_public_regression_test.mbt`.
 - [x] Split serializer minimized/quoted attribute regression into
       `serializer_public_regression_test.mbt`.
+- [x] Split serializer unsafe-name and invalid-quote regressions into
+      `serializer_public_regression_test.mbt`.
+- [x] Split serializer quote-context and comment-guard regressions into
+      `serializer_public_regression_test.mbt`.
 
 ## Working Rule
 
