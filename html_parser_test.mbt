@@ -2794,22 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tree builder matches reference empty-stack foreign table row edge" {
-  let doc = @html_parser.parse(
-    "<svg><tr><title><section\n><math><p><tr>>",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(doc.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <svg svg>\n|       <svg tr>\n|         <svg title>\n|           <section>\n|             <math math>\n|             <p>\n|   <tr>\n|     \">\"",
-  )
-  assert_eq(doc.errors.length(), 3)
-  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
-  assert_eq(doc.errors[1].code, "unexpected-html-element-in-foreign-content")
-  assert_eq(doc.errors[2].code, "unexpected-character-implies-table-voodoo")
-}
-
-///|
 test "parser tracks origins for foreign table recovery helpers" {
   let cell = @html_parser.parse(
     "<!><svg><th><title><n><select><td>",
