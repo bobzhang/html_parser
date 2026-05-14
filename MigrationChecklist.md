@@ -887,6 +887,8 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_fixtures_test.mbt`.
 - [x] Split tree-builder MathML text form-feed regression into
       `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder after-head stray template end regression into
+      `treebuilder_fixtures_test.mbt`.
 - [x] Split builder compact serialization regression into
       `builder_public_regression_test.mbt`.
 - [x] Split builder test-format line regression into
