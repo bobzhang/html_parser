@@ -567,6 +567,17 @@ test "query supports contains pseudo selector" {
 }
 
 ///|
+test "query supports contains pseudo selector quoted escapes" {
+  let doc = @html_parser.parse_fragment(
+    "<div><span>don't</span><span>a\\b</span><span>don\\x</span><span>tail\\</span></div>",
+  )
+  assert_eq(doc.query("span:contains('don\\'t')").length(), 1)
+  assert_eq(doc.query("span:contains(\"a\\\\b\")").length(), 1)
+  assert_eq(doc.query("span:contains(\"don\\x\")").length(), 1)
+  assert_eq(doc.query("span:contains(\"tail\\\")").length(), 1)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(

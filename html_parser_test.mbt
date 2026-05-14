@@ -7561,17 +7561,6 @@ test "parser tracks origins for fragment colgroup starts" {
 }
 
 ///|
-test "query supports contains pseudo selector quoted escapes" {
-  let doc = @html_parser.parse_fragment(
-    "<div><span>don't</span><span>a\\b</span><span>don\\x</span><span>tail\\</span></div>",
-  )
-  assert_eq(doc.query("span:contains('don\\'t')").length(), 1)
-  assert_eq(doc.query("span:contains(\"a\\\\b\")").length(), 1)
-  assert_eq(doc.query("span:contains(\"don\\x\")").length(), 1)
-  assert_eq(doc.query("span:contains(\"tail\\\")").length(), 1)
-}
-
-///|
 test "query and matches support complex selector combinations" {
   let doc = @html_parser.parse_fragment(
     "<div id='main' class='container'><h1>Title</h1><p class='intro'>One</p><p class='content'>Two</p><ul><li>Item 1</li><li class='special'>Item 2</li></ul><a href='x' data-id='123'>Link</a></div><aside id='sidebar'><a href='y'>Side</a></aside>",
