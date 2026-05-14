@@ -746,6 +746,8 @@ reference implementation in `.repos/justhtml`.
       `parser/insertion_helpers_wbtest.mbt`.
 - [x] Split parser defensive-branch whitebox coverage into
       `parser/defensive_wbtest.mbt`.
+- [x] Split parser detached-recovery whitebox coverage into
+      `parser/detached_recovery_wbtest.mbt`.
 
 ## Working Rule
 

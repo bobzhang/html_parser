@@ -296,6 +296,7 @@ def main(argv: list[str]) -> int:
         "parser/active_formatting_wbtest.mbt",
         "parser/cursor_text_wbtest.mbt",
         "parser/defensive_wbtest.mbt",
+        "parser/detached_recovery_wbtest.mbt",
         "parser/document_modes_wbtest.mbt",
         "parser/dom_selector_wbtest.mbt",
         "parser/foreign_adjustments_wbtest.mbt",
