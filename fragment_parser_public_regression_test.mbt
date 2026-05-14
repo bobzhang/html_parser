@@ -43,3 +43,61 @@ test "fragment parser preserves ignored head children" {
   assert_eq(nested.errors[0].code, "unexpected-start-tag")
   assert_eq(nested.errors[1].code, "unexpected-end-tag")
 }
+
+///|
+test "fragment context seeds literal text modes" {
+  let empty_script = @html_parser.parse_fragment(
+    "",
+    context=@html_parser.FragmentContext::new("script"),
+    collect_errors=true,
+  )
+  assert_eq(empty_script.to_html(pretty=false), "")
+  assert_eq(empty_script.errors.length(), 0)
+  let textarea = @html_parser.parse_fragment(
+    "<b>x</b>&lt;",
+    context=@html_parser.FragmentContext::new("textarea"),
+  )
+  assert_eq(textarea.to_html(pretty=false), "&lt;b&gt;x&lt;/b&gt;&amp;lt;")
+  assert_eq(textarea.to_text(separator="", strip=false), "<b>x</b>&lt;")
+  assert_eq(textarea.query("b").length(), 0)
+  let textarea_newlines = @html_parser.parse_fragment(
+    "a\rb\r\nc",
+    context=@html_parser.FragmentContext::new("textarea"),
+  )
+  assert_eq(textarea_newlines.to_html(pretty=false), "a\nb\nc")
+  assert_eq(textarea_newlines.to_text(separator="", strip=false), "a\nb\nc")
+  let after_end = @html_parser.parse_fragment(
+    "a\r</textarea><b>x</b>",
+    context=@html_parser.FragmentContext::new("textarea"),
+    collect_errors=true,
+  )
+  assert_eq(after_end.to_html(pretty=false), "a\n<b>x</b>")
+  assert_eq(after_end.errors[0].code, "unexpected-end-tag")
+  let script = @html_parser.parse_fragment(
+    "a</script><b>x</b>",
+    context=@html_parser.FragmentContext::new("script"),
+  )
+  assert_eq(
+    script.to_html(pretty=false),
+    "a&lt;/script&gt;&lt;b&gt;x&lt;/b&gt;",
+  )
+  assert_eq(script.query("b").length(), 0)
+  let script_newlines = @html_parser.parse_fragment(
+    "a\rb\r\nc",
+    context=@html_parser.FragmentContext::new("script"),
+  )
+  assert_eq(script_newlines.to_html(pretty=false), "a\nb\nc")
+  let style_null = @html_parser.parse_fragment(
+    "a\u{0000}b",
+    context=@html_parser.FragmentContext::new("style"),
+    collect_errors=true,
+  )
+  assert_eq(style_null.to_html(pretty=false), "a\u{FFFD}b")
+  assert_eq(style_null.errors.length(), 1)
+  assert_eq(style_null.errors[0].code, "unexpected-null-character")
+  let div = @html_parser.parse_fragment(
+    "<b>x</b>",
+    context=@html_parser.FragmentContext::new("div"),
+  )
+  assert_eq(div.to_html(pretty=false), "<b>x</b>")
+}
