@@ -338,3 +338,57 @@ test "document parser places comments around implicit head like reference" {
     "<html><head></head><body><p>x</p><!--c--><title>T</title></body></html>",
   )
 }
+
+///|
+test "document parser preserves head-side whitespace like reference" {
+  let implicit = @html_parser.parse("<!doctype html><title>T</title>  text")
+  assert_eq(
+    implicit.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><title>T</title>  </head><body>text</body></html>",
+  )
+  let implicit_trailing_space = @html_parser.parse(
+    "<!doctype html><title>T</title>  ",
+    collect_errors=true,
+  )
+  assert_eq(
+    implicit_trailing_space.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><title>T</title>  </head><body></body></html>",
+  )
+  assert_eq(implicit_trailing_space.errors.length(), 0)
+  let open_head = @html_parser.parse(
+    "<!doctype html><head><title>T</title>  text",
+  )
+  assert_eq(
+    open_head.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><title>T</title>  </head><body>text</body></html>",
+  )
+  let coerced_head_space = @html_parser.parse(
+    "<!doctype html><head><title>T</title>\u{000C} x",
+    xml_coercion=true,
+  )
+  assert_eq(
+    coerced_head_space.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><title>T</title>  </head><body>x</body></html>",
+  )
+  let explicit = @html_parser.parse(
+    "<!doctype html><head></head><!--c-->  <meta name=x><p>y",
+  )
+  assert_eq(
+    explicit.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><meta name=\"x\"></head><!--c-->  <body><p>y</p></body></html>",
+  )
+  let explicit_html_implicit_head = @html_parser.parse(
+    "<html><title>T</title>  text</html>",
+  )
+  assert_eq(
+    explicit_html_implicit_head.to_html(pretty=false),
+    "<html><head><title>T</title>  </head><body>text</body></html>",
+  )
+  let explicit_html_closed_head = @html_parser.parse(
+    "<html><head></head>  <p>x</p></html>",
+  )
+  assert_eq(
+    explicit_html_closed_head.to_html(pretty=false),
+    "<html><head></head>  <body><p>x</p></body></html>",
+  )
+}
