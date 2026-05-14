@@ -470,6 +470,23 @@ test "matches handles detached nodes for structural pseudo selectors" {
 }
 
 ///|
+test "query supports not pseudo selector" {
+  let doc = @html_parser.parse_fragment(
+    "<div id='main'><p class='intro'>One</p><p class='content'>Two</p></div><div id='sidebar'><p>Side</p></div>",
+  )
+  assert_eq(doc.query("div:not(#sidebar)").length(), 1)
+  assert_eq(doc.query("p:not(.intro)").length(), 2)
+  assert_eq(doc.query("div > p:not(.content)").length(), 2)
+  assert_eq(doc.query("p:not(.intro, .content)").length(), 1)
+  assert_eq(doc.query("p:not()").length(), 3)
+  guard doc.query_one(".intro") is Some(intro) else {
+    fail("expected intro paragraph")
+  }
+  assert_true(@html_parser.matches(intro, "p:not(.content)"))
+  assert_eq(@html_parser.matches(intro, "p:not(.intro)"), false)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(
