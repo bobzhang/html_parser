@@ -2794,20 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tree builder matches reference iframe srcdoc doctype edge" {
-  let doc = @html_parser.parse(
-    "<!DOCTYPE foo><p><table></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(doc.root),
-    "| <!DOCTYPE foo>\n| <html>\n|   <head>\n|   <body>\n|     <p>\n|     <table>",
-  )
-  assert_eq(doc.errors.length(), 1)
-  assert_eq(doc.errors[0].code, "unknown-doctype")
-}
-
-///|
 test "tree builder matches reference legacy loose doctype fixture" {
   let doc = @html_parser.parse(
     "<!DOCTYPE html PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//\" \"http://www.w3.org/TR/html4/loose.dtd\">",

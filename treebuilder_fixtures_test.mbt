@@ -53,6 +53,20 @@ test "tree builder matches vendored iframe srcdoc fixture" {
 }
 
 ///|
+test "tree builder matches reference iframe srcdoc doctype edge" {
+  let doc = @html_parser.parse(
+    "<!DOCTYPE foo><p><table></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <!DOCTYPE foo>\n| <html>\n|   <head>\n|   <body>\n|     <p>\n|     <table>",
+  )
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "unknown-doctype")
+}
+
+///|
 test "tree builder matches vendored XML coercion fixtures" {
   for case in xml_coercion_tree_fixture_cases() {
     assert_tree_fixture(case)
