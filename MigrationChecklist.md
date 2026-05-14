@@ -1017,6 +1017,8 @@ reference implementation in `.repos/justhtml`.
       `fragment_parser_public_regression_test.mbt`.
 - [x] Split fragment parser column-group insertion-mode context regression into
       `fragment_parser_public_regression_test.mbt`.
+- [x] Split fragment parser column-group origin tracking regression into
+      `fragment_parser_public_regression_test.mbt`.
 - [x] Split fragment parser foreign namespace context regression into
       `fragment_parser_public_regression_test.mbt`.
 - [x] Start template parser regression file with table structural child

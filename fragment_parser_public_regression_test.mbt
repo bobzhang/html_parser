@@ -728,6 +728,19 @@ test "fragment context seeds column group insertion mode" {
 }
 
 ///|
+test "parser tracks origins for fragment colgroup starts" {
+  let cols = @html_parser.parse_fragment(
+    "<col><col>",
+    context=@html_parser.FragmentContext::new("colgroup"),
+    track_node_locations=true,
+  )
+  let children = cols.root.children()
+  assert_eq(children.length(), 2)
+  assert_node_origin(children[0], 0, 1, 1)
+  assert_node_origin(children[1], 5, 1, 6)
+}
+
+///|
 test "fragment context seeds foreign namespaces" {
   let svg = @html_parser.parse_fragment(
     "<lineargradient><stop/></lineargradient>",
