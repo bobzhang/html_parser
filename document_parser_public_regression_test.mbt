@@ -319,3 +319,22 @@ test "document parser preserves shell scaffolding edge ordering" {
   assert_eq(recursive_html.errors[3].code, "unexpected-start-tag")
   assert_eq(recursive_html.errors[4].code, "unexpected-token-after-body")
 }
+
+///|
+test "document parser places comments around implicit head like reference" {
+  let before = @html_parser.parse("<!--c--><title>T</title><p>x</p>")
+  assert_eq(
+    before.to_html(pretty=false),
+    "<!--c--><html><head><title>T</title></head><body><p>x</p></body></html>",
+  )
+  let inside = @html_parser.parse("<title>T</title><!--c--><p>x</p>")
+  assert_eq(
+    inside.to_html(pretty=false),
+    "<html><head><title>T</title><!--c--></head><body><p>x</p></body></html>",
+  )
+  let after_body = @html_parser.parse("<p>x</p><!--c--><title>T</title>")
+  assert_eq(
+    after_body.to_html(pretty=false),
+    "<html><head></head><body><p>x</p><!--c--><title>T</title></body></html>",
+  )
+}

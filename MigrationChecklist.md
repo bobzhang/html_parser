@@ -973,6 +973,8 @@ reference implementation in `.repos/justhtml`.
       `document_parser_public_regression_test.mbt`.
 - [x] Split document parser shell scaffolding edge-ordering regression into
       `document_parser_public_regression_test.mbt`.
+- [x] Split document parser implicit-head comment placement regression into
+      `document_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
