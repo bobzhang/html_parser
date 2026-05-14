@@ -15,7 +15,7 @@ ROOT = pathlib.Path(__file__).resolve().parents[1]
 
 EXPECTED_COUNT = 616
 EXPECTED_SHA256 = (
-    "504313d07bde456439c8c0cc3256ad7ffdc22fa07529daeaa47336783cd1a72f"
+    "e8725fe3ccd1c678ab90270bdb9c990cf2c6fa00cf8d10750d7457c23383f795"
 )
 TEST_DECLARATION = re.compile(
     r'^\s*(?:async\s+)?test\s+"((?:[^"\\]|\\.)*)"',

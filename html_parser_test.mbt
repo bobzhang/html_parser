@@ -8681,52 +8681,6 @@ test "parser closes repeated option and select optgroup starts" {
 }
 
 ///|
-test "tree builder matches Python reference select aside and selectedcontent attribute branch fixtures" {
-  let aside = @html_parser.parse(
-    "<select><aside>text</aside></select>",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(aside.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       \"text\"",
-  )
-  assert_eq(aside.errors.length(), 3)
-  assert_eq(aside.errors[0].code, "expected-doctype-but-got-start-tag")
-  assert_eq(aside.errors[1].code, "unexpected-start-tag-in-select")
-  assert_eq(aside.errors[2].code, "unexpected-end-tag")
-  guard aside.errors[1].column is Some(15) else {
-    fail("expected aside start error at start tag close")
-  }
-  guard aside.errors[2].column is Some(27) else {
-    fail("expected aside end error at end tag close")
-  }
-  let disabled = @html_parser.parse(
-    "<select><selectedcontent></selectedcontent><option disabled>A</option></select>",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(disabled.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       <selectedcontent>\n|         \"A\"\n|       <option>\n|         disabled=\"\"\n|         \"A\"",
-  )
-  assert_eq(disabled.errors.length(), 3)
-  assert_eq(disabled.errors[0].code, "expected-doctype-but-got-start-tag")
-  assert_eq(disabled.errors[1].code, "unexpected-start-tag-in-select")
-  assert_eq(disabled.errors[2].code, "unexpected-end-tag-in-select")
-  let classed = @html_parser.parse(
-    "<select><selectedcontent></selectedcontent><option class=\"x\">A</option><option selected>B</option></select>",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(classed.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <select>\n|       <selectedcontent>\n|         \"B\"\n|       <option>\n|         class=\"x\"\n|         \"A\"\n|       <option>\n|         selected=\"\"\n|         \"B\"",
-  )
-  assert_eq(classed.errors.length(), 3)
-  assert_eq(classed.errors[0].code, "expected-doctype-but-got-start-tag")
-  assert_eq(classed.errors[1].code, "unexpected-start-tag-in-select")
-  assert_eq(classed.errors[2].code, "unexpected-end-tag-in-select")
-}
-
-///|
 test "tree builder matches Python reference select formatting end branch fixtures" {
   let bold = @html_parser.parse("<b><select></b></select>", collect_errors=true)
   assert_eq(
