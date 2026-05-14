@@ -2794,20 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "fragment parser keeps col starts outside tables" {
-  let paragraph = @html_parser.parse_fragment(
-    "<p>a<col>b</p>",
-    collect_errors=true,
-  )
-  assert_eq(paragraph.to_html(pretty=false), "<p>a<col>b</p>")
-  assert_eq(paragraph.errors.length(), 0)
-  let root = @html_parser.parse_fragment("<col>x</col>", collect_errors=true)
-  assert_eq(root.to_html(pretty=false), "<col>x")
-  assert_eq(root.errors.length(), 1)
-  assert_eq(root.errors[0].code, "unexpected-end-tag")
-}
-
-///|
 test "parser reports select hr br and img starts" {
   let hr = @html_parser.parse_fragment(
     "<select><option>a<hr>b</option></select>",
