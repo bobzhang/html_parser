@@ -361,3 +361,53 @@ test "fragment context seeds html insertion mode" {
   )
   assert_eq(explicit_html_ns.errors.length(), 0)
 }
+
+///|
+test "fragment context seeds foreign namespaces" {
+  let svg = @html_parser.parse_fragment(
+    "<lineargradient><stop/></lineargradient>",
+    context=@html_parser.FragmentContext::new("svg", ns="svg"),
+    collect_errors=true,
+  )
+  assert_eq(
+    svg.to_html(pretty=false),
+    "<linearGradient><stop></stop></linearGradient>",
+  )
+  assert_eq(svg.errors.length(), 1)
+  assert_eq(svg.errors[0].code, "expected-closing-tag-but-got-eof")
+  guard svg.query_one("stop") is Some(stop) else {
+    fail("expected SVG stop child")
+  }
+  assert_true(stop.namespace_uri() is Some("svg"))
+  let cdata = @html_parser.parse_fragment(
+    "text<![CDATA[x<y]]>",
+    context=@html_parser.FragmentContext::new("svg", ns="svg"),
+    collect_errors=true,
+  )
+  assert_eq(cdata.to_html(pretty=false), "textx&lt;y")
+  assert_eq(cdata.errors.length(), 1)
+  assert_eq(cdata.errors[0].code, "expected-closing-tag-but-got-eof")
+  let math = @html_parser.parse_fragment(
+    "<mi>x</mi><mo>=</mo><mn>5</mn>",
+    context=@html_parser.FragmentContext::new("math", ns="mathml"),
+    collect_errors=true,
+  )
+  assert_eq(math.to_html(pretty=false), "<mi>x</mi><mo>=</mo><mn>5</mn>")
+  assert_eq(math.errors.length(), 1)
+  assert_eq(math.errors[0].code, "expected-closing-tag-but-got-eof")
+  guard math.query_one("mi") is Some(mi) else { fail("expected MathML mi") }
+  assert_true(mi.namespace_uri() is Some("math"))
+  let breakout = @html_parser.parse_fragment(
+    "</svg><p>x</p>",
+    context=@html_parser.FragmentContext::new("svg", ns="svg"),
+    collect_errors=true,
+  )
+  assert_eq(breakout.to_html(pretty=false), "<p>x</p>")
+  assert_eq(breakout.errors.length(), 3)
+  assert_eq(breakout.errors[0].code, "unexpected-end-tag-in-fragment-context")
+  assert_eq(
+    breakout.errors[1].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(breakout.errors[2].code, "expected-closing-tag-but-got-eof")
+}
