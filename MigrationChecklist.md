@@ -1067,6 +1067,8 @@ reference implementation in `.repos/justhtml`.
       coverage in `select_parser_public_regression_test.mbt`.
 - [x] Split select parser common element start/end regression into
       `select_parser_public_regression_test.mbt`.
+- [x] Split select parser sectioning-start ignore regression into
+      `select_parser_public_regression_test.mbt`.
 - [x] Start template parser regression file with table structural child
       coverage in `template_parser_public_regression_test.mbt`.
 - [x] Split template parser structural end-recovery regression into
