@@ -753,6 +753,8 @@ reference implementation in `.repos/justhtml`.
       `parser/parser_wbtest.mbt`.
 - [x] Split public DOM mutation edge-case regressions into
       `dom_public_regression_test.mbt`.
+- [x] Split public selector tag/class/id regressions into
+      `selector_public_regression_test.mbt`.
 
 ## Working Rule
 
