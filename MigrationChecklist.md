@@ -378,6 +378,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Moved remaining parser stack lookup/removal helpers into
       `parser/stack.mbt`.
 - [x] Split parser document frameset helpers into `parser/frameset.mbt`.
+- [x] Split parser implicit frameset replacement helpers into
+      `parser/frameset_replacement.mbt`.
 - [x] Split parser active-formatting and adoption-agency helpers into
       `parser/active_formatting.mbt`.
 - [x] Split parser adoption-agency algorithm into
