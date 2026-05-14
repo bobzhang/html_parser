@@ -811,6 +811,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split public parser early ancestor end-tag regressions into
       `parser_public_regression_test.mbt`.
+- [x] Split public parser unclosed non-implied EOF regressions into
+      `parser_public_regression_test.mbt`.
 
 ## Working Rule
 
