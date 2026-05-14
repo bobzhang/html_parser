@@ -49,3 +49,31 @@ test "fragment parser keeps col starts outside tables" {
   assert_eq(root.errors.length(), 1)
   assert_eq(root.errors[0].code, "unexpected-end-tag")
 }
+
+///|
+test "parser inserts basic table row groups and rows" {
+  let rows = @html_parser.parse_fragment("<table><tr><td>x</td></tr></table>")
+  assert_eq(
+    rows.to_html(pretty=false),
+    "<table><tbody><tr><td>x</td></tr></tbody></table>",
+  )
+  let cells = @html_parser.parse_fragment("<table><td>x<td>y</table>")
+  assert_eq(
+    cells.to_html(pretty=false),
+    "<table><tbody><tr><td>x</td><td>y</td></tr></tbody></table>",
+  )
+  let after_head = @html_parser.parse_fragment(
+    "<table><thead><tr><td>h</td></tr></thead><tr><td>b</td></tr></table>",
+  )
+  assert_eq(
+    after_head.to_html(pretty=false),
+    "<table><thead><tr><td>h</td></tr></thead><tbody><tr><td>b</td></tr></tbody></table>",
+  )
+  let section_cells = @html_parser.parse_fragment(
+    "<table><tbody><td>x<th>y</tbody></table>",
+  )
+  assert_eq(
+    section_cells.to_html(pretty=false),
+    "<table><tbody><tr><td>x</td><th>y</th></tr></tbody></table>",
+  )
+}
