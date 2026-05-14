@@ -388,6 +388,7 @@ def main(argv: list[str]) -> int:
         "constructor_public_regression_test.mbt",
         "dom_public_regression_test.mbt",
         "doctype_public_regression_test.mbt",
+        "document_frameset_public_regression_test.mbt",
         "encoding_fixtures_test.mbt",
         "encoding_public_regression_test.mbt",
         "golden_output_regression_test.mbt",
