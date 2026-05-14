@@ -726,6 +726,8 @@ reference implementation in `.repos/justhtml`.
       `tokenizer/entity_types.mbt`.
 - [x] Split parser foreign-adjustment whitebox coverage into
       `parser/foreign_adjustments_wbtest.mbt`.
+- [x] Split parser DOM/selector interaction whitebox coverage into
+      `parser/dom_selector_wbtest.mbt`.
 
 ## Working Rule
 
