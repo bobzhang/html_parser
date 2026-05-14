@@ -578,6 +578,24 @@ test "query supports contains pseudo selector quoted escapes" {
 }
 
 ///|
+test "query and matches support complex selector combinations" {
+  let doc = @html_parser.parse_fragment(
+    "<div id='main' class='container'><h1>Title</h1><p class='intro'>One</p><p class='content'>Two</p><ul><li>Item 1</li><li class='special'>Item 2</li></ul><a href='x' data-id='123'>Link</a></div><aside id='sidebar'><a href='y'>Side</a></aside>",
+  )
+  assert_eq(doc.query("div.container#main").length(), 1)
+  assert_eq(doc.query("a[href][data-id]").length(), 1)
+  assert_eq(doc.query("div.container > ul li.special").length(), 1)
+  assert_eq(doc.query("div > p:first-child").length(), 0)
+  assert_eq(doc.query("#main p, #sidebar a").length(), 3)
+  guard doc.query_one("p.intro") is Some(intro) else {
+    fail("expected intro paragraph")
+  }
+  assert_true(@html_parser.matches(intro, "div p"))
+  assert_true(@html_parser.matches(intro, "#main p"))
+  assert_eq(@html_parser.matches(intro, "#sidebar p"), false)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(

@@ -799,6 +799,8 @@ reference implementation in `.repos/justhtml`.
       `selector_public_regression_test.mbt`.
 - [x] Split public selector `:contains(...)` quoted-escape regressions into
       `selector_public_regression_test.mbt`.
+- [x] Split public selector complex query/matches regressions into
+      `selector_public_regression_test.mbt`.
 
 ## Working Rule
 
