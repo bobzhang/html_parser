@@ -14,6 +14,41 @@ fn Parser::reset_select_insertion_mode(self : Parser) -> Unit {
 }
 
 ///|
+fn select_start_tag_reprocesses_in_body(name : StringView) -> Bool {
+  match name {
+    "caption"
+    | "col"
+    | "colgroup"
+    | "input"
+    | "table"
+    | "tbody"
+    | "td"
+    | "textarea"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "tr" => true
+    _ => false
+  }
+}
+
+///|
+fn Parser::close_select_for_reprocessed_start_tag(
+  self : Parser,
+  name : StringView,
+  start : Int,
+) -> Bool {
+  if !self.in_select_insertion_mode() ||
+    !select_start_tag_reprocesses_in_body(name) {
+    return false
+  }
+  self.error_at("unexpected-start-tag-in-select", start)
+  ignore(self.close_open_element("select"))
+  self.reset_select_insertion_mode()
+  true
+}
+
+///|
 fn Parser::pop_until_select_in_insertion_mode(self : Parser) -> Unit {
   while self.stack.length() > 1 {
     let node = self.stack.pop().unwrap()

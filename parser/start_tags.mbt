@@ -113,16 +113,11 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       if self.handle_fragment_context_colgroup_start_tag(name, attrs, start) {
         return
       }
-      if self.in_select_insertion_mode() &&
-        select_start_tag_reprocesses_in_body(name) {
-        self.error_at("unexpected-start-tag-in-select", start)
-        ignore(self.close_open_element("select"))
-        self.reset_select_insertion_mode()
-        if self.handle_select_reprocessed_foreign_cell_start_tag(
-            name, attrs, start, self_closing,
-          ) {
-          return
-        }
+      if self.close_select_for_reprocessed_start_tag(name, start) &&
+        self.handle_select_reprocessed_foreign_cell_start_tag(
+          name, attrs, start, self_closing,
+        ) {
+        return
       }
       if self.handle_foreign_table_row_recovery_start_tag(
           name, attrs, start, self_closing,

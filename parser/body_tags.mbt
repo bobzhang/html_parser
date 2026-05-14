@@ -1,23 +1,4 @@
 ///|
-fn select_start_tag_reprocesses_in_body(name : StringView) -> Bool {
-  match name {
-    "caption"
-    | "col"
-    | "colgroup"
-    | "input"
-    | "table"
-    | "tbody"
-    | "td"
-    | "textarea"
-    | "tfoot"
-    | "th"
-    | "thead"
-    | "tr" => true
-    _ => false
-  }
-}
-
-///|
 fn table_start_tag_is_ignored_outside_table(name : StringView) -> Bool {
   match name {
     "colgroup" | "tbody" | "td" | "tfoot" | "th" | "thead" | "tr" => true
