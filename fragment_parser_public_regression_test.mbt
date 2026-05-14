@@ -563,6 +563,48 @@ test "fragment context seeds table row insertion mode" {
 }
 
 ///|
+test "fragment context seeds table cell insertion mode" {
+  let body_content = @html_parser.parse_fragment(
+    "x<div>y</div>",
+    context=@html_parser.FragmentContext::new("td"),
+    collect_errors=true,
+  )
+  assert_eq(body_content.to_html(pretty=false), "x<div>y</div>")
+  assert_eq(body_content.errors.length(), 0)
+  let ignored_cell = @html_parser.parse_fragment(
+    "<td>x</td>",
+    context=@html_parser.FragmentContext::new("td"),
+    collect_errors=true,
+  )
+  assert_eq(ignored_cell.to_html(pretty=false), "x")
+  assert_eq(ignored_cell.errors.length(), 2)
+  assert_eq(
+    ignored_cell.errors[0].code,
+    "unexpected-start-tag-in-cell-fragment",
+  )
+  assert_eq(ignored_cell.errors[1].code, "unexpected-end-tag")
+  let ignored_row = @html_parser.parse_fragment(
+    "<tr><td>x</td></tr>",
+    context=@html_parser.FragmentContext::new("th"),
+    collect_errors=true,
+  )
+  assert_eq(ignored_row.to_html(pretty=false), "x")
+  assert_eq(ignored_row.errors.length(), 4)
+  assert_eq(ignored_row.errors[0].code, "unexpected-start-tag-in-cell-fragment")
+  assert_eq(ignored_row.errors[1].code, "unexpected-start-tag-in-cell-fragment")
+  assert_eq(ignored_row.errors[2].code, "unexpected-end-tag")
+  assert_eq(ignored_row.errors[3].code, "unexpected-end-tag")
+  let nested_table = @html_parser.parse_fragment(
+    "<table>x</table>",
+    context=@html_parser.FragmentContext::new("td"),
+    collect_errors=true,
+  )
+  assert_eq(nested_table.to_html(pretty=false), "x<table></table>")
+  assert_eq(nested_table.errors.length(), 1)
+  assert_eq(nested_table.errors[0].code, "foster-parenting-character")
+}
+
+///|
 test "fragment context seeds foreign namespaces" {
   let svg = @html_parser.parse_fragment(
     "<lineargradient><stop/></lineargradient>",
