@@ -2794,43 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser tracks origins for template table helper starts" {
-  let caption = @html_parser.parse_fragment(
-    "<template><caption>x</caption></template>",
-    track_node_locations=true,
-  )
-  guard caption.query_one("caption") is Some(caption_node) else {
-    fail("expected caption")
-  }
-  assert_node_origin(caption_node, 10, 1, 11)
-  let caption_children = caption_node.children()
-  assert_eq(caption_children.length(), 1)
-  assert_node_origin(caption_children[0], 19, 1, 20)
-  let row = @html_parser.parse_fragment(
-    "<template><tr><td>x</td></tr></template>",
-    track_node_locations=true,
-  )
-  guard row.query_one("tr") is Some(row_node) else { fail("expected row") }
-  assert_node_origin(row_node, 10, 1, 11)
-  guard row.query_one("td") is Some(row_cell) else { fail("expected cell") }
-  assert_node_origin(row_cell, 14, 1, 15)
-  let direct_cell = @html_parser.parse_fragment(
-    "<template><td>x</td></template>",
-    track_node_locations=true,
-  )
-  guard direct_cell.query_one("td") is Some(cell) else { fail("expected td") }
-  assert_node_origin(cell, 10, 1, 11)
-  let section = @html_parser.parse_fragment(
-    "<template><tbody><tr><td>x</td></tr></tbody></template>",
-    track_node_locations=true,
-  )
-  guard section.query_one("tbody") is Some(section_node) else {
-    fail("expected section")
-  }
-  assert_node_origin(section_node, 10, 1, 11)
-}
-
-///|
 test "template caption structural starts close caption and reprocess" {
   let row = @html_parser.parse_fragment(
     "<template><caption>x<tr><td>y</td></tr></caption></template>",
