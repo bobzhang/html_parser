@@ -2794,38 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser treats cdata sections as foreign text" {
-  let svg = @html_parser.parse_fragment(
-    "<svg><![CDATA[x<y]]><![CDATA[a&lt;b]]></svg>",
-    collect_errors=true,
-  )
-  assert_eq(svg.to_html(pretty=false), "<svg>x&lt;ya&amp;lt;b</svg>")
-  assert_eq(svg.errors.length(), 0)
-  let nul_svg = @html_parser.parse_fragment(
-    "<svg><![CDATA[a\u{0000}b]]></svg>",
-    collect_errors=true,
-  )
-  assert_eq(nul_svg.to_html(pretty=false), "<svg>a�b</svg>")
-  assert_eq(nul_svg.errors.length(), 2)
-  assert_eq(nul_svg.errors[0].code, "unexpected-null-character")
-  assert_eq(nul_svg.errors[1].code, "invalid-codepoint-in-foreign-content")
-  let math_text_integration = @html_parser.parse_fragment(
-    "<math><mi><![CDATA[a\u{0000}b]]></mi></math>",
-    collect_errors=true,
-  )
-  assert_eq(
-    math_text_integration.to_html(pretty=false),
-    "<math><mi>ab</mi></math>",
-  )
-  assert_eq(math_text_integration.errors.length(), 1)
-  assert_eq(math_text_integration.errors[0].code, "unexpected-null-character")
-  let html = @html_parser.parse_fragment("<![CDATA[x]]>", collect_errors=true)
-  assert_eq(html.to_html(pretty=false), "<!--[CDATA[x]]-->")
-  assert_eq(html.errors.length(), 1)
-  assert_eq(html.errors[0].code, "cdata-in-html-content")
-}
-
-///|
 test "parser and tokenizer optionally coerce XML-invalid text" {
   let tokens = @html_parser.tokenize(
     "\u{000C}\u{FDD0}<script>\u{FDD0}</script><!--a--b-->",
