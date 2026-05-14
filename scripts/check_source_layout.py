@@ -279,6 +279,7 @@ def main(argv: list[str]) -> int:
         "parser/table_normalize.mbt",
         "parser/table_context.mbt",
         "parser/table_start_closure.mbt",
+        "parser/table_text_foster.mbt",
         "parser/template_column_group.mbt",
         "parser/template_context.mbt",
         "parser/template_table_context.mbt",

@@ -417,6 +417,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split parser table-context and foster-parenting helpers into
       `parser/table_context.mbt`.
 - [x] Split parser foster-parenting helpers into `parser/table_foster.mbt`.
+- [x] Split parser table text foster-parenting helpers into
+      `parser/table_text_foster.mbt`.
 - [x] Split parser column-group helpers into `parser/column_group.mbt`.
 - [x] Split parser template column-group handlers into
       `parser/template_column_group.mbt`.
