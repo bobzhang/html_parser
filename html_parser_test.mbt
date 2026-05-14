@@ -5953,20 +5953,6 @@ test "tree builder matches reference after-head null fixture" {
 }
 
 ///|
-test "tree builder matches Python reference table form-feed behavior" {
-  let doc = @html_parser.parse("<table>\u{000C}</table>", collect_errors=true)
-  assert_eq(
-    @html_parser.to_test_format(doc.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <table>\n|       \" \"",
-  )
-  assert_eq(doc.errors.length(), 1)
-  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
-  guard doc.errors[0].column is Some(7) else {
-    fail("expected table form-feed doctype error at table start close")
-  }
-}
-
-///|
 test "tree builder matches reference select stray end EOF fixture" {
   let doc = @html_parser.parse("<select></regularitem>", collect_errors=true)
   assert_eq(
