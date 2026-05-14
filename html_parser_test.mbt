@@ -8681,38 +8681,6 @@ test "parser closes repeated option and select optgroup starts" {
 }
 
 ///|
-test "tree builder matches Python reference select formatting stray branch fixtures" {
-  let link_end = @html_parser.parse(
-    "<select></a></select>",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(link_end.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <select>",
-  )
-  assert_eq(link_end.errors.length(), 2)
-  assert_eq(link_end.errors[0].code, "expected-doctype-but-got-start-tag")
-  assert_eq(link_end.errors[1].code, "unexpected-end-tag-in-select")
-  guard link_end.errors[1].column is Some(12) else {
-    fail("expected stray link end in select at close bracket")
-  }
-  let bold_end = @html_parser.parse(
-    "<select></b></select>",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(bold_end.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <select>",
-  )
-  assert_eq(bold_end.errors.length(), 2)
-  assert_eq(bold_end.errors[0].code, "expected-doctype-but-got-start-tag")
-  assert_eq(bold_end.errors[1].code, "unexpected-end-tag-in-select")
-  guard bold_end.errors[1].column is Some(12) else {
-    fail("expected stray bold end in select at close bracket")
-  }
-}
-
-///|
 test "tree builder matches Python reference select plaintext branch fixture" {
   let doc = @html_parser.parse(
     "<select><plaintext></select>",
