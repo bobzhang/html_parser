@@ -957,6 +957,8 @@ reference implementation in `.repos/justhtml`.
       coverage in `document_parser_public_regression_test.mbt`.
 - [x] Split document parser initial head-routing regression into
       `document_parser_public_regression_test.mbt`.
+- [x] Split document parser explicit root head/body promotion regression into
+      `document_parser_public_regression_test.mbt`.
 
 ## Working Rule
 

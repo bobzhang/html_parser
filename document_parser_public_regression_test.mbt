@@ -36,3 +36,93 @@ test "document parser routes initial head elements into head" {
     "<html><head></head><body>x<title>T</title></body></html>",
   )
 }
+
+///|
+test "document parser promotes explicit root head and body elements" {
+  let doc = @html_parser.parse(
+    "<head><title>T</title></head><body class=x><p>p</p></body>",
+  )
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<html><head><title>T</title></head><body class=\"x\"><p>p</p></body></html>",
+  )
+  let extra_head = @html_parser.parse(
+    "<head><meta charset=utf-8></head><title>T</title><body><p>p</p></body>",
+  )
+  assert_eq(
+    extra_head.to_html(pretty=false),
+    "<html><head><meta charset=\"utf-8\"><title>T</title></head><body><p>p</p></body></html>",
+  )
+  let late_head_item = @html_parser.parse(
+    "<body class=x><p>p</p></body><title>T</title>",
+  )
+  assert_eq(
+    late_head_item.to_html(pretty=false),
+    "<html><head></head><body class=\"x\"><p>p</p><title>T</title></body></html>",
+  )
+  let text_in_head = @html_parser.parse(
+    "<head>x</head><p>y",
+    collect_errors=true,
+  )
+  assert_eq(
+    text_in_head.to_html(pretty=false),
+    "<html><head></head><body>x<p>y</p></body></html>",
+  )
+  assert_eq(text_in_head.errors.length(), 2)
+  assert_eq(text_in_head.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(text_in_head.errors[1].code, "unexpected-end-tag")
+  let duplicate_head = @html_parser.parse(
+    "<head><head><title>T</title>",
+    collect_errors=true,
+  )
+  assert_eq(
+    duplicate_head.to_html(pretty=false),
+    "<html><head></head><body><title>T</title></body></html>",
+  )
+  assert_eq(duplicate_head.errors.length(), 2)
+  assert_eq(duplicate_head.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(duplicate_head.errors[1].code, "unexpected-start-tag")
+  let duplicate_head_body_start = @html_parser.parse(
+    "<head><head><p>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    duplicate_head_body_start.to_html(pretty=false),
+    "<html><head></head><body><p>x</p></body></html>",
+  )
+  assert_eq(duplicate_head_body_start.errors.length(), 2)
+  assert_eq(
+    duplicate_head_body_start.errors[0].code,
+    "expected-doctype-but-got-start-tag",
+  )
+  assert_eq(duplicate_head_body_start.errors[1].code, "unexpected-start-tag")
+  let closed_duplicate_head = @html_parser.parse(
+    "<head><head></head><title>T</title>",
+    collect_errors=true,
+  )
+  assert_eq(
+    closed_duplicate_head.to_html(pretty=false),
+    "<html><head></head><body><title>T</title></body></html>",
+  )
+  assert_eq(closed_duplicate_head.errors.length(), 3)
+  assert_eq(
+    closed_duplicate_head.errors[0].code,
+    "expected-doctype-but-got-start-tag",
+  )
+  assert_eq(closed_duplicate_head.errors[1].code, "unexpected-start-tag")
+  assert_eq(closed_duplicate_head.errors[2].code, "unexpected-end-tag")
+  let root_duplicate_head = @html_parser.parse(
+    "<head></head><head><title>T</title>",
+    collect_errors=true,
+  )
+  assert_eq(
+    root_duplicate_head.to_html(pretty=false),
+    "<html><head></head><body><title>T</title></body></html>",
+  )
+  assert_eq(root_duplicate_head.errors.length(), 2)
+  assert_eq(
+    root_duplicate_head.errors[0].code,
+    "expected-doctype-but-got-start-tag",
+  )
+  assert_eq(root_duplicate_head.errors[1].code, "unexpected-start-tag")
+}
