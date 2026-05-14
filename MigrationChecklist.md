@@ -416,6 +416,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Split parser column-group helpers into `parser/column_group.mbt`.
 - [x] Split parser template column-group handlers into
       `parser/template_column_group.mbt`.
+- [x] Split parser normal start-tag tree insertion into
+      `parser/start_tag_insertion.mbt`.
 - [x] Split parser caption helpers into `parser/caption.mbt`.
 - [x] Split parser template-table-context handlers into
       `parser/template_table_context.mbt`.
