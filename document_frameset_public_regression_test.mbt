@@ -132,3 +132,17 @@ test "document parser replaces implicit body before frameset" {
   assert_eq(text_blocks_frameset.errors[0].code, "unexpected-start-tag-ignored")
   assert_eq(text_blocks_frameset.errors[1].code, "unexpected-end-tag")
 }
+
+///|
+test "parser tracks origins for frameset helper insertions" {
+  let doc = @html_parser.parse(
+    "<!doctype html><frameset><frame src=x><frameset></frameset></frameset>",
+    track_node_locations=true,
+  )
+  let framesets = doc.root.query("frameset")
+  guard framesets.length() == 2 else { fail("expected nested framesets") }
+  assert_node_origin(framesets[0], 15, 1, 16)
+  assert_node_origin(framesets[1], 38, 1, 39)
+  guard doc.query_one("frame") is Some(frame) else { fail("expected frame") }
+  assert_node_origin(frame, 25, 1, 26)
+}

@@ -2794,20 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser tracks origins for frameset helper insertions" {
-  let doc = @html_parser.parse(
-    "<!doctype html><frameset><frame src=x><frameset></frameset></frameset>",
-    track_node_locations=true,
-  )
-  let framesets = doc.root.query("frameset")
-  guard framesets.length() == 2 else { fail("expected nested framesets") }
-  assert_node_origin(framesets[0], 15, 1, 16)
-  assert_node_origin(framesets[1], 38, 1, 39)
-  guard doc.query_one("frame") is Some(frame) else { fail("expected frame") }
-  assert_node_origin(frame, 25, 1, 26)
-}
-
-///|
 test "document parser ignores tokens after frameset" {
   let text = @html_parser.parse(
     "<!DOCTYPE html><html><head></head><frameset></frameset>abc",
