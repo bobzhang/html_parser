@@ -40,6 +40,13 @@ test "parser handles nested tags attributes comments and doctype" {
 }
 
 ///|
+test "parser cursor advances by unicode character length" {
+  let doc = @html_parser.parse_fragment("<p>😀 &lt; ok</p>")
+  assert_eq(doc.to_html(pretty=false), "<p>😀 &lt; ok</p>")
+  assert_eq(doc.to_text(separator="", strip=false), "😀 < ok")
+}
+
+///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)

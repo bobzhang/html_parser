@@ -2794,13 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser cursor advances by unicode character length" {
-  let doc = @html_parser.parse_fragment("<p>😀 &lt; ok</p>")
-  assert_eq(doc.to_html(pretty=false), "<p>😀 &lt; ok</p>")
-  assert_eq(doc.to_text(separator="", strip=false), "😀 < ok")
-}
-
-///|
 test "fragment context seeds literal text modes" {
   let empty_script = @html_parser.parse_fragment(
     "",

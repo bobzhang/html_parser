@@ -989,6 +989,8 @@ reference implementation in `.repos/justhtml`.
       `text_markdown_public_regression_test.mbt`.
 - [x] Split parser nested tags/attributes/comments/doctype regression into
       `parser_public_regression_test.mbt`.
+- [x] Split parser Unicode cursor text regression into
+      `parser_public_regression_test.mbt`.
 - [x] Start document parser regression file with explicit html shell scaffolding
       coverage in `document_parser_public_regression_test.mbt`.
 - [x] Split document parser initial head-routing regression into
