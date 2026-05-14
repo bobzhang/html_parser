@@ -327,6 +327,76 @@ test "parser adoption agency preserves formatting origins" {
 }
 
 ///|
+test "parser handles active formatting duplicate starts" {
+  let anchors = @html_parser.parse_fragment(
+    "<a><a>x</a>y</a>",
+    collect_errors=true,
+    track_node_locations=true,
+  )
+  assert_eq(anchors.to_html(pretty=false), "<a></a><a>x</a>y")
+  assert_eq(anchors.errors.length(), 2)
+  assert_eq(anchors.errors[0].code, "unexpected-start-tag-implies-end-tag")
+  assert_eq(anchors.errors[1].code, "adoption-agency-1.3")
+  let anchor_nodes = anchors.root.query("a")
+  guard anchor_nodes.length() == 2 else { fail("expected repeated anchors") }
+  assert_node_origin(anchor_nodes[0], 0, 1, 1)
+  assert_node_origin(anchor_nodes[1], 3, 1, 4)
+  let nobr = @html_parser.parse_fragment(
+    "<nobr><nobr>x</nobr>y</nobr>",
+    collect_errors=true,
+    track_node_locations=true,
+  )
+  assert_eq(nobr.to_html(pretty=false), "<nobr></nobr><nobr>x</nobr>y")
+  assert_eq(nobr.errors.length(), 1)
+  assert_eq(nobr.errors[0].code, "adoption-agency-1.3")
+  let nobr_nodes = nobr.root.query("nobr")
+  guard nobr_nodes.length() == 2 else { fail("expected repeated nobr") }
+  assert_node_origin(nobr_nodes[0], 0, 1, 1)
+  assert_node_origin(nobr_nodes[1], 6, 1, 7)
+  let repeated = @html_parser.parse_fragment(
+    "<p><b><b><b><b>x</p>y",
+    collect_errors=true,
+    track_node_locations=true,
+  )
+  assert_eq(
+    repeated.to_html(pretty=false),
+    "<p><b><b><b><b>x</b></b></b></b></p><b><b><b>y</b></b></b>",
+  )
+  let repeated_bold = repeated.root.query("b")
+  guard repeated_bold.length() == 7 else {
+    fail("expected capped reconstructed bold entries")
+  }
+  assert_node_origin(repeated_bold[0], 3, 1, 4)
+  assert_node_origin(repeated_bold[1], 6, 1, 7)
+  assert_node_origin(repeated_bold[2], 9, 1, 10)
+  assert_node_origin(repeated_bold[3], 12, 1, 13)
+  assert_node_origin(repeated_bold[4], 6, 1, 7)
+  assert_node_origin(repeated_bold[5], 9, 1, 10)
+  assert_node_origin(repeated_bold[6], 12, 1, 13)
+  let repeated_attrs = @html_parser.parse_fragment(
+    "<p><b class=x><b class=x><b class=x><b class=x>z</p>tail",
+  )
+  assert_eq(
+    repeated_attrs.to_html(pretty=false),
+    "<p><b class=\"x\"><b class=\"x\"><b class=\"x\"><b class=\"x\">z</b></b></b></b></p><b class=\"x\"><b class=\"x\"><b class=\"x\">tail</b></b></b>",
+  )
+  let mixed_attrs = @html_parser.parse_fragment(
+    "<p><b class=x><b class=x id=y><b class=x id=y><b class=x id=y><b class=x id=y>z</p>tail",
+  )
+  assert_eq(
+    mixed_attrs.to_html(pretty=false),
+    "<p><b class=\"x\"><b class=\"x\" id=\"y\"><b class=\"x\" id=\"y\"><b class=\"x\" id=\"y\"><b class=\"x\" id=\"y\">z</b></b></b></b></b></p><b class=\"x\"><b class=\"x\" id=\"y\"><b class=\"x\" id=\"y\"><b class=\"x\" id=\"y\">tail</b></b></b></b>",
+  )
+  let mismatched_attrs = @html_parser.parse_fragment(
+    "<p><b class=x><b class=y><b class=x><b class=y><b class=x>z</p>tail",
+  )
+  assert_eq(
+    mismatched_attrs.to_html(pretty=false),
+    "<p><b class=\"x\"><b class=\"y\"><b class=\"x\"><b class=\"y\"><b class=\"x\">z</b></b></b></b></b></p><b class=\"x\"><b class=\"y\"><b class=\"x\"><b class=\"y\"><b class=\"x\">tail</b></b></b></b></b>",
+  )
+}
+
+///|
 test "public parser fragment contexts stay stable" {
   let table = @html_parser.parse_fragment(
     "<tr><td>A</td></tr>",

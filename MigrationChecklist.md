@@ -821,6 +821,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split public parser adoption-agency origin regressions into
       `parser_public_regression_test.mbt`.
+- [x] Split public parser active-formatting duplicate-start regressions into
+      `parser_public_regression_test.mbt`.
 
 ## Working Rule
 
