@@ -2794,64 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "to_markdown escapes text and line starting markdown markers" {
-  let escaped = @html_parser.parse_fragment(
-    "<p>&lt;img src=x onerror=alert(1)&gt;</p>",
-  )
-  assert_eq(escaped.to_markdown(), "&lt;img src=x onerror=alert(1)>")
-  let markers = @html_parser.parse_fragment(
-    "<p>a<br># heading<br>&gt; quote<br>- item<br>+ next<br>1. ordered<br>2) ordered<br>12. multi<br>~~~<br>```<br>---<br>===</p>",
-  )
-  assert_eq(
-    markers.to_markdown(),
-    "a\n\\# heading\n\\> quote\n\\- item\n\\+ next\n1\\. ordered\n2\\) ordered\n12\\. multi\n\\~~~\n\\`\\`\\`\n\\---\n\\===",
-  )
-  let digit_prefixes = @html_parser.parse_fragment(
-    "<p>a<br>3x plain<br>4.no space<br>5)no space<br>6. ordered<br>7) ordered</p>",
-  )
-  assert_eq(
-    digit_prefixes.to_markdown(),
-    "a\n3x plain\n4.no space\n5)no space\n6\\. ordered\n7\\) ordered",
-  )
-  let non_markers = @html_parser.parse_fragment(
-    "<p>a<br>#heading<br>-x<br>+item<br>~~<br>=x<br>plain text</p>",
-  )
-  assert_eq(
-    non_markers.to_markdown(),
-    "a\n#heading\n-x\n+item\n~~\n=x\nplain text",
-  )
-  let thematic_spacing = @html_parser.parse_fragment(
-    "<p>a<br>- - -<br>=<br>= =<br>=x</p>",
-  )
-  assert_eq(thematic_spacing.to_markdown(), "a\n\\- - -\n\\=\n\\= =\n=x")
-}
-
-///|
-test "to_markdown handles direct nodes comments doctypes and empty inline nodes" {
-  assert_eq(@html_parser.text("a*b").to_markdown(), "a\\*b")
-  assert_eq(@html_parser.text("a < b & c").to_markdown(), "a &lt; b &amp; c")
-  assert_eq(@html_parser.text("").to_markdown(), "")
-  let empty_breaks = @html_parser.parse_fragment("<br><br><br>")
-  assert_eq(empty_breaks.to_markdown(), "")
-  let unknown_inline = @html_parser.parse_fragment("<span>Hi</span>")
-  assert_eq(unknown_inline.to_markdown(), "Hi")
-  let document_text = @html_parser.document(children=[@html_parser.text("Hi")])
-  assert_eq(document_text.to_markdown(), "Hi")
-  let document_empty = @html_parser.document(children=[
-    @html_parser.element("p"),
-  ])
-  assert_eq(document_empty.to_markdown(), "")
-  let root = @html_parser.element("div", children=[
-    @html_parser.comment("nope"),
-    @html_parser.doctype(),
-    @html_parser.element("i"),
-    @html_parser.element("b"),
-    @html_parser.text("ok"),
-  ])
-  assert_eq(root.to_markdown(), "ok")
-}
-
-///|
 test "to_markdown covers builder whitespace and raw newline branches" {
   assert_eq(@html_parser.text("   a").to_markdown(), "a")
   let pre = @html_parser.element("pre", children=[@html_parser.text("a\nb")])

@@ -933,6 +933,10 @@ reference implementation in `.repos/justhtml`.
       `text_markdown_public_regression_test.mbt`.
 - [x] Split markdown generic block container regression into
       `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown marker escaping regression into
+      `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown direct-node edge regression into
+      `text_markdown_public_regression_test.mbt`.
 
 ## Working Rule
 
