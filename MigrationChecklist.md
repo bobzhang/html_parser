@@ -899,6 +899,10 @@ reference implementation in `.repos/justhtml`.
       `serializer_public_regression_test.mbt`.
 - [x] Split pretty serializer formatted inline-run regression into
       `serializer_public_regression_test.mbt`.
+- [x] Split pretty serializer comment-child run regression into
+      `serializer_public_regression_test.mbt`.
+- [x] Split pretty serializer whitespace-only fragment regression into
+      `serializer_public_regression_test.mbt`.
 
 ## Working Rule
 

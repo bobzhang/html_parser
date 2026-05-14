@@ -246,6 +246,52 @@ test "pretty serializer splits formatted inline runs in block containers" {
 }
 
 ///|
+test "pretty serializer keeps comment child runs compact" {
+  let commented = @html_parser.element("div", children=[
+    @html_parser.element("span"),
+    @html_parser.text(" "),
+    @html_parser.comment("x"),
+    @html_parser.text(" "),
+    @html_parser.element("span"),
+  ])
+  assert_eq(
+    commented.to_html(pretty=true),
+    "<div><span></span> <!--x--> <span></span></div>",
+  )
+  let edge_whitespace = @html_parser.element("div", children=[
+    @html_parser.text(" \n"),
+    @html_parser.element("a"),
+    @html_parser.comment("x"),
+    @html_parser.text(" \t\n"),
+  ])
+  assert_eq(edge_whitespace.to_html(pretty=true), "<div><a></a><!--x--></div>")
+  let block_child = @html_parser.element("div", children=[
+    @html_parser.comment("x"),
+    @html_parser.element("p"),
+  ])
+  assert_eq(block_child.to_html(pretty=true), "<div><!--x--><p></p></div>")
+}
+
+///|
+test "pretty serializer filters whitespace-only fragments" {
+  assert_eq(@html_parser.text("\n\t").to_html(pretty=true), "")
+  let whitespace = @html_parser.fragment(children=[@html_parser.text("   ")])
+  assert_eq(whitespace.to_html(pretty=true), "")
+  let visible = @html_parser.fragment(children=[@html_parser.text("  hi  ")])
+  assert_eq(visible.to_html(pretty=true), "hi")
+  let nested_visible = @html_parser.element("div", children=[
+    @html_parser.fragment(children=[@html_parser.text("  hi  ")]),
+  ])
+  assert_eq(nested_visible.to_html(pretty=true), "<div>\n  hi\n</div>")
+  let inner_empty_lines = @html_parser.element("div", children=[
+    @html_parser.fragment(children=[@html_parser.text("  ")]),
+    @html_parser.text(" "),
+    @html_parser.fragment(children=[@html_parser.text("\n")]),
+  ])
+  assert_eq(inner_empty_lines.to_html(pretty=true), "<div> </div>")
+}
+
+///|
 test "public serializer contexts keep escaping stable" {
   let raw_text = @html_parser.text("\"<&>")
   assert_eq(raw_text.to_html(pretty=false), "\"&lt;&amp;&gt;")
