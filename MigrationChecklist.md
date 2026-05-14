@@ -963,6 +963,8 @@ reference implementation in `.repos/justhtml`.
       in `fragment_parser_public_regression_test.mbt`.
 - [x] Split fragment parser ignored-head-children regression into
       `fragment_parser_public_regression_test.mbt`.
+- [x] Split document parser repeated-body merge regression into
+      `document_parser_public_regression_test.mbt`.
 
 ## Working Rule
 

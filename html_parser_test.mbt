@@ -2794,36 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "document parser merges repeated body tags" {
-  let repeated = @html_parser.parse(
-    "<body class=a><p>one</p><body id=b><p>two</p>",
-  )
-  assert_eq(
-    repeated.to_html(pretty=false),
-    "<html><head></head><body class=\"a\" id=\"b\"><p>one</p><p>two</p></body></html>",
-  )
-  let first_wins = @html_parser.parse("<body class=a><body class=b id=x>text")
-  assert_eq(
-    first_wins.to_html(pretty=false),
-    "<html><head></head><body class=\"a\" id=\"x\">text</body></html>",
-  )
-  let closed_siblings = @html_parser.parse(
-    "<body class=a>one</body><body id=b>two</body>",
-  )
-  assert_eq(
-    closed_siblings.to_html(pretty=false),
-    "<html><head></head><body class=\"a\" id=\"b\">onetwo</body></html>",
-  )
-  let after_head = @html_parser.parse(
-    "<head><title>T</title></head><body class=a>one</body><body id=b>two</body>",
-  )
-  assert_eq(
-    after_head.to_html(pretty=false),
-    "<html><head><title>T</title></head><body class=\"a\" id=\"b\">onetwo</body></html>",
-  )
-}
-
-///|
 test "document parser ignores early body end after explicit html" {
   let doc = @html_parser.parse(
     "<!doctype html><html></body><p>x",
