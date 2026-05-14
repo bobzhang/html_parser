@@ -518,6 +518,73 @@ test "to_markdown flattens block content inside links" {
 }
 
 ///|
+test "to_markdown keeps inline and raw variants inside links" {
+  let formatted = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.element("strong", children=[@html_parser.text("B")]),
+      @html_parser.text(" "),
+      @html_parser.element("em", children=[@html_parser.text("I")]),
+      @html_parser.text(" "),
+      @html_parser.element("img", attrs={ "src": Some("x"), "alt": Some("y") }),
+      @html_parser.text(" "),
+      @html_parser.element("section", children=[@html_parser.text("S")]),
+      @html_parser.text(" "),
+      @html_parser.element("foo", children=[@html_parser.text("F")]),
+      @html_parser.comment("skip"),
+    ],
+  )
+  assert_eq(
+    formatted.to_markdown(),
+    "[**B** *I* <img src=\"x\" alt=\"y\"> S F](https://e.com)",
+  )
+  let template = @html_parser.element("template", children=[
+    @html_parser.text("T"),
+  ])
+  assert_eq(template.to_markdown(), "T")
+  let passthrough = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.element("script", children=[@html_parser.text("alert(1);")]),
+      @html_parser.text("x"),
+      @html_parser.element("style", children=[@html_parser.text("body{}")]),
+      @html_parser.element("textarea", children=[@html_parser.text("T")]),
+    ],
+  )
+  assert_eq(passthrough.to_markdown(), "[x](https://e.com)")
+  assert_eq(
+    passthrough.to_markdown(html_passthrough=true),
+    "[<script>alert(1);</script>x<style>body{}</style><textarea>T</textarea>](https://e.com)",
+  )
+  let style = @html_parser.element("style", children=[
+    @html_parser.text("a {\n  b: c; }"),
+  ])
+  assert_eq(
+    style.to_markdown(html_passthrough=true),
+    "<style>a {\n  b: c; }</style>",
+  )
+  let fragment_child = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.fragment(children=[
+        @html_parser.text("Hi"),
+        @html_parser.element("strong", children=[@html_parser.text("B")]),
+      ]),
+    ],
+  )
+  assert_eq(fragment_child.to_markdown(), "[Hi**B**](https://e.com)")
+  let document_child = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[@html_parser.document(children=[@html_parser.text("Doc")])],
+  )
+  assert_eq(document_child.to_markdown(), "[Doc](https://e.com)")
+}
+
+///|
 test "public markdown passthrough mode stays stable" {
   let doc = @html_parser.parse_fragment(
     "<p>Before</p><table><tr><td>A</td></tr></table><script data-x='1&2'>if (a < b) alert(1)</script><p>After</p>",
