@@ -39,27 +39,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "to_text handles empty whitespace and strip options" {
-  let root = @html_parser.element("div", children=[
-    @html_parser.text(""),
-    @html_parser.text("   "),
-    @html_parser.text("A"),
-  ])
-  assert_eq(root.to_text(), "A")
-  assert_eq(@html_parser.element("div").to_text(), "")
-  let spaced = @html_parser.text("  A  ")
-  assert_eq(spaced.to_text(strip=false), "  A  ")
-  assert_eq(spaced.to_text(strip=true), "A")
-  let whitespace_root = @html_parser.element("div", children=[
-    @html_parser.text("   "),
-  ])
-  assert_eq(
-    whitespace_root.to_text(separator="\n", separator_blocks_only=true),
-    "",
-  )
-}
-
-///|
 test "sanitize_dom default policy drops unsafe document content" {
   let doc = @html_parser.parse(
     "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",
@@ -2811,27 +2790,6 @@ test "js string serialization context escapes special characters" {
   assert_eq(
     single_quote.to_html(pretty=false, context=JsString, quote='\''),
     "It\\'s ok",
-  )
-}
-
-///|
-test "to_text can separate only block boundaries" {
-  let doc = @html_parser.parse_fragment("<p>hi</p><p>Hello <b>world</b></p>")
-  assert_eq(doc.to_text(separator="\n"), "hi\nHello\nworld")
-  assert_eq(
-    doc.to_text(separator="\n", separator_blocks_only=true),
-    "hi\nHello world",
-  )
-  let br = @html_parser.parse_fragment("<div>A<br>   <span>B</span></div>")
-  assert_eq(br.to_text(separator="|", separator_blocks_only=true), "A|B")
-  let node = @html_parser.element("div", children=[
-    @html_parser.text("  A  "),
-    @html_parser.element("br"),
-    @html_parser.text(" B "),
-  ])
-  assert_eq(
-    node.to_text(separator="|", separator_blocks_only=true, strip=false),
-    "  A  | B ",
   )
 }
 

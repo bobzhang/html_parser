@@ -19,6 +19,48 @@ test "public text extraction modes stay stable" {
 }
 
 ///|
+test "to_text handles empty whitespace and strip options" {
+  let root = @html_parser.element("div", children=[
+    @html_parser.text(""),
+    @html_parser.text("   "),
+    @html_parser.text("A"),
+  ])
+  assert_eq(root.to_text(), "A")
+  assert_eq(@html_parser.element("div").to_text(), "")
+  let spaced = @html_parser.text("  A  ")
+  assert_eq(spaced.to_text(strip=false), "  A  ")
+  assert_eq(spaced.to_text(strip=true), "A")
+  let whitespace_root = @html_parser.element("div", children=[
+    @html_parser.text("   "),
+  ])
+  assert_eq(
+    whitespace_root.to_text(separator="\n", separator_blocks_only=true),
+    "",
+  )
+}
+
+///|
+test "to_text can separate only block boundaries" {
+  let doc = @html_parser.parse_fragment("<p>hi</p><p>Hello <b>world</b></p>")
+  assert_eq(doc.to_text(separator="\n"), "hi\nHello\nworld")
+  assert_eq(
+    doc.to_text(separator="\n", separator_blocks_only=true),
+    "hi\nHello world",
+  )
+  let br = @html_parser.parse_fragment("<div>A<br>   <span>B</span></div>")
+  assert_eq(br.to_text(separator="|", separator_blocks_only=true), "A|B")
+  let node = @html_parser.element("div", children=[
+    @html_parser.text("  A  "),
+    @html_parser.element("br"),
+    @html_parser.text(" B "),
+  ])
+  assert_eq(
+    node.to_text(separator="|", separator_blocks_only=true, strip=false),
+    "  A  | B ",
+  )
+}
+
+///|
 test "public markdown document workflow stays stable" {
   let doc = @html_parser.parse_fragment(
     "<article><h1>Title</h1><p>Hello <strong>MoonBit</strong> &amp; <code>x`y</code></p><blockquote><p>Quote</p><p>More</p></blockquote><ol><li>One</li><li>Two <a href='https://example.com/a b'>link</a></li></ol></article>",

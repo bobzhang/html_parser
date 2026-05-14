@@ -917,6 +917,10 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split parse_bytes origin tracking regression into
       `parser_public_regression_test.mbt`.
+- [x] Split text extraction empty/strip regression into
+      `text_markdown_public_regression_test.mbt`.
+- [x] Split block-only text separator regression into
+      `text_markdown_public_regression_test.mbt`.
 
 ## Working Rule
 
