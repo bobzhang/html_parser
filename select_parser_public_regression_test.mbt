@@ -326,3 +326,26 @@ test "parser populates selectedcontent from selected option" {
   )
   assert_eq(two_selects.errors.length(), 4)
 }
+
+///|
+test "selectedcontent population handles deeply nested selected option" {
+  let html = "<select><option selected>" +
+    repeat_for_test("<div>", 1200) +
+    "x" +
+    repeat_for_test("</div>", 1200) +
+    "</option><selectedcontent></selectedcontent></select>"
+  let doc = @html_parser.parse_fragment(html, collect_errors=true)
+  guard doc.query_one("selectedcontent") is Some(selectedcontent) else {
+    fail("expected selectedcontent element")
+  }
+  assert_eq(selectedcontent.children().length(), 1)
+  let cloned = selectedcontent.children()[0]
+  assert_eq(cloned.name(), "div")
+  assert_eq(cloned.to_text(separator="", strip=false), "x")
+  assert_eq(doc.errors.length(), 2402)
+  assert_eq(doc.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(
+    doc.errors[doc.errors.length() - 1].code,
+    "unexpected-end-tag-in-select",
+  )
+}

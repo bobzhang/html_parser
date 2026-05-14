@@ -1077,6 +1077,8 @@ reference implementation in `.repos/justhtml`.
       `select_parser_public_regression_test.mbt`.
 - [x] Split select parser selectedcontent population regression into
       `select_parser_public_regression_test.mbt`.
+- [x] Split select parser deep selectedcontent population regression into
+      `select_parser_public_regression_test.mbt`.
 - [x] Start list parser regression file with repeated list item closure
       coverage in `list_parser_public_regression_test.mbt`.
 - [x] Split list parser repeated definition item closure regression into
