@@ -2794,32 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "to_markdown dispatches mixed-case builder tag names like Python" {
-  let root = @html_parser.element("DIV", children=[
-    @html_parser.element("P", children=[@html_parser.text("One")]),
-    @html_parser.element("DIV", children=[@html_parser.text("Two")]),
-    @html_parser.element("A", attrs={ "href": Some("https://e.com/a b") }, children=[
-      @html_parser.element("STRONG", children=[@html_parser.text("B")]),
-      @html_parser.text(" "),
-      @html_parser.element("EM", children=[@html_parser.text("I")]),
-    ]),
-    @html_parser.element("UL", children=[
-      @html_parser.element("LI", children=[@html_parser.text("Item")]),
-    ]),
-    @html_parser.element("BLOCKQUOTE", children=[
-      @html_parser.element("P", children=[@html_parser.text("Q")]),
-    ]),
-    @html_parser.element("PRE", children=[@html_parser.text("code")]),
-    @html_parser.element("HR"),
-    @html_parser.element("SPAN", children=[@html_parser.text("Tail")]),
-  ])
-  assert_eq(
-    root.to_markdown(),
-    "One\n\nTwo\n\n[**B** *I*](<https://e.com/a%20b>)\n\n- Item\n\n> Q\n\n```\ncode\n```\n\n---\n\nTail",
-  )
-}
-
-///|
 test "to_markdown handles deeply nested programmatic trees" {
   let root = @html_parser.element("div")
   let mut parent = root

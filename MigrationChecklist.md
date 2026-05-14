@@ -947,6 +947,8 @@ reference implementation in `.repos/justhtml`.
       `text_markdown_public_regression_test.mbt`.
 - [x] Split markdown link inline/raw-variant regression into
       `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown mixed-case builder tag regression into
+      `text_markdown_public_regression_test.mbt`.
 
 ## Working Rule
 
