@@ -217,6 +217,23 @@ test "tree builder matches Python reference nested foreign breakout branch fixtu
 }
 
 ///|
+test "tree builder matches Python reference body hidden input fixture" {
+  let doc = @html_parser.parse(
+    "<body><input type=\"hidden\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <input>\n|       type=\"hidden\"",
+  )
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+  guard doc.errors[0].column is Some(6) else {
+    fail("expected body doctype error at body start close")
+  }
+}
+
+///|
 test "tree builder matches vendored empty stack edge fixtures" {
   for case in empty_stack_edge_fixture_cases() {
     assert_tree_fixture(case)

@@ -4312,23 +4312,6 @@ test "document parser ignores early body end after explicit html" {
 }
 
 ///|
-test "tree builder matches Python reference body hidden input fixture" {
-  let doc = @html_parser.parse(
-    "<body><input type=\"hidden\">",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(doc.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <input>\n|       type=\"hidden\"",
-  )
-  assert_eq(doc.errors.length(), 1)
-  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
-  guard doc.errors[0].column is Some(6) else {
-    fail("expected body doctype error at body start close")
-  }
-}
-
-///|
 test "document parser merges nested repeated html tags" {
   let nested = @html_parser.parse(
     "<html lang=en><html dir=ltr><body>x</body></html>",
