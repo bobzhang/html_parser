@@ -596,6 +596,20 @@ test "query and matches support complex selector combinations" {
 }
 
 ///|
+test "node query searches descendants only" {
+  let root = @html_parser.element("div", children=[
+    @html_parser.element("p", children=[@html_parser.text("One")]),
+  ])
+  assert_eq(root.query("div").length(), 0)
+  assert_eq(root.query("p").length(), 1)
+  assert_true(@html_parser.matches(root, "div"))
+  let doc = @html_parser.parse_fragment("<div id='main'><p>One</p></div>")
+  guard doc.query_one("#main") is Some(main) else { fail("expected main div") }
+  assert_eq(main.query("div").length(), 0)
+  assert_eq(main.query("p").length(), 1)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(

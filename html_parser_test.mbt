@@ -7561,20 +7561,6 @@ test "parser tracks origins for fragment colgroup starts" {
 }
 
 ///|
-test "node query searches descendants only" {
-  let root = @html_parser.element("div", children=[
-    @html_parser.element("p", children=[@html_parser.text("One")]),
-  ])
-  assert_eq(root.query("div").length(), 0)
-  assert_eq(root.query("p").length(), 1)
-  assert_true(@html_parser.matches(root, "div"))
-  let doc = @html_parser.parse_fragment("<div id='main'><p>One</p></div>")
-  guard doc.query_one("#main") is Some(main) else { fail("expected main div") }
-  assert_eq(main.query("div").length(), 0)
-  assert_eq(main.query("p").length(), 1)
-}
-
-///|
 test "collect_errors records malformed markup without raising" {
   let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
   assert_eq(doc.errors.length(), 1)
