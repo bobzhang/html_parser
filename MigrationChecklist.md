@@ -989,6 +989,8 @@ reference implementation in `.repos/justhtml`.
       `doctype_public_regression_test.mbt`.
 - [x] Split missing doctype identifier regression into
       `doctype_public_regression_test.mbt`.
+- [x] Split missing doctype identifier quote regression into
+      `doctype_public_regression_test.mbt`.
 
 ## Working Rule
 
