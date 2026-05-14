@@ -372,3 +372,43 @@ test "parser closes column groups before non-colgroup end tags" {
   assert_eq(col.errors.length(), 1)
   assert_eq(col.errors[0].code, "unexpected-end-tag")
 }
+
+///|
+test "parser closes rows before table structure starts" {
+  let next_row = @html_parser.parse_fragment(
+    "<table><tr><tr><td>x</td></tr></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    next_row.to_html(pretty=false),
+    "<table><tbody><tr></tr><tr><td>x</td></tr></tbody></table>",
+  )
+  assert_eq(next_row.errors.length(), 0)
+  let row_group = @html_parser.parse_fragment(
+    "<table><tbody><tr><tbody><tr><td>x</td></tr></tbody></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    row_group.to_html(pretty=false),
+    "<table><tbody><tr></tr></tbody><tbody><tr><td>x</td></tr></tbody></table>",
+  )
+  assert_eq(row_group.errors.length(), 0)
+  let caption = @html_parser.parse_fragment(
+    "<table><tr><caption>x</caption></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    caption.to_html(pretty=false),
+    "<table><tbody><tr></tr></tbody><caption>x</caption></table>",
+  )
+  assert_eq(caption.errors.length(), 0)
+  let col = @html_parser.parse_fragment(
+    "<table><tr><col><tr><td>x</td></tr></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    col.to_html(pretty=false),
+    "<table><tbody><tr></tr></tbody><colgroup><col></colgroup><tbody><tr><td>x</td></tr></tbody></table>",
+  )
+  assert_eq(col.errors.length(), 0)
+}
