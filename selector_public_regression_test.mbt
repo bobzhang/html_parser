@@ -332,6 +332,17 @@ test "query supports first and last child pseudo selectors" {
 }
 
 ///|
+test "query supports only child pseudo selector" {
+  let doc = @html_parser.parse_fragment(
+    "<div><span>Only</span></div><ul><li>One</li><li>Two</li></ul>",
+  )
+  assert_eq(doc.query("span:only-child").length(), 1)
+  assert_eq(doc.query("li:only-child").length(), 0)
+  guard doc.query_one("span") is Some(span) else { fail("expected span") }
+  assert_true(@html_parser.matches(span, "div > span:only-child"))
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(

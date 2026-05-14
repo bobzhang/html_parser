@@ -7561,17 +7561,6 @@ test "parser tracks origins for fragment colgroup starts" {
 }
 
 ///|
-test "query supports only child pseudo selector" {
-  let doc = @html_parser.parse_fragment(
-    "<div><span>Only</span></div><ul><li>One</li><li>Two</li></ul>",
-  )
-  assert_eq(doc.query("span:only-child").length(), 1)
-  assert_eq(doc.query("li:only-child").length(), 0)
-  guard doc.query_one("span") is Some(span) else { fail("expected span") }
-  assert_true(@html_parser.matches(span, "div > span:only-child"))
-}
-
-///|
 test "query supports empty pseudo selector" {
   let doc = @html_parser.parse_fragment(
     "<div class='empty'></div><div class='whitespace'>   </div><div class='text'>content</div><div class='nested'><span></span></div><!-- ignored -->",
