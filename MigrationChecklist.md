@@ -1007,6 +1007,8 @@ reference implementation in `.repos/justhtml`.
       `fragment_parser_public_regression_test.mbt`.
 - [x] Split fragment parser foreign namespace context regression into
       `fragment_parser_public_regression_test.mbt`.
+- [x] Start template parser regression file with table structural child
+      coverage in `template_parser_public_regression_test.mbt`.
 - [x] Split document parser repeated-body merge regression into
       `document_parser_public_regression_test.mbt`.
 - [x] Split document parser early-body-end regression into
