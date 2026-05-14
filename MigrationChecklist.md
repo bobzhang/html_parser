@@ -969,6 +969,8 @@ reference implementation in `.repos/justhtml`.
       `document_parser_public_regression_test.mbt`.
 - [x] Split document parser nested repeated-html merge regression into
       `document_parser_public_regression_test.mbt`.
+- [x] Split document parser root repeated-html merge regression into
+      `document_parser_public_regression_test.mbt`.
 
 ## Working Rule
 

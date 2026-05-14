@@ -2794,24 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "document parser merges root repeated html tags" {
-  let repeated = @html_parser.parse(
-    "<html lang=en></html><html dir=ltr><body>x</body></html>",
-  )
-  assert_eq(
-    repeated.to_html(pretty=false),
-    "<html lang=\"en\" dir=\"ltr\"><head></head><body>x</body></html>",
-  )
-  let with_existing_body = @html_parser.parse(
-    "<html lang=en><body>x</body></html><html dir=ltr><body>y</body></html>",
-  )
-  assert_eq(
-    with_existing_body.to_html(pretty=false),
-    "<html lang=\"en\" dir=\"ltr\"><head></head><body>xy</body></html>",
-  )
-}
-
-///|
 test "document parser preserves shell scaffolding edge ordering" {
   let leading_text = @html_parser.parse(
     "<html> \n\tBody</html>",
