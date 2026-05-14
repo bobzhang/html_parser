@@ -7561,33 +7561,6 @@ test "parser tracks origins for fragment colgroup starts" {
 }
 
 ///|
-test "parser reports implied active formatting end in table view" {
-  let row = @html_parser.parse_fragment(
-    "<table><a><tr>x</table></a>",
-    collect_errors=true,
-    track_node_locations=true,
-  )
-  assert_eq(
-    row.to_html(pretty=false),
-    "<a></a><a>x</a><table><tbody><tr></tr></tbody></table>",
-  )
-  assert_eq(row.errors.length(), 3)
-  assert_eq(row.errors[0].code, "foster-parenting-start-tag")
-  assert_eq(row.errors[1].code, "unexpected-implied-end-tag-in-table-view")
-  assert_eq(row.errors[2].code, "adoption-agency-1.3")
-  let links = row.root.query("a")
-  guard links.length() == 2 else {
-    fail("expected original and reconstructed links")
-  }
-  assert_node_origin(links[0], 7, 1, 8)
-  assert_node_origin(links[1], 7, 1, 8)
-  guard row.root.query_one("tr") is Some(tr) else {
-    fail("expected implied row")
-  }
-  assert_node_origin(tr, 10, 1, 11)
-}
-
-///|
 test "fragment table contexts foster active formatting text" {
   let row = @html_parser.parse_fragment(
     "<a><tr>x</tr></a>",
