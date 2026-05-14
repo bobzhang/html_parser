@@ -210,3 +210,63 @@ test "parser wraps table col starts in implied colgroups" {
   )
   assert_eq(row_group.errors.length(), 0)
 }
+
+///|
+test "parser handles text in column group context" {
+  let explicit_text = @html_parser.parse_fragment(
+    "<table><colgroup>x</colgroup></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    explicit_text.to_html(pretty=false),
+    "x<table><colgroup></colgroup></table>",
+  )
+  assert_eq(explicit_text.errors.length(), 3)
+  assert_eq(
+    explicit_text.errors[0].code,
+    "unexpected-characters-in-column-group",
+  )
+  assert_eq(explicit_text.errors[1].code, "foster-parenting-character")
+  assert_eq(explicit_text.errors[2].code, "unexpected-end-tag")
+  let explicit_space = @html_parser.parse_fragment(
+    "<table><colgroup> </colgroup></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    explicit_space.to_html(pretty=false),
+    "<table><colgroup> </colgroup></table>",
+  )
+  assert_eq(explicit_space.errors.length(), 2)
+  assert_eq(
+    explicit_space.errors[0].code,
+    "unexpected-characters-in-column-group",
+  )
+  assert_eq(explicit_space.errors[1].code, "unexpected-end-tag")
+  let implicit_text = @html_parser.parse_fragment(
+    "<table><col>x</table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    implicit_text.to_html(pretty=false),
+    "x<table><colgroup><col></colgroup></table>",
+  )
+  assert_eq(implicit_text.errors.length(), 2)
+  assert_eq(
+    implicit_text.errors[0].code,
+    "unexpected-characters-in-column-group",
+  )
+  assert_eq(implicit_text.errors[1].code, "foster-parenting-character")
+  let implicit_space = @html_parser.parse_fragment(
+    "<table><col> </table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    implicit_space.to_html(pretty=false),
+    "<table><colgroup><col> </colgroup></table>",
+  )
+  assert_eq(implicit_space.errors.length(), 1)
+  assert_eq(
+    implicit_space.errors[0].code,
+    "unexpected-characters-in-column-group",
+  )
+}
