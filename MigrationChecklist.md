@@ -861,6 +861,8 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_fixtures_test.mbt`.
 - [x] Split tree-builder mixed frameset recovery reference regression into
       `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder select optgroup reference regressions into
+      `treebuilder_fixtures_test.mbt`.
 
 ## Working Rule
 
