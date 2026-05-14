@@ -835,6 +835,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split public parser repeated-button close regressions into
       `parser_public_regression_test.mbt`.
+- [x] Split public parser nested-form start regressions into
+      `parser_public_regression_test.mbt`.
 
 ## Working Rule
 
