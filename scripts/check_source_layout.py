@@ -256,6 +256,7 @@ def main(argv: list[str]) -> int:
         "parser/document_head.mbt",
         "parser/head_noscript.mbt",
         "parser/markup.mbt",
+        "parser/node_origin.mbt",
         "parser/parser.mbt",
         "parser/scaffold_existing.mbt",
         "parser/scaffold.mbt",

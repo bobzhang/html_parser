@@ -344,6 +344,8 @@ reference implementation in `.repos/justhtml`.
       `parser/selected_content.mbt`.
 - [x] Split parser state, cursor helpers, and node-origin helpers into
       `parser/state.mbt`.
+- [x] Split parser node-origin and source-location helpers into
+      `parser/node_origin.mbt`.
 - [x] Split parser syntax-adapter helpers into `parser/syntax.mbt`.
 - [x] Split parser diagnostics and EOF error helpers into
       `parser/diagnostics.mbt`.
