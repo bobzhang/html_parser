@@ -357,6 +357,8 @@ reference implementation in `.repos/justhtml`.
       `parser/special_text.mbt`.
 - [x] Split parser fragment-context parsing and wrapper unwrapping into
       `parser/fragment_context.mbt`.
+- [x] Split parser table fragment-context wrapper parsing into
+      `parser/fragment_table_context.mbt`.
 - [x] Moved parser foreign table recovery helpers into
       `parser/foreign_content.mbt`.
 - [x] Split parser foreign table recovery helpers into
