@@ -487,6 +487,43 @@ test "query supports not pseudo selector" {
 }
 
 ///|
+test "query supports comment pseudo selector" {
+  let doc = @html_parser.parse_fragment(
+    "<div>Before<!-- first --><span>Inside</span><!-- second --></div><!-- outside -->",
+  )
+  assert_eq(doc.query(":comment").length(), 3)
+  assert_eq(doc.query("div > :comment").length(), 2)
+  assert_eq(doc.query("div :comment").length(), 2)
+  assert_eq(doc.query("div, :comment").length(), 4)
+  assert_eq(doc.query(":comment:empty").length(), 3)
+  assert_eq(doc.query(":comment:not(.missing)").length(), 3)
+  assert_eq(doc.query(":comment(x)").length(), 3)
+  guard doc.query_one(":comment") is Some(comment) else {
+    fail("expected comment")
+  }
+  assert_eq(comment.name(), "#comment")
+  assert_true(@html_parser.matches(comment, ":comment"))
+  assert_true(@html_parser.matches(comment, ":empty"))
+  assert_true(@html_parser.matches(comment, ":not(span)"))
+  assert_eq(@html_parser.matches(comment, ":not(:comment)"), false)
+  assert_eq(@html_parser.matches(comment, ":hover"), false)
+  assert_eq(@html_parser.matches(comment, ":hover(2)"), false)
+  assert_eq(@html_parser.matches(comment, ":contains(   )"), false)
+  assert_true(@html_parser.matches(comment, "div > :empty"))
+  assert_eq(@html_parser.matches(comment, "*"), false)
+  let mixed = @html_parser.parse_fragment(
+    "<div>A<!-- note --><p>text</p></div>",
+  )
+  assert_eq(mixed.query(":empty").length(), 0)
+  assert_eq(mixed.query("div > :empty").length(), 0)
+  assert_eq(mixed.query("div > :comment:empty").length(), 1)
+  assert_eq(mixed.query(":comment, :empty").length(), 3)
+  assert_eq(mixed.query("[data-note=':comment'], :empty").length(), 0)
+  assert_eq(mixed.query(":contains(':comment'), :empty").length(), 0)
+  assert_eq(mixed.query(":1comment, :empty").length(), 0)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(

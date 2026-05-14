@@ -791,6 +791,8 @@ reference implementation in `.repos/justhtml`.
       `selector_public_regression_test.mbt`.
 - [x] Split public selector `:not(...)` pseudo regressions into
       `selector_public_regression_test.mbt`.
+- [x] Split public selector `:comment` pseudo regressions into
+      `selector_public_regression_test.mbt`.
 
 ## Working Rule
 
