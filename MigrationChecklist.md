@@ -1021,6 +1021,8 @@ reference implementation in `.repos/justhtml`.
       `fragment_parser_public_regression_test.mbt`.
 - [x] Split fragment parser foreign namespace context regression into
       `fragment_parser_public_regression_test.mbt`.
+- [x] Start foreign content parser regression file with SVG edge name and
+      attribute adjustment coverage in `foreign_content_public_regression_test.mbt`.
 - [x] Start template parser regression file with table structural child
       coverage in `template_parser_public_regression_test.mbt`.
 - [x] Split template parser structural end-recovery regression into
