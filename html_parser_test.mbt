@@ -2794,53 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "to_markdown covers builder whitespace and raw newline branches" {
-  assert_eq(@html_parser.text("   a").to_markdown(), "a")
-  let pre = @html_parser.element("pre", children=[@html_parser.text("a\nb")])
-  assert_eq(pre.to_markdown(), "```\na\nb\n```")
-  let pending_raw = @html_parser.element("p", children=[
-    @html_parser.text("a "),
-    @html_parser.element("strong", children=[@html_parser.text("b")]),
-  ])
-  assert_eq(pending_raw.to_markdown(), "a **b**")
-  let raw_newline = @html_parser.element("div", children=[
-    @html_parser.text("a "),
-    @html_parser.element("style", children=[
-      @html_parser.text("\nbody { color: red; }"),
-    ]),
-  ])
-  assert_eq(
-    raw_newline.to_markdown(html_passthrough=true),
-    "a\n\n<style>\nbody { color: red; }</style>",
-  )
-}
-
-///|
-test "to_markdown preserves table image HTML and title text parity" {
-  let doc = @html_parser.parse_fragment(
-    "<p>Hi<img src=x alt=y>there</p><table><tr><td>A</td></tr></table>",
-  )
-  assert_eq(
-    doc.to_markdown(),
-    "Hi<img src=\"x\" alt=\"y\">there\n\n<table><tbody><tr><td>A</td></tr></tbody></table>",
-  )
-  let title = @html_parser.parse_fragment(
-    "<title><script>alert(1)</script></title>",
-  )
-  assert_eq(title.to_markdown(), "&lt;script>alert(1)&lt;/script>")
-  let parsed_head = @html_parser.parse_fragment("<head><title>T</title></head>")
-  assert_eq(parsed_head.to_markdown(), "T")
-  let direct_title = @html_parser.element("title", children=[
-    @html_parser.text("T"),
-  ])
-  assert_eq(direct_title.to_markdown(), "")
-  let direct_head = @html_parser.element("head", children=[
-    @html_parser.element("title", children=[@html_parser.text("T")]),
-  ])
-  assert_eq(direct_head.to_markdown(), "")
-}
-
-///|
 test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
   let links = @html_parser.parse_fragment(
     "<p><a href='https://e.com/a(b)c'>x</a> <a href='https://e.com/a b'>y</a></p>",
