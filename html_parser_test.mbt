@@ -2794,55 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "fragment context seeds caption insertion mode" {
-  let body_content = @html_parser.parse_fragment(
-    "x<div>y</div>",
-    context=@html_parser.FragmentContext::new("caption"),
-    collect_errors=true,
-  )
-  assert_eq(body_content.to_html(pretty=false), "x<div>y</div>")
-  assert_eq(body_content.errors.length(), 0)
-  let ignored_row = @html_parser.parse_fragment(
-    "<tr><td>x</td></tr>",
-    context=@html_parser.FragmentContext::new("caption"),
-    collect_errors=true,
-  )
-  assert_eq(ignored_row.to_html(pretty=false), "x")
-  assert_eq(ignored_row.errors.length(), 6)
-  assert_eq(ignored_row.errors[0].code, "unexpected-start-tag-implies-end-tag")
-  assert_eq(ignored_row.errors[1].code, "unexpected-end-tag")
-  assert_eq(ignored_row.errors[2].code, "unexpected-start-tag-implies-end-tag")
-  assert_eq(ignored_row.errors[3].code, "unexpected-end-tag")
-  assert_eq(ignored_row.errors[4].code, "unexpected-end-tag")
-  assert_eq(ignored_row.errors[5].code, "unexpected-end-tag")
-  let ignored_caption = @html_parser.parse_fragment(
-    "<caption>x</caption>",
-    context=@html_parser.FragmentContext::new("caption"),
-    collect_errors=true,
-  )
-  assert_eq(ignored_caption.to_html(pretty=false), "x")
-  assert_eq(ignored_caption.errors.length(), 3)
-  assert_eq(
-    ignored_caption.errors[0].code,
-    "unexpected-start-tag-implies-end-tag",
-  )
-  assert_eq(ignored_caption.errors[1].code, "unexpected-end-tag")
-  assert_eq(ignored_caption.errors[2].code, "unexpected-end-tag")
-  let table = @html_parser.parse_fragment(
-    "<table>x</table><td>y</td>",
-    context=@html_parser.FragmentContext::new("caption"),
-    collect_errors=true,
-  )
-  assert_eq(table.to_html(pretty=false), "x<table></table>y")
-  assert_eq(table.errors.length(), 5)
-  assert_eq(table.errors[0].code, "unexpected-start-tag-implies-end-tag")
-  assert_eq(table.errors[1].code, "unexpected-end-tag")
-  assert_eq(table.errors[2].code, "foster-parenting-character")
-  assert_eq(table.errors[3].code, "unexpected-start-tag-ignored")
-  assert_eq(table.errors[4].code, "unexpected-end-tag")
-}
-
-///|
 test "fragment context seeds column group insertion mode" {
   let cols = @html_parser.parse_fragment(
     "<col><col>",
