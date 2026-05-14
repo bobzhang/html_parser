@@ -213,3 +213,35 @@ test "template caption structural starts close caption and reprocess" {
   assert_eq(colgroup.errors[1].code, "unexpected-end-tag")
   assert_eq(colgroup.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
 }
+
+///|
+test "template caption end defers recovery to template end" {
+  let caption = @html_parser.parse_fragment(
+    "<template><caption>x</caption></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    caption.to_html(pretty=false),
+    "<template><caption>x</caption></template>",
+  )
+  assert_eq(caption.errors.length(), 1)
+  assert_eq(caption.errors[0].code, "unexpected-end-tag-implies-table-voodoo")
+  let nested_caption = @html_parser.parse_fragment(
+    "<template><caption>x<caption>y</caption></caption></template>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_caption.to_html(pretty=false),
+    "<template><caption>x</caption><caption>y</caption></template>",
+  )
+  assert_eq(nested_caption.errors.length(), 3)
+  assert_eq(
+    nested_caption.errors[0].code,
+    "unexpected-start-tag-implies-end-tag",
+  )
+  assert_eq(nested_caption.errors[1].code, "unexpected-end-tag")
+  assert_eq(
+    nested_caption.errors[2].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
+}

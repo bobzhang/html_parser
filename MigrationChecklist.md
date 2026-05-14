@@ -1017,6 +1017,8 @@ reference implementation in `.repos/justhtml`.
       `template_parser_public_regression_test.mbt`.
 - [x] Split template parser caption structural-start regression into
       `template_parser_public_regression_test.mbt`.
+- [x] Split template parser caption end-recovery regression into
+      `template_parser_public_regression_test.mbt`.
 - [x] Split document parser repeated-body merge regression into
       `document_parser_public_regression_test.mbt`.
 - [x] Split document parser early-body-end regression into
