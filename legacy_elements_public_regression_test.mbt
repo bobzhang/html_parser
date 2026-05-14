@@ -23,3 +23,22 @@ test "parser inserts keygen and fragment frame as empty non-void elements" {
   assert_eq(frame.errors.length(), 1)
   assert_eq(frame.errors[0].code, "unexpected-end-tag")
 }
+
+///|
+test "parser handles keygen and frame starts in select mode" {
+  let keygen = @html_parser.parse_fragment(
+    "<select><keygen>x</keygen></select>",
+    collect_errors=true,
+  )
+  assert_eq(keygen.to_html(pretty=false), "<select><keygen></keygen>x</select>")
+  assert_eq(keygen.errors.length(), 1)
+  assert_eq(keygen.errors[0].code, "unexpected-end-tag")
+  let frame = @html_parser.parse_fragment(
+    "<select><frame>x</frame></select>",
+    collect_errors=true,
+  )
+  assert_eq(frame.to_html(pretty=false), "<select>x</select>")
+  assert_eq(frame.errors.length(), 2)
+  assert_eq(frame.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(frame.errors[1].code, "unexpected-end-tag")
+}
