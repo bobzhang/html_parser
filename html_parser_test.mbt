@@ -2794,40 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "to_markdown treats orphan list items as block content" {
-  let orphan = @html_parser.parse_fragment("<li>One</li><li>Two</li>")
-  assert_eq(orphan.to_markdown(), "One\n\nTwo")
-  let menu = @html_parser.parse_fragment(
-    "<menu><li>One</li><li>Two</li></menu>",
-  )
-  assert_eq(menu.to_markdown(), "One\n\nTwo")
-  let link = @html_parser.parse_fragment(
-    "<a href='https://e.com'><li>One</li><li>Two</li></a>",
-  )
-  assert_eq(link.to_markdown(), "[One Two](https://e.com)")
-  let link_menu = @html_parser.parse_fragment(
-    "<a href='https://e.com'><menu><li>One</li><li>Two</li></menu></a>",
-  )
-  assert_eq(link_menu.to_markdown(), "[One Two](https://e.com)")
-}
-
-///|
-test "to_markdown separates generic block containers" {
-  let doc = @html_parser.parse_fragment(
-    "<div>A</div><section><span>B</span></section><aside>C</aside>",
-  )
-  assert_eq(doc.to_markdown(), "A\n\nB\n\nC")
-  let nested = @html_parser.parse_fragment(
-    "<article><p>A</p><p>B</p></article><footer>C</footer>",
-  )
-  assert_eq(nested.to_markdown(), "A\n\nB\n\nC")
-  let inline_before_block = @html_parser.parse_fragment(
-    "A<div>B</div><span>C</span>",
-  )
-  assert_eq(inline_before_block.to_markdown(), "AB\n\nC")
-}
-
-///|
 test "to_markdown escapes text and line starting markdown markers" {
   let escaped = @html_parser.parse_fragment(
     "<p>&lt;img src=x onerror=alert(1)&gt;</p>",

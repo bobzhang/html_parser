@@ -929,6 +929,10 @@ reference implementation in `.repos/justhtml`.
       `text_markdown_public_regression_test.mbt`.
 - [x] Split markdown nested list indentation regression into
       `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown orphan list item regression into
+      `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown generic block container regression into
+      `text_markdown_public_regression_test.mbt`.
 
 ## Working Rule
 
