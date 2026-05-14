@@ -855,6 +855,8 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_fixtures_test.mbt`.
 - [x] Split tree-builder MathML null text reference regressions into
       `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder table fostered text reference regression into
+      `treebuilder_fixtures_test.mbt`.
 
 ## Working Rule
 

@@ -282,6 +282,23 @@ test "tree builder matches Python reference MathML null text fixtures" {
 }
 
 ///|
+test "tree builder matches Python reference table fostered text behavior" {
+  let doc = @html_parser.parse("<table>text</table>", collect_errors=true)
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     \"text\"\n|     <table>",
+  )
+  assert_eq(doc.errors.length(), 5)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+  for index in 1..<doc.errors.length() {
+    assert_eq(doc.errors[index].code, "foster-parenting-character")
+  }
+  guard doc.errors[0].column is Some(7) else {
+    fail("expected table doctype error at table start close")
+  }
+}
+
+///|
 test "tree builder matches vendored empty stack edge fixtures" {
   for case in empty_stack_edge_fixture_cases() {
     assert_tree_fixture(case)
