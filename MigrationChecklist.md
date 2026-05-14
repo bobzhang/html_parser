@@ -845,6 +845,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split tree-builder annotation-xml breakout reference regressions into
       `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder SVG font breakout reference regression into
+      `treebuilder_fixtures_test.mbt`.
 
 ## Working Rule
 
