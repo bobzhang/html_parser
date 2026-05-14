@@ -301,7 +301,7 @@ def main(argv: list[str]) -> int:
         "parser/dom_selector_wbtest.mbt",
         "parser/foreign_adjustments_wbtest.mbt",
         "parser/insertion_helpers_wbtest.mbt",
-        "parser/parser_wbtest.mbt",
+        "parser/sanitize_rawtext_wbtest.mbt",
         "parser/scaffold_wbtest.mbt",
         "parser/scanner_wbtest.mbt",
         "parser/table_wbtest.mbt",

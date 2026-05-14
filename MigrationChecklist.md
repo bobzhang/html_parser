@@ -748,6 +748,9 @@ reference implementation in `.repos/justhtml`.
       `parser/defensive_wbtest.mbt`.
 - [x] Split parser detached-recovery whitebox coverage into
       `parser/detached_recovery_wbtest.mbt`.
+- [x] Split parser sanitizer/rawtext whitebox coverage into
+      `parser/sanitize_rawtext_wbtest.mbt` and retire the catch-all
+      `parser/parser_wbtest.mbt`.
 
 ## Working Rule
 
