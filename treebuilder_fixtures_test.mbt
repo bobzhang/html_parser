@@ -234,6 +234,54 @@ test "tree builder matches Python reference body hidden input fixture" {
 }
 
 ///|
+test "tree builder matches Python reference MathML null text fixtures" {
+  let null_only = @html_parser.parse(
+    "<math><mi>\u{0000}</mi></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(null_only.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math mi>",
+  )
+  assert_eq(null_only.errors.length(), 2)
+  assert_eq(null_only.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(null_only.errors[1].code, "unexpected-null-character")
+  guard null_only.errors[0].column is Some(6) else {
+    fail("expected MathML doctype error at math start close")
+  }
+  guard null_only.errors[1].column is Some(11) else {
+    fail("expected MathML null error at null character")
+  }
+  let null_form_feed = @html_parser.parse(
+    "<math><mi>\u{0000}\u{000C}</mi></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(null_form_feed.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math mi>\n|         \" \"",
+  )
+  assert_eq(null_form_feed.errors.length(), 2)
+  assert_eq(null_form_feed.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(null_form_feed.errors[1].code, "unexpected-null-character")
+  guard null_form_feed.errors[1].column is Some(11) else {
+    fail("expected MathML mixed null error at null character")
+  }
+  let whitespace = @html_parser.parse(
+    "<math><mi>   </mi></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(whitespace.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math mi>\n|         \"   \"",
+  )
+  assert_eq(whitespace.errors.length(), 1)
+  assert_eq(whitespace.errors[0].code, "expected-doctype-but-got-start-tag")
+  guard whitespace.errors[0].column is Some(6) else {
+    fail("expected MathML whitespace doctype error at math start close")
+  }
+}
+
+///|
 test "tree builder matches vendored empty stack edge fixtures" {
   for case in empty_stack_edge_fixture_cases() {
     assert_tree_fixture(case)
