@@ -883,6 +883,8 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_fixtures_test.mbt`.
 - [x] Split tree-builder iframe srcdoc doctype regression into
       `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder legacy loose doctype regression into
+      `treebuilder_fixtures_test.mbt`.
 - [x] Split builder compact serialization regression into
       `builder_public_regression_test.mbt`.
 - [x] Split builder test-format line regression into
