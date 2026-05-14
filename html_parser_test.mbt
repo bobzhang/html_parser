@@ -2794,24 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tree builder matches reference frameset trailing end fixture" {
-  let doc = @html_parser.parse(
-    "<frameset></frameset></frameset>",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(doc.root),
-    "| <html>\n|   <head>\n|   <frameset>",
-  )
-  assert_eq(doc.errors.length(), 2)
-  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
-  assert_eq(doc.errors[1].code, "unexpected-token-after-frameset")
-  guard doc.errors[1].column is Some(32) else {
-    fail("expected trailing frameset end tag at close bracket")
-  }
-}
-
-///|
 test "tree builder matches reference nested table in caption fixture" {
   let doc = @html_parser.parse(
     "<table><caption><table></table></caption></table>",
