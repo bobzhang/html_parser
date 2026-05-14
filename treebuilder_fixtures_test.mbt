@@ -235,6 +235,24 @@ test "tree builder matches reference table null text fixture" {
 }
 
 ///|
+test "tree builder matches reference table direct cell comment fixture" {
+  let doc = @html_parser.parse(
+    "<table><td><!-- comment in cell --></td></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(doc.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <table>\n|       <tbody>\n|         <tr>\n|           <td>\n|             <!--  comment in cell  -->",
+  )
+  assert_eq(doc.errors.length(), 2)
+  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(doc.errors[1].code, "unexpected-cell-in-table-body")
+  guard doc.errors[1].column is Some(11) else {
+    fail("expected direct table cell error at td start close")
+  }
+}
+
+///|
 test "tree builder matches vendored branch coverage fixtures" {
   for case in branch_coverage_fixture_cases() {
     assert_tree_fixture(case)
