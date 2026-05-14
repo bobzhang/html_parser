@@ -891,6 +891,8 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_fixtures_test.mbt`.
 - [x] Split tree-builder definition list regression into
       `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder table caption comment regression into
+      `treebuilder_fixtures_test.mbt`.
 - [x] Split builder compact serialization regression into
       `builder_public_regression_test.mbt`.
 - [x] Split builder test-format line regression into
