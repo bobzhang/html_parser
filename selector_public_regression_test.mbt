@@ -208,6 +208,37 @@ test "query supports comma selector lists" {
 }
 
 ///|
+test "query treats malformed selector pieces as no match" {
+  let doc = @html_parser.parse_fragment(
+    "<section><h1>Title</h1><p id='intro' class='lead'>One</p><a href='x'>Link</a></section>",
+  )
+  assert_eq(doc.query("").length(), 0)
+  assert_eq(doc.query("   ").length(), 0)
+  assert_eq(doc.query("div@foo").length(), 0)
+  assert_eq(doc.query("p[").length(), 0)
+  assert_eq(doc.query("p.").length(), 0)
+  assert_eq(doc.query("p#").length(), 0)
+  assert_eq(doc.query("p[id]]").length(), 0)
+  assert_eq(doc.query("[attr=\"unclosed]").length(), 0)
+  assert_eq(doc.query(":contains(foo").length(), 0)
+  assert_eq(doc.query("p >").length(), 0)
+  assert_eq(doc.query("> p").length(), 0)
+  assert_eq(doc.query("section > > p").length(), 0)
+  assert_eq(doc.query("section,, p").length(), 2)
+  assert_eq(doc.query("p, p[").length(), 0)
+  assert_eq(doc.query("p, :hover").length(), 0)
+  assert_eq(doc.query("p, > a").length(), 0)
+  assert_eq(doc.query("p, .").length(), 0)
+  guard doc.query_one("p") is Some(paragraph) else {
+    fail("expected paragraph")
+  }
+  assert_eq(@html_parser.matches(paragraph, "p["), false)
+  assert_eq(@html_parser.matches(paragraph, "p."), false)
+  assert_eq(@html_parser.matches(paragraph, "> p"), false)
+  assert_eq(@html_parser.matches(paragraph, "p, p["), false)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(

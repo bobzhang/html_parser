@@ -761,6 +761,8 @@ reference implementation in `.repos/justhtml`.
       `selector_public_regression_test.mbt`.
 - [x] Split public selector comma-list regressions into
       `selector_public_regression_test.mbt`.
+- [x] Split public selector malformed-input regressions into
+      `selector_public_regression_test.mbt`.
 
 ## Working Rule
 
