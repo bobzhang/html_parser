@@ -829,6 +829,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split public parser implied active-formatting table-view regressions into
       `parser_public_regression_test.mbt`.
+- [x] Split public parser fragment table active-formatting regressions into
+      `parser_public_regression_test.mbt`.
 
 ## Working Rule
 
