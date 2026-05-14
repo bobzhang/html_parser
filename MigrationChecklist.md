@@ -849,6 +849,8 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_fixtures_test.mbt`.
 - [x] Split tree-builder foreign integration reference regressions into
       `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder nested foreign breakout reference regressions into
+      `treebuilder_fixtures_test.mbt`.
 
 ## Working Rule
 
