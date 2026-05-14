@@ -130,6 +130,61 @@ test "query supports attribute presence and exact selectors" {
 }
 
 ///|
+test "query supports attribute operator selectors" {
+  let doc = @html_parser.parse_fragment(
+    "<div class='container secondary' lang='en-US' data-tags='alpha\tbeta' data-name='example item' data-quote='hello&quot;world' data-slash='a\\b' data-escape='x'><a href='http://example.com'>Link</a><p data-empty=''></p></div>",
+  )
+  assert_eq(doc.query("[class~='container']").length(), 1)
+  assert_eq(doc.query("[class~='contain']").length(), 0)
+  assert_eq(doc.query("[class~='']").length(), 0)
+  assert_eq(doc.query("[data-tags~=beta]").length(), 1)
+  assert_eq(doc.query("[lang|=en]").length(), 1)
+  assert_eq(doc.query("[lang|=eng]").length(), 0)
+  assert_eq(doc.query("[href^='http']").length(), 1)
+  assert_eq(doc.query("[href^='https']").length(), 0)
+  assert_eq(doc.query("[href$='.com']").length(), 1)
+  assert_eq(doc.query("[href$='.org']").length(), 0)
+  assert_eq(doc.query("[href*='example']").length(), 1)
+  assert_eq(doc.query("[href *= 'example']").length(), 1)
+  assert_eq(doc.query("[href*='google']").length(), 0)
+  assert_eq(doc.query("[data-name='example item']").length(), 1)
+  assert_eq(doc.query("[data-name=example item]").length(), 0)
+  assert_eq(doc.query("[href^='']").length(), 0)
+  assert_eq(doc.query("[href$='']").length(), 0)
+  assert_eq(doc.query("[href*='']").length(), 0)
+  assert_eq(doc.query("[data-quote=\"hello\\\"world\"]").length(), 1)
+  assert_eq(doc.query("[data-slash=\"a\\\\b\"]").length(), 1)
+  assert_eq(doc.query("[data-escape=\"\\x\"]").length(), 1)
+  assert_eq(doc.query("[data-quote=\"hello\\\"world\"], p").length(), 2)
+  assert_eq(doc.query("div > [data-quote=\"hello\\\"world\"]").length(), 0)
+  assert_eq(doc.query("[~=container]").length(), 0)
+  assert_eq(doc.query("[href!=http://example.com]").length(), 0)
+  assert_eq(doc.query("[lang|=e]").length(), 0)
+  let exact_lang = @html_parser.parse_fragment(
+    "<p lang='en'></p><p lang='en-US'></p><p lang='eng'></p>",
+  )
+  assert_eq(exact_lang.query("[lang|=en]").length(), 2)
+  let empty = @html_parser.parse_fragment(
+    "<p data-empty=''></p><p data-empty='x'></p>",
+  )
+  assert_eq(empty.query("[data-empty=]").length(), 1)
+  let punctuation = @html_parser.fragment(children=[
+    @html_parser.element("p", attrs={
+      "data-id": Some("x"),
+      "data-id!": Some("x"),
+      "1data": Some("x"),
+      "xlink:href": Some("url"),
+      "日本語": Some("yes"),
+    }),
+  ])
+  assert_eq(punctuation.query("[data-id=x]").length(), 1)
+  assert_eq(punctuation.query("[data-id!=x]").length(), 0)
+  assert_eq(punctuation.query("[1data=x]").length(), 0)
+  assert_eq(punctuation.query("[xlink:href]").length(), 0)
+  assert_eq(punctuation.query("[日本語=yes]").length(), 1)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(
