@@ -296,6 +296,7 @@ def main(argv: list[str]) -> int:
         "parser/dom_selector_wbtest.mbt",
         "parser/foreign_adjustments_wbtest.mbt",
         "parser/parser_wbtest.mbt",
+        "parser/tokenizer_helpers_wbtest.mbt",
     }
     for path in sorted(required_parser_tests):
         if path not in tracked:
