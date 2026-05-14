@@ -354,6 +354,17 @@ test "query supports empty pseudo selector" {
 }
 
 ///|
+test "query supports root pseudo selector" {
+  let doc = @html_parser.parse("<!doctype html><p>x</p>")
+  assert_eq(doc.query(":root").length(), 1)
+  assert_eq(doc.query("html:root").length(), 1)
+  assert_eq(doc.query("body:root").length(), 0)
+  let fragment = @html_parser.parse_fragment("<div>x</div>")
+  assert_eq(fragment.query(":root").length(), 1)
+  assert_eq(fragment.query("div:root").length(), 1)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(

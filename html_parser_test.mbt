@@ -7561,17 +7561,6 @@ test "parser tracks origins for fragment colgroup starts" {
 }
 
 ///|
-test "query supports root pseudo selector" {
-  let doc = @html_parser.parse("<!doctype html><p>x</p>")
-  assert_eq(doc.query(":root").length(), 1)
-  assert_eq(doc.query("html:root").length(), 1)
-  assert_eq(doc.query("body:root").length(), 0)
-  let fragment = @html_parser.parse_fragment("<div>x</div>")
-  assert_eq(fragment.query(":root").length(), 1)
-  assert_eq(fragment.query("div:root").length(), 1)
-}
-
-///|
 test "query supports first and last of type pseudo selectors" {
   let doc = @html_parser.parse_fragment(
     "<div><h1>Heading</h1><p class='first'>First</p><p class='second'>Second</p><span>Other</span><p class='third'>Third</p></div>",
