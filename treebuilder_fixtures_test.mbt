@@ -141,6 +141,36 @@ test "tree builder matches Python reference SVG font breakout branch fixture" {
 }
 
 ///|
+test "tree builder matches Python reference foreign integration branch fixtures" {
+  let svg = @html_parser.parse(
+    "<svg><g><rect></rect><circle></circle><path></path></g></svg><div></div>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(svg.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <svg svg>\n|       <svg g>\n|         <svg rect>\n|         <svg circle>\n|         <svg path>\n|     <div>",
+  )
+  assert_eq(svg.errors.length(), 1)
+  assert_eq(svg.errors[0].code, "expected-doctype-but-got-start-tag")
+  guard svg.errors[0].column is Some(5) else {
+    fail("expected SVG doctype error at svg start close")
+  }
+  let math = @html_parser.parse(
+    "<math><annotation-xml encoding=\"text/html\"><div><table><tr></tr></table></div></annotation-xml></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(math.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math annotation-xml>\n|         encoding=\"text/html\"\n|         <div>\n|           <table>\n|             <tbody>\n|               <tr>",
+  )
+  assert_eq(math.errors.length(), 1)
+  assert_eq(math.errors[0].code, "expected-doctype-but-got-start-tag")
+  guard math.errors[0].column is Some(6) else {
+    fail("expected MathML doctype error at math start close")
+  }
+}
+
+///|
 test "tree builder matches vendored empty stack edge fixtures" {
   for case in empty_stack_edge_fixture_cases() {
     assert_tree_fixture(case)
