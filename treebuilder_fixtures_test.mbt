@@ -74,6 +74,51 @@ test "tree builder matches vendored branch coverage fixtures" {
 }
 
 ///|
+test "tree builder matches Python reference annotation-xml breakout branch fixtures" {
+  let plain_encoding = @html_parser.parse(
+    "<math><annotation-xml encoding=\"text/plain\"><div></div></annotation-xml></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(plain_encoding.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math annotation-xml>\n|         encoding=\"text/plain\"\n|     <div>",
+  )
+  assert_eq(plain_encoding.errors.length(), 4)
+  assert_eq(plain_encoding.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(
+    plain_encoding.errors[1].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(plain_encoding.errors[2].code, "unexpected-end-tag")
+  assert_eq(plain_encoding.errors[3].code, "unexpected-end-tag")
+  guard plain_encoding.errors[1].column is Some(49) else {
+    fail("expected text/plain annotation-xml breakout at div start close")
+  }
+  let missing_encoding = @html_parser.parse(
+    "<math><annotation-xml><div></div></annotation-xml></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    @html_parser.to_test_format(missing_encoding.root),
+    "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math annotation-xml>\n|     <div>",
+  )
+  assert_eq(missing_encoding.errors.length(), 4)
+  assert_eq(
+    missing_encoding.errors[0].code,
+    "expected-doctype-but-got-start-tag",
+  )
+  assert_eq(
+    missing_encoding.errors[1].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(missing_encoding.errors[2].code, "unexpected-end-tag")
+  assert_eq(missing_encoding.errors[3].code, "unexpected-end-tag")
+  guard missing_encoding.errors[1].column is Some(27) else {
+    fail("expected missing-encoding annotation-xml breakout at div start close")
+  }
+}
+
+///|
 test "tree builder matches vendored empty stack edge fixtures" {
   for case in empty_stack_edge_fixture_cases() {
     assert_tree_fixture(case)

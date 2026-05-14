@@ -843,6 +843,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split public parser foreign-content namespace regressions into
       `parser_public_regression_test.mbt`.
+- [x] Split tree-builder annotation-xml breakout reference regressions into
+      `treebuilder_fixtures_test.mbt`.
 
 ## Working Rule
 
