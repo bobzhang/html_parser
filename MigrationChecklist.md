@@ -891,6 +891,10 @@ reference implementation in `.repos/justhtml`.
       `serializer_public_regression_test.mbt`.
 - [x] Split pretty serializer raw/preformatted text-only regression into
       `serializer_public_regression_test.mbt`.
+- [x] Split pretty serializer inline mixed-content regression into
+      `serializer_public_regression_test.mbt`.
+- [x] Split pretty serializer block-descendant multiline regression into
+      `serializer_public_regression_test.mbt`.
 
 ## Working Rule
 
