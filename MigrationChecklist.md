@@ -738,6 +738,8 @@ reference implementation in `.repos/justhtml`.
       `parser/table_wbtest.mbt`.
 - [x] Split parser scaffold and fragment-shell whitebox coverage into
       `parser/scaffold_wbtest.mbt`.
+- [x] Split parser document-mode whitebox coverage into
+      `parser/document_modes_wbtest.mbt`.
 
 ## Working Rule
 
