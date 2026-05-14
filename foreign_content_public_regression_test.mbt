@@ -150,3 +150,113 @@ test "parser treats foreign integration points as HTML islands" {
   }
   assert_true(section.namespace_uri() is Some("html"))
 }
+
+///|
+test "parser handles foreign content end tag recovery" {
+  let ancestor_end = @html_parser.parse_fragment(
+    "<svg><lineargradient></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    ancestor_end.to_html(pretty=false),
+    "<svg><linearGradient></linearGradient></svg>",
+  )
+  assert_eq(ancestor_end.errors.length(), 1)
+  assert_eq(ancestor_end.errors[0].code, "unexpected-end-tag")
+  let missing_foreign = @html_parser.parse_fragment(
+    "<svg><g></path></svg>",
+    collect_errors=true,
+  )
+  assert_eq(missing_foreign.to_html(pretty=false), "<svg><g></g></svg>")
+  assert_eq(missing_foreign.errors.length(), 3)
+  assert_eq(missing_foreign.errors[0].code, "unexpected-end-tag")
+  assert_eq(missing_foreign.errors[1].code, "unexpected-end-tag")
+  assert_eq(missing_foreign.errors[2].code, "unexpected-end-tag")
+  let paragraph_breakout = @html_parser.parse_fragment(
+    "<svg></p>",
+    collect_errors=true,
+  )
+  assert_eq(paragraph_breakout.to_html(pretty=false), "<svg></svg><p></p>")
+  assert_eq(paragraph_breakout.errors.length(), 2)
+  assert_eq(
+    paragraph_breakout.errors[0].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(paragraph_breakout.errors[1].code, "unexpected-end-tag")
+  let nested_svg_breakout = @html_parser.parse_fragment(
+    "<div><svg><g><p>x</p></g></svg>after</div>",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested_svg_breakout.to_html(pretty=false),
+    "<div><svg><g></g></svg><p>x</p>after</div>",
+  )
+  assert_eq(nested_svg_breakout.errors.length(), 3)
+  assert_eq(
+    nested_svg_breakout.errors[0].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(nested_svg_breakout.errors[1].code, "unexpected-end-tag")
+  assert_eq(nested_svg_breakout.errors[2].code, "unexpected-end-tag")
+  let math_text_integration = @html_parser.parse_fragment(
+    "<math><mi><b>x</b></mi></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    math_text_integration.to_html(pretty=false),
+    "<math><mi><b>x</b></mi></math>",
+  )
+  assert_eq(math_text_integration.errors.length(), 0)
+  guard math_text_integration.query_one("b") is Some(bold) else {
+    fail("expected html b")
+  }
+  assert_true(bold.namespace_uri() is Some("html"))
+  let math_exception_children = @html_parser.parse_fragment(
+    "<math><mi><mglyph></mglyph><malignmark></malignmark><b>x</b></mi></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    math_exception_children.to_html(pretty=false),
+    "<math><mi><mglyph></mglyph><malignmark></malignmark><b>x</b></mi></math>",
+  )
+  assert_eq(math_exception_children.errors.length(), 0)
+  guard math_exception_children.query_one("mglyph") is Some(mglyph) else {
+    fail("expected mglyph")
+  }
+  assert_true(mglyph.namespace_uri() is Some("math"))
+  guard math_exception_children.query_one("malignmark") is Some(malignmark) else {
+    fail("expected malignmark")
+  }
+  assert_true(malignmark.namespace_uri() is Some("math"))
+  guard math_exception_children.query_one("b") is Some(exception_bold) else {
+    fail("expected html b after MathML exceptions")
+  }
+  assert_true(exception_bold.namespace_uri() is Some("html"))
+  let integration_breakout = @html_parser.parse_fragment(
+    "<svg><foreignObject><svg><p>x</p></svg></foreignObject></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    integration_breakout.to_html(pretty=false),
+    "<svg><foreignObject><svg></svg><p>x</p></foreignObject></svg>",
+  )
+  assert_eq(integration_breakout.errors.length(), 4)
+  assert_eq(
+    integration_breakout.errors[0].code,
+    "unexpected-html-element-in-foreign-content",
+  )
+  assert_eq(integration_breakout.errors[1].code, "unexpected-end-tag")
+  assert_eq(integration_breakout.errors[2].code, "unexpected-end-tag")
+  assert_eq(integration_breakout.errors[3].code, "unexpected-end-tag")
+  let ancestor_html_end = @html_parser.parse_fragment(
+    "<div><svg></div><p>after</p>",
+    collect_errors=true,
+  )
+  assert_eq(
+    ancestor_html_end.to_html(pretty=false),
+    "<div><svg></svg></div><p>after</p>",
+  )
+  assert_eq(ancestor_html_end.errors.length(), 2)
+  assert_eq(ancestor_html_end.errors[0].code, "unexpected-end-tag")
+  assert_eq(ancestor_html_end.errors[1].code, "end-tag-too-early")
+}
