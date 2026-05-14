@@ -2794,48 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "template column group keeps columns and drops text" {
-  let text = @html_parser.parse_fragment(
-    "<template><col>x<col></template>",
-    collect_errors=true,
-  )
-  assert_eq(text.to_html(pretty=false), "<template><col><col></template>")
-  assert_eq(text.errors.length(), 1)
-  assert_eq(
-    text.errors[0].code,
-    "unexpected-characters-in-template-column-group",
-  )
-  let whitespace = @html_parser.parse_fragment(
-    "<template><col> x<col></template>",
-    collect_errors=true,
-  )
-  assert_eq(
-    whitespace.to_html(pretty=false),
-    "<template><col> <col></template>",
-  )
-  assert_eq(whitespace.errors.length(), 1)
-  assert_eq(
-    whitespace.errors[0].code,
-    "unexpected-characters-in-template-column-group",
-  )
-  let col_end = @html_parser.parse_fragment(
-    "<template><col></col></template>",
-    collect_errors=true,
-  )
-  assert_eq(col_end.to_html(pretty=false), "<template><col></template>")
-  assert_eq(col_end.errors.length(), 1)
-  assert_eq(col_end.errors[0].code, "unexpected-end-tag")
-  let colgroup = @html_parser.parse_fragment(
-    "<template><col><colgroup><col></colgroup></template>",
-    collect_errors=true,
-  )
-  assert_eq(colgroup.to_html(pretty=false), "<template><col><col></template>")
-  assert_eq(colgroup.errors.length(), 2)
-  assert_eq(colgroup.errors[0].code, "unexpected-start-tag-implies-end-tag")
-  assert_eq(colgroup.errors[1].code, "unexpected-end-tag")
-}
-
-///|
 test "nested templates suspend hidden template table modes" {
   let nested_column_group = @html_parser.parse_fragment(
     "<template><col><template><p>x</p></template><col></template>",
