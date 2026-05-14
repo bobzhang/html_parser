@@ -232,3 +232,90 @@ test "document parser merges root repeated html tags" {
     "<html lang=\"en\" dir=\"ltr\"><head></head><body>xy</body></html>",
   )
 }
+
+///|
+test "document parser preserves shell scaffolding edge ordering" {
+  let leading_text = @html_parser.parse(
+    "<html> \n\tBody</html>",
+    collect_errors=true,
+  )
+  assert_eq(
+    leading_text.to_html(pretty=false),
+    "<html><head></head><body>Body</body></html>",
+  )
+  assert_eq(leading_text.errors.length(), 1)
+  assert_eq(leading_text.errors[0].code, "expected-doctype-but-got-start-tag")
+  let leading_space_only = @html_parser.parse(
+    "<!doctype html><html>   </html>",
+    collect_errors=true,
+  )
+  assert_eq(
+    leading_space_only.to_html(pretty=false),
+    "<!DOCTYPE html><html><head></head><body></body></html>",
+  )
+  assert_eq(leading_space_only.errors.length(), 0)
+  let explicit_head_whitespace = @html_parser.parse(
+    "<html><title>T</title> \t\n<p>x</p></html>",
+  )
+  assert_eq(
+    explicit_head_whitespace.to_html(pretty=false),
+    "<html><head><title>T</title> \t\n</head><body><p>x</p></body></html>",
+  )
+  let explicit_head_trailing_whitespace = @html_parser.parse(
+    "<html><title>T</title> \t\n</html>",
+  )
+  assert_eq(
+    explicit_head_trailing_whitespace.to_html(pretty=false),
+    "<html><head><title>T</title> \t\n</head><body></body></html>",
+  )
+  let explicit_after_head_text = @html_parser.parse(
+    "<html><head></head>Body</html>",
+  )
+  assert_eq(
+    explicit_after_head_text.to_html(pretty=false),
+    "<html><head></head><body>Body</body></html>",
+  )
+  let implicit_head_trailing_whitespace = @html_parser.parse(
+    "<title>T</title> \t\n",
+  )
+  assert_eq(
+    implicit_head_trailing_whitespace.to_html(pretty=false),
+    "<html><head><title>T</title> \t\n</head><body></body></html>",
+  )
+  let late_head = @html_parser.parse(
+    "<html><body>x</body><head><title>T</title></head></html>",
+    collect_errors=true,
+  )
+  assert_eq(
+    late_head.to_html(pretty=false),
+    "<html><head></head><body>x<title>T</title></body></html>",
+  )
+  assert_eq(late_head.errors.length(), 3)
+  assert_eq(late_head.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(late_head.errors[1].code, "unexpected-start-tag")
+  assert_eq(late_head.errors[2].code, "unexpected-end-tag")
+  let frameset_tail = @html_parser.parse(
+    "<html><frameset></frameset>   <!--tail--></html>",
+    collect_errors=true,
+  )
+  assert_eq(
+    frameset_tail.to_html(pretty=false),
+    "<html><head></head><frameset></frameset>   <!--tail--></html>",
+  )
+  assert_eq(frameset_tail.errors.length(), 1)
+  assert_eq(frameset_tail.errors[0].code, "expected-doctype-but-got-start-tag")
+  let recursive_html = @html_parser.parse(
+    "<html lang=en></html><html dir=ltr><html data-x=1><body>x</body></html></html>",
+    collect_errors=true,
+  )
+  assert_eq(
+    recursive_html.to_html(pretty=false),
+    "<html lang=\"en\" dir=\"ltr\" data-x=\"1\"><head></head><body>x</body></html>",
+  )
+  assert_eq(recursive_html.errors.length(), 5)
+  assert_eq(recursive_html.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(recursive_html.errors[1].code, "unexpected-start-tag")
+  assert_eq(recursive_html.errors[2].code, "unexpected-start-tag")
+  assert_eq(recursive_html.errors[3].code, "unexpected-start-tag")
+  assert_eq(recursive_html.errors[4].code, "unexpected-token-after-body")
+}
