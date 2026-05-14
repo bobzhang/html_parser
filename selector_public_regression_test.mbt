@@ -274,6 +274,24 @@ test "query supports child selectors" {
 }
 
 ///|
+test "query supports adjacent sibling selectors" {
+  let doc = @html_parser.parse_fragment(
+    "<div><h1>Heading</h1>\n<p class='first'>First</p><p class='second'>Second</p><span>Other</span><p class='third'>Third</p></div>",
+  )
+  assert_eq(doc.query("h1 + p").length(), 1)
+  assert_eq(doc.query(".first + p").length(), 1)
+  assert_eq(doc.query(".first + span").length(), 0)
+  assert_eq(doc.query("span + p").length(), 1)
+  assert_eq(doc.query("h1+p").length(), 1)
+  assert_eq(doc.query("p + h1").length(), 0)
+  guard doc.query_one(".second") is Some(second) else {
+    fail("expected second paragraph")
+  }
+  assert_true(@html_parser.matches(second, ".first + p"))
+  assert_eq(@html_parser.matches(second, "h1 + p"), false)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(

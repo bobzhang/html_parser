@@ -767,6 +767,8 @@ reference implementation in `.repos/justhtml`.
       `selector_public_regression_test.mbt`.
 - [x] Split public selector child-combinator regressions into
       `selector_public_regression_test.mbt`.
+- [x] Split public selector adjacent-sibling regressions into
+      `selector_public_regression_test.mbt`.
 
 ## Working Rule
 
