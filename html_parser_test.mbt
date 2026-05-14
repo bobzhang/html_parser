@@ -7561,16 +7561,6 @@ test "parser tracks origins for fragment colgroup starts" {
 }
 
 ///|
-test "parser creates empty paragraph for stray p end tags" {
-  let root = @html_parser.parse_fragment("</p>after", collect_errors=true)
-  assert_eq(root.to_html(pretty=false), "<p></p>after")
-  assert_eq(root.errors.length(), 1)
-  assert_eq(root.errors[0].code, "unexpected-end-tag")
-  let nested = @html_parser.parse_fragment("<div></p>after</div>")
-  assert_eq(nested.to_html(pretty=false), "<div><p></p>after</div>")
-}
-
-///|
 test "parser reports early ancestor end tags after implied end tags" {
   let implied = @html_parser.parse_fragment(
     "<div><p>x</div>after",

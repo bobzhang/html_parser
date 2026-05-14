@@ -80,6 +80,16 @@ test "parser ignores unmatched end tags without closing current element" {
 }
 
 ///|
+test "parser creates empty paragraph for stray p end tags" {
+  let root = @html_parser.parse_fragment("</p>after", collect_errors=true)
+  assert_eq(root.to_html(pretty=false), "<p></p>after")
+  assert_eq(root.errors.length(), 1)
+  assert_eq(root.errors[0].code, "unexpected-end-tag")
+  let nested = @html_parser.parse_fragment("<div></p>after</div>")
+  assert_eq(nested.to_html(pretty=false), "<div><p></p>after</div>")
+}
+
+///|
 test "public parser fragment contexts stay stable" {
   let table = @html_parser.parse_fragment(
     "<tr><td>A</td></tr>",
