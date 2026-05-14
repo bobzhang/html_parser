@@ -69,6 +69,17 @@ test "collect_errors records malformed markup without raising" {
 }
 
 ///|
+test "parser ignores unmatched end tags without closing current element" {
+  let doc = @html_parser.parse_fragment(
+    "<div><p>open</span>after</div>",
+    collect_errors=true,
+  )
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "unexpected-end-tag")
+  assert_eq(doc.to_html(pretty=false), "<div><p>openafter</p></div>")
+}
+
+///|
 test "public parser fragment contexts stay stable" {
   let table = @html_parser.parse_fragment(
     "<tr><td>A</td></tr>",

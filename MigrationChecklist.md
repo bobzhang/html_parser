@@ -805,6 +805,8 @@ reference implementation in `.repos/justhtml`.
       `selector_public_regression_test.mbt`.
 - [x] Split public parser malformed-markup collect-errors regressions into
       `parser_public_regression_test.mbt`.
+- [x] Split public parser unmatched-end-tag regressions into
+      `parser_public_regression_test.mbt`.
 
 ## Working Rule
 

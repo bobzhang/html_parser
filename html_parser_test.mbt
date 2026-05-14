@@ -7561,17 +7561,6 @@ test "parser tracks origins for fragment colgroup starts" {
 }
 
 ///|
-test "parser ignores unmatched end tags without closing current element" {
-  let doc = @html_parser.parse_fragment(
-    "<div><p>open</span>after</div>",
-    collect_errors=true,
-  )
-  assert_eq(doc.errors.length(), 1)
-  assert_eq(doc.errors[0].code, "unexpected-end-tag")
-  assert_eq(doc.to_html(pretty=false), "<div><p>openafter</p></div>")
-}
-
-///|
 test "parser creates empty paragraph for stray p end tags" {
   let root = @html_parser.parse_fragment("</p>after", collect_errors=true)
   assert_eq(root.to_html(pretty=false), "<p></p>after")
