@@ -423,3 +423,197 @@ test "document parser accepts doctype after leading comments and whitespace" {
   )
   assert_eq(mixed.errors.length(), 0)
 }
+
+///|
+test "document parser reports missing initial doctype" {
+  let chars = @html_parser.parse("x", collect_errors=true)
+  assert_eq(
+    chars.to_html(pretty=false),
+    "<html><head></head><body>x</body></html>",
+  )
+  assert_eq(chars.errors.length(), 1)
+  assert_eq(chars.errors[0].code, "expected-doctype-but-got-chars")
+  guard chars.errors[0].column is Some(1) else {
+    fail("expected character doctype error at first column")
+  }
+  let start = @html_parser.parse("<div>x", collect_errors=true)
+  assert_eq(
+    start.to_html(pretty=false),
+    "<html><head></head><body><div>x</div></body></html>",
+  )
+  assert_eq(start.errors.length(), 2)
+  assert_eq(start.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(start.errors[1].code, "expected-closing-tag-but-got-eof")
+  guard start.errors[0].column is Some(5) else {
+    fail("expected start tag doctype error at tag close")
+  }
+  let stray_template = @html_parser.parse("</template>", collect_errors=true)
+  assert_eq(
+    stray_template.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  assert_eq(stray_template.errors.length(), 2)
+  assert_eq(stray_template.errors[0].code, "expected-doctype-but-got-end-tag")
+  assert_eq(stray_template.errors[1].code, "unexpected-end-tag-before-html")
+  guard stray_template.errors[1].column is Some(11) else {
+    fail("expected before-html end tag error at tag close")
+  }
+  let stray_html = @html_parser.parse("</html>", collect_errors=true)
+  assert_eq(stray_html.errors.length(), 1)
+  assert_eq(stray_html.errors[0].code, "expected-doctype-but-got-end-tag")
+  let stray_br = @html_parser.parse("</br>", collect_errors=true)
+  assert_eq(
+    stray_br.to_html(pretty=false),
+    "<html><head></head><body><br></body></html>",
+  )
+  assert_eq(stray_br.errors.length(), 2)
+  assert_eq(stray_br.errors[0].code, "expected-doctype-but-got-end-tag")
+  assert_eq(stray_br.errors[1].code, "unexpected-end-tag")
+  guard stray_br.errors[1].column is Some(5) else {
+    fail("expected before-html br error at tag close")
+  }
+  let after_comment = @html_parser.parse("<!--c--><div>x", collect_errors=true)
+  assert_eq(
+    after_comment.to_html(pretty=false),
+    "<!--c--><html><head></head><body><div>x</div></body></html>",
+  )
+  assert_eq(after_comment.errors[0].code, "expected-doctype-but-got-start-tag")
+  guard after_comment.errors[0].column is Some(13) else {
+    fail("expected doctype error after initial comment")
+  }
+  let whitespace_eof = @html_parser.parse("   ", collect_errors=true)
+  assert_eq(
+    whitespace_eof.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  assert_eq(whitespace_eof.errors.length(), 1)
+  assert_eq(whitespace_eof.errors[0].code, "expected-doctype-but-got-eof")
+  guard whitespace_eof.errors[0].column is Some(3) else {
+    fail("expected EOF doctype error at final whitespace")
+  }
+  let empty = @html_parser.parse("", collect_errors=true)
+  assert_eq(empty.errors[0].code, "expected-doctype-but-got-eof")
+  guard empty.errors[0].column is Some(0) else {
+    fail("expected empty input EOF at column zero")
+  }
+  let unfinished_start = @html_parser.parse("<div foo=\"", collect_errors=true)
+  assert_eq(
+    unfinished_start.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  assert_eq(unfinished_start.errors.length(), 2)
+  assert_eq(unfinished_start.errors[0].code, "eof-in-tag")
+  assert_eq(unfinished_start.errors[1].code, "expected-doctype-but-got-eof")
+  guard unfinished_start.errors[1].column is Some(10) else {
+    fail("expected doctype EOF after unfinished start tag")
+  }
+  let unfinished_end = @html_parser.parse("</span", collect_errors=true)
+  assert_eq(
+    unfinished_end.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  assert_eq(unfinished_end.errors.length(), 2)
+  assert_eq(unfinished_end.errors[0].code, "eof-in-tag")
+  assert_eq(unfinished_end.errors[1].code, "expected-doctype-but-got-eof")
+  guard unfinished_end.errors[1].column is Some(6) else {
+    fail("expected doctype EOF after unfinished end tag")
+  }
+  let unfinished_comment = @html_parser.parse("<!--x", collect_errors=true)
+  assert_eq(
+    unfinished_comment.to_html(pretty=false),
+    "<!--x--><html><head></head><body></body></html>",
+  )
+  assert_eq(unfinished_comment.errors.length(), 2)
+  assert_eq(unfinished_comment.errors[0].code, "eof-in-comment")
+  assert_eq(unfinished_comment.errors[1].code, "expected-doctype-but-got-eof")
+  guard unfinished_comment.errors[0].column is Some(5) else {
+    fail("expected unfinished comment EOF at final character")
+  }
+  guard unfinished_comment.errors[1].column is Some(5) else {
+    fail("expected doctype EOF after unfinished comment")
+  }
+  let bogus_question = @html_parser.parse("<?foo", collect_errors=true)
+  assert_eq(
+    bogus_question.to_html(pretty=false),
+    "<!--?foo--><html><head></head><body></body></html>",
+  )
+  assert_eq(bogus_question.errors.length(), 2)
+  assert_eq(
+    bogus_question.errors[0].code,
+    "unexpected-question-mark-instead-of-tag-name",
+  )
+  assert_eq(bogus_question.errors[1].code, "expected-doctype-but-got-eof")
+  guard bogus_question.errors[0].column is Some(2) else {
+    fail("expected question-mark error at column 2")
+  }
+  guard bogus_question.errors[1].column is Some(5) else {
+    fail("expected doctype EOF after bogus question-mark comment")
+  }
+  let question_then_text = @html_parser.parse("<?foo>x", collect_errors=true)
+  assert_eq(
+    question_then_text.to_html(pretty=false),
+    "<!--?foo--><html><head></head><body>x</body></html>",
+  )
+  assert_eq(question_then_text.errors.length(), 2)
+  assert_eq(
+    question_then_text.errors[0].code,
+    "unexpected-question-mark-instead-of-tag-name",
+  )
+  assert_eq(question_then_text.errors[1].code, "expected-doctype-but-got-chars")
+  guard question_then_text.errors[1].column is Some(7) else {
+    fail("expected doctype chars after closed bogus question-mark comment")
+  }
+  let malformed_declaration = @html_parser.parse("<!foo>", collect_errors=true)
+  assert_eq(
+    malformed_declaration.to_html(pretty=false),
+    "<!--foo--><html><head></head><body></body></html>",
+  )
+  assert_eq(malformed_declaration.errors.length(), 2)
+  assert_eq(malformed_declaration.errors[0].code, "incorrectly-opened-comment")
+  assert_eq(
+    malformed_declaration.errors[1].code,
+    "expected-doctype-but-got-eof",
+  )
+  guard malformed_declaration.errors[0].column is Some(2) else {
+    fail("expected malformed declaration error at bang")
+  }
+  guard malformed_declaration.errors[1].column is Some(6) else {
+    fail("expected doctype EOF after malformed declaration")
+  }
+  let cdata_then_text = @html_parser.parse("<![CDATA[]]>x", collect_errors=true)
+  assert_eq(
+    cdata_then_text.to_html(pretty=false),
+    "<!--[CDATA[]]--><html><head></head><body>x</body></html>",
+  )
+  assert_eq(cdata_then_text.errors.length(), 2)
+  assert_eq(cdata_then_text.errors[0].code, "cdata-in-html-content")
+  assert_eq(cdata_then_text.errors[1].code, "expected-doctype-but-got-chars")
+  guard cdata_then_text.errors[0].column is Some(9) else {
+    fail("expected cdata error at opening bracket")
+  }
+  guard cdata_then_text.errors[1].column is Some(13) else {
+    fail("expected doctype chars after HTML cdata bogus comment")
+  }
+  let empty_end = @html_parser.parse("</>", collect_errors=true)
+  assert_eq(
+    empty_end.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  assert_eq(empty_end.errors.length(), 2)
+  assert_eq(empty_end.errors[0].code, "empty-end-tag")
+  assert_eq(empty_end.errors[1].code, "expected-doctype-but-got-eof")
+  guard empty_end.errors[0].column is Some(3) else {
+    fail("expected empty end tag error at >")
+  }
+  guard empty_end.errors[1].column is Some(3) else {
+    fail("expected doctype EOF after empty end tag")
+  }
+  let invalid_open = @html_parser.parse("<*foo>", collect_errors=true)
+  assert_eq(
+    invalid_open.to_html(pretty=false),
+    "<html><head></head><body>&lt;*foo&gt;</body></html>",
+  )
+  assert_eq(invalid_open.errors.length(), 2)
+  assert_eq(invalid_open.errors[0].code, "invalid-first-character-of-tag-name")
+  assert_eq(invalid_open.errors[1].code, "expected-doctype-but-got-chars")
+}
