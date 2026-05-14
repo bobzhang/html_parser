@@ -724,6 +724,8 @@ reference implementation in `.repos/justhtml`.
       `tokenizer/comment_scan_types.mbt`.
 - [x] Split tokenizer entity public data definitions into
       `tokenizer/entity_types.mbt`.
+- [x] Split parser foreign-adjustment whitebox coverage into
+      `parser/foreign_adjustments_wbtest.mbt`.
 
 ## Working Rule
 

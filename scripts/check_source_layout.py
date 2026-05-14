@@ -293,6 +293,7 @@ def main(argv: list[str]) -> int:
             ok = False
 
     required_parser_tests = {
+        "parser/foreign_adjustments_wbtest.mbt",
         "parser/parser_wbtest.mbt",
     }
     for path in sorted(required_parser_tests):
