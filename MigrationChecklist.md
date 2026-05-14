@@ -837,6 +837,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split public parser nested-form start regressions into
       `parser_public_regression_test.mbt`.
+- [x] Split public parser stored-form end-tag regressions into
+      `parser_public_regression_test.mbt`.
 
 ## Working Rule
 

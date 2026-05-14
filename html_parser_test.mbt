@@ -7561,27 +7561,6 @@ test "parser tracks origins for fragment colgroup starts" {
 }
 
 ///|
-test "parser handles form end tags through stored form element" {
-  let closes_p = @html_parser.parse_fragment("<p>a<form>b</form>c")
-  assert_eq(closes_p.to_html(pretty=false), "<p>a</p><form>b</form>c")
-  let stray = @html_parser.parse_fragment("</form>x", collect_errors=true)
-  assert_eq(stray.to_html(pretty=false), "x")
-  assert_eq(stray.errors.length(), 1)
-  assert_eq(stray.errors[0].code, "unexpected-end-tag")
-  let removed_by_ancestor = @html_parser.parse_fragment(
-    "<div><form><p>x</div>after</form>",
-    collect_errors=true,
-  )
-  assert_eq(
-    removed_by_ancestor.to_html(pretty=false),
-    "<div><form><p>x</p></form></div>after",
-  )
-  assert_eq(removed_by_ancestor.errors.length(), 2)
-  assert_eq(removed_by_ancestor.errors[0].code, "end-tag-too-early")
-  assert_eq(removed_by_ancestor.errors[1].code, "unexpected-end-tag")
-}
-
-///|
 test "parser generates implied ruby annotation end tags" {
   let repeated_base = @html_parser.parse_fragment(
     "<ruby><rb>a<rb>b</ruby>",
