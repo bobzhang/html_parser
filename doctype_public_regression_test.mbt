@@ -435,3 +435,109 @@ test "parser and tokenizer report missing doctype identifier quotes" {
   guard system_info.system_id is None else { fail("expected no system id") }
   assert_eq(system_info.force_quirks, true)
 }
+
+///|
+test "parser reports doctype quoted identifier edge recovery" {
+  let public_abrupt = @html_parser.parse(
+    "<!doctype html PUBLIC \"x>",
+    collect_errors=true,
+  )
+  assert_eq(
+    public_abrupt.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(public_abrupt.errors.length(), 2)
+  assert_eq(public_abrupt.errors[0].code, "abrupt-doctype-public-identifier")
+  guard public_abrupt.errors[0].column is Some(25) else {
+    fail("expected abrupt public id at close bracket")
+  }
+  assert_eq(public_abrupt.errors[1].code, "unknown-doctype")
+  let public_identifier_eof = @html_parser.parse(
+    "<!doctype html PUBLIC \"x",
+    collect_errors=true,
+  )
+  assert_eq(
+    public_identifier_eof.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(public_identifier_eof.errors.length(), 2)
+  assert_eq(
+    public_identifier_eof.errors[0].code,
+    "eof-in-doctype-public-identifier",
+  )
+  guard public_identifier_eof.errors[0].column is Some(24) else {
+    fail("expected public id EOF at final character")
+  }
+  assert_eq(public_identifier_eof.errors[1].code, "unknown-doctype")
+  let public_identifier_newline_eof = @html_parser.parse(
+    "<!doctype html PUBLIC \"x\n",
+    collect_errors=true,
+  )
+  assert_eq(
+    public_identifier_newline_eof.to_html(pretty=false),
+    "<!DOCTYPE html PUBLIC \"x\n\"><html><head></head><body></body></html>",
+  )
+  assert_eq(public_identifier_newline_eof.errors.length(), 2)
+  assert_eq(
+    public_identifier_newline_eof.errors[0].code,
+    "eof-in-doctype-public-identifier",
+  )
+  guard public_identifier_newline_eof.errors[0].line is Some(2) else {
+    fail("expected public identifier newline EOF on line 2")
+  }
+  guard public_identifier_newline_eof.errors[0].column is Some(0) else {
+    fail("expected public identifier newline EOF at column 0")
+  }
+  assert_eq(public_identifier_newline_eof.errors[1].code, "unknown-doctype")
+  let system_abrupt = @html_parser.parse(
+    "<!doctype html SYSTEM \"x>",
+    collect_errors=true,
+  )
+  assert_eq(
+    system_abrupt.to_html(pretty=false),
+    "<!DOCTYPE html SYSTEM \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(system_abrupt.errors.length(), 2)
+  assert_eq(system_abrupt.errors[0].code, "abrupt-doctype-system-identifier")
+  guard system_abrupt.errors[0].column is Some(25) else {
+    fail("expected abrupt system id at close bracket")
+  }
+  assert_eq(system_abrupt.errors[1].code, "unknown-doctype")
+  let system_identifier_eof = @html_parser.parse(
+    "<!doctype html SYSTEM \"x",
+    collect_errors=true,
+  )
+  assert_eq(
+    system_identifier_eof.to_html(pretty=false),
+    "<!DOCTYPE html SYSTEM \"x\"><html><head></head><body></body></html>",
+  )
+  assert_eq(system_identifier_eof.errors.length(), 2)
+  assert_eq(
+    system_identifier_eof.errors[0].code,
+    "eof-in-doctype-system-identifier",
+  )
+  guard system_identifier_eof.errors[0].column is Some(24) else {
+    fail("expected system id EOF at final character")
+  }
+  assert_eq(system_identifier_eof.errors[1].code, "unknown-doctype")
+  let system_identifier_newline_eof = @html_parser.parse(
+    "<!doctype html SYSTEM \"x\n",
+    collect_errors=true,
+  )
+  assert_eq(
+    system_identifier_newline_eof.to_html(pretty=false),
+    "<!DOCTYPE html SYSTEM \"x\n\"><html><head></head><body></body></html>",
+  )
+  assert_eq(system_identifier_newline_eof.errors.length(), 2)
+  assert_eq(
+    system_identifier_newline_eof.errors[0].code,
+    "eof-in-doctype-system-identifier",
+  )
+  guard system_identifier_newline_eof.errors[0].line is Some(2) else {
+    fail("expected system identifier newline EOF on line 2")
+  }
+  guard system_identifier_newline_eof.errors[0].column is Some(0) else {
+    fail("expected system identifier newline EOF at column 0")
+  }
+  assert_eq(system_identifier_newline_eof.errors[1].code, "unknown-doctype")
+}
