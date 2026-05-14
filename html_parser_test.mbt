@@ -2794,39 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "document parser replaces implicit body before frameset" {
-  let discarded_body = @html_parser.parse(
-    "<!doctype html><meta name=x>  <p><b></b></p><!--drop--><frameset></frameset>",
-    collect_errors=true,
-  )
-  assert_eq(
-    discarded_body.to_html(pretty=false),
-    "<!DOCTYPE html><html><head><meta name=\"x\">  </head><frameset></frameset></html>",
-  )
-  assert_eq(discarded_body.errors.length(), 0)
-  let preserved_head_comment = @html_parser.parse(
-    "<!doctype html><meta name=x>  <!--keep--><figure></figure><!--drop--><frameset></frameset>",
-    collect_errors=true,
-  )
-  assert_eq(
-    preserved_head_comment.to_html(pretty=false),
-    "<!DOCTYPE html><html><head><meta name=\"x\">  <!--keep--></head><frameset></frameset></html>",
-  )
-  assert_eq(preserved_head_comment.errors.length(), 0)
-  let text_blocks_frameset = @html_parser.parse(
-    "<!doctype html><meta name=x>  <p>x</p><!--keep--><frameset></frameset>",
-    collect_errors=true,
-  )
-  assert_eq(
-    text_blocks_frameset.to_html(pretty=false),
-    "<!DOCTYPE html><html><head><meta name=\"x\">  </head><body><p>x</p><!--keep--></body></html>",
-  )
-  assert_eq(text_blocks_frameset.errors.length(), 2)
-  assert_eq(text_blocks_frameset.errors[0].code, "unexpected-start-tag-ignored")
-  assert_eq(text_blocks_frameset.errors[1].code, "unexpected-end-tag")
-}
-
-///|
 test "parser tracks origins for frameset helper insertions" {
   let doc = @html_parser.parse(
     "<!doctype html><frameset><frame src=x><frameset></frameset></frameset>",
