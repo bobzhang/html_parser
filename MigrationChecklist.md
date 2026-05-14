@@ -382,6 +382,8 @@ reference implementation in `.repos/justhtml`.
       `parser/frameset_replacement.mbt`.
 - [x] Split parser active-formatting and adoption-agency helpers into
       `parser/active_formatting.mbt`.
+- [x] Split parser active-formatting entry bookkeeping into
+      `parser/active_formatting_entries.mbt`.
 - [x] Split parser adoption-agency algorithm into
       `parser/adoption_agency.mbt`.
 - [x] Split parser body tag classification and heading/table cell helpers into
