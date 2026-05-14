@@ -97,3 +97,35 @@ test "parser ignores sectioning starts in select mode" {
   assert_eq(aside.errors[1].code, "unexpected-start-tag-in-select")
   assert_eq(aside.errors[2].code, "unexpected-end-tag")
 }
+
+///|
+test "parser tracks origins for select helper start tags" {
+  let div = @html_parser.parse_fragment(
+    "<select><div>x</div>y</select>",
+    track_node_locations=true,
+  )
+  guard div.query_one("div") is Some(div_node) else {
+    fail("expected select div")
+  }
+  assert_node_origin(div_node, 8, 1, 9)
+  let div_children = div_node.children()
+  assert_eq(div_children.length(), 1)
+  assert_node_origin(div_children[0], 13, 1, 14)
+  let br = @html_parser.parse_fragment(
+    "<select><br>x</select>",
+    track_node_locations=true,
+  )
+  guard br.query_one("br") is Some(br_node) else { fail("expected select br") }
+  assert_node_origin(br_node, 8, 1, 9)
+  let plain = @html_parser.parse_fragment(
+    "<select><plaintext>x</select>y",
+    track_node_locations=true,
+  )
+  guard plain.query_one("plaintext") is Some(plaintext) else {
+    fail("expected select plaintext")
+  }
+  assert_node_origin(plaintext, 8, 1, 9)
+  let plain_children = plaintext.children()
+  assert_eq(plain_children.length(), 1)
+  assert_node_origin(plain_children[0], 19, 1, 20)
+}
