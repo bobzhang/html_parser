@@ -977,6 +977,8 @@ reference implementation in `.repos/justhtml`.
       `document_parser_public_regression_test.mbt`.
 - [x] Split document parser head-side whitespace regression into
       `document_parser_public_regression_test.mbt`.
+- [x] Split document parser leading-comment doctype regression into
+      `document_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
