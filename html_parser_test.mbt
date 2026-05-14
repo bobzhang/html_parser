@@ -2794,46 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser closes row groups before table structure starts" {
-  let nested_body = @html_parser.parse_fragment(
-    "<table><tbody><tbody><tr><td>x</td></tr></tbody></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    nested_body.to_html(pretty=false),
-    "<table><tbody></tbody><tbody><tr><td>x</td></tr></tbody></table>",
-  )
-  assert_eq(nested_body.errors.length(), 0)
-  let head = @html_parser.parse_fragment(
-    "<table><tbody><thead><tr><td>x</td></tr></thead></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    head.to_html(pretty=false),
-    "<table><tbody></tbody><thead><tr><td>x</td></tr></thead></table>",
-  )
-  assert_eq(head.errors.length(), 0)
-  let caption = @html_parser.parse_fragment(
-    "<table><tbody><caption>x</caption></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    caption.to_html(pretty=false),
-    "<table><tbody></tbody><caption>x</caption></table>",
-  )
-  assert_eq(caption.errors.length(), 0)
-  let colgroup = @html_parser.parse_fragment(
-    "<table><tbody><colgroup><col></colgroup></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    colgroup.to_html(pretty=false),
-    "<table><tbody></tbody><colgroup><col></colgroup></table>",
-  )
-  assert_eq(colgroup.errors.length(), 0)
-}
-
-///|
 test "parser wraps table col starts in implied colgroups" {
   let single = @html_parser.parse_fragment(
     "<table><col></table>",
