@@ -817,6 +817,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split public parser paragraph auto-close regressions into
       `parser_public_regression_test.mbt`.
+- [x] Split public parser active-formatting paragraph recovery regressions into
+      `parser_public_regression_test.mbt`.
 
 ## Working Rule
 
