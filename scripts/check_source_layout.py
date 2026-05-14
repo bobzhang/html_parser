@@ -298,6 +298,7 @@ def main(argv: list[str]) -> int:
         "parser/foreign_adjustments_wbtest.mbt",
         "parser/parser_wbtest.mbt",
         "parser/scanner_wbtest.mbt",
+        "parser/table_wbtest.mbt",
         "parser/tokenizer_helpers_wbtest.mbt",
     }
     for path in sorted(required_parser_tests):

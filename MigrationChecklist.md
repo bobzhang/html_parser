@@ -734,6 +734,8 @@ reference implementation in `.repos/justhtml`.
       `parser/scanner_wbtest.mbt`.
 - [x] Split parser active-formatting and adoption-agency whitebox coverage into
       `parser/active_formatting_wbtest.mbt`.
+- [x] Split parser table/template whitebox coverage into
+      `parser/table_wbtest.mbt`.
 
 ## Working Rule
 
