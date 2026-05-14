@@ -867,6 +867,8 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_fixtures_test.mbt`.
 - [x] Split tree-builder select aside and selectedcontent attribute regressions
       into `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder select formatting-end regressions into
+      `treebuilder_fixtures_test.mbt`.
 
 ## Working Rule
 

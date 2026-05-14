@@ -8681,43 +8681,6 @@ test "parser closes repeated option and select optgroup starts" {
 }
 
 ///|
-test "tree builder matches Python reference select formatting end branch fixtures" {
-  let bold = @html_parser.parse("<b><select></b></select>", collect_errors=true)
-  assert_eq(
-    @html_parser.to_test_format(bold.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <b>\n|       <select>",
-  )
-  assert_eq(bold.errors.length(), 3)
-  assert_eq(bold.errors[0].code, "expected-doctype-but-got-start-tag")
-  assert_eq(bold.errors[1].code, "unexpected-end-tag-in-select")
-  assert_eq(bold.errors[2].code, "expected-closing-tag-but-got-eof")
-  guard bold.errors[1].column is Some(15) else {
-    fail("expected bold end tag in select at close bracket")
-  }
-  guard bold.errors[2].column is Some(24) else {
-    fail("expected bold EOF recovery at EOF column")
-  }
-  let link = @html_parser.parse(
-    "<a href=\"x\"><select></a></select>",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(link.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <a>\n|       href=\"x\"\n|       <select>",
-  )
-  assert_eq(link.errors.length(), 3)
-  assert_eq(link.errors[0].code, "expected-doctype-but-got-start-tag")
-  assert_eq(link.errors[1].code, "unexpected-end-tag-in-select")
-  assert_eq(link.errors[2].code, "expected-closing-tag-but-got-eof")
-  guard link.errors[1].column is Some(24) else {
-    fail("expected link end tag in select at close bracket")
-  }
-  guard link.errors[2].column is Some(33) else {
-    fail("expected link EOF recovery at EOF column")
-  }
-}
-
-///|
 test "tree builder matches Python reference select formatting stray branch fixtures" {
   let link_end = @html_parser.parse(
     "<select></a></select>",
