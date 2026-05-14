@@ -452,6 +452,72 @@ test "to_markdown wraps unsafe link destinations and controls raw passthrough" {
 }
 
 ///|
+test "to_markdown flattens block content inside links" {
+  let line_break = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.text("A"),
+      @html_parser.element("br"),
+      @html_parser.text("B"),
+      @html_parser.element("p", children=[@html_parser.text("C")]),
+      @html_parser.text("D"),
+    ],
+  )
+  assert_eq(line_break.to_markdown(), "[A BC D](https://e.com)")
+  let list = @html_parser.element("ul", children=[
+    @html_parser.text("\n"),
+    @html_parser.element("li", children=[@html_parser.text("One")]),
+    @html_parser.element("li", children=[@html_parser.text("Two")]),
+  ])
+  let blocks = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.element("blockquote", children=[
+        @html_parser.element("p", children=[@html_parser.text("Q")]),
+      ]),
+      list,
+    ],
+  )
+  assert_eq(blocks.to_markdown(), "[Q One Two](https://e.com)")
+  let parsed_title = @html_parser.parse_fragment(
+    "<a href='https://e.com'><title>T</title></a>",
+  )
+  assert_eq(parsed_title.to_markdown(), "[T](https://e.com)")
+  let table_link = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.element("hr"),
+      @html_parser.element("h2", children=[@html_parser.text("T")]),
+      @html_parser.element("pre", children=[@html_parser.text("code")]),
+      @html_parser.element("table", children=[
+        @html_parser.element("tr", children=[
+          @html_parser.element("td", children=[@html_parser.text("A")]),
+        ]),
+      ]),
+    ],
+  )
+  assert_eq(
+    table_link.to_markdown(),
+    "[T`code`<table><tr><td>A</td></tr></table>](https://e.com)",
+  )
+  let filtered = @html_parser.element(
+    "a",
+    attrs={ "href": Some("https://e.com") },
+    children=[
+      @html_parser.element("blockquote"),
+      @html_parser.element("ul", children=[
+        @html_parser.text("\n"),
+        @html_parser.element("li", children=[@html_parser.text("One")]),
+      ]),
+    ],
+  )
+  assert_eq(filtered.to_markdown(), "[One](https://e.com)")
+}
+
+///|
 test "public markdown passthrough mode stays stable" {
   let doc = @html_parser.parse_fragment(
     "<p>Before</p><table><tr><td>A</td></tr></table><script data-x='1&2'>if (a < b) alert(1)</script><p>After</p>",

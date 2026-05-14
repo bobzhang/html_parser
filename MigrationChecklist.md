@@ -943,6 +943,8 @@ reference implementation in `.repos/justhtml`.
       `text_markdown_public_regression_test.mbt`.
 - [x] Split markdown unsafe-link and raw passthrough regression into
       `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown link block-flattening regression into
+      `text_markdown_public_regression_test.mbt`.
 
 ## Working Rule
 
