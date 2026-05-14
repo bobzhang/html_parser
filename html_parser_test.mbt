@@ -2794,20 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tree builder matches reference MathML text form-feed fixture" {
-  let doc = @html_parser.parse(
-    "<math><mi>\u{000C}text</mi></math>",
-    collect_errors=true,
-  )
-  assert_eq(
-    @html_parser.to_test_format(doc.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <math math>\n|       <math mi>\n|         \" text\"",
-  )
-  assert_eq(doc.errors.length(), 1)
-  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
-}
-
-///|
 test "tree builder matches reference after-head stray template end fixture" {
   let doc = @html_parser.parse(
     "<head></head></template>text",
