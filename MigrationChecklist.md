@@ -742,6 +742,8 @@ reference implementation in `.repos/justhtml`.
       `parser/document_modes_wbtest.mbt`.
 - [x] Split parser cursor/text whitebox coverage into
       `parser/cursor_text_wbtest.mbt`.
+- [x] Split parser insertion-helper whitebox coverage into
+      `parser/insertion_helpers_wbtest.mbt`.
 
 ## Working Rule
 
