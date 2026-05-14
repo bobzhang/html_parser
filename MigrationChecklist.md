@@ -1075,6 +1075,8 @@ reference implementation in `.repos/justhtml`.
       `select_parser_public_regression_test.mbt`.
 - [x] Start list parser regression file with repeated list item closure
       coverage in `list_parser_public_regression_test.mbt`.
+- [x] Split list parser repeated definition item closure regression into
+      `list_parser_public_regression_test.mbt`.
 - [x] Start template parser regression file with table structural child
       coverage in `template_parser_public_regression_test.mbt`.
 - [x] Split template parser structural end-recovery regression into
