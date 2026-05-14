@@ -30,3 +30,65 @@ test "parser adjusts SVG edge names and foreign attributes" {
     fail("expected adjusted gradientTransform")
   }
 }
+
+///|
+test "parser adjusts long tail SVG names attributes and font breakouts" {
+  let svg = @html_parser.parse_fragment(
+    "<svg><altglyphdef><altglyphitem><femorphology basefrequency='x' gradientunits='u' xlink:arcrole='r'></femorphology><glyphref></glyphref><textpath></textpath></altglyphitem></altglyphdef></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    svg.to_html(pretty=false),
+    "<svg><altGlyphDef><altGlyphItem><feMorphology baseFrequency=\"x\" gradientUnits=\"u\" xlink:arcrole=\"r\"></feMorphology><glyphRef></glyphRef><textPath></textPath></altGlyphItem></altGlyphDef></svg>",
+  )
+  assert_eq(svg.errors.length(), 0)
+  let remaining = @html_parser.parse_fragment(
+    "<svg><animatecolor baseprofile='tiny'></animatecolor><feoffset kernelmatrix='k' xlink:href='#f'></feoffset></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    remaining.to_html(pretty=false),
+    "<svg><animateColor baseProfile=\"tiny\"></animateColor><feOffset kernelMatrix=\"k\" xlink:href=\"#f\"></feOffset></svg>",
+  )
+  assert_eq(remaining.errors.length(), 0)
+  let motion = @html_parser.parse_fragment(
+    "<svg><animatemotion calcmode='paced'></animatemotion><fepointlight kernelunitlength='1 1' xlink:role='r'></fepointlight></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    motion.to_html(pretty=false),
+    "<svg><animateMotion calcMode=\"paced\"></animateMotion><fePointLight kernelUnitLength=\"1 1\" xlink:role=\"r\"></fePointLight></svg>",
+  )
+  assert_eq(motion.errors.length(), 0)
+  let transform = @html_parser.parse_fragment(
+    "<svg><animatetransform clippathunits='userSpaceOnUse' keypoints='0;1' xlink:show='new'></animatetransform><fespecularlighting></fespecularlighting></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    transform.to_html(pretty=false),
+    "<svg><animateTransform clipPathUnits=\"userSpaceOnUse\" keyPoints=\"0;1\" xlink:show=\"new\"></animateTransform><feSpecularLighting></feSpecularLighting></svg>",
+  )
+  assert_eq(transform.errors.length(), 0)
+  let face = @html_parser.parse_fragment(
+    "<svg><font face='serif'>text</font></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    face.to_html(pretty=false),
+    "<svg></svg><font face=\"serif\">text</font>",
+  )
+  assert_eq(face.errors.length(), 2)
+  assert_eq(face.errors[0].code, "unexpected-html-element-in-foreign-content")
+  assert_eq(face.errors[1].code, "unexpected-end-tag")
+  let size = @html_parser.parse_fragment(
+    "<svg><font size='3'>text</font></svg>",
+    collect_errors=true,
+  )
+  assert_eq(
+    size.to_html(pretty=false),
+    "<svg></svg><font size=\"3\">text</font>",
+  )
+  assert_eq(size.errors.length(), 2)
+  assert_eq(size.errors[0].code, "unexpected-html-element-in-foreign-content")
+  assert_eq(size.errors[1].code, "unexpected-end-tag")
+}
