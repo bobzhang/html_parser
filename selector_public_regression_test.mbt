@@ -313,6 +313,25 @@ test "query supports general sibling selectors" {
 }
 
 ///|
+test "query supports first and last child pseudo selectors" {
+  let doc = @html_parser.parse_fragment(
+    "<ul><li class='first'>One</li><li class='middle'>Two</li><li class='last'>Three</li></ul><div><span>Only</span></div>",
+  )
+  assert_eq(doc.query("li:first-child").length(), 1)
+  assert_eq(doc.query("li:last-child").length(), 1)
+  assert_eq(doc.query(".middle:first-child").length(), 0)
+  assert_eq(doc.query(".middle:last-child").length(), 0)
+  assert_eq(doc.query("div > :first-child").length(), 1)
+  assert_eq(doc.query("span:first-child").length(), 1)
+  assert_eq(doc.query("span:last-child").length(), 1)
+  guard doc.query_one("li.first") is Some(first) else {
+    fail("expected first list item")
+  }
+  assert_true(@html_parser.matches(first, "ul > li:first-child"))
+  assert_eq(@html_parser.matches(first, "li:last-child"), false)
+}
+
+///|
 test "public selector query corpus keeps combinators and pseudos stable" {
   let doc = selector_public_doc()
   assert_eq(
