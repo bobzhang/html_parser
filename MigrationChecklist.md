@@ -961,6 +961,8 @@ reference implementation in `.repos/justhtml`.
       `document_parser_public_regression_test.mbt`.
 - [x] Start fragment parser regression file with shell-start body-mode coverage
       in `fragment_parser_public_regression_test.mbt`.
+- [x] Split fragment parser ignored-head-children regression into
+      `fragment_parser_public_regression_test.mbt`.
 
 ## Working Rule
 

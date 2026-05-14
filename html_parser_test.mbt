@@ -2794,26 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "fragment parser preserves ignored head children" {
-  let root = @html_parser.parse_fragment(
-    "<head><title>T</title></head>x",
-    collect_errors=true,
-  )
-  assert_eq(root.to_html(pretty=false), "<title>T</title>x")
-  assert_eq(root.errors.length(), 2)
-  assert_eq(root.errors[0].code, "unexpected-start-tag")
-  assert_eq(root.errors[1].code, "unexpected-end-tag")
-  let nested = @html_parser.parse_fragment(
-    "<div><head><title>T</title></head>x</div>",
-    collect_errors=true,
-  )
-  assert_eq(nested.to_html(pretty=false), "<div><title>T</title>x</div>")
-  assert_eq(nested.errors.length(), 2)
-  assert_eq(nested.errors[0].code, "unexpected-start-tag")
-  assert_eq(nested.errors[1].code, "unexpected-end-tag")
-}
-
-///|
 test "document parser merges repeated body tags" {
   let repeated = @html_parser.parse(
     "<body class=a><p>one</p><body id=b><p>two</p>",
