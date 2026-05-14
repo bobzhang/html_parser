@@ -1055,6 +1055,8 @@ reference implementation in `.repos/justhtml`.
       `document_frameset_public_regression_test.mbt`.
 - [x] Split document frameset helper insertion origin regression into
       `document_frameset_public_regression_test.mbt`.
+- [x] Split document frameset post-token ignore regression into
+      `document_frameset_public_regression_test.mbt`.
 - [x] Start template parser regression file with table structural child
       coverage in `template_parser_public_regression_test.mbt`.
 - [x] Split template parser structural end-recovery regression into
