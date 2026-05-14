@@ -178,3 +178,39 @@ test "document parser ignores early body end after explicit html" {
   )
   assert_eq(after_head.errors.length(), 0)
 }
+
+///|
+test "document parser merges nested repeated html tags" {
+  let nested = @html_parser.parse(
+    "<html lang=en><html dir=ltr><body>x</body></html>",
+  )
+  assert_eq(
+    nested.to_html(pretty=false),
+    "<html lang=\"en\" dir=\"ltr\"><head></head><body>x</body></html>",
+  )
+  let after_body = @html_parser.parse(
+    "<html lang=en><body>x</body><html dir=ltr><body>y</body></html>",
+  )
+  assert_eq(
+    after_body.to_html(pretty=false),
+    "<html lang=\"en\" dir=\"ltr\"><head></head><body>xy</body></html>",
+  )
+  let first_wins = @html_parser.parse(
+    "<html lang=en><html lang=fr dir=ltr><head><title>T</title></head><body>x</body></html>",
+  )
+  assert_eq(
+    first_wins.to_html(pretty=false),
+    "<html lang=\"en\" dir=\"ltr\"><head><title>T</title></head><body>x</body></html>",
+  )
+  let body_repeated = @html_parser.parse(
+    "<html><body><html attr=\"test\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    body_repeated.to_html(pretty=false),
+    "<html attr=\"test\"><head></head><body></body></html>",
+  )
+  assert_eq(body_repeated.errors.length(), 2)
+  assert_eq(body_repeated.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(body_repeated.errors[1].code, "unexpected-start-tag")
+}
