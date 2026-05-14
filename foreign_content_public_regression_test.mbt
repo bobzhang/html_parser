@@ -260,3 +260,25 @@ test "parser handles foreign content end tag recovery" {
   assert_eq(ancestor_html_end.errors[0].code, "unexpected-end-tag")
   assert_eq(ancestor_html_end.errors[1].code, "end-tag-too-early")
 }
+
+///|
+test "parser reports invalid codepoints in foreign text" {
+  let svg = @html_parser.parse_fragment(
+    "<svg>a\u{0000}\u{000C}</svg>",
+    collect_errors=true,
+  )
+  assert_eq(svg.to_html(pretty=false), "<svg>a� </svg>")
+  assert_eq(svg.errors.length(), 2)
+  assert_eq(svg.errors[0].code, "unexpected-null-character")
+  assert_eq(svg.errors[1].code, "invalid-codepoint-in-foreign-content")
+  let math_text_integration = @html_parser.parse_fragment(
+    "<math><mi>\u{0000}\u{000C}text</mi></math>",
+    collect_errors=true,
+  )
+  assert_eq(
+    math_text_integration.to_html(pretty=false),
+    "<math><mi> text</mi></math>",
+  )
+  assert_eq(math_text_integration.errors.length(), 1)
+  assert_eq(math_text_integration.errors[0].code, "unexpected-null-character")
+}
