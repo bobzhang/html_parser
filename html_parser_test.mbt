@@ -2794,25 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tree builder matches reference select parent end text fixture" {
-  let doc = @html_parser.parse("<div><select></div>text", collect_errors=true)
-  assert_eq(
-    @html_parser.to_test_format(doc.root),
-    "| <html>\n|   <head>\n|   <body>\n|     <div>\n|       <select>\n|         \"text\"",
-  )
-  assert_eq(doc.errors.length(), 3)
-  assert_eq(doc.errors[0].code, "expected-doctype-but-got-start-tag")
-  assert_eq(doc.errors[1].code, "unexpected-end-tag-in-select")
-  assert_eq(doc.errors[2].code, "expected-closing-tag-but-got-eof")
-  guard doc.errors[1].column is Some(19) else {
-    fail("expected parent end tag in select at close bracket")
-  }
-  guard doc.errors[2].column is Some(23) else {
-    fail("expected open select EOF after trailing text")
-  }
-}
-
-///|
 test "parser reports unknown and unexpected doctypes" {
   let unknown = @html_parser.parse("<!DOCTYPE svg><p>x", collect_errors=true)
   assert_eq(

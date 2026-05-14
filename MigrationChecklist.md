@@ -907,6 +907,8 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_fixtures_test.mbt`.
 - [x] Split tree-builder select stray-end EOF regression into
       `treebuilder_fixtures_test.mbt`.
+- [x] Split tree-builder select parent-end text regression into
+      `treebuilder_fixtures_test.mbt`.
 - [x] Split builder compact serialization regression into
       `builder_public_regression_test.mbt`.
 - [x] Split builder test-format line regression into
