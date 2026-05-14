@@ -37,3 +37,47 @@ test "parser reports select hr br and img starts" {
   assert_eq(img.errors.length(), 1)
   assert_eq(img.errors[0].code, "unexpected-start-tag-in-select")
 }
+
+///|
+test "parser reports select common element starts and ends" {
+  let div = @html_parser.parse_fragment(
+    "<select><div>x</div>y</select>",
+    collect_errors=true,
+  )
+  assert_eq(div.to_html(pretty=false), "<select><div>x</div>y</select>")
+  assert_eq(div.errors.length(), 2)
+  assert_eq(div.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(div.errors[1].code, "unexpected-end-tag-in-select")
+  let button = @html_parser.parse_fragment(
+    "<select><button>x</button>y</select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    button.to_html(pretty=false),
+    "<select><button>x</button>y</select>",
+  )
+  assert_eq(button.errors.length(), 2)
+  assert_eq(button.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(button.errors[1].code, "unexpected-end-tag-in-select")
+  let menuitem = @html_parser.parse_fragment(
+    "<select><menuitem>x</menuitem>y</select>",
+    collect_errors=true,
+  )
+  assert_eq(
+    menuitem.to_html(pretty=false),
+    "<select><menuitem>xy</menuitem></select>",
+  )
+  assert_eq(menuitem.errors.length(), 2)
+  assert_eq(menuitem.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(menuitem.errors[1].code, "unexpected-end-tag")
+  let shell = @html_parser.parse_fragment(
+    "<select><body>x</body><head>y</head></select>",
+    collect_errors=true,
+  )
+  assert_eq(shell.to_html(pretty=false), "<select>xy</select>")
+  assert_eq(shell.errors.length(), 4)
+  assert_eq(shell.errors[0].code, "unexpected-start-tag-in-select")
+  assert_eq(shell.errors[1].code, "unexpected-end-tag")
+  assert_eq(shell.errors[2].code, "unexpected-start-tag-in-select")
+  assert_eq(shell.errors[3].code, "unexpected-end-tag")
+}
