@@ -921,6 +921,10 @@ reference implementation in `.repos/justhtml`.
       `text_markdown_public_regression_test.mbt`.
 - [x] Split block-only text separator regression into
       `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown inline/link rendering regression into
+      `text_markdown_public_regression_test.mbt`.
+- [x] Split markdown code/list/blockquote rendering regression into
+      `text_markdown_public_regression_test.mbt`.
 
 ## Working Rule
 

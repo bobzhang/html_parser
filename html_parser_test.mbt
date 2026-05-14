@@ -2794,67 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "to_markdown renders headings paragraphs inline formatting and links" {
-  let doc = @html_parser.parse_fragment(
-    "<h1>Title</h1><p>Hello <b>world</b> <em>ok</em> <a href='https://e.com'>link</a> a*b</p>",
-  )
-  assert_eq(
-    doc.to_markdown(),
-    "# Title\n\nHello **world** *ok* [link](https://e.com) a\\*b",
-  )
-}
-
-///|
-test "to_markdown renders code spans blocks lists and blockquotes" {
-  let code = @html_parser.parse_fragment(
-    "<pre>code`here\n</pre><p>inline <code>a`b</code></p>",
-  )
-  assert_eq(code.to_markdown(), "```\ncode`here\n```\n\ninline ``a`b``")
-  let leading_tick = @html_parser.parse_fragment("<p><code>&#96;x</code></p>")
-  assert_eq(leading_tick.to_markdown(), "`` `x ``")
-  let trailing_tick = @html_parser.parse_fragment("<p><code>x&#96;</code></p>")
-  assert_eq(trailing_tick.to_markdown(), "`` x` ``")
-  let surrounded_ticks = @html_parser.parse_fragment(
-    "<p><code>a&#96;b&#96;</code></p>",
-  )
-  assert_eq(surrounded_ticks.to_markdown(), "`` a`b` ``")
-  let empty_pre = @html_parser.parse_fragment("<pre></pre>")
-  assert_eq(empty_pre.to_markdown(), "```\n```")
-  let newline_only_pre = @html_parser.parse_fragment("<pre>\n\n</pre>")
-  assert_eq(newline_only_pre.to_markdown(), "```\n\n```")
-  let space_only_pre = @html_parser.parse_fragment("<pre>   \n</pre>")
-  assert_eq(space_only_pre.to_markdown(), "```\n\n```")
-  let trailing_space = @html_parser.parse_fragment("<pre>X   \n</pre>")
-  assert_eq(trailing_space.to_markdown(), "```\nX\n```")
-  let longer_fence = @html_parser.parse_fragment(
-    "<pre>&#96;&#96;&#96;\n&lt;img src=x onerror=alert(1)&gt;</pre>",
-  )
-  assert_eq(
-    longer_fence.to_markdown(),
-    "````\n```\n<img src=x onerror=alert(1)>\n````",
-  )
-  let longest_fence = @html_parser.parse_fragment(
-    "<pre>&#96;&#96;&#96;&#96;\n&lt;img src=x onerror=alert(1)&gt;</pre>",
-  )
-  assert_eq(
-    longest_fence.to_markdown(),
-    "`````\n````\n<img src=x onerror=alert(1)>\n`````",
-  )
-  let quote = @html_parser.parse_fragment(
-    "<blockquote><p>Q<br>R</p></blockquote>",
-  )
-  assert_eq(quote.to_markdown(), "> Q\n> R")
-  let list = @html_parser.parse_fragment(
-    "<ul>\n<li>One</li>\n</ul><ol><li>A</li><li>B</li></ol>",
-  )
-  assert_eq(list.to_markdown(), "- One\n\n1. A\n2. B")
-  let simple_list = @html_parser.parse_fragment(
-    "<ul><li>One</li><li>Two</li></ul>",
-  )
-  assert_eq(simple_list.to_markdown(), "- One\n- Two")
-}
-
-///|
 test "to_markdown renders empty blocks headings and horizontal rules" {
   let empty_blocks = @html_parser.parse_fragment(
     "<hr><h2></h2><p></p><pre></pre><blockquote></blockquote>",
