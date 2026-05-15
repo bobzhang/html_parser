@@ -1493,6 +1493,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split allowed template content sanitizer regression into
       `security_policy_regression_test.mbt`.
+- [x] Split disallowed template unwrapping sanitizer regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 

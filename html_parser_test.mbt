@@ -31,24 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom unwraps disallowed template content" {
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["p"],
-    allowed_attributes={ "*": [], "p": [] },
-    drop_foreign_namespaces=false,
-    drop_content_tags=[],
-  )
-  let fragment = @html_parser.parse_fragment(
-    "<template><p>ok</p></template>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<p>ok</p>",
-  )
-}
-
-///|
 test "sanitize_dom drops foreign url function attributes without url policy" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["svg", "rect"],
