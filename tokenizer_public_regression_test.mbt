@@ -777,3 +777,168 @@ test "tokenize normalizes BOM and CRLF edge cases" {
     fail("expected normalized attr")
   }
 }
+
+///|
+test "tokenize matches upstream CR and LF normalization fixtures" {
+  let bom = @html_parser.tokenize("\u{FEFF}<div>", collect_errors=true)
+  guard bom.tokens[0] is Tag(bom_tag) else {
+    fail("expected BOM-stripped div start tag")
+  }
+  assert_eq(bom_tag.name, "div")
+  assert_eq(bom.errors.length(), 0)
+  let cr_text = @html_parser.tokenize("abc\rdef", collect_errors=true)
+  guard cr_text.tokens[0] is Characters("abc\ndef") else {
+    fail("expected CR in text to normalize to LF")
+  }
+  assert_eq(cr_text.errors.length(), 0)
+  let crlf_text = @html_parser.tokenize("\r\n", collect_errors=true)
+  guard crlf_text.tokens[0] is Characters("\n") else {
+    fail("expected CRLF in text to collapse to one LF")
+  }
+  assert_eq(crlf_text.errors.length(), 0)
+  let cr_after_name = @html_parser.tokenize("<div\r>", collect_errors=true)
+  guard cr_after_name.tokens[0] is Tag(cr_after_name_tag) else {
+    fail("expected CR after tag name to close div")
+  }
+  assert_eq(cr_after_name_tag.name, "div")
+  assert_eq(cr_after_name_tag.attrs.length(), 0)
+  assert_eq(cr_after_name.errors.length(), 0)
+  let crlf_before_attr = @html_parser.tokenize(
+    "<div\r\nattr>",
+    collect_errors=true,
+  )
+  guard crlf_before_attr.tokens[0] is Tag(crlf_before_attr_tag) else {
+    fail("expected CRLF before attribute name")
+  }
+  guard crlf_before_attr_tag.attrs["attr"] is Some("") else {
+    fail("expected empty attr after CRLF")
+  }
+  assert_eq(crlf_before_attr.errors.length(), 0)
+  let cr_after_attr = @html_parser.tokenize("<div attr\r>", collect_errors=true)
+  guard cr_after_attr.tokens[0] is Tag(cr_after_attr_tag) else {
+    fail("expected CR after attribute name")
+  }
+  guard cr_after_attr_tag.attrs["attr"] is Some("") else {
+    fail("expected empty attr after CR")
+  }
+  assert_eq(cr_after_attr.errors.length(), 0)
+  let cr_space_after_attr = @html_parser.tokenize(
+    "<div attr\r >",
+    collect_errors=true,
+  )
+  guard cr_space_after_attr.tokens[0] is Tag(cr_space_after_attr_tag) else {
+    fail("expected CR space after attribute name")
+  }
+  guard cr_space_after_attr_tag.attrs["attr"] is Some("") else {
+    fail("expected empty attr after CR space")
+  }
+  assert_eq(cr_space_after_attr.errors.length(), 0)
+  let crlf_after_attr = @html_parser.tokenize(
+    "<div attr\r\n>",
+    collect_errors=true,
+  )
+  guard crlf_after_attr.tokens[0] is Tag(crlf_after_attr_tag) else {
+    fail("expected CRLF after attribute name")
+  }
+  guard crlf_after_attr_tag.attrs["attr"] is Some("") else {
+    fail("expected empty attr after CRLF")
+  }
+  assert_eq(crlf_after_attr.errors.length(), 0)
+  let cr_tab_after_attr = @html_parser.tokenize(
+    "<div attr\r\t>",
+    collect_errors=true,
+  )
+  guard cr_tab_after_attr.tokens[0] is Tag(cr_tab_after_attr_tag) else {
+    fail("expected CR tab after attribute name")
+  }
+  guard cr_tab_after_attr_tag.attrs["attr"] is Some("") else {
+    fail("expected empty attr after CR tab")
+  }
+  assert_eq(cr_tab_after_attr.errors.length(), 0)
+  let double_attr = @html_parser.tokenize(
+    "<div attr=\"a\rb\">",
+    collect_errors=true,
+  )
+  guard double_attr.tokens[0] is Tag(double_attr_tag) else {
+    fail("expected double-quoted attr with CR")
+  }
+  guard double_attr_tag.attrs["attr"] is Some("a\nb") else {
+    fail("expected normalized CR in double-quoted attr")
+  }
+  assert_eq(double_attr.errors.length(), 0)
+  let single_attr = @html_parser.tokenize(
+    "<div attr='a\rb'>",
+    collect_errors=true,
+  )
+  guard single_attr.tokens[0] is Tag(single_attr_tag) else {
+    fail("expected single-quoted attr with CR")
+  }
+  guard single_attr_tag.attrs["attr"] is Some("a\nb") else {
+    fail("expected normalized CR in single-quoted attr")
+  }
+  assert_eq(single_attr.errors.length(), 0)
+  let unquoted = @html_parser.tokenize("<div attr=abc>", collect_errors=true)
+  guard unquoted.tokens[0] is Tag(unquoted_tag) else {
+    fail("expected unquoted attr")
+  }
+  guard unquoted_tag.attrs["attr"] is Some("abc") else {
+    fail("expected unquoted attr value")
+  }
+  assert_eq(unquoted.errors.length(), 0)
+  let lf_after_name = @html_parser.tokenize("<div\n>", collect_errors=true)
+  guard lf_after_name.tokens[0] is Tag(lf_after_name_tag) else {
+    fail("expected LF after tag name")
+  }
+  assert_eq(lf_after_name_tag.name, "div")
+  assert_eq(lf_after_name_tag.attrs.length(), 0)
+  assert_eq(lf_after_name.errors.length(), 0)
+  let lf_after_attr = @html_parser.tokenize("<div attr\n>", collect_errors=true)
+  guard lf_after_attr.tokens[0] is Tag(lf_after_attr_tag) else {
+    fail("expected LF after attribute name")
+  }
+  guard lf_after_attr_tag.attrs["attr"] is Some("") else {
+    fail("expected empty attr after LF")
+  }
+  assert_eq(lf_after_attr.errors.length(), 0)
+  let double_lf_attr = @html_parser.tokenize(
+    "<div attr=\"a\nb\">",
+    collect_errors=true,
+  )
+  guard double_lf_attr.tokens[0] is Tag(double_lf_attr_tag) else {
+    fail("expected double-quoted attr with LF")
+  }
+  guard double_lf_attr_tag.attrs["attr"] is Some("a\nb") else {
+    fail("expected LF in double-quoted attr")
+  }
+  assert_eq(double_lf_attr.errors.length(), 0)
+  let single_lf_attr = @html_parser.tokenize(
+    "<div attr='a\nb'>",
+    collect_errors=true,
+  )
+  guard single_lf_attr.tokens[0] is Tag(single_lf_attr_tag) else {
+    fail("expected single-quoted attr with LF")
+  }
+  guard single_lf_attr_tag.attrs["attr"] is Some("a\nb") else {
+    fail("expected LF in single-quoted attr")
+  }
+  assert_eq(single_lf_attr.errors.length(), 0)
+  let crlf_space_attr = @html_parser.tokenize(
+    "<div \r\n attr>",
+    collect_errors=true,
+  )
+  guard crlf_space_attr.tokens[0] is Tag(crlf_space_attr_tag) else {
+    fail("expected CRLF space before attr")
+  }
+  guard crlf_space_attr_tag.attrs["attr"] is Some("") else {
+    fail("expected empty attr after CRLF space")
+  }
+  assert_eq(crlf_space_attr.errors.length(), 0)
+  let comment = @html_parser.tokenize(
+    "<!-- test\rcomment -->",
+    collect_errors=true,
+  )
+  guard comment.tokens[0] is CommentToken(" test\ncomment ") else {
+    fail("expected CR in comment to normalize to LF")
+  }
+  assert_eq(comment.errors.length(), 0)
+}
