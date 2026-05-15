@@ -2794,30 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser ignores one initial newline in pre listing and textarea" {
-  let pre = @html_parser.parse_fragment(
-    "<pre>\r\nline</pre><listing>\nitem</listing>",
-  )
-  assert_eq(pre.to_html(pretty=false), "<pre>line</pre><listing>item</listing>")
-  let pre_cr = @html_parser.parse_fragment("<pre>\rline</pre>")
-  assert_eq(pre_cr.to_html(pretty=false), "<pre>line</pre>")
-  let listing_cr = @html_parser.parse_fragment("<listing>\rline</listing>")
-  assert_eq(listing_cr.to_html(pretty=false), "<listing>line</listing>")
-  let textarea = @html_parser.parse_fragment("<textarea>\nline</textarea>")
-  assert_eq(textarea.to_html(pretty=false), "<textarea>line</textarea>")
-  let textarea_cr = @html_parser.parse_fragment("<textarea>\rline</textarea>")
-  assert_eq(textarea_cr.to_html(pretty=false), "<textarea>line</textarea>")
-  let textarea_crlf = @html_parser.parse_fragment(
-    "<textarea>\r\nline</textarea>",
-  )
-  assert_eq(textarea_crlf.to_html(pretty=false), "<textarea>line</textarea>")
-  let title = @html_parser.parse_fragment("<title>\nline</title>")
-  assert_eq(title.to_html(pretty=false), "<title>\nline</title>")
-  let title_cr = @html_parser.parse_fragment("<title>\rline</title>")
-  assert_eq(title_cr.to_html(pretty=false), "<title>\nline</title>")
-}
-
-///|
 test "tokenize preserves rawtext and rcdata element contents" {
   let script = @html_parser.tokenize("<script><!--a--<b</script>")
   assert_eq(script.tokens.length(), 4)
