@@ -1611,6 +1611,8 @@ reference implementation in `.repos/justhtml`.
       `comment_parser_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
+- [x] Split duplicate-attribute parser regression into
+      `attribute_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
