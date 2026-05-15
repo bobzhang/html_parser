@@ -1091,6 +1091,8 @@ reference implementation in `.repos/justhtml`.
       `encoding_public_regression_test.mbt`.
 - [x] Start tokenizer public regression file with stable token data structure
       coverage in `tokenizer_public_regression_test.mbt`.
+- [x] Split tokenizer upstream coverage-gap fixture regression into
+      `tokenizer_public_regression_test.mbt`.
 - [x] Start legacy element regression file with fragment keygen/frame empty
       non-void coverage in `legacy_elements_public_regression_test.mbt`.
 - [x] Split legacy element select-mode keygen/frame regression into
