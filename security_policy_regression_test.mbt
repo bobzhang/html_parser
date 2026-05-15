@@ -9,6 +9,19 @@ test "public default sanitizer security corpus stays stable" {
 }
 
 ///|
+test "sanitize_dom default policy drops unsafe document content" {
+  let doc = @html_parser.parse(
+    "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",
+    sanitize=false,
+  )
+  let sanitized = @html_parser.sanitize_dom(
+    doc.root,
+    policy=@html_parser.default_sanitization_policy(),
+  )
+  assert_eq(sanitized.to_html(pretty=false), "<p>ok</p>")
+}
+
+///|
 test "public URL proxy policy rewrites and strips URLs stably" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,

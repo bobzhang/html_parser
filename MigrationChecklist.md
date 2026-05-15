@@ -959,6 +959,8 @@ reference implementation in `.repos/justhtml`.
       `builder_public_regression_test.mbt`.
 - [x] Split builder insert/replace graph invariant regression into
       `builder_public_regression_test.mbt`.
+- [x] Split default sanitizer unsafe document regression into
+      `security_policy_regression_test.mbt`.
 - [x] Split parser default empty origin metadata regression into
       `parser_public_regression_test.mbt`.
 - [x] Split parser simple element/text origin tracking regression into
