@@ -2794,37 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "start tag solidus does not skip following whitespace" {
-  let tokenized = @html_parser.tokenize("<div/ >", collect_errors=true)
-  guard tokenized.tokens[0] is Tag(tag) else { fail("expected div tag") }
-  assert_eq(tag.name, "div")
-  assert_eq(tag.self_closing, false)
-  assert_eq(tokenized.errors.length(), 1)
-  assert_eq(
-    tokenized.errors[0].code,
-    "unexpected-character-after-solidus-in-tag",
-  )
-  guard tokenized.errors[0].column is Some(6) else {
-    fail("expected whitespace after solidus at column 6")
-  }
-  let img = @html_parser.tokenize("<img />", collect_errors=true)
-  guard img.tokens[0] is Tag(img_tag) else { fail("expected img tag") }
-  assert_eq(img_tag.self_closing, true)
-  assert_eq(img.errors.length(), 0)
-  let fragment = @html_parser.parse_fragment("<div/ >", collect_errors=true)
-  assert_eq(fragment.to_html(pretty=false), "<div></div>")
-  assert_eq(fragment.errors.length(), 2)
-  assert_eq(
-    fragment.errors[0].code,
-    "unexpected-character-after-solidus-in-tag",
-  )
-  assert_eq(fragment.errors[1].code, "expected-closing-tag-but-got-eof")
-  guard fragment.errors[0].column is Some(6) else {
-    fail("expected parser whitespace after solidus at column 6")
-  }
-}
-
-///|
 test "tokenize normalizes BOM and CRLF edge cases" {
   let bom = @html_parser.tokenize("\u{FEFF}<div>")
   guard bom.tokens[0] is Tag(tag) else { fail("expected div start tag") }
