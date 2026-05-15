@@ -440,3 +440,32 @@ test "attribute entity decoding reports upstream fixture errors" {
   }
   assert_eq(exact_named.errors.length(), 0)
 }
+
+///|
+test "attribute legacy entities block alphanumeric continuations" {
+  let attr = @html_parser.parse_fragment(
+    "<div a='&copycat &copy0 &copy= &copy.'>x</div>",
+    collect_errors=true,
+  )
+  assert_eq(
+    attr.to_html(pretty=false),
+    "<div a=\"&amp;copycat &amp;copy0 &amp;copy= \u{00A9}.\">x</div>",
+  )
+  assert_eq(attr.errors.length(), 1)
+  assert_eq(attr.errors[0].code, "missing-semicolon-after-character-reference")
+  guard attr.errors[0].column is Some(39) else {
+    fail("expected decoded attribute legacy entity error at tag close")
+  }
+  let text = @html_parser.parse_fragment(
+    "&copycat &copy0 &copy= &copy.",
+    collect_errors=true,
+  )
+  assert_eq(
+    text.to_html(pretty=false),
+    "\u{00A9}cat \u{00A9}0 \u{00A9}= \u{00A9}.",
+  )
+  assert_eq(text.errors.length(), 4)
+  for error in text.errors {
+    assert_eq(error.code, "missing-semicolon-after-character-reference")
+  }
+}
