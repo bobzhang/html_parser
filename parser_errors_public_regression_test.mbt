@@ -26,6 +26,17 @@ test "public parser error modes and document scaffolding stay stable" {
 }
 
 ///|
+test "parser ignores unmatched end tags without closing current element" {
+  let doc = @html_parser.parse_fragment(
+    "<div><p>open</span>after</div>",
+    collect_errors=true,
+  )
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "unexpected-end-tag")
+  assert_eq(doc.to_html(pretty=false), "<div><p>openafter</p></div>")
+}
+
+///|
 test "strict mode raises on first parse error" {
   let fragment_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = try? @html_parser.parse_fragment(
     "<p>open</span>",

@@ -1541,6 +1541,8 @@ reference implementation in `.repos/justhtml`.
       `parser_errors_public_regression_test.mbt`.
 - [x] Split EOF-for-unclosed-elements parser error regression into
       `parser_errors_public_regression_test.mbt`.
+- [x] Split unmatched-end-tag parser recovery regression into
+      `parser_errors_public_regression_test.mbt`.
 
 ## Working Rule
 
