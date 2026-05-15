@@ -57,33 +57,6 @@ test "parser closes open paragraphs before paragraph and block starts" {
 }
 
 ///|
-test "parser tracks comment and doctype origins when requested" {
-  let fragment = @html_parser.parse_fragment(
-    "<!--x--><p><!--y--></p>",
-    track_node_locations=true,
-  )
-  let root_children = fragment.root.children()
-  assert_eq(root_children.length(), 2)
-  assert_true(root_children[0].kind() is Comment)
-  assert_node_origin(root_children[0], 0, 1, 1)
-  guard fragment.query_one("p") is Some(paragraph) else {
-    fail("expected parsed paragraph")
-  }
-  assert_node_origin(paragraph, 8, 1, 9)
-  let paragraph_children = paragraph.children()
-  assert_eq(paragraph_children.length(), 1)
-  assert_true(paragraph_children[0].kind() is Comment)
-  assert_node_origin(paragraph_children[0], 11, 1, 12)
-  let doc = @html_parser.parse(
-    "<!doctype html><p>x</p>",
-    track_node_locations=true,
-  )
-  let doc_children = doc.root.children()
-  assert_true(doc_children[0].kind() is Doctype)
-  assert_node_origin(doc_children[0], 0, 1, 1)
-}
-
-///|
 test "parse_bytes forwards node origin tracking" {
   let doc = @html_parser.parse_bytes(b"<p>x</p>", track_node_locations=true)
   guard doc.query_one("p") is Some(paragraph) else {

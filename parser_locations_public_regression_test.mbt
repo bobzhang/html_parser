@@ -47,6 +47,33 @@ test "parser tracks simple element and text origins when requested" {
 }
 
 ///|
+test "parser tracks comment and doctype origins when requested" {
+  let fragment = @html_parser.parse_fragment(
+    "<!--x--><p><!--y--></p>",
+    track_node_locations=true,
+  )
+  let root_children = fragment.root.children()
+  assert_eq(root_children.length(), 2)
+  assert_true(root_children[0].kind() is Comment)
+  assert_node_origin(root_children[0], 0, 1, 1)
+  guard fragment.query_one("p") is Some(paragraph) else {
+    fail("expected parsed paragraph")
+  }
+  assert_node_origin(paragraph, 8, 1, 9)
+  let paragraph_children = paragraph.children()
+  assert_eq(paragraph_children.length(), 1)
+  assert_true(paragraph_children[0].kind() is Comment)
+  assert_node_origin(paragraph_children[0], 11, 1, 12)
+  let doc = @html_parser.parse(
+    "<!doctype html><p>x</p>",
+    track_node_locations=true,
+  )
+  let doc_children = doc.root.children()
+  assert_true(doc_children[0].kind() is Doctype)
+  assert_node_origin(doc_children[0], 0, 1, 1)
+}
+
+///|
 test "parser tracks origins for end-tag recovery elements" {
   let before_html = @html_parser.parse("</br>", track_node_locations=true)
   guard before_html.query_one("br") is Some(before_br) else {
