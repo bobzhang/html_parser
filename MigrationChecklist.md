@@ -1581,6 +1581,8 @@ reference implementation in `.repos/justhtml`.
       `form_controls_parser_public_regression_test.mbt`.
 - [x] Start ruby parser public regression file with implied annotation
       end-tag coverage.
+- [x] Split ruby annotation start-exclusion regression into
+      `ruby_parser_public_regression_test.mbt`.
 
 ## Working Rule
 

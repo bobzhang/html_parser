@@ -57,49 +57,6 @@ test "parser closes open paragraphs before paragraph and block starts" {
 }
 
 ///|
-test "parser handles ruby annotation start exclusions" {
-  let rtc_text = @html_parser.parse_fragment(
-    "<ruby><rtc>a<rt>b</ruby>",
-    collect_errors=true,
-  )
-  assert_eq(
-    rtc_text.to_html(pretty=false),
-    "<ruby><rtc>a<rt>b</rt></rtc></ruby>",
-  )
-  assert_eq(rtc_text.errors.length(), 1)
-  assert_eq(rtc_text.errors[0].code, "end-tag-too-early")
-  let paragraph_rt = @html_parser.parse_fragment("<p>a<rt>b")
-  assert_eq(paragraph_rt.to_html(pretty=false), "<p>a</p><rt>b</rt>")
-  let paragraph_rb = @html_parser.parse_fragment("<p>a<rb>b")
-  assert_eq(paragraph_rb.to_html(pretty=false), "<p>a<rb>b</rb></p>")
-  let loose = @html_parser.parse_fragment("<rb>a<rt>b<rtc>c<rb>d")
-  assert_eq(
-    loose.to_html(pretty=false),
-    "<rb>a</rb><rt>b</rt><rtc>c</rtc><rb>d</rb>",
-  )
-  let special = @html_parser.parse_fragment(
-    "<ruby><div>x</ruby>y</div>",
-    collect_errors=true,
-  )
-  assert_eq(special.to_html(pretty=false), "<ruby><div>xy</div></ruby>")
-  assert_eq(special.errors.length(), 2)
-  assert_eq(special.errors[0].code, "unexpected-end-tag")
-  assert_eq(special.errors[1].code, "expected-closing-tag-but-got-eof")
-  let inline = @html_parser.parse_fragment(
-    "<ruby><span>x</ruby>y</span>",
-    collect_errors=true,
-  )
-  assert_eq(inline.to_html(pretty=false), "<ruby><span>x</span></ruby>y")
-  assert_eq(inline.errors.length(), 2)
-  assert_eq(inline.errors[0].code, "end-tag-too-early")
-  assert_eq(inline.errors[1].code, "unexpected-end-tag")
-  let stray = @html_parser.parse_fragment("x</ruby>y", collect_errors=true)
-  assert_eq(stray.to_html(pretty=false), "xy")
-  assert_eq(stray.errors.length(), 1)
-  assert_eq(stray.errors[0].code, "unexpected-end-tag")
-}
-
-///|
 test "parser assigns namespaces and adjusted names for foreign content" {
   let svg = @html_parser.parse_fragment(
     "<svg><lineargradient><stop/></lineargradient><feimage attributename='href'></feimage></svg>",
