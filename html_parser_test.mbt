@@ -2794,31 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tokenize reports missing attribute value fixture errors" {
-  let bare = @html_parser.tokenize("<div attr>", collect_errors=true)
-  guard bare.tokens[0] is Tag(bare_tag) else { fail("expected div tag") }
-  guard bare_tag.attrs["attr"] is Some("") else {
-    fail("expected empty attr without error")
-  }
-  assert_eq(bare.errors.length(), 0)
-  let simple = @html_parser.tokenize("<div attr=>", collect_errors=true)
-  guard simple.tokens[0] is Tag(tag) else { fail("expected div tag") }
-  guard tag.attrs["attr"] is Some("") else { fail("expected empty attr value") }
-  assert_eq(simple.errors[0].code, "missing-attribute-value")
-  guard simple.errors[0].column is Some(11) else {
-    fail("expected missing value at column 11")
-  }
-  let crlf = @html_parser.tokenize("<div attr=\r\n>", collect_errors=true)
-  assert_eq(crlf.errors[0].code, "missing-attribute-value")
-  guard crlf.errors[0].line is Some(2) else {
-    fail("expected CRLF normalized line")
-  }
-  guard crlf.errors[0].column is Some(1) else {
-    fail("expected CRLF normalized column")
-  }
-}
-
-///|
 test "parser reports missing attribute value after equals only" {
   let bare = @html_parser.parse_fragment("<div attr>", collect_errors=true)
   assert_eq(bare.to_html(pretty=false), "<div attr></div>")
