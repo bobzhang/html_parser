@@ -1613,6 +1613,8 @@ reference implementation in `.repos/justhtml`.
       `comment_parser_public_regression_test.mbt`.
 - [x] Split script/style/title/textarea text parser regression into
       `special_text_parser_public_regression_test.mbt`.
+- [x] Split initial-newline special-text parser regression into
+      `special_text_parser_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
