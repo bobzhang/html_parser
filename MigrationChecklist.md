@@ -991,6 +991,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split parser Unicode cursor text regression into
       `parser_public_regression_test.mbt`.
+- [x] Split parser self-closing solidus end-tag matching regression into
+      `parser_public_regression_test.mbt`.
 - [x] Start document parser regression file with explicit html shell scaffolding
       coverage in `document_parser_public_regression_test.mbt`.
 - [x] Split document parser initial head-routing regression into
