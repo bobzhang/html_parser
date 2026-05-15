@@ -404,6 +404,55 @@ test "sanitize_dom raise mode reports dropped content and child tags" {
 }
 
 ///|
+test "sanitize_dom raise mode reports foreign namespace drops" {
+  let root_policy = @html_parser.SanitizationPolicy::new(
+    ["svg"],
+    allowed_attributes={ "svg": [] },
+    drop_foreign_namespaces=true,
+    unsafe_handling=Raise,
+  )
+  let root_fragment = @html_parser.parse_fragment(
+    "<svg><title>foo</title></svg>",
+    sanitize=false,
+  )
+  guard root_fragment.root.children().get(0) is Some(svg_root) else {
+    fail("expected svg root")
+  }
+  let root_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    svg_root,
+    policy=root_policy,
+  )
+  match root_result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(message, "Unsafe tag 'svg' (foreign namespace)")
+    _ => fail("expected foreign namespace root to raise UnsafeHtml")
+  }
+
+  let child_policy = @html_parser.SanitizationPolicy::new(
+    ["div"],
+    allowed_attributes={ "div": [] },
+    drop_foreign_namespaces=true,
+    unsafe_handling=Raise,
+  )
+  let child_fragment = @html_parser.parse_fragment(
+    "<div><svg></svg></div>",
+    sanitize=false,
+  )
+  guard child_fragment.root.children().get(0) is Some(div_root) else {
+    fail("expected div root")
+  }
+  let child_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    div_root,
+    policy=child_policy,
+  )
+  match child_result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(message, "Unsafe tag 'svg' (foreign namespace)")
+    _ => fail("expected foreign namespace child to raise UnsafeHtml")
+  }
+}
+
+///|
 test "sanitize_dom default policy drops unsafe document content" {
   let doc = @html_parser.parse(
     "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",
