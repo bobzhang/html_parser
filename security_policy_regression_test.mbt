@@ -214,6 +214,24 @@ test "sanitize_dom raise mode reports active foreign mutation tags" {
 }
 
 ///|
+test "sanitize_dom treats html namespace svg roots as foreign for active tags" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["svg", "rect", "set"],
+    allowed_attributes={ "rect": ["width"], "set": ["begin"] },
+    drop_foreign_namespaces=false,
+    drop_content_tags=[],
+  )
+  let svg = @html_parser.element("svg", ns="html", children=[
+    @html_parser.element("set", ns="html", attrs={ "begin": Some("0s") }),
+    @html_parser.element("rect", ns="html", attrs={ "width": Some("10") }),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(svg, policy~).to_html(pretty=false),
+    "<svg><rect width=\"10\"></rect></svg>",
+  )
+}
+
+///|
 test "sanitize_dom hardens allowed rawtext element contents" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["style", "script", "img", "span"],
