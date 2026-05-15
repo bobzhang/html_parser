@@ -875,3 +875,37 @@ test "parser tracks origins for hidden input and form table helpers" {
   guard form.query_one("form") is Some(form_node) else { fail("expected form") }
   assert_node_origin(form_node, 7, 1, 8)
 }
+
+///|
+test "parser keeps style and script starts in table context" {
+  let style = @html_parser.parse_fragment(
+    "<table><style>x</style></table>",
+    collect_errors=true,
+  )
+  assert_eq(style.to_html(pretty=false), "<table><style>x</style></table>")
+  assert_eq(style.errors.length(), 0)
+  let script = @html_parser.parse_fragment(
+    "<table><script>x</script></table>",
+    collect_errors=true,
+  )
+  assert_eq(script.to_html(pretty=false), "<table><script>x</script></table>")
+  assert_eq(script.errors.length(), 0)
+  let section = @html_parser.parse_fragment(
+    "<table><tbody><style>x</style></tbody></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    section.to_html(pretty=false),
+    "<table><tbody><style>x</style></tbody></table>",
+  )
+  assert_eq(section.errors.length(), 0)
+  let row = @html_parser.parse_fragment(
+    "<table><tr><style>x</style></tr></table>",
+    collect_errors=true,
+  )
+  assert_eq(
+    row.to_html(pretty=false),
+    "<table><tbody><tr><style>x</style></tr></tbody></table>",
+  )
+  assert_eq(row.errors.length(), 0)
+}
