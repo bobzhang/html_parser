@@ -187,6 +187,19 @@ test "parse_bytes valid transport encoding overrides sniffing" {
 }
 
 ///|
+test "parse_bytes sniffs utf8 bom before windows1252 fallback" {
+  let bytes = b"\xef\xbb\xbf\x3c\x70\x3e\x62\x6f\x6d\x3c\x2f\x70\x3e"
+  let doc = @html_parser.parse_bytes(bytes)
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<html><head></head><body><p>bom</p></body></html>",
+  )
+  guard doc.encoding is Some("utf-8") else {
+    fail("expected utf-8 bom encoding")
+  }
+}
+
+///|
 test "public parse_bytes meta charset and transport override stay stable" {
   let meta = @html_parser.parse_bytes(
     b"<meta charset=utf-8><p>\xe2\x82\xac</p>",

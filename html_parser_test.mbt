@@ -2794,19 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parse_bytes sniffs utf8 bom before windows1252 fallback" {
-  let bytes = b"\xef\xbb\xbf\x3c\x70\x3e\x62\x6f\x6d\x3c\x2f\x70\x3e"
-  let doc = @html_parser.parse_bytes(bytes)
-  assert_eq(
-    doc.to_html(pretty=false),
-    "<html><head></head><body><p>bom</p></body></html>",
-  )
-  guard doc.encoding is Some("utf-8") else {
-    fail("expected utf-8 bom encoding")
-  }
-}
-
-///|
 test "parse_bytes prescans direct meta charset" {
   let utf8 = b"\x3c\x6d\x65\x74\x61\x20\x63\x68\x61\x72\x73\x65\x74\x3d\x75\x74\x66\x2d\x38\x3e\x3c\x70\x3e\xe2\x82\xac\x3c\x2f\x70\x3e"
   let doc = @html_parser.parse_bytes(utf8)
