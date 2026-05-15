@@ -1761,3 +1761,55 @@ test "parser reports noncharacters in input stream" {
   assert_eq(invalid_xml.errors[0].code, "invalid-first-character-of-tag-name")
   assert_eq(invalid_xml.errors[1].code, "noncharacter-in-input-stream")
 }
+
+///|
+test "parser treats script style title textarea content as text" {
+  let doc = @html_parser.parse_fragment(
+    "<script><!--a--<b</script><title>a &lt; b</title>",
+  )
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<script><!--a--<<b</script><title>a &lt; b</title>",
+  )
+  assert_eq(doc.query("b").length(), 0)
+  assert_eq(doc.to_text(separator="|", strip=false), "<!--a--<<b|a < b")
+  let escaped_end = @html_parser.parse_fragment("<script><!--a--</script>")
+  assert_eq(escaped_end.to_html(pretty=false), "<script><!--a--<</script>")
+  let comment_end = @html_parser.parse_fragment("<script><!--a--></script>")
+  assert_eq(comment_end.to_html(pretty=false), "<script><!--a--></script>")
+  let raw_after_comment = @html_parser.parse_fragment(
+    "<script><!--a-->x--</script>",
+  )
+  assert_eq(
+    raw_after_comment.to_html(pretty=false),
+    "<script><!--a-->x--</script>",
+  )
+  let double_escaped = @html_parser.parse_fragment(
+    "<script><!--<script>x</script>y</script>",
+  )
+  assert_eq(
+    double_escaped.to_text(separator="|", strip=false),
+    "<!--<script>x</script>y",
+  )
+  let dash_dash_less_than = @html_parser.parse_fragment(
+    "<script><!----<x</script>",
+  )
+  assert_eq(
+    dash_dash_less_than.to_html(pretty=false),
+    "<script><!----<<x</script>",
+  )
+  let double_escaped_dash = @html_parser.parse_fragment(
+    "<script><!--<script>---x</script>tail</script>",
+  )
+  assert_eq(
+    double_escaped_dash.to_html(pretty=false),
+    "<script><!--<script>---x&lt;/script>tail</script>",
+  )
+  let non_script_double_escape_end = @html_parser.parse_fragment(
+    "<script><!--<script></style x</script>tail</script>",
+  )
+  assert_eq(
+    non_script_double_escape_end.to_html(pretty=false),
+    "<script><!--<script></style x&lt;/script>tail</script>",
+  )
+}
