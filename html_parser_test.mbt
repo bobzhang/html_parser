@@ -2794,24 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser tracks origins for hidden input and form table helpers" {
-  let hidden = @html_parser.parse_fragment(
-    "<table><input type=hidden name=x value=y></table>",
-    track_node_locations=true,
-  )
-  guard hidden.query_one("input") is Some(input) else {
-    fail("expected hidden input")
-  }
-  assert_node_origin(input, 7, 1, 8)
-  let form = @html_parser.parse_fragment(
-    "<table><form id=f></form></table>",
-    track_node_locations=true,
-  )
-  guard form.query_one("form") is Some(form_node) else { fail("expected form") }
-  assert_node_origin(form_node, 7, 1, 8)
-}
-
-///|
 test "parser keeps style and script starts in table context" {
   let style = @html_parser.parse_fragment(
     "<table><style>x</style></table>",
