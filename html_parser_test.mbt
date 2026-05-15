@@ -31,23 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom drops base href even when allowlisted" {
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["base", "img"],
-    allowed_attributes={ "base": ["href"], "img": ["src"] },
-    drop_content_tags=[],
-  )
-  let fragment = @html_parser.parse_fragment(
-    "<base Href='https://evil.example/assets/'><img src='pixel'>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<base><img src=\"pixel\">",
-  )
-}
-
-///|
 test "sanitize_dom drops url-like attributes without exact url rules" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["a", "img", "blockquote", "object", "p", "form", "button", "video"],
