@@ -84,6 +84,34 @@ test "pretty serializer preserves raw and preformatted text-only elements" {
 }
 
 ///|
+test "raw text serializer only neutralizes matching end tag boundaries" {
+  let non_boundary = @html_parser.element("script", children=[
+    @html_parser.text("</scriptx>ok"),
+  ])
+  assert_eq(non_boundary.to_html(pretty=false), "<script></scriptx>ok</script>")
+  let vertical_tab = @html_parser.element("script", children=[
+    @html_parser.text("</script\u{000B}>ok"),
+  ])
+  assert_eq(
+    vertical_tab.to_html(pretty=false),
+    "<script></script\u{000B}>ok</script>",
+  )
+  let mixed_case = @html_parser.element("script", children=[
+    @html_parser.text("</ScRiPt >x"),
+  ])
+  assert_eq(mixed_case.to_html(pretty=false), "<script>&lt;/ScRiPt >x</script>")
+  let parsed = @html_parser.parse_fragment("<script>a</scriptx>b</script>")
+  assert_eq(parsed.to_html(pretty=false), "<script>a</scriptx>b</script>")
+  let double_escaped = @html_parser.parse_fragment(
+    "<script><!--<script>x</script>y</script>",
+  )
+  assert_eq(
+    double_escaped.to_html(pretty=false),
+    "<script><!--<script>x&lt;/script>y</script>",
+  )
+}
+
+///|
 test "pretty serializer keeps inline mixed content compact" {
   let mixed = @html_parser.parse_fragment("<div>Text <span>Span</span></div>")
   guard mixed.query_one("div") is Some(div) else { fail("expected div") }
