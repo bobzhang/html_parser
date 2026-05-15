@@ -423,6 +423,50 @@ test "sanitize_dom proxy mode fails closed without usable proxy config" {
 }
 
 ///|
+test "sanitize_dom proxy rejects invalid scheme-like URL prefixes" {
+  let url_policy = @html_parser.UrlPolicy::new(
+    default_handling=UrlProxy,
+    proxy=@html_parser.UrlProxy::new("/proxy"),
+    allow_rules=[
+      @html_parser.UrlPolicyRule::new(
+        "a",
+        "href",
+        @html_parser.UrlRule::new(allowed_schemes=["https"]),
+      ),
+      @html_parser.UrlPolicyRule::new(
+        "img",
+        "srcset",
+        @html_parser.UrlRule::new(allowed_schemes=["https"]),
+      ),
+      @html_parser.UrlPolicyRule::new(
+        "p",
+        "style:background-image",
+        @html_parser.UrlRule::new(allowed_schemes=["https"]),
+      ),
+    ],
+  )
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a", "img", "p"],
+    allowed_attributes={
+      "*": [],
+      "a": ["href"],
+      "img": ["srcset"],
+      "p": ["style"],
+    },
+    allowed_css_properties=["background-image"],
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a href='1https:foo'>bad</a><a href='ht^tps:foo'>punct</a><a href=':rel'>colon</a><a href='h ttps:foo'>space</a><a href='/ok'>ok</a><img srcset='1https:foo 1x'><p style=\"background-image: url('1https:foo')\">p</p>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a>bad</a><a>punct</a><a href=\"/proxy?url=%3Arel\">colon</a><a href=\"/proxy?url=h%20ttps%3Afoo\">space</a><a href=\"/proxy?url=%2Fok\">ok</a><img><p>p</p>",
+  )
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
