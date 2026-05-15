@@ -1415,6 +1415,8 @@ reference implementation in `.repos/justhtml`.
       into `security_policy_regression_test.mbt`.
 - [x] Split sanitizer invisible-Unicode text and attribute regression into
       `security_policy_regression_test.mbt`.
+- [x] Split sanitizer invisible-Unicode preservation policy regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 

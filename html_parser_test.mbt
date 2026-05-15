@@ -31,24 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom can preserve invisible unicode by policy" {
-  let invisible = "\u{FE00}\u{200B}\u{202E}\u{E000}"
-  let fragment = @html_parser.parse_fragment(
-    "<p title=\"a" + invisible + "b\">a" + invisible + "b</p>",
-    sanitize=false,
-  )
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["p"],
-    allowed_attributes={ "p": ["title"] },
-    strip_invisible_unicode=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<p title=\"a" + invisible + "b\">a" + invisible + "b</p>",
-  )
-}
-
-///|
 test "sanitize_dom force_link_rel permits and merges anchor rel tokens" {
   let default_rel = @html_parser.parse_fragment(
     "<a href='/x' rel='noopener'>x</a>",

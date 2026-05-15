@@ -122,6 +122,24 @@ test "sanitize_dom strips invisible unicode from text and attributes" {
 }
 
 ///|
+test "sanitize_dom can preserve invisible unicode by policy" {
+  let invisible = "\u{FE00}\u{200B}\u{202E}\u{E000}"
+  let fragment = @html_parser.parse_fragment(
+    "<p title=\"a" + invisible + "b\">a" + invisible + "b</p>",
+    sanitize=false,
+  )
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": ["title"] },
+    strip_invisible_unicode=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<p title=\"a" + invisible + "b\">a" + invisible + "b</p>",
+  )
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
