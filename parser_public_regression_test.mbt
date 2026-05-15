@@ -98,15 +98,6 @@ test "public parser source locations and scripting mode stay stable" {
 }
 
 ///|
-test "parser normalizes leading BOM and CRLF in text comment and attr" {
-  let doc = @html_parser.parse_fragment(
-    "\u{FEFF}<p title='a\rb'>a\r\nb<!--x\ry--></p>",
-  )
-  assert_eq(doc.to_html(pretty=false), "<p title=\"a\nb\">a\nb<!--x\ny--></p>")
-  assert_eq(doc.to_text(separator="", strip=false), "a\nb")
-}
-
-///|
 test "parser handles null characters in text attributes and text modes" {
   let text = @html_parser.parse_fragment("a\u{0000}b", collect_errors=true)
   assert_eq(text.to_html(pretty=false), "ab")

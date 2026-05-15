@@ -1623,6 +1623,8 @@ reference implementation in `.repos/justhtml`.
       `special_text_parser_public_regression_test.mbt`.
 - [x] Split similarly named special-end-tag parser regression into
       `special_text_parser_public_regression_test.mbt`.
+- [x] Start input-stream parser public regression file with BOM/CRLF
+      normalization coverage.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
