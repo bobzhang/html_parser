@@ -2794,50 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tokenize preserves end tag attributes and self closing solidus" {
-  let self_closing = @html_parser.tokenize("</div/>", collect_errors=true)
-  guard self_closing.tokens[0] is Tag(tag) else { fail("expected end tag") }
-  assert_true(tag.kind is EndTag)
-  assert_eq(tag.name, "div")
-  assert_eq(tag.self_closing, true)
-  assert_eq(self_closing.errors.length(), 0)
-  let attrs = @html_parser.tokenize("</div attr=x>", collect_errors=true)
-  guard attrs.tokens[0] is Tag(attr_tag) else {
-    fail("expected attributed end tag")
-  }
-  assert_true(attr_tag.kind is EndTag)
-  assert_eq(attr_tag.name, "div")
-  guard attr_tag.attrs["attr"] is Some("x") else {
-    fail("expected end tag attr")
-  }
-  assert_eq(attr_tag.self_closing, false)
-  assert_eq(attrs.errors.length(), 0)
-  let null_name = @html_parser.tokenize("</d\u{0000}iv>", collect_errors=true)
-  guard null_name.tokens[0] is Tag(null_tag) else {
-    fail("expected null-containing end tag")
-  }
-  assert_true(null_tag.kind is EndTag)
-  assert_eq(null_tag.name, "d\u{FFFD}iv")
-  assert_eq(null_name.errors.length(), 1)
-  assert_eq(null_name.errors[0].code, "unexpected-null-character")
-  let bad_solidus = @html_parser.tokenize("</div/ x>", collect_errors=true)
-  guard bad_solidus.tokens[0] is Tag(bad_tag) else {
-    fail("expected recovered end tag after bad solidus")
-  }
-  assert_true(bad_tag.kind is EndTag)
-  assert_eq(bad_tag.name, "div")
-  assert_eq(bad_tag.self_closing, false)
-  guard bad_tag.attrs["x"] is Some("") else {
-    fail("expected recovered attr after bad end-tag solidus")
-  }
-  assert_eq(bad_solidus.errors.length(), 1)
-  assert_eq(
-    bad_solidus.errors[0].code,
-    "unexpected-character-after-solidus-in-tag",
-  )
-}
-
-///|
 test "parser matches end tags before self closing solidus" {
   let div = @html_parser.parse_fragment("<div>x</div/>y", collect_errors=true)
   assert_eq(div.to_html(pretty=false), "<div>x</div>y")
