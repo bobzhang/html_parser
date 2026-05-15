@@ -945,6 +945,8 @@ reference implementation in `.repos/justhtml`.
       `serializer_public_regression_test.mbt`.
 - [x] Split builder raw-text end-tag hardening regression into
       `serializer_public_regression_test.mbt`.
+- [x] Split template clone traversal regression into
+      `builder_public_regression_test.mbt`.
 - [x] Split builder foreign element-name regression into
       `builder_public_regression_test.mbt`.
 - [x] Split builder DOM helper invariants into

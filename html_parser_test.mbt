@@ -2660,36 +2660,3 @@ test "tree builder finishes deeply nested parsed HTML without recursion" {
   }
   assert_eq(first_div.to_text(separator="", strip=false), "x")
 }
-
-///|
-test "clone_node copies template descendants through child traversal" {
-  let template = @html_parser.element("template", children=[
-    @html_parser.element("div", attrs={ "id": Some("content") }),
-    @html_parser.element("span"),
-  ])
-  assert_eq(
-    template.clone_node().to_html(pretty=false),
-    "<template></template>",
-  )
-  let cloned = template.clone_node(deep=true)
-  assert_eq(
-    cloned.to_html(pretty=false),
-    "<template><div id=\"content\"></div><span></span></template>",
-  )
-  guard cloned.query_one("div") is Some(cloned_div) else {
-    fail("expected cloned template content")
-  }
-  cloned_div.append_child(@html_parser.text("clone"))
-  guard cloned_div.parent() is Some(cloned_parent) else {
-    fail("expected cloned template child parent")
-  }
-  assert_eq(cloned_parent.name(), "template")
-  assert_eq(
-    template.to_html(pretty=false),
-    "<template><div id=\"content\"></div><span></span></template>",
-  )
-  assert_eq(
-    cloned.to_html(pretty=false),
-    "<template><div id=\"content\">clone</div><span></span></template>",
-  )
-}
