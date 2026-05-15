@@ -1557,6 +1557,8 @@ reference implementation in `.repos/justhtml`.
       origin coverage in `parser_locations_public_regression_test.mbt`.
 - [x] Start active-formatting parser public regression file with paragraph
       recovery reconstruction coverage.
+- [x] Split adoption-agency formatting origin regression into
+      `active_formatting_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
