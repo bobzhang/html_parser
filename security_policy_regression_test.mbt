@@ -217,6 +217,32 @@ test "sanitize_dom filters inline style declarations by property allowlist" {
 }
 
 ///|
+test "sanitize_dom applies css url function policy rules" {
+  let css_url_rule = @html_parser.UrlRule::new(
+    allowed_schemes=[],
+    allow_relative=true,
+    resolve_protocol_relative=None,
+  )
+  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
+    @html_parser.UrlPolicyRule::new("*", "style:background-image", css_url_rule),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "*": [], "p": ["style"] },
+    allowed_css_properties=["background-image", "color"],
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<p style='background-image: url(/safe.png); color: red'>ok</p><p style=\"background-image: url('https://evil.example/x.png'); color: blue\">bad</p><p style=\"background-image: image-set(url('/safe.png') 1x); color: green\">blocked</p><p style='background-image: URL(  \"/safe-2.png\"  )'>case</p>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<p style=\"background-image: url('/safe.png'); color: red\">ok</p><p style=\"color: blue\">bad</p><p style=\"color: green\">blocked</p><p style=\"background-image: url('/safe-2.png')\">case</p>",
+  )
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
