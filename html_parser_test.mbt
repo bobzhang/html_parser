@@ -31,20 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom neutralizes rawtext end tag boundaries only" {
-  let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
-  let fragment = @html_parser.fragment(children=[
-    @html_parser.element("style", children=[
-      @html_parser.text("</stylex> ok </style"),
-    ]),
-  ])
-  let out = @html_parser.sanitize_dom(fragment, policy~).to_html(pretty=false)
-  assert_eq(out, "<style></stylex> ok &lt;/style</style>")
-  let reparsed = @html_parser.parse_fragment(out, sanitize=false)
-  assert_eq(reparsed.query("style").length(), 1)
-}
-
-///|
 test "sanitize_dom hardens rawtext inside template children" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["template", "style", "img"],

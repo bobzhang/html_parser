@@ -1461,6 +1461,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split empty rawtext and disabled invisible stripping regression into
       `security_policy_regression_test.mbt`.
+- [x] Split rawtext end-tag boundary neutralization regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
