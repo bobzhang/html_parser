@@ -2794,62 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser foster parents table-context start tags" {
-  let direct = @html_parser.parse_fragment(
-    "<table><div>x</div></table>",
-    collect_errors=true,
-  )
-  assert_eq(direct.to_html(pretty=false), "<div>x</div><table></table>")
-  assert_eq(direct.errors.length(), 3)
-  assert_eq(direct.errors[0].code, "foster-parenting-start-tag")
-  assert_eq(direct.errors[1].code, "foster-parenting-character")
-  assert_eq(direct.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
-  let section = @html_parser.parse_fragment(
-    "<table><tbody><div>x</div></tbody></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    section.to_html(pretty=false),
-    "<div>x</div><table><tbody></tbody></table>",
-  )
-  assert_eq(section.errors.length(), 3)
-  assert_eq(section.errors[0].code, "foster-parenting-start-tag")
-  assert_eq(section.errors[1].code, "foster-parenting-character")
-  assert_eq(section.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
-  let row = @html_parser.parse_fragment(
-    "<table><tr><div>x</div></tr></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    row.to_html(pretty=false),
-    "<div>x</div><table><tbody><tr></tr></tbody></table>",
-  )
-  assert_eq(row.errors.length(), 1)
-  assert_eq(row.errors[0].code, "foster-parenting-character")
-  let cell = @html_parser.parse_fragment(
-    "<table><tr><td><div>x</div></td></tr></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    cell.to_html(pretty=false),
-    "<table><tbody><tr><td><div>x</div></td></tr></tbody></table>",
-  )
-  assert_eq(cell.errors.length(), 0)
-  let doc = @html_parser.parse(
-    "<!doctype html><div><table><p>x</p></table></div>",
-    collect_errors=true,
-  )
-  assert_eq(
-    doc.to_html(pretty=false),
-    "<!DOCTYPE html><html><head></head><body><div><p>x</p><table></table></div></body></html>",
-  )
-  assert_eq(doc.errors.length(), 3)
-  assert_eq(doc.errors[0].code, "foster-parenting-start-tag")
-  assert_eq(doc.errors[1].code, "foster-parenting-character")
-  assert_eq(doc.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
-}
-
-///|
 test "parser handles hidden input and form starts in table context" {
   let hidden = @html_parser.parse_fragment(
     "<table><input type=hidden name=x value=y></table>",

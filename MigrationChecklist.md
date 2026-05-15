@@ -1091,6 +1091,8 @@ reference implementation in `.repos/justhtml`.
       `table_parser_public_regression_test.mbt`.
 - [x] Split table parser foster-parented text origin regression into
       `table_parser_public_regression_test.mbt`.
+- [x] Split table parser foster-parented start-tag regression into
+      `table_parser_public_regression_test.mbt`.
 - [x] Start select parser regression file with void/common special starts
       coverage in `select_parser_public_regression_test.mbt`.
 - [x] Split select parser common element start/end regression into
