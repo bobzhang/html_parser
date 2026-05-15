@@ -467,6 +467,30 @@ test "sanitize_dom proxy rejects invalid scheme-like URL prefixes" {
 }
 
 ///|
+test "sanitize_dom rejects malformed URL schemes when relatives are disabled" {
+  let url_policy = @html_parser.UrlPolicy::new(default_allow_relative=false, allow_rules=[
+    @html_parser.UrlPolicyRule::new(
+      "a",
+      "href",
+      @html_parser.UrlRule::new(allowed_schemes=["https"], allow_relative=false),
+    ),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a"],
+    allowed_attributes={ "*": [], "a": ["href"] },
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a href='1https:foo'>leading</a><a href='ht^tps:foo'>punct</a><a href='https://example.com/x'>ok</a><a href='/rel'>rel</a>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a>leading</a><a>punct</a><a href=\"https://example.com/x\">ok</a><a>rel</a>",
+  )
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",

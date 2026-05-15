@@ -1437,6 +1437,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split sanitizer URL proxy invalid scheme-like prefix regression into
       `security_policy_regression_test.mbt`.
+- [x] Split sanitizer malformed URL scheme with relatives disabled regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
