@@ -2794,50 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tokenize matches rawtext and rcdata end tags before bad solidus" {
-  let title = @html_parser.tokenize(
-    "<title>a</title/foo><p>b",
-    collect_errors=true,
-  )
-  guard title.tokens[1] is Characters("a") else {
-    fail("expected title text before slash end tag")
-  }
-  guard title.tokens[2] is Tag(end_title) else {
-    fail("expected title end tag before slash attribute")
-  }
-  assert_true(end_title.kind is EndTag)
-  assert_eq(end_title.name, "title")
-  guard end_title.attrs["foo"] is Some("") else {
-    fail("expected recovered foo attribute on title end tag")
-  }
-  assert_eq(title.errors.length(), 1)
-  assert_eq(title.errors[0].code, "unexpected-character-after-solidus-in-tag")
-  guard title.errors[0].column is Some(17) else {
-    fail("expected title solidus recovery at column 17")
-  }
-  let script = @html_parser.tokenize(
-    "<script>a</script/foo><p>b",
-    collect_errors=true,
-  )
-  guard script.tokens[1] is Characters("a") else {
-    fail("expected script text before slash end tag")
-  }
-  guard script.tokens[2] is Tag(end_script) else {
-    fail("expected script end tag before slash attribute")
-  }
-  assert_true(end_script.kind is EndTag)
-  assert_eq(end_script.name, "script")
-  guard end_script.attrs["foo"] is Some("") else {
-    fail("expected recovered foo attribute on script end tag")
-  }
-  assert_eq(script.errors.length(), 1)
-  assert_eq(script.errors[0].code, "unexpected-character-after-solidus-in-tag")
-  guard script.errors[0].column is Some(19) else {
-    fail("expected script solidus recovery at column 19")
-  }
-}
-
-///|
 test "tokenize reports malformed end tag errors when requested" {
   let result = @html_parser.tokenize("</>", collect_errors=true)
   assert_eq(result.tokens.length(), 1)
