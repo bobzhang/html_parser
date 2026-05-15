@@ -1083,6 +1083,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split parser missing quoted-attribute whitespace regression into
       `parser_public_regression_test.mbt`.
+- [x] Split invalid self-closing start tag fixture regression into
+      tokenizer and parser public regression tests.
 - [x] Split explicit UTF-8 parse_bytes regression into
       `encoding_public_regression_test.mbt`.
 - [x] Split Windows-1252 parse_bytes fallback regression into
