@@ -1051,6 +1051,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split parser end-tag recovery origin regression into
       `parser_public_regression_test.mbt`.
+- [x] Split parser image-to-img start-tag recovery regression into
+      `parser_public_regression_test.mbt`.
 - [x] Start legacy element regression file with fragment keygen/frame empty
       non-void coverage in `legacy_elements_public_regression_test.mbt`.
 - [x] Split legacy element select-mode keygen/frame regression into

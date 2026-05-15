@@ -243,6 +243,19 @@ test "parser tracks origins for end-tag recovery elements" {
 }
 
 ///|
+test "parser treats image start tags as img elements" {
+  let doc = @html_parser.parse_fragment(
+    "<p>a<image src=x>b</p>",
+    collect_errors=true,
+  )
+  assert_eq(doc.to_html(pretty=false), "<p>a<img src=\"x\">b</p>")
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "image-start-tag")
+  let loose = @html_parser.parse_fragment("<image>text</image>")
+  assert_eq(loose.to_html(pretty=false), "<img>text")
+}
+
+///|
 test "parser closes open paragraphs before paragraph and block starts" {
   let fragment = @html_parser.parse_fragment("<p>one<p>two<div>three</div>")
   assert_eq(
