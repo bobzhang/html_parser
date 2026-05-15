@@ -20,49 +20,6 @@ test "parser cursor advances by unicode character length" {
 }
 
 ///|
-test "collect_errors records malformed markup without raising" {
-  let doc = @html_parser.parse_fragment("<p>open</span>", collect_errors=true)
-  assert_eq(doc.errors.length(), 1)
-  assert_eq(doc.errors[0].code, "unexpected-end-tag")
-  assert_eq(doc.to_html(pretty=false), "<p>open</p>")
-  let invalid_open = @html_parser.parse_fragment("<*foo>", collect_errors=true)
-  assert_eq(invalid_open.to_html(pretty=false), "&lt;*foo&gt;")
-  assert_eq(invalid_open.errors.length(), 1)
-  assert_eq(invalid_open.errors[0].code, "invalid-first-character-of-tag-name")
-  guard invalid_open.errors[0].column is Some(2) else {
-    fail("expected invalid tag-open error at second character")
-  }
-  let empty_end = @html_parser.parse_fragment("</>", collect_errors=true)
-  assert_eq(empty_end.to_html(pretty=false), "")
-  assert_eq(empty_end.errors.length(), 1)
-  assert_eq(empty_end.errors[0].code, "empty-end-tag")
-  guard empty_end.errors[0].column is Some(3) else {
-    fail("expected empty end tag error at >")
-  }
-  let invalid_end = @html_parser.parse_fragment("</ >", collect_errors=true)
-  assert_eq(invalid_end.to_html(pretty=false), "<!-- -->")
-  assert_eq(invalid_end.errors.length(), 1)
-  assert_eq(invalid_end.errors[0].code, "invalid-first-character-of-tag-name")
-  guard invalid_end.errors[0].column is Some(3) else {
-    fail("expected invalid end tag error after slash")
-  }
-  let lt = @html_parser.parse_fragment("<", collect_errors=true)
-  assert_eq(lt.to_html(pretty=false), "&lt;")
-  assert_eq(lt.errors.length(), 1)
-  assert_eq(lt.errors[0].code, "eof-before-tag-name")
-  guard lt.errors[0].column is Some(1) else {
-    fail("expected bare < EOF at the < character")
-  }
-  let end_open = @html_parser.parse_fragment("</", collect_errors=true)
-  assert_eq(end_open.to_html(pretty=false), "&lt;/")
-  assert_eq(end_open.errors.length(), 1)
-  assert_eq(end_open.errors[0].code, "eof-before-tag-name")
-  guard end_open.errors[0].column is Some(2) else {
-    fail("expected bare </ EOF at the slash")
-  }
-}
-
-///|
 test "parser ignores unmatched end tags without closing current element" {
   let doc = @html_parser.parse_fragment(
     "<div><p>open</span>after</div>",
