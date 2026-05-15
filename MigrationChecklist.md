@@ -1459,6 +1459,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split textarea markdown passthrough breakout regression into
       `security_policy_regression_test.mbt`.
+- [x] Split empty rawtext and disabled invisible stripping regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
