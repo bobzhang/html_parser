@@ -340,3 +340,48 @@ test "parser reports implied active formatting end in table view" {
   }
   assert_node_origin(tr, 10, 1, 11)
 }
+
+///|
+test "fragment table contexts foster active formatting text" {
+  let row = @html_parser.parse_fragment(
+    "<a><tr>x</tr></a>",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+    track_node_locations=true,
+  )
+  assert_eq(
+    row.to_html(pretty=false),
+    "<a></a><tbody><tr><a>x</a></tr></tbody>",
+  )
+  assert_eq(row.errors.length(), 3)
+  assert_eq(row.errors[0].code, "foster-parenting-start-tag")
+  assert_eq(row.errors[1].code, "unexpected-end-tag-implies-table-voodoo")
+  assert_eq(row.errors[2].code, "adoption-agency-1.3")
+  let row_links = row.root.query("a")
+  guard row_links.length() == 2 else {
+    fail("expected fostered and reconstructed links")
+  }
+  assert_node_origin(row_links[0], 0, 1, 1)
+  assert_node_origin(row_links[1], 0, 1, 1)
+  let text_row = @html_parser.parse_fragment(
+    "<a>x<tr></tr></a>",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(text_row.to_html(pretty=false), "<a>x</a><tbody><tr></tr></tbody>")
+  assert_eq(text_row.errors.length(), 4)
+  assert_eq(text_row.errors[0].code, "foster-parenting-start-tag")
+  assert_eq(text_row.errors[1].code, "foster-parenting-character")
+  assert_eq(text_row.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
+  assert_eq(text_row.errors[3].code, "adoption-agency-1.3")
+  let text_only = @html_parser.parse_fragment(
+    "<a>x</a>",
+    context=@html_parser.FragmentContext::new("table"),
+    collect_errors=true,
+  )
+  assert_eq(text_only.to_html(pretty=false), "<a>x</a>")
+  assert_eq(text_only.errors.length(), 3)
+  assert_eq(text_only.errors[0].code, "foster-parenting-start-tag")
+  assert_eq(text_only.errors[1].code, "foster-parenting-character")
+  assert_eq(text_only.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
+}

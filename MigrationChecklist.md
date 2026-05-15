@@ -1567,6 +1567,8 @@ reference implementation in `.repos/justhtml`.
       `active_formatting_parser_public_regression_test.mbt`.
 - [x] Split implied active-formatting table-view regression into
       `active_formatting_parser_public_regression_test.mbt`.
+- [x] Split fragment table-context active-formatting regression into
+      `active_formatting_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
