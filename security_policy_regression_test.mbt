@@ -48,6 +48,41 @@ test "sanitize_dom document policy preserves shell and doctype" {
 }
 
 ///|
+test "sanitize_dom custom policy keeps comments and can drop subtrees" {
+  let keep_shell = @html_parser.parse(
+    "<!DOCTYPE html><!--x--><p>ok</p><span>kept text</span>",
+    sanitize=false,
+  )
+  let keep_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "*": [], "p": [] },
+    drop_comments=false,
+    drop_doctype=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(keep_shell.root, policy=keep_policy).to_html(
+      pretty=false,
+    ),
+    "<!DOCTYPE html><!--x--><p>ok</p>kept text",
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<div>keep<sarcasm><b>drop</b></sarcasm><p>ok</p></div>",
+    sanitize=false,
+  )
+  let drop_policy = @html_parser.SanitizationPolicy::new(
+    ["div", "p"],
+    allowed_attributes={ "*": [], "div": [], "p": [] },
+    disallowed_tag_handling=Drop,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy=drop_policy).to_html(
+      pretty=false,
+    ),
+    "<div>keep<p>ok</p></div>",
+  )
+}
+
+///|
 test "public URL proxy policy rewrites and strips URLs stably" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,
