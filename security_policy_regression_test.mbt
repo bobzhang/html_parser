@@ -1631,6 +1631,37 @@ test "sanitize_dom applies srcset url policy rules" {
 }
 
 ///|
+test "sanitize_dom applies space separated url list rules" {
+  let url_list_rule = @html_parser.UrlRule::new(
+    allowed_schemes=["https"],
+    allowed_hosts=["trusted.example"],
+    allow_relative=false,
+  )
+  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
+    @html_parser.UrlPolicyRule::new("a", "href", url_list_rule),
+    @html_parser.UrlPolicyRule::new("a", "ping", url_list_rule),
+    @html_parser.UrlPolicyRule::new("img", "src", url_list_rule),
+    @html_parser.UrlPolicyRule::new("img", "attributionsrc", url_list_rule),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a", "img"],
+    allowed_attributes={
+      "a": ["href", "ping"],
+      "img": ["src", "attributionsrc"],
+    },
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a href='https://trusted.example/x' ping=' https://trusted.example/p   //trusted.example/q '>ok</a><a href='https://trusted.example/x' ping='https://trusted.example/p https://evil.example/p'>bad</a><a href='https://trusted.example/x' ping='  \t\n  '>empty</a><img src='https://trusted.example/x.png' attributionsrc='https://trusted.example/register https://trusted.example/measure'><img src='https://trusted.example/x.png' attributionsrc='https://trusted.example/register https://evil.example/register'>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a href=\"https://trusted.example/x\" ping=\"https://trusted.example/p https://trusted.example/q\">ok</a><a href=\"https://trusted.example/x\">bad</a><a href=\"https://trusted.example/x\">empty</a><img src=\"https://trusted.example/x.png\" attributionsrc=\"https://trusted.example/register https://trusted.example/measure\"><img src=\"https://trusted.example/x.png\">",
+  )
+}
+
+///|
 test "sanitize_dom preserves allowed valueless non-url attributes" {
   let policy = @html_parser.SanitizationPolicy::new(["div"], allowed_attributes={
     "*": [],
