@@ -1499,6 +1499,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split foreign URL-function exact-rule sanitizer regression into
       `security_policy_regression_test.mbt`.
+- [x] Split meta refresh content-attribute sanitizer regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
