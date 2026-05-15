@@ -218,6 +218,34 @@ test "sanitize_dom escape handling emits disallowed tags as text" {
 }
 
 ///|
+test "sanitize_dom escape handling can return fragments for standalone roots" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "*": [], "p": [] },
+    drop_content_tags=[],
+    disallowed_tag_handling=Escape,
+  )
+  let standalone = @html_parser.element(
+    "widget",
+    attrs={ "data-x": Some("1") },
+    children=[@html_parser.text("ok")],
+  )
+  let sanitized = @html_parser.sanitize_dom(standalone, policy~)
+  assert_true(sanitized.kind() is Fragment)
+  assert_eq(
+    sanitized.to_html(pretty=false),
+    "&lt;widget data-x=\"1\"&gt;ok&lt;/widget&gt;",
+  )
+  let image = @html_parser.fragment(children=[
+    @html_parser.element("img", attrs={ "src": Some("/safe.png") }),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(image, policy~).to_html(pretty=false),
+    "&lt;img src=\"/safe.png\"&gt;",
+  )
+}
+
+///|
 test "public URL proxy policy rewrites and strips URLs stably" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,
