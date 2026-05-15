@@ -174,6 +174,26 @@ test "tokenize preserves end tag attributes and self closing solidus" {
 }
 
 ///|
+test "parser matches end tags before self closing solidus" {
+  let div = @html_parser.parse_fragment("<div>x</div/>y", collect_errors=true)
+  assert_eq(div.to_html(pretty=false), "<div>x</div>y")
+  assert_eq(div.errors.length(), 0)
+  let script = @html_parser.tokenize("<script>x</script/>after")
+  guard script.tokens[1] is Characters("x") else {
+    fail("expected script text before slash end tag")
+  }
+  guard script.tokens[2] is Tag(end_script) else {
+    fail("expected script end tag before slash")
+  }
+  assert_true(end_script.kind is EndTag)
+  assert_eq(end_script.name, "script")
+  assert_eq(end_script.self_closing, true)
+  guard script.tokens[3] is Characters("after") else {
+    fail("expected text after slash end tag")
+  }
+}
+
+///|
 test "tokenize matches rawtext and rcdata end tags before bad solidus" {
   let title = @html_parser.tokenize(
     "<title>a</title/foo><p>b",

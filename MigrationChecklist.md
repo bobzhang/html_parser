@@ -1599,6 +1599,8 @@ reference implementation in `.repos/justhtml`.
       scripting-mode coverage.
 - [x] Split disabled head `noscript` document-mode regression into
       `document_modes_public_regression_test.mbt`.
+- [x] Split self-closing end-tag tokenizer regression into
+      `tokenizer_public_regression_test.mbt`.
 
 ## Working Rule
 
