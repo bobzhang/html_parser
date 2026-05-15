@@ -712,3 +712,23 @@ test "parser foster parents non-whitespace table text" {
     assert_eq(error.code, "foster-parenting-character")
   }
 }
+
+///|
+test "parser tracks origins for foster-parented table text" {
+  let direct = @html_parser.parse_fragment(
+    "<table>text</table>",
+    track_node_locations=true,
+  )
+  let direct_children = direct.root.children()
+  assert_eq(direct_children.length(), 2)
+  assert_eq(direct_children[0].data(), "text")
+  assert_node_origin(direct_children[0], 7, 1, 8)
+  let section = @html_parser.parse_fragment(
+    "<table><tbody>text</tbody></table>",
+    track_node_locations=true,
+  )
+  let section_children = section.root.children()
+  assert_eq(section_children.length(), 2)
+  assert_eq(section_children[0].data(), "text")
+  assert_node_origin(section_children[0], 14, 1, 15)
+}
