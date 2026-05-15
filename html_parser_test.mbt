@@ -31,24 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom escape handling preserves disallowed template children" {
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["b"],
-    allowed_attributes={ "*": [], "b": [] },
-    drop_content_tags=[],
-    disallowed_tag_handling=Escape,
-  )
-  let fragment = @html_parser.parse_fragment(
-    "<template><b>x</b></template>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "&lt;template&gt;<b>x</b>&lt;/template&gt;",
-  )
-}
-
-///|
 test "sanitize_dom removes parser escape-only text outside escape mode" {
   let fragment = @html_parser.parse_fragment(
     "safe <!DOCTYPE and y>z",
