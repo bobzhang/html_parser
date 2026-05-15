@@ -168,6 +168,38 @@ test "parser reports treebuilder error positions after newlines" {
 }
 
 ///|
+test "parse errors expose tokenizer treebuilder and default categories" {
+  let direct = @html_parser.ParseError::new("custom-error")
+  assert_eq(direct.category, "parse")
+  assert_eq(direct.message, "custom-error")
+  let tokenized = @html_parser.tokenize("<", collect_errors=true)
+  assert_eq(tokenized.errors.length(), 1)
+  assert_eq(tokenized.errors[0].code, "eof-before-tag-name")
+  assert_eq(tokenized.errors[0].category, "tokenizer")
+  let document = @html_parser.parse("<div>x", collect_errors=true)
+  assert_eq(document.errors.length(), 2)
+  assert_eq(document.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(document.errors[0].category, "treebuilder")
+  assert_eq(document.errors[1].code, "expected-closing-tag-but-got-eof")
+  assert_eq(document.errors[1].category, "treebuilder")
+  let malformed = @html_parser.parse_fragment("<*foo>", collect_errors=true)
+  assert_eq(malformed.errors.length(), 1)
+  assert_eq(malformed.errors[0].code, "invalid-first-character-of-tag-name")
+  assert_eq(malformed.errors[0].category, "tokenizer")
+  let mixed = @html_parser.parse("<p>\u{0000}</p>", collect_errors=true)
+  assert_eq(mixed.errors[0].code, "expected-doctype-but-got-start-tag")
+  assert_eq(mixed.errors[0].category, "treebuilder")
+  let mut saw_null = false
+  for error in mixed.errors {
+    if error.code == "unexpected-null-character" {
+      saw_null = true
+      assert_eq(error.category, "tokenizer")
+    }
+  }
+  assert_true(saw_null)
+}
+
+///|
 test "parser handles nested tags attributes comments and doctype" {
   let doc = @html_parser.parse(
     "<!doctype html><p id='x' class=\"intro lead\">Hi &amp; bye<!--ok--></p>",
