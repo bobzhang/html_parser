@@ -31,61 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom proxy mode fails closed without usable proxy config" {
-  let missing_proxy_policy = @html_parser.UrlPolicy::new(
-    default_handling=UrlProxy,
-    allow_rules=[
-      @html_parser.UrlPolicyRule::new(
-        "a",
-        "href",
-        @html_parser.UrlRule::new(allowed_schemes=["https"]),
-      ),
-    ],
-  )
-  let missing_policy = @html_parser.SanitizationPolicy::new(
-    ["a"],
-    allowed_attributes={ "a": ["href"] },
-    url_policy=missing_proxy_policy,
-  )
-  let missing = @html_parser.parse_fragment(
-    "<a href='https://example.com/x'>missing</a>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(missing.root, policy=missing_policy).to_html(
-      pretty=false,
-    ),
-    "<a>missing</a>",
-  )
-  let empty_proxy_policy = @html_parser.UrlPolicy::new(
-    default_handling=UrlProxy,
-    proxy=@html_parser.UrlProxy::new(""),
-    allow_rules=[
-      @html_parser.UrlPolicyRule::new(
-        "a",
-        "href",
-        @html_parser.UrlRule::new(allowed_schemes=["https"]),
-      ),
-    ],
-  )
-  let empty_policy = @html_parser.SanitizationPolicy::new(
-    ["a"],
-    allowed_attributes={ "a": ["href"] },
-    url_policy=empty_proxy_policy,
-  )
-  let empty = @html_parser.parse_fragment(
-    "<a href='https://example.com/x'>empty</a>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(empty.root, policy=empty_policy).to_html(
-      pretty=false,
-    ),
-    "<a>empty</a>",
-  )
-}
-
-///|
 test "sanitize_dom proxy rejects invalid scheme-like URL prefixes" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,
