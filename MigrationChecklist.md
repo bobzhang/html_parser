@@ -1421,6 +1421,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split sanitizer mixed-case valueless attribute regression into
       `security_policy_regression_test.mbt`.
+- [x] Split sanitizer inline-style property allowlist regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
