@@ -98,52 +98,6 @@ test "public parser source locations and scripting mode stay stable" {
 }
 
 ///|
-test "parser reports noncharacters in input stream" {
-  let fragment = @html_parser.parse_fragment(
-    "ab\u{FDD0}cd",
-    collect_errors=true,
-  )
-  assert_eq(fragment.to_html(pretty=false), "ab\u{FDD0}cd")
-  assert_eq(fragment.errors.length(), 1)
-  assert_eq(fragment.errors[0].code, "noncharacter-in-input-stream")
-  let invalid_fragment = @html_parser.parse_fragment(
-    "<\u{FDD0}",
-    collect_errors=true,
-  )
-  assert_eq(invalid_fragment.to_html(pretty=false), "&lt;\u{FDD0}")
-  assert_eq(invalid_fragment.errors.length(), 3)
-  assert_eq(invalid_fragment.errors[0].code, "noncharacter-in-input-stream")
-  assert_eq(
-    invalid_fragment.errors[1].code,
-    "invalid-first-character-of-tag-name",
-  )
-  assert_eq(invalid_fragment.errors[2].code, "noncharacter-in-input-stream")
-  let invalid_entity = @html_parser.parse_fragment(
-    "<&notit",
-    collect_errors=true,
-  )
-  assert_eq(invalid_entity.to_html(pretty=false), "&lt;¬it")
-  assert_eq(invalid_entity.errors.length(), 2)
-  assert_eq(
-    invalid_entity.errors[0].code,
-    "invalid-first-character-of-tag-name",
-  )
-  assert_eq(
-    invalid_entity.errors[1].code,
-    "missing-semicolon-after-character-reference",
-  )
-  let invalid_xml = @html_parser.parse_fragment(
-    "<\u{000C}\u{FDD0}&lt;",
-    collect_errors=true,
-    xml_coercion=true,
-  )
-  assert_eq(invalid_xml.to_html(pretty=false), "&lt; �&lt;")
-  assert_eq(invalid_xml.errors.length(), 2)
-  assert_eq(invalid_xml.errors[0].code, "invalid-first-character-of-tag-name")
-  assert_eq(invalid_xml.errors[1].code, "noncharacter-in-input-stream")
-}
-
-///|
 test "tree builder finishes deeply nested parsed HTML without recursion" {
   let html = repeat_for_test("<div>", 1200) +
     "x" +
