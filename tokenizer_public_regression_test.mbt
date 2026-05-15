@@ -362,6 +362,25 @@ test "tokenize keeps similarly named special end tags in text" {
 }
 
 ///|
+test "tokenize does not report special text EOF tree errors" {
+  let script = @html_parser.tokenize("<script>x", collect_errors=true)
+  guard script.tokens[1] is Characters("x") else {
+    fail("expected unclosed script text")
+  }
+  assert_eq(script.errors.length(), 0)
+  let plaintext = @html_parser.tokenize("<plaintext>x", collect_errors=true)
+  guard plaintext.tokens[1] is Characters("x") else {
+    fail("expected unclosed plaintext text")
+  }
+  assert_eq(plaintext.errors.length(), 0)
+  let title = @html_parser.tokenize("<title>x", collect_errors=true)
+  guard title.tokens[1] is Characters("x") else {
+    fail("expected unclosed title text")
+  }
+  assert_eq(title.errors.length(), 0)
+}
+
+///|
 test "tokenize reports malformed end tag errors when requested" {
   let result = @html_parser.tokenize("</>", collect_errors=true)
   assert_eq(result.tokens.length(), 1)
