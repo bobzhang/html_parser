@@ -22,6 +22,19 @@ test "sanitize_dom default policy drops unsafe document content" {
 }
 
 ///|
+test "sanitize_dom default policy keeps table captions" {
+  let root = @html_parser.fragment(children=[
+    @html_parser.element("table", children=[
+      @html_parser.element("caption", children=[@html_parser.text("Summary")]),
+    ]),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(root).to_html(pretty=false),
+    "<table><caption>Summary</caption></table>",
+  )
+}
+
+///|
 test "public URL proxy policy rewrites and strips URLs stably" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,

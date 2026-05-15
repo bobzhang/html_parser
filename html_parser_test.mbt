@@ -31,19 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom default policy keeps table captions" {
-  let root = @html_parser.fragment(children=[
-    @html_parser.element("table", children=[
-      @html_parser.element("caption", children=[@html_parser.text("Summary")]),
-    ]),
-  ])
-  assert_eq(
-    @html_parser.sanitize_dom(root).to_html(pretty=false),
-    "<table><caption>Summary</caption></table>",
-  )
-}
-
-///|
 test "sanitize_dom document policy preserves shell and doctype" {
   let doc = @html_parser.parse(
     "<!DOCTYPE html><!--x--><html><head><title>T</title><script>bad</script></head><body><p onclick=x>ok</p></body></html>",
