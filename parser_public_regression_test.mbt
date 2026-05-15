@@ -57,30 +57,6 @@ test "parser closes open paragraphs before paragraph and block starts" {
 }
 
 ///|
-test "nodes expose empty origin metadata by default" {
-  let text = @html_parser.text("hello")
-  assert_true(text.origin_offset() is None)
-  assert_true(text.origin_line() is None)
-  assert_true(text.origin_col() is None)
-  assert_true(text.origin_location() is None)
-  let parent = @html_parser.element("p", children=[text])
-  assert_true(parent.origin_offset() is None)
-  assert_true(parent.origin_location() is None)
-  let clone = parent.clone_node(deep=true)
-  assert_true(clone.origin_offset() is None)
-  assert_true(clone.origin_location() is None)
-  let doc = @html_parser.parse_fragment("<p>hi</p>")
-  guard doc.query_one("p") is Some(parsed_p) else {
-    fail("expected parsed paragraph")
-  }
-  assert_true(parsed_p.origin_offset() is None)
-  assert_true(parsed_p.origin_location() is None)
-  let parsed_children = parsed_p.children()
-  assert_eq(parsed_children.length(), 1)
-  assert_true(parsed_children[0].origin_location() is None)
-}
-
-///|
 test "parser tracks simple element and text origins when requested" {
   let doc = @html_parser.parse_fragment("<p>hi</p>", track_node_locations=true)
   guard doc.query_one("p") is Some(paragraph) else {

@@ -1587,6 +1587,8 @@ reference implementation in `.repos/justhtml`.
       `foreign_content_public_regression_test.mbt`.
 - [x] Split public fragment-context stability regression into
       `fragment_parser_public_regression_test.mbt`.
+- [x] Split empty origin metadata regression into
+      `parser_locations_public_regression_test.mbt`.
 
 ## Working Rule
 
