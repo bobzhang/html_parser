@@ -18,6 +18,48 @@ test "parse_bytes decodes explicit utf8 and records encoding" {
 }
 
 ///|
+test "parse_bytes defaults to windows1252 and normalizes compatible labels" {
+  let bytes = b"\x3c\x70\x3e\x80\x3c\x2f\x70\x3e"
+  let doc = @html_parser.parse_bytes(bytes)
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<html><head></head><body><p>\u{20AC}</p></body></html>",
+  )
+  guard doc.encoding is Some("windows-1252") else {
+    fail("expected default windows-1252 encoding")
+  }
+  let latin1 = @html_parser.parse_bytes(bytes, encoding="iso-8859-1")
+  assert_eq(
+    latin1.to_html(pretty=false),
+    "<html><head></head><body><p>\u{20AC}</p></body></html>",
+  )
+  guard latin1.encoding is Some("windows-1252") else {
+    fail("expected latin1 label to normalize to windows-1252")
+  }
+  let utf7 = @html_parser.parse_bytes(bytes, encoding="utf7")
+  assert_eq(
+    utf7.to_html(pretty=false),
+    "<html><head></head><body><p>\u{20AC}</p></body></html>",
+  )
+  guard utf7.encoding is Some("windows-1252") else {
+    fail("expected utf7 label to normalize to windows-1252")
+  }
+  let c1_letters = @html_parser.parse_bytes(b"<p>\x83\x9f</p>")
+  assert_eq(c1_letters.to_text(separator="", strip=false), "\u{0192}\u{0178}")
+  guard c1_letters.encoding is Some("windows-1252") else {
+    fail("expected C1 default bytes to use windows-1252")
+  }
+  let c1_punctuation = @html_parser.parse_bytes(b"<p>\x84\x8c</p>")
+  assert_eq(
+    c1_punctuation.to_text(separator="", strip=false),
+    "\u{201E}\u{0152}",
+  )
+  guard c1_punctuation.encoding is Some("windows-1252") else {
+    fail("expected sparse C1 bytes to use windows-1252")
+  }
+}
+
+///|
 test "public parse_bytes meta charset and transport override stay stable" {
   let meta = @html_parser.parse_bytes(
     b"<meta charset=utf-8><p>\xe2\x82\xac</p>",
