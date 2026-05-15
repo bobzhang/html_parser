@@ -31,44 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom applies single url-like attribute rules" {
-  let remote_rule = @html_parser.UrlRule::new(
-    allowed_schemes=["https"],
-    allowed_hosts=["trusted.example"],
-    allow_relative=false,
-  )
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new("video", "poster", remote_rule),
-    @html_parser.UrlPolicyRule::new("form", "action", remote_rule),
-    @html_parser.UrlPolicyRule::new("button", "formaction", remote_rule),
-    @html_parser.UrlPolicyRule::new("blockquote", "cite", remote_rule),
-    @html_parser.UrlPolicyRule::new("object", "data", remote_rule),
-    @html_parser.UrlPolicyRule::new("p", "background", remote_rule),
-  ])
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["video", "form", "button", "blockquote", "object", "p"],
-    allowed_attributes={
-      "video": ["poster"],
-      "form": ["action"],
-      "button": ["formaction"],
-      "blockquote": ["cite"],
-      "object": ["data"],
-      "p": ["background"],
-    },
-    url_policy~,
-    drop_content_tags=[],
-  )
-  let fragment = @html_parser.parse_fragment(
-    "<video poster='https://trusted.example/poster.png'></video><video poster='https://evil.example/poster.png'></video><form action='//trusted.example/submit'></form><button formaction='https://trusted.example/send'>go</button><blockquote cite='https://trusted.example/q'></blockquote><object data='https://trusted.example/payload'></object><p background='https://trusted.example/bg.png'>ok</p><p background='/relative.png'>rel</p>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<video poster=\"https://trusted.example/poster.png\"></video><video></video><form action=\"https://trusted.example/submit\"></form><button formaction=\"https://trusted.example/send\">go</button><blockquote cite=\"https://trusted.example/q\"></blockquote><object data=\"https://trusted.example/payload\"></object><p background=\"https://trusted.example/bg.png\">ok</p><p>rel</p>",
-  )
-}
-
-///|
 test "sanitize_dom applies custom url policy rules" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlStrip,

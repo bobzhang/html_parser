@@ -1505,6 +1505,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split URL-like attribute drop-without-rule sanitizer regression into
       `security_policy_regression_test.mbt`.
+- [x] Split single URL-like attribute rule sanitizer regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
