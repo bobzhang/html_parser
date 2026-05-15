@@ -13,13 +13,6 @@ test "parser handles nested tags attributes comments and doctype" {
 }
 
 ///|
-test "parser cursor advances by unicode character length" {
-  let doc = @html_parser.parse_fragment("<p>😀 &lt; ok</p>")
-  assert_eq(doc.to_html(pretty=false), "<p>😀 &lt; ok</p>")
-  assert_eq(doc.to_text(separator="", strip=false), "😀 < ok")
-}
-
-///|
 test "parser closes current heading before another heading start" {
   let fragment = @html_parser.parse_fragment("<p>intro<h1>head<h2>next")
   assert_eq(

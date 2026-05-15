@@ -8,6 +8,13 @@ test "parser normalizes leading BOM and CRLF in text comment and attr" {
 }
 
 ///|
+test "parser cursor advances by unicode character length" {
+  let doc = @html_parser.parse_fragment("<p>😀 &lt; ok</p>")
+  assert_eq(doc.to_html(pretty=false), "<p>😀 &lt; ok</p>")
+  assert_eq(doc.to_text(separator="", strip=false), "😀 < ok")
+}
+
+///|
 test "parser handles null characters in text attributes and text modes" {
   let text = @html_parser.parse_fragment("a\u{0000}b", collect_errors=true)
   assert_eq(text.to_html(pretty=false), "ab")
