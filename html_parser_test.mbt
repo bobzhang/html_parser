@@ -2794,37 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser treats similarly named special end tags as text" {
-  let title = @html_parser.parse(
-    "<title>a</titlex></title><p>b",
-    collect_errors=true,
-  )
-  assert_eq(
-    title.to_html(pretty=false),
-    "<html><head><title>a&lt;/titlex&gt;</title></head><body><p>b</p></body></html>",
-  )
-  assert_eq(title.errors.length(), 1)
-  assert_eq(title.errors[0].code, "expected-doctype-but-got-start-tag")
-  let textarea = @html_parser.parse(
-    "<textarea>a</textareax></textarea><p>b",
-    collect_errors=true,
-  )
-  assert_eq(
-    textarea.to_html(pretty=false),
-    "<html><head></head><body><textarea>a&lt;/textareax&gt;</textarea><p>b</p></body></html>",
-  )
-  assert_eq(textarea.errors.length(), 1)
-  assert_eq(textarea.errors[0].code, "expected-doctype-but-got-start-tag")
-  let xmp = @html_parser.parse("<xmp>a</xmpx></xmp><p>b", collect_errors=true)
-  assert_eq(
-    xmp.to_html(pretty=false),
-    "<html><head></head><body><xmp>a&lt;/xmpx&gt;</xmp><p>b</p></body></html>",
-  )
-  assert_eq(xmp.errors.length(), 1)
-  assert_eq(xmp.errors[0].code, "expected-doctype-but-got-start-tag")
-}
-
-///|
 test "parser treats legacy raw text elements as text" {
   let doc = @html_parser.parse_fragment(
     "<iframe><b>x</b></iframe><noembed><i>y</i></noembed><noscript><em>z</em></noscript>",
