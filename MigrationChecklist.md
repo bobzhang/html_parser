@@ -1529,6 +1529,8 @@ reference implementation in `.repos/justhtml`.
       document scaffolding coverage in `parser_errors_public_regression_test.mbt`.
 - [x] Split strict-mode first parser error regression into
       `parser_errors_public_regression_test.mbt`.
+- [x] Split parser error collection line-column regression into
+      `parser_errors_public_regression_test.mbt`.
 
 ## Working Rule
 

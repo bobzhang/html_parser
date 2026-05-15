@@ -49,3 +49,50 @@ test "strict mode raises on first parse error" {
     _ => fail("expected strict document parse to raise StrictMode")
   }
 }
+
+///|
+test "parser error collection is opt in and keeps line columns" {
+  let loose = @html_parser.parse("<p>\u{0000}</p>")
+  assert_eq(loose.errors.length(), 0)
+  let collected = @html_parser.parse("<p>\u{0000}</p>", collect_errors=true)
+  assert_true(collected.errors.length() > 0)
+  assert_eq(collected.errors[0].code, "expected-doctype-but-got-start-tag")
+  let mut saw_null = false
+  for error in collected.errors {
+    if error.code == "unexpected-null-character" {
+      saw_null = true
+      guard error.line is Some(1) else {
+        fail("expected inline null error on line 1")
+      }
+      guard error.column is Some(4) else {
+        fail("expected inline null error at column 4")
+      }
+    }
+  }
+  assert_true(saw_null)
+  let multiline = @html_parser.parse(
+    "line1\nline2\u{0000}",
+    collect_errors=true,
+  )
+  let mut saw_multiline_null = false
+  for error in multiline.errors {
+    if error.code == "unexpected-null-character" {
+      saw_multiline_null = true
+      guard error.line is Some(2) else {
+        fail("expected multiline null error on line 2")
+      }
+      guard error.column is Some(6) else {
+        fail("expected multiline null error at column 6")
+      }
+    }
+  }
+  assert_true(saw_multiline_null)
+  let strict_valid : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = try? @html_parser.parse(
+    "<!DOCTYPE html><html><head><title>Test</title></head><body></body></html>",
+    strict=true,
+  )
+  match strict_valid {
+    Ok(doc) => assert_eq(doc.errors.length(), 0)
+    Err(_) => fail("expected strict valid document to parse")
+  }
+}
