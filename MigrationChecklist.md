@@ -1651,6 +1651,8 @@ reference implementation in `.repos/justhtml`.
       point and MathML marker exception coverage.
 - [x] Split active foreign mutation sanitizer regression into
       `sanitize_foreign_content_public_regression_test.mbt`.
+- [x] Split foreign SVG URL-function attribute sanitizer regressions into
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
