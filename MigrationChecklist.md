@@ -1527,6 +1527,8 @@ reference implementation in `.repos/justhtml`.
       `html_parser_test.mbt` to `public_regression_helpers_test.mbt`.
 - [x] Start parser error public regression file with parser error modes and
       document scaffolding coverage in `parser_errors_public_regression_test.mbt`.
+- [x] Split strict-mode first parser error regression into
+      `parser_errors_public_regression_test.mbt`.
 
 ## Working Rule
 

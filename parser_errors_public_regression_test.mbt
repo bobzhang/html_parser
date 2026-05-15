@@ -24,3 +24,28 @@ test "public parser error modes and document scaffolding stay stable" {
     _ => fail("expected strict document parse to raise StrictMode")
   }
 }
+
+///|
+test "strict mode raises on first parse error" {
+  let fragment_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = try? @html_parser.parse_fragment(
+    "<p>open</span>",
+    strict=true,
+  )
+  match fragment_result {
+    Err(StrictMode(error)) => assert_eq(error.code, "unexpected-end-tag")
+    _ => fail("expected strict fragment parse to raise StrictMode")
+  }
+  let document_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = try? @html_parser.parse(
+    "<p>x",
+    strict=true,
+  )
+  match document_result {
+    Err(StrictMode(error)) => {
+      assert_eq(error.code, "expected-doctype-but-got-start-tag")
+      guard error.column is Some(3) else {
+        fail("expected strict document error at initial start tag")
+      }
+    }
+    _ => fail("expected strict document parse to raise StrictMode")
+  }
+}
