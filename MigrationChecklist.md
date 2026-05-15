@@ -1099,6 +1099,8 @@ reference implementation in `.repos/justhtml`.
       `table_parser_public_regression_test.mbt`.
 - [x] Split table parser style/script start regression into
       `table_parser_public_regression_test.mbt`.
+- [x] Split table parser stray end-tag regression into
+      `table_parser_public_regression_test.mbt`.
 - [x] Start select parser regression file with void/common special starts
       coverage in `select_parser_public_regression_test.mbt`.
 - [x] Split select parser common element start/end regression into

@@ -2794,49 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser reports stray table-context end tags" {
-  let div = @html_parser.parse_fragment(
-    "<table></div></table>",
-    collect_errors=true,
-  )
-  assert_eq(div.to_html(pretty=false), "<table></table>")
-  assert_eq(div.errors.length(), 2)
-  assert_eq(div.errors[0].code, "unexpected-end-tag-implies-table-voodoo")
-  assert_eq(div.errors[1].code, "unexpected-end-tag")
-  let paragraph = @html_parser.parse_fragment(
-    "<table></p></table>",
-    collect_errors=true,
-  )
-  assert_eq(paragraph.to_html(pretty=false), "<p></p><table></table>")
-  assert_eq(paragraph.errors.length(), 2)
-  assert_eq(paragraph.errors[0].code, "unexpected-end-tag-implies-table-voodoo")
-  assert_eq(paragraph.errors[1].code, "unexpected-end-tag")
-  let row_group = @html_parser.parse_fragment(
-    "<table></tbody></table>",
-    collect_errors=true,
-  )
-  assert_eq(row_group.to_html(pretty=false), "<table></table>")
-  assert_eq(row_group.errors.length(), 1)
-  assert_eq(row_group.errors[0].code, "unexpected-end-tag")
-  let body = @html_parser.parse_fragment(
-    "<table></body></table>",
-    collect_errors=true,
-  )
-  assert_eq(body.to_html(pretty=false), "<table></table>")
-  assert_eq(body.errors.length(), 1)
-  assert_eq(body.errors[0].code, "unexpected-end-tag")
-  let proper_row_group = @html_parser.parse_fragment(
-    "<table><tbody></tbody></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    proper_row_group.to_html(pretty=false),
-    "<table><tbody></tbody></table>",
-  )
-  assert_eq(proper_row_group.errors.length(), 0)
-}
-
-///|
 test "parser ignores table structure starts outside table" {
   let cell = @html_parser.parse_fragment("<td>x</td>", collect_errors=true)
   assert_eq(cell.to_html(pretty=false), "x")
