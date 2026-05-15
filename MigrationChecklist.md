@@ -1539,6 +1539,8 @@ reference implementation in `.repos/justhtml`.
       `parser_errors_public_regression_test.mbt`.
 - [x] Split collect-errors malformed markup regression into
       `parser_errors_public_regression_test.mbt`.
+- [x] Split EOF-for-unclosed-elements parser error regression into
+      `parser_errors_public_regression_test.mbt`.
 
 ## Working Rule
 

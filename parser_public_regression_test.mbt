@@ -58,62 +58,6 @@ test "parser reports early ancestor end tags after implied end tags" {
 }
 
 ///|
-test "parser reports EOF for unclosed non-implied elements" {
-  let unfinished_start = @html_parser.parse_fragment(
-    "<div foo=\"",
-    collect_errors=true,
-  )
-  assert_eq(unfinished_start.to_html(pretty=false), "")
-  assert_eq(unfinished_start.errors.length(), 1)
-  assert_eq(unfinished_start.errors[0].code, "eof-in-tag")
-  guard unfinished_start.errors[0].column is Some(10) else {
-    fail("expected incomplete start tag EOF at final quote")
-  }
-  let unfinished_end = @html_parser.parse_fragment(
-    "<p>x</span",
-    collect_errors=true,
-  )
-  assert_eq(unfinished_end.to_html(pretty=false), "<p>x</p>")
-  assert_eq(unfinished_end.errors.length(), 1)
-  assert_eq(unfinished_end.errors[0].code, "eof-in-tag")
-  guard unfinished_end.errors[0].column is Some(10) else {
-    fail("expected incomplete end tag EOF at final name character")
-  }
-  let div = @html_parser.parse_fragment("<div>x", collect_errors=true)
-  assert_eq(div.to_html(pretty=false), "<div>x</div>")
-  assert_eq(div.errors.length(), 1)
-  assert_eq(div.errors[0].code, "expected-closing-tag-but-got-eof")
-  guard div.errors[0].column is Some(6) else {
-    fail("expected EOF error at final input column")
-  }
-  let paragraph = @html_parser.parse_fragment("<p>x", collect_errors=true)
-  assert_eq(paragraph.to_html(pretty=false), "<p>x</p>")
-  assert_eq(paragraph.errors.length(), 0)
-  let list = @html_parser.parse_fragment("<ul><li>x", collect_errors=true)
-  assert_eq(list.to_html(pretty=false), "<ul><li>x</li></ul>")
-  assert_eq(list.errors.length(), 1)
-  assert_eq(list.errors[0].code, "expected-closing-tag-but-got-eof")
-  guard list.errors[0].column is Some(9) else {
-    fail("expected list EOF error at final input column")
-  }
-  let doc = @html_parser.parse("<!doctype html><div>x", collect_errors=true)
-  assert_eq(
-    doc.to_html(pretty=false),
-    "<!DOCTYPE html><html><head></head><body><div>x</div></body></html>",
-  )
-  assert_eq(doc.errors.length(), 1)
-  assert_eq(doc.errors[0].code, "expected-closing-tag-but-got-eof")
-  let unicode_tail = @html_parser.parse_fragment(
-    "<div>😀",
-    collect_errors=true,
-  )
-  assert_eq(unicode_tail.errors[0].code, "expected-closing-tag-but-got-eof")
-  guard unicode_tail.errors[0].column is Some(6) else {
-    fail("expected EOF position to use the final character boundary")
-  }
-}
-
-///|
 test "parser closes current heading before another heading start" {
   let fragment = @html_parser.parse_fragment("<p>intro<h1>head<h2>next")
   assert_eq(
