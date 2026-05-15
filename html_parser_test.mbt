@@ -31,22 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom preserves allowed valueless non-url attributes" {
-  let policy = @html_parser.SanitizationPolicy::new(["div"], allowed_attributes={
-    "*": [],
-    "div": ["disabled"],
-  })
-  let fragment = @html_parser.parse_fragment(
-    "<div disabled></div>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<div disabled></div>",
-  )
-}
-
-///|
 test "sanitize_dom lowercases manual DOM attribute names" {
   let root = @html_parser.element(
     "a",
