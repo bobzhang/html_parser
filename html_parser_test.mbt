@@ -1,12 +1,4 @@
 ///|
-fn test_attr_id(node : @html_parser.Node) -> String {
-  match node.attrs().get("id") {
-    Some(Some(value)) => value
-    _ => ""
-  }
-}
-
-///|
 fn assert_node_origin(
   node : @html_parser.Node,
   offset : Int,
@@ -2561,64 +2553,4 @@ test "parse sanitize flag applies default sanitizer policies" {
   guard bytes.encoding is Some("windows-1252") else {
     fail("expected sanitized bytes parse to preserve encoding")
   }
-}
-
-///|
-test "builder insert and replace helpers preserve graph invariants" {
-  let parent = @html_parser.element("div", attrs={ "id": Some("parent") })
-  let first = @html_parser.element("span", attrs={ "id": Some("1") })
-  let second = @html_parser.element("span", attrs={ "id": Some("2") })
-  let third = @html_parser.element("span", attrs={ "id": Some("3") })
-  parent.append_child(first)
-  parent.insert_before(second, Some(first))
-  parent.insert_before(third, None)
-  let children = parent.children()
-  assert_eq(children.length(), 3)
-  assert_eq(test_attr_id(children[0]), "2")
-  assert_eq(test_attr_id(children[1]), "1")
-  assert_eq(test_attr_id(children[2]), "3")
-  guard second.parent() is Some(second_parent) else {
-    fail("expected inserted child parent")
-  }
-  assert_eq(test_attr_id(second_parent), "parent")
-  parent.insert_before(second, Some(second))
-  assert_eq(test_attr_id(parent.children()[0]), "2")
-  let fallback = @html_parser.element("span", attrs={ "id": Some("4") })
-  parent.insert_before(fallback, Some(@html_parser.element("missing")))
-  assert_eq(test_attr_id(parent.children()[3]), "4")
-  let replacement = @html_parser.element("p", attrs={ "id": Some("new") })
-  guard parent.replace_child(replacement, first) is Some(replaced) else {
-    fail("expected replaced child")
-  }
-  assert_eq(test_attr_id(replaced), "1")
-  assert_true(first.parent() is None)
-  guard replacement.parent() is Some(replacement_parent) else {
-    fail("expected replacement parent")
-  }
-  assert_eq(test_attr_id(replacement_parent), "parent")
-  let after_replace = parent.children()
-  assert_eq(test_attr_id(after_replace[0]), "2")
-  assert_eq(test_attr_id(after_replace[1]), "new")
-  assert_eq(test_attr_id(after_replace[2]), "3")
-  assert_eq(test_attr_id(after_replace[3]), "4")
-  guard parent.replace_child(replacement, replacement) is Some(same_child) else {
-    fail("expected same-child replacement")
-  }
-  assert_eq(test_attr_id(same_child), "new")
-  assert_eq(test_attr_id(parent.children()[1]), "new")
-  guard parent.replace_child(second, third) is Some(moved_out) else {
-    fail("expected moved old child")
-  }
-  assert_eq(test_attr_id(moved_out), "3")
-  assert_true(third.parent() is None)
-  let after_move = parent.children()
-  assert_eq(after_move.length(), 3)
-  assert_eq(test_attr_id(after_move[0]), "new")
-  assert_eq(test_attr_id(after_move[1]), "2")
-  assert_eq(test_attr_id(after_move[2]), "4")
-  assert_true(parent.replace_child(@html_parser.element("x"), first) is None)
-  let nested = @html_parser.element("i", attrs={ "id": Some("nested") })
-  replacement.append_child(nested)
-  assert_true(replacement.replace_child(parent, nested) is None)
-  assert_eq(test_attr_id(replacement.children()[0]), "nested")
 }

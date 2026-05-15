@@ -957,6 +957,8 @@ reference implementation in `.repos/justhtml`.
       `builder_public_regression_test.mbt`.
 - [x] Split text node child no-op regression into
       `builder_public_regression_test.mbt`.
+- [x] Split builder insert/replace graph invariant regression into
+      `builder_public_regression_test.mbt`.
 - [x] Split parser default empty origin metadata regression into
       `parser_public_regression_test.mbt`.
 - [x] Split parser simple element/text origin tracking regression into
