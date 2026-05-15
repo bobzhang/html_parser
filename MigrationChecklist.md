@@ -1525,6 +1525,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Rename the remaining shared black-box test helpers from
       `html_parser_test.mbt` to `public_regression_helpers_test.mbt`.
+- [x] Start parser error public regression file with parser error modes and
+      document scaffolding coverage in `parser_errors_public_regression_test.mbt`.
 
 ## Working Rule
 
