@@ -195,6 +195,20 @@ test "parser closes current heading before another heading start" {
 }
 
 ///|
+test "parser closes open headings for mismatched heading end tags" {
+  let doc = @html_parser.parse_fragment(
+    "<h1><span>one</h2>after",
+    collect_errors=true,
+  )
+  assert_eq(doc.to_html(pretty=false), "<h1><span>one</span></h1>after")
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "end-tag-too-early")
+  let stray = @html_parser.parse_fragment("</h1>after", collect_errors=true)
+  assert_eq(stray.to_html(pretty=false), "after")
+  assert_eq(stray.errors[0].code, "unexpected-end-tag")
+}
+
+///|
 test "parser closes open paragraphs before paragraph and block starts" {
   let fragment = @html_parser.parse_fragment("<p>one<p>two<div>three</div>")
   assert_eq(
