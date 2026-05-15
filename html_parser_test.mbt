@@ -31,31 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom recurses through nested containers and empty templates" {
-  let text_policy = @html_parser.SanitizationPolicy::new([], allowed_attributes={
-    "*": [],
-  })
-  let nested = @html_parser.fragment(children=[
-    @html_parser.fragment(children=[@html_parser.text("t")]),
-  ])
-  assert_eq(
-    @html_parser.sanitize_dom(nested, policy=text_policy).to_html(pretty=false),
-    "t",
-  )
-  let template_policy = @html_parser.SanitizationPolicy::new(["template"], allowed_attributes={
-    "*": [],
-    "template": [],
-  })
-  let root = @html_parser.fragment(children=[@html_parser.element("template")])
-  assert_eq(
-    @html_parser.sanitize_dom(root, policy=template_policy).to_html(
-      pretty=false,
-    ),
-    "<template></template>",
-  )
-}
-
-///|
 test "sanitize_dom handles standalone root element edge cases" {
   let unwrap_policy = @html_parser.SanitizationPolicy::new(["div"], allowed_attributes={
     "*": [],

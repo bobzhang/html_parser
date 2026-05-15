@@ -135,6 +135,31 @@ test "sanitize_dom handles standalone text comment and doctype roots" {
 }
 
 ///|
+test "sanitize_dom recurses through nested containers and empty templates" {
+  let text_policy = @html_parser.SanitizationPolicy::new([], allowed_attributes={
+    "*": [],
+  })
+  let nested = @html_parser.fragment(children=[
+    @html_parser.fragment(children=[@html_parser.text("t")]),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(nested, policy=text_policy).to_html(pretty=false),
+    "t",
+  )
+  let template_policy = @html_parser.SanitizationPolicy::new(["template"], allowed_attributes={
+    "*": [],
+    "template": [],
+  })
+  let root = @html_parser.fragment(children=[@html_parser.element("template")])
+  assert_eq(
+    @html_parser.sanitize_dom(root, policy=template_policy).to_html(
+      pretty=false,
+    ),
+    "<template></template>",
+  )
+}
+
+///|
 test "public URL proxy policy rewrites and strips URLs stably" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,
