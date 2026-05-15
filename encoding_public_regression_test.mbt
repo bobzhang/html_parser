@@ -7,6 +7,17 @@ fn encoding_public_name(doc : @html_parser.ParsedHtml) -> String {
 }
 
 ///|
+test "parse_bytes decodes explicit utf8 and records encoding" {
+  let bytes = @utf8.encode("<p>bytes</p>")
+  let doc = @html_parser.parse_bytes(bytes, encoding="utf-8")
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<html><head></head><body><p>bytes</p></body></html>",
+  )
+  guard doc.encoding is Some("utf-8") else { fail("expected utf-8 encoding") }
+}
+
+///|
 test "public parse_bytes meta charset and transport override stay stable" {
   let meta = @html_parser.parse_bytes(
     b"<meta charset=utf-8><p>\xe2\x82\xac</p>",

@@ -2794,17 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parse_bytes decodes explicit utf8 and records encoding" {
-  let bytes = @utf8.encode("<p>bytes</p>")
-  let doc = @html_parser.parse_bytes(bytes, encoding="utf-8")
-  assert_eq(
-    doc.to_html(pretty=false),
-    "<html><head></head><body><p>bytes</p></body></html>",
-  )
-  guard doc.encoding is Some("utf-8") else { fail("expected utf-8 encoding") }
-}
-
-///|
 test "parse_bytes defaults to windows1252 and normalizes compatible labels" {
   let bytes = b"\x3c\x70\x3e\x80\x3c\x2f\x70\x3e"
   let doc = @html_parser.parse_bytes(bytes)
