@@ -1649,6 +1649,8 @@ reference implementation in `.repos/justhtml`.
       policy file into `sanitize_entrypoints_public_regression_test.mbt`.
 - [x] Start sanitizer foreign-content regression file with text integration
       point and MathML marker exception coverage.
+- [x] Split active foreign mutation sanitizer regression into
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
