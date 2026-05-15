@@ -1453,6 +1453,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split sanitizer parsed-authority host allowlist regression into
       `security_policy_regression_test.mbt`.
+- [x] Split conservative CSS text preset sanitizer regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 

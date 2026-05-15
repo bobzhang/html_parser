@@ -31,39 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "css_preset_text allows conservative inline text styling" {
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["div"],
-    allowed_attributes={ "*": [], "div": ["style"] },
-    allowed_css_properties=@html_parser.css_preset_text(),
-  )
-  let styled = @html_parser.parse_fragment(
-    "<div style='color: red; position: fixed; top: 0'>x</div><div style='position: fixed'>y</div>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(styled.root, policy~).to_html(pretty=false),
-    "<div style=\"color: red\">x</div><div>y</div>",
-  )
-
-  let mutated = @html_parser.css_preset_text()
-  mutated.clear()
-  let fresh = @html_parser.SanitizationPolicy::new(
-    ["span"],
-    allowed_attributes={ "span": ["style"] },
-    allowed_css_properties=@html_parser.css_preset_text(),
-  )
-  let span = @html_parser.parse_fragment(
-    "<span style='font-weight: 700'>ok</span>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(span.root, policy=fresh).to_html(pretty=false),
-    "<span style=\"font-weight: 700\">ok</span>",
-  )
-}
-
-///|
 test "sanitize_dom hardens allowed rawtext element contents" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["style", "script", "img", "span"],
