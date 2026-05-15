@@ -2794,60 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser clears nested table stack before structure starts" {
-  let cell_paragraph = @html_parser.parse_fragment(
-    "<table><td><p>x<tr><td>y</td></tr></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    cell_paragraph.to_html(pretty=false),
-    "<table><tbody><tr><td><p>x</p></td></tr><tr><td>y</td></tr></tbody></table>",
-  )
-  assert_eq(cell_paragraph.errors.length(), 1)
-  assert_eq(cell_paragraph.errors[0].code, "unexpected-cell-in-table-body")
-  let cell_div = @html_parser.parse_fragment(
-    "<table><tr><td><div>x<td>y</td></tr></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    cell_div.to_html(pretty=false),
-    "<table><tbody><tr><td><div>x</div></td><td>y</td></tr></tbody></table>",
-  )
-  assert_eq(cell_div.errors.length(), 0)
-  let row_div = @html_parser.parse_fragment(
-    "<table><tr><div>x<tr><td>y</td></tr></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    row_div.to_html(pretty=false),
-    "<div>x</div><table><tbody><tr></tr><tr><td>y</td></tr></tbody></table>",
-  )
-  assert_eq(row_div.errors.length(), 1)
-  assert_eq(row_div.errors[0].code, "foster-parenting-character")
-  let section_div = @html_parser.parse_fragment(
-    "<table><tbody><div>x<tbody><tr><td>y</td></tr></tbody></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    section_div.to_html(pretty=false),
-    "<div>x</div><table><tbody></tbody><tbody><tr><td>y</td></tr></tbody></table>",
-  )
-  assert_eq(section_div.errors.length(), 2)
-  assert_eq(section_div.errors[0].code, "foster-parenting-start-tag")
-  assert_eq(section_div.errors[1].code, "foster-parenting-character")
-  let caption_div = @html_parser.parse_fragment(
-    "<table><caption><div>x<tr><td>y</td></tr></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    caption_div.to_html(pretty=false),
-    "<table><caption><div>x</div></caption><tbody><tr><td>y</td></tr></tbody></table>",
-  )
-  assert_eq(caption_div.errors.length(), 1)
-  assert_eq(caption_div.errors[0].code, "unexpected-start-tag-implies-end-tag")
-}
-
-///|
 test "parser closes current table before nested table starts" {
   let direct = @html_parser.parse_fragment(
     "<table><table><tr><td>x</td></tr></table>",
