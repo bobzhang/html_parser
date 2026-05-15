@@ -122,6 +122,25 @@ test "parser tracks origins for nested foreign content starts" {
 }
 
 ///|
+test "parser tracks origins for foreign table recovery helpers" {
+  let cell = @html_parser.parse(
+    "<!><svg><th><title><n><select><td>",
+    track_node_locations=true,
+  )
+  guard cell.root.query("td").get(0) is Some(td) else {
+    fail("expected recovered td")
+  }
+  assert_node_origin(td, 30, 1, 31)
+  let row = @html_parser.parse(
+    "<svg><tr><title><section\n><math><p><tr>>",
+    track_node_locations=true,
+  )
+  let trs = row.root.query("tr")
+  guard trs.length() == 2 else { fail("expected foreign and recovered tr") }
+  assert_node_origin(trs[1], 35, 2, 11)
+}
+
+///|
 test "parser treats foreign integration points as HTML islands" {
   let svg = @html_parser.parse_fragment(
     "<svg><foreignobject><div><span>x</span></div></foreignobject></svg>",
