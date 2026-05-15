@@ -1165,6 +1165,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split parser xmp/plaintext text-mode regression into
       `parser_public_regression_test.mbt`.
+- [x] Split parser special-text EOF regression and helper into
+      `parser_public_regression_test.mbt`.
 - [x] Start entity public regression file with upstream fixture coverage in
       `entity_public_regression_test.mbt`.
 - [x] Split entity decoding upstream error regression into
