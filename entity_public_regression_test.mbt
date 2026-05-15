@@ -469,3 +469,62 @@ test "attribute legacy entities block alphanumeric continuations" {
     assert_eq(error.code, "missing-semicolon-after-character-reference")
   }
 }
+
+///|
+test "special text entity decoding reports upstream fixture errors" {
+  let title = @html_parser.tokenize(
+    "<title>&#x80 &notit;</title>",
+    collect_errors=true,
+  )
+  guard title.tokens[1] is Characters("\u{20AC} ¬it;") else {
+    fail("expected title RCDATA entities")
+  }
+  assert_eq(title.errors.length(), 3)
+  assert_eq(title.errors[0].code, "missing-semicolon-after-character-reference")
+  assert_eq(title.errors[1].code, "control-character-reference")
+  assert_eq(title.errors[2].code, "missing-semicolon-after-character-reference")
+  guard title.errors[0].column is Some(28) else {
+    fail("expected title entity errors at closing tag")
+  }
+  guard title.errors[2].column is Some(28) else {
+    fail("expected title legacy entity error at closing tag")
+  }
+  let textarea = @html_parser.tokenize(
+    "<textarea>&#65</textarea>",
+    collect_errors=true,
+  )
+  guard textarea.tokens[1] is Characters("A") else {
+    fail("expected textarea RCDATA entity")
+  }
+  assert_eq(textarea.errors.length(), 1)
+  assert_eq(
+    textarea.errors[0].code,
+    "missing-semicolon-after-character-reference",
+  )
+  guard textarea.errors[0].column is Some(25) else {
+    fail("expected textarea entity error at closing tag")
+  }
+  let script = @html_parser.tokenize(
+    "<script>&#x80</script>",
+    collect_errors=true,
+  )
+  guard script.tokens[1] is Characters("&#x80") else {
+    fail("expected script raw text to skip entity decoding")
+  }
+  assert_eq(script.errors.length(), 0)
+  let parsed = @html_parser.parse_fragment(
+    "<title>&#x80 &notit;</title>",
+    collect_errors=true,
+  )
+  assert_eq(parsed.to_text(separator="", strip=false), "\u{20AC} ¬it;")
+  assert_eq(parsed.errors.length(), 3)
+  assert_eq(
+    parsed.errors[0].code,
+    "missing-semicolon-after-character-reference",
+  )
+  assert_eq(parsed.errors[1].code, "control-character-reference")
+  assert_eq(
+    parsed.errors[2].code,
+    "missing-semicolon-after-character-reference",
+  )
+}
