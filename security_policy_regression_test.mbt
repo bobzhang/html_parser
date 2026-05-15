@@ -64,6 +64,64 @@ test "sanitize_dom collects rawtext and foreign integration findings" {
 }
 
 ///|
+test "sanitize_dom strips invisible unicode from text and attributes" {
+  let invisible = "\u{FE00}\u{E0100}\u{200B}\u{202E}\u{E000}"
+  let fragment = @html_parser.parse_fragment(
+    "<p title=\"a" +
+    invisible +
+    "b\">a" +
+    invisible +
+    "b<a href=\"java\u{200B}script:alert(1)\">x</a></p>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root).to_html(pretty=false),
+    "<p title=\"ab\">ab<a>x</a></p>",
+  )
+
+  let collect_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": ["title"] },
+    unsafe_handling=Collect,
+  )
+  let attr_fragment = @html_parser.parse_fragment(
+    "<p title='a\u{200B}b'>x</p>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(attr_fragment.root, policy=collect_policy).to_html(
+      pretty=false,
+    ),
+    "<p title=\"ab\">x</p>",
+  )
+  let errors = collect_policy.collected_security_errors()
+  assert_eq(errors.length(), 1)
+  assert_eq(
+    errors[0].message,
+    "Stripped invisible Unicode from attribute(s): title",
+  )
+
+  let raise_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": ["title"] },
+    unsafe_handling=Raise,
+  )
+  let raise_fragment = @html_parser.parse_fragment(
+    "<p title='a\u{200B}b'>x</p>",
+    sanitize=false,
+  )
+  let result = try? @html_parser.sanitize_dom(
+    raise_fragment.root,
+    policy=raise_policy,
+  )
+  match result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(message, "Stripped invisible Unicode from attribute(s): title")
+    _ => fail("expected invisible Unicode attribute stripping to raise")
+  }
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
