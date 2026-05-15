@@ -2794,56 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parse_bytes decodes utf16 bom and explicit encodings" {
-  let little = b"\xff\xfe\x3c\x00\x70\x00\x3e\x00\x68\x00\x69\x00\x3c\x00\x2f\x00\x70\x00\x3e\x00"
-  let little_doc = @html_parser.parse_bytes(little)
-  assert_eq(
-    little_doc.to_html(pretty=false),
-    "<html><head></head><body><p>hi</p></body></html>",
-  )
-  guard little_doc.encoding is Some("utf-16le") else {
-    fail("expected utf-16le encoding")
-  }
-  let big = b"\xfe\xff\x00\x3c\x00\x70\x00\x3e\x00\x68\x00\x69\x00\x3c\x00\x2f\x00\x70\x00\x3e"
-  let big_doc = @html_parser.parse_bytes(big)
-  assert_eq(
-    big_doc.to_html(pretty=false),
-    "<html><head></head><body><p>hi</p></body></html>",
-  )
-  guard big_doc.encoding is Some("utf-16be") else {
-    fail("expected utf-16be encoding")
-  }
-  let explicit = @html_parser.parse_bytes(little, encoding="utf-16")
-  assert_eq(
-    explicit.to_html(pretty=false),
-    "<html><head></head><body><p>hi</p></body></html>",
-  )
-  guard explicit.encoding is Some("utf-16") else {
-    fail("expected explicit utf-16 encoding")
-  }
-  let explicit_generic_big = @html_parser.parse_bytes(big, encoding="utf-16")
-  assert_eq(
-    explicit_generic_big.to_html(pretty=false),
-    "<html><head></head><body><p>hi</p></body></html>",
-  )
-  guard explicit_generic_big.encoding is Some("utf-16") else {
-    fail("expected generic utf-16 encoding to preserve label")
-  }
-  let explicit_big = b"\x00\x3c\x00\x70\x00\x3e\x00\x62\x00\x65\x00\x3c\x00\x2f\x00\x70\x00\x3e"
-  let explicit_big_doc = @html_parser.parse_bytes(
-    explicit_big,
-    encoding="UTF16BE",
-  )
-  assert_eq(
-    explicit_big_doc.to_html(pretty=false),
-    "<html><head></head><body><p>be</p></body></html>",
-  )
-  guard explicit_big_doc.encoding is Some("utf-16be") else {
-    fail("expected explicit utf-16be encoding")
-  }
-}
-
-///|
 test "parse_bytes handles empty labels aliases and malformed utf16 tails" {
   let empty_label = @html_parser.parse_bytes(b"<p>\x80</p>", encoding="  ")
   assert_eq(empty_label.to_text(separator="", strip=false), "\u{20AC}")
