@@ -1579,6 +1579,8 @@ reference implementation in `.repos/justhtml`.
       `form_controls_parser_public_regression_test.mbt`.
 - [x] Split stored form-element end-tag parser regression into
       `form_controls_parser_public_regression_test.mbt`.
+- [x] Start ruby parser public regression file with implied annotation
+      end-tag coverage.
 
 ## Working Rule
 
