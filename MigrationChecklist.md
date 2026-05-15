@@ -1619,6 +1619,8 @@ reference implementation in `.repos/justhtml`.
       `special_text_parser_public_regression_test.mbt`.
 - [x] Split special-text EOF parser regression and helper into
       `special_text_parser_public_regression_test.mbt`.
+- [x] Split malformed special-text end-tag parser regression into
+      `special_text_parser_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
