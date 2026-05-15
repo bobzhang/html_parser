@@ -378,3 +378,25 @@ test "tokenize reports abrupt closing of empty comments" {
     fail("expected abrupt empty dash comment at >")
   }
 }
+
+///|
+test "tokenize reports incorrectly closed comments" {
+  let bang = @html_parser.tokenize("<!--x--!>", collect_errors=true)
+  guard bang.tokens[0] is CommentToken("x") else {
+    fail("expected bang-closed comment")
+  }
+  assert_eq(bang.errors.length(), 1)
+  assert_eq(bang.errors[0].code, "incorrectly-closed-comment")
+  guard bang.errors[0].column is Some(9) else {
+    fail("expected bang close error at >")
+  }
+  let text = @html_parser.tokenize("<!--x--y-->", collect_errors=true)
+  guard text.tokens[0] is CommentToken("x--y") else {
+    fail("expected recovered comment data")
+  }
+  assert_eq(text.errors.length(), 1)
+  assert_eq(text.errors[0].code, "incorrectly-closed-comment")
+  guard text.errors[0].column is Some(8) else {
+    fail("expected comment close error at reconsumed text")
+  }
+}
