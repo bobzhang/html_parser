@@ -1489,6 +1489,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split active foreign integration stabilization sanitizer regression into
       `security_policy_regression_test.mbt`.
+- [x] Split foreign stabilization fragment-return sanitizer regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
