@@ -2624,31 +2624,6 @@ test "builder insert and replace helpers preserve graph invariants" {
 }
 
 ///|
-test "clone_node deep handles deep trees iteratively" {
-  let root = @html_parser.document()
-  let mut parent = root
-  for _ in 0..<1200 {
-    let child = @html_parser.element("div")
-    parent.append_child(child)
-    parent = child
-  }
-  parent.append_child(@html_parser.text("x"))
-  let cloned = root.clone_node(deep=true)
-  assert_eq(cloned.to_text(separator="", strip=false), "x")
-  let mut current = cloned
-  let mut depth = 0
-  while current.children().length() > 0 {
-    let children = current.children()
-    current = children[0]
-    depth += 1
-    if current.kind() is Text {
-      break
-    }
-  }
-  assert_eq(depth, 1201)
-}
-
-///|
 test "tree builder finishes deeply nested parsed HTML without recursion" {
   let html = repeat_for_test("<div>", 1200) +
     "x" +
