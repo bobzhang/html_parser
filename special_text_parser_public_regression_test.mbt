@@ -93,3 +93,19 @@ test "parser ignores one initial newline in pre listing and textarea" {
   let title_cr = @html_parser.parse_fragment("<title>\rline</title>")
   assert_eq(title_cr.to_html(pretty=false), "<title>\nline</title>")
 }
+
+///|
+test "parser treats xmp and plaintext content as text" {
+  let xmp = @html_parser.parse_fragment("<xmp><b>x</b></xmp>after")
+  assert_eq(xmp.to_html(pretty=false), "<xmp>&lt;b&gt;x&lt;/b&gt;</xmp>after")
+  assert_eq(xmp.query("b").length(), 0)
+  let plaintext = @html_parser.parse_fragment(
+    "<plaintext><b>x</b></plaintext>after",
+    collect_errors=true,
+  )
+  assert_eq(
+    plaintext.to_html(pretty=false),
+    "<plaintext>&lt;b&gt;x&lt;/b&gt;&lt;/plaintext&gt;after</plaintext>",
+  )
+  assert_eq(plaintext.errors[0].code, "expected-closing-tag-but-got-eof")
+}
