@@ -209,6 +209,19 @@ test "parser closes open headings for mismatched heading end tags" {
 }
 
 ///|
+test "parser treats br end tags as recovered br elements" {
+  let paragraph = @html_parser.parse_fragment(
+    "<p>one</br>two",
+    collect_errors=true,
+  )
+  assert_eq(paragraph.to_html(pretty=false), "<p>one</p><br>two")
+  assert_eq(paragraph.errors.length(), 1)
+  assert_eq(paragraph.errors[0].code, "unexpected-end-tag")
+  let loose = @html_parser.parse_fragment("a</br>b")
+  assert_eq(loose.to_html(pretty=false), "a<br>b")
+}
+
+///|
 test "parser closes open paragraphs before paragraph and block starts" {
   let fragment = @html_parser.parse_fragment("<p>one<p>two<div>three</div>")
   assert_eq(

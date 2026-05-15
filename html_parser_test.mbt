@@ -2794,19 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser treats br end tags as recovered br elements" {
-  let paragraph = @html_parser.parse_fragment(
-    "<p>one</br>two",
-    collect_errors=true,
-  )
-  assert_eq(paragraph.to_html(pretty=false), "<p>one</p><br>two")
-  assert_eq(paragraph.errors.length(), 1)
-  assert_eq(paragraph.errors[0].code, "unexpected-end-tag")
-  let loose = @html_parser.parse_fragment("a</br>b")
-  assert_eq(loose.to_html(pretty=false), "a<br>b")
-}
-
-///|
 test "parser tracks origins for end-tag recovery elements" {
   let before_html = @html_parser.parse("</br>", track_node_locations=true)
   guard before_html.query_one("br") is Some(before_br) else {
