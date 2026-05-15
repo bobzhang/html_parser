@@ -57,41 +57,6 @@ test "parser closes open paragraphs before paragraph and block starts" {
 }
 
 ///|
-test "public parser fragment contexts stay stable" {
-  let table = @html_parser.parse_fragment(
-    "<tr><td>A</td></tr>",
-    context=@html_parser.FragmentContext::new("table"),
-    collect_errors=true,
-  )
-  assert_eq(table.to_html(pretty=false), "<tbody><tr><td>A</td></tr></tbody>")
-  assert_eq(table.errors.length(), 0)
-
-  let textarea = @html_parser.parse_fragment(
-    "<b>x</b>&lt;",
-    context=@html_parser.FragmentContext::new("textarea"),
-  )
-  assert_eq(textarea.to_html(pretty=false), "&lt;b&gt;x&lt;/b&gt;&amp;lt;")
-  assert_eq(textarea.to_text(separator="", strip=false), "<b>x</b>&lt;")
-  assert_eq(textarea.query("b").length(), 0)
-
-  let svg = @html_parser.parse_fragment(
-    "<lineargradient><stop/></lineargradient>",
-    context=@html_parser.FragmentContext::new("svg", ns="svg"),
-    collect_errors=true,
-  )
-  assert_eq(
-    svg.to_html(pretty=false),
-    "<linearGradient><stop></stop></linearGradient>",
-  )
-  assert_eq(svg.errors.length(), 1)
-  assert_eq(svg.errors[0].code, "expected-closing-tag-but-got-eof")
-  guard svg.query_one("stop") is Some(stop) else {
-    fail("expected SVG stop child")
-  }
-  assert_true(stop.namespace_uri() is Some("svg"))
-}
-
-///|
 test "nodes expose empty origin metadata by default" {
   let text = @html_parser.text("hello")
   assert_true(text.origin_offset() is None)

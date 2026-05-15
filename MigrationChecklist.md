@@ -1585,6 +1585,8 @@ reference implementation in `.repos/justhtml`.
       `ruby_parser_public_regression_test.mbt`.
 - [x] Split foreign namespace/name adjustment regression into
       `foreign_content_public_regression_test.mbt`.
+- [x] Split public fragment-context stability regression into
+      `fragment_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
