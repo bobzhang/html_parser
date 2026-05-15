@@ -33,3 +33,17 @@ test "parser ignores self closing slash on non void html elements" {
   let voids = @html_parser.parse_fragment("<br/>x<img/>")
   assert_eq(voids.to_html(pretty=false), "<br>x<img>")
 }
+
+///|
+test "parser closes open paragraphs before paragraph and block starts" {
+  let fragment = @html_parser.parse_fragment("<p>one<p>two<div>three</div>")
+  assert_eq(
+    fragment.to_html(pretty=false),
+    "<p>one</p><p>two</p><div>three</div>",
+  )
+  let doc = @html_parser.parse("<p>one<div>two</div>")
+  assert_eq(
+    doc.to_html(pretty=false),
+    "<html><head></head><body><p>one</p><div>two</div></body></html>",
+  )
+}

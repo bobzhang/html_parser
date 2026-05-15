@@ -13,20 +13,6 @@ test "parser handles nested tags attributes comments and doctype" {
 }
 
 ///|
-test "parser closes open paragraphs before paragraph and block starts" {
-  let fragment = @html_parser.parse_fragment("<p>one<p>two<div>three</div>")
-  assert_eq(
-    fragment.to_html(pretty=false),
-    "<p>one</p><p>two</p><div>three</div>",
-  )
-  let doc = @html_parser.parse("<p>one<div>two</div>")
-  assert_eq(
-    doc.to_html(pretty=false),
-    "<html><head></head><body><p>one</p><div>two</div></body></html>",
-  )
-}
-
-///|
 test "public parser source locations and scripting mode stay stable" {
   let located = @html_parser.parse_fragment(
     "lead\n<p id=x>Hi</p>",
