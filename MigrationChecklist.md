@@ -1621,6 +1621,8 @@ reference implementation in `.repos/justhtml`.
       `attribute_parser_public_regression_test.mbt`.
 - [x] Split invalid self-closing start-tag parser regression into
       `attribute_parser_public_regression_test.mbt`.
+- [x] Split start-tag solidus whitespace parser regression into
+      `attribute_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
