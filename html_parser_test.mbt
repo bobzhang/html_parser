@@ -31,34 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom applies url policy host allowlists" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
-      "a",
-      "href",
-      @html_parser.UrlRule::new(
-        allowed_schemes=["https"],
-        allowed_hosts=["trusted.example", "::1"],
-        allow_relative=false,
-      ),
-    ),
-  ])
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["a"],
-    allowed_attributes={ "a": ["href"] },
-    url_policy~,
-  )
-  let fragment = @html_parser.parse_fragment(
-    "<a href='https://trusted.example/path'>ok</a><a href='https://TRUSTED.example/case'>case</a><a href='https://trusted.example:443/port'>port</a><a href='https://user@trusted.example/userinfo'>userinfo</a><a href='https://[::1]/ip'>ipv6</a><a href='//trusted.example/proto'>proto</a><a href='https://evil.example/path'>evil</a><a href='https://ex[ample].com/path'>bad-bracket</a><a href='https://[::1'>missing-bracket</a><a href='https://evil.example\\@trusted.example/path'>backslash</a><a href='/relative'>relative</a>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<a href=\"https://trusted.example/path\">ok</a><a href=\"https://TRUSTED.example/case\">case</a><a href=\"https://trusted.example:443/port\">port</a><a href=\"https://user@trusted.example/userinfo\">userinfo</a><a href=\"https://[::1]/ip\">ipv6</a><a href=\"https://trusted.example/proto\">proto</a><a>evil</a><a>bad-bracket</a><a>missing-bracket</a><a>backslash</a><a>relative</a>",
-  )
-}
-
-///|
 test "sanitize_dom applies srcset url policy rules" {
   let srcset_rule = @html_parser.UrlRule::new(
     allowed_schemes=["https"],

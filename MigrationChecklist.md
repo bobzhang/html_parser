@@ -1513,6 +1513,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split decoded control-character URL value sanitizer regression into
       `security_policy_regression_test.mbt`.
+- [x] Split URL policy host allowlist sanitizer regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
