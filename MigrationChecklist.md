@@ -1431,6 +1431,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split sanitizer missing CSS URL close-paren regression into
       `security_policy_regression_test.mbt`.
+- [x] Split sanitizer URL proxy value regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
