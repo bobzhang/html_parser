@@ -98,18 +98,6 @@ test "public parser source locations and scripting mode stay stable" {
 }
 
 ///|
-test "parser recovers invalid self closing start tag fixture case" {
-  let fragment = @html_parser.parse_fragment("<div /a>", collect_errors=true)
-  assert_eq(fragment.to_html(pretty=false), "<div a></div>")
-  assert_eq(fragment.errors.length(), 2)
-  assert_eq(
-    fragment.errors[0].code,
-    "unexpected-character-after-solidus-in-tag",
-  )
-  assert_eq(fragment.errors[1].code, "expected-closing-tag-but-got-eof")
-}
-
-///|
 test "parser start tag solidus does not skip following whitespace" {
   let fragment = @html_parser.parse_fragment("<div/ >", collect_errors=true)
   assert_eq(fragment.to_html(pretty=false), "<div></div>")

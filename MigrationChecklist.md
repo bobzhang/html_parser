@@ -1619,6 +1619,8 @@ reference implementation in `.repos/justhtml`.
       `attribute_parser_public_regression_test.mbt`.
 - [x] Split missing-whitespace-after-quoted-attribute parser regression into
       `attribute_parser_public_regression_test.mbt`.
+- [x] Split invalid self-closing start-tag parser regression into
+      `attribute_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
