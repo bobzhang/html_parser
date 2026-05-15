@@ -52,19 +52,6 @@ test "parser tracks origins for end-tag recovery elements" {
 }
 
 ///|
-test "parser treats image start tags as img elements" {
-  let doc = @html_parser.parse_fragment(
-    "<p>a<image src=x>b</p>",
-    collect_errors=true,
-  )
-  assert_eq(doc.to_html(pretty=false), "<p>a<img src=\"x\">b</p>")
-  assert_eq(doc.errors.length(), 1)
-  assert_eq(doc.errors[0].code, "image-start-tag")
-  let loose = @html_parser.parse_fragment("<image>text</image>")
-  assert_eq(loose.to_html(pretty=false), "<img>text")
-}
-
-///|
 test "parser ignores self closing slash on non void html elements" {
   let div = @html_parser.parse_fragment("<div/>x")
   assert_eq(div.to_html(pretty=false), "<div>x</div>")
