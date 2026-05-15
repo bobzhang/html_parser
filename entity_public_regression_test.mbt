@@ -243,3 +243,102 @@ test "entity decoding reports upstream fixture errors" {
     assert_eq(error.code, "missing-semicolon-after-character-reference")
   }
 }
+
+///|
+test "numeric entity decoding covers replacement and no digit edges" {
+  let zero = @html_parser.tokenize("&#0;", collect_errors=true)
+  guard zero.tokens[0] is Characters("\u{FFFD}") else {
+    fail("expected null numeric reference replacement")
+  }
+  assert_eq(zero.errors.length(), 1)
+  assert_eq(zero.errors[0].code, "control-character-reference")
+  guard zero.errors[0].column is Some(4) else {
+    fail("expected null control reference at column 4")
+  }
+  let c1 = @html_parser.tokenize("&#x82;", collect_errors=true)
+  guard c1.tokens[0] is Characters("\u{201A}") else {
+    fail("expected C1 numeric replacement")
+  }
+  assert_eq(c1.errors.length(), 1)
+  assert_eq(c1.errors[0].code, "control-character-reference")
+  guard c1.errors[0].column is Some(6) else {
+    fail("expected C1 control reference at column 6")
+  }
+  let c1_printable = @html_parser.tokenize("&#x83; &#131;", collect_errors=true)
+  guard c1_printable.tokens[0] is Characters("\u{0192} \u{0192}") else {
+    fail("expected C1 printable numeric replacements")
+  }
+  assert_eq(c1_printable.errors.length(), 2)
+  for error in c1_printable.errors {
+    assert_eq(error.code, "control-character-reference")
+  }
+  guard c1_printable.errors[0].column is Some(6) else {
+    fail("expected hex C1 printable error at column 6")
+  }
+  guard c1_printable.errors[1].column is Some(13) else {
+    fail("expected decimal C1 printable error at column 13")
+  }
+  let c1_replacements : Array[(String, String)] = [
+    ("&#x84;", "\u{201E}"),
+    ("&#x85;", "\u{2026}"),
+    ("&#x86;", "\u{2020}"),
+    ("&#x87;", "\u{2021}"),
+    ("&#x88;", "\u{02C6}"),
+    ("&#x89;", "\u{2030}"),
+    ("&#x8A;", "\u{0160}"),
+    ("&#x8B;", "\u{2039}"),
+    ("&#x8C;", "\u{0152}"),
+    ("&#x8E;", "\u{017D}"),
+    ("&#x91;", "\u{2018}"),
+    ("&#x92;", "\u{2019}"),
+    ("&#x93;", "\u{201C}"),
+    ("&#x94;", "\u{201D}"),
+    ("&#x95;", "\u{2022}"),
+    ("&#x96;", "\u{2013}"),
+    ("&#x97;", "\u{2014}"),
+    ("&#x98;", "\u{02DC}"),
+    ("&#x99;", "\u{2122}"),
+    ("&#x9A;", "\u{0161}"),
+    ("&#x9B;", "\u{203A}"),
+    ("&#x9C;", "\u{0153}"),
+    ("&#x9E;", "\u{017E}"),
+    ("&#x9F;", "\u{0178}"),
+  ]
+  for item in c1_replacements {
+    let (source, expected) = item
+    let result = @html_parser.tokenize(source, collect_errors=true)
+    guard result.tokens[0] is Characters(actual) else {
+      fail("expected C1 replacement token")
+    }
+    assert_eq(actual, expected)
+    assert_eq(result.errors.length(), 1)
+    assert_eq(result.errors[0].code, "control-character-reference")
+  }
+  let lowercase_hex = @html_parser.tokenize("&#xa;", collect_errors=true)
+  guard lowercase_hex.tokens[0] is Characters("\n") else {
+    fail("expected lowercase hex numeric reference")
+  }
+  assert_eq(lowercase_hex.errors.length(), 1)
+  assert_eq(lowercase_hex.errors[0].code, "control-character-reference")
+  guard lowercase_hex.errors[0].column is Some(5) else {
+    fail("expected lowercase hex control reference at column 5")
+  }
+  let upper_x = @html_parser.tokenize("&#X66;", collect_errors=true)
+  guard upper_x.tokens[0] is Characters("f") else {
+    fail("expected uppercase X hex marker")
+  }
+  assert_eq(upper_x.errors.length(), 0)
+  let invalid_scalars = @html_parser.tokenize(
+    "&#x110000; &#xD800;",
+    collect_errors=true,
+  )
+  guard invalid_scalars.tokens[0] is Characters("\u{FFFD} \u{FFFD}") else {
+    fail("expected invalid numeric scalars to replace")
+  }
+  assert_eq(invalid_scalars.errors.length(), 0)
+  let no_digits = @html_parser.tokenize("&#x; &#; &#xg;", collect_errors=true)
+  guard no_digits.tokens[0] is Characters("&#x; &#; &#xg;") else {
+    fail("expected digitless numeric references to remain literal")
+  }
+  assert_eq(no_digits.errors.length(), 0)
+}
