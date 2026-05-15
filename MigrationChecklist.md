@@ -1613,6 +1613,8 @@ reference implementation in `.repos/justhtml`.
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
       `attribute_parser_public_regression_test.mbt`.
+- [x] Split attribute-name parser regression into
+      `attribute_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
