@@ -1447,6 +1447,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split sanitizer URL-list filter drop/empty regression into
       `security_policy_regression_test.mbt`.
+- [x] Split sanitizer srcset candidate normalization regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 

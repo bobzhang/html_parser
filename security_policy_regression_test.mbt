@@ -658,6 +658,31 @@ test "sanitize_dom drops URL list attributes when URL filter drops or empties th
 }
 
 ///|
+test "sanitize_dom normalizes srcset candidates atomically" {
+  let trusted_rule = @html_parser.UrlRule::new(
+    allowed_schemes=["https"],
+    allowed_hosts=["trusted.example"],
+    allow_relative=false,
+  )
+  let url_policy = @html_parser.UrlPolicy::new(default_allow_relative=false, allow_rules=[
+    @html_parser.UrlPolicyRule::new("img", "srcset", trusted_rule),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["img"],
+    allowed_attributes={ "*": [], "img": ["srcset"] },
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<img srcset=', https://trusted.example/a.png, , https://trusted.example/b.png 2x, '><img srcset=', , '><img srcset='https://trusted.example/a.png, https://evil.example/b.png 2x'><img srcset='https://evil.example/b.png 2x, https://trusted.example/a.png'><img srcset='https://trusted.example/c.png 1x'>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<img srcset=\"https://trusted.example/a.png, https://trusted.example/b.png 2x\"><img><img><img><img srcset=\"https://trusted.example/c.png 1x\">",
+  )
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
