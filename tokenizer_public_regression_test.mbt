@@ -657,3 +657,16 @@ test "tokenize reports unquoted attribute value fixture errors" {
     "unexpected-character-in-unquoted-attribute-value",
   )
 }
+
+///|
+test "tokenize reports missing whitespace after quoted attribute value" {
+  let result = @html_parser.tokenize("<div a=\"b\"c=d>", collect_errors=true)
+  guard result.tokens[0] is Tag(tag) else { fail("expected div tag") }
+  guard tag.attrs["a"] is Some("b") else { fail("expected quoted attr") }
+  guard tag.attrs["c"] is Some("d") else { fail("expected adjacent attr") }
+  assert_eq(result.errors.length(), 1)
+  assert_eq(result.errors[0].code, "missing-whitespace-between-attributes")
+  guard result.errors[0].column is Some(11) else {
+    fail("expected missing whitespace at adjacent attr name")
+  }
+}
