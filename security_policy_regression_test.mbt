@@ -1479,6 +1479,48 @@ test "sanitize_dom applies single url-like attribute rules" {
 }
 
 ///|
+test "sanitize_dom applies custom url policy rules" {
+  let url_policy = @html_parser.UrlPolicy::new(
+    default_handling=UrlStrip,
+    default_allow_relative=false,
+    allow_rules=[
+      @html_parser.UrlPolicyRule::new(
+        "a",
+        "href",
+        @html_parser.UrlRule::new(
+          allowed_schemes=["https"],
+          allow_fragment=false,
+          allow_relative=false,
+          handling=UrlAllow,
+        ),
+      ),
+      @html_parser.UrlPolicyRule::new(
+        "img",
+        "src",
+        @html_parser.UrlRule::new(
+          allowed_schemes=["https"],
+          allow_relative=false,
+          resolve_protocol_relative=None,
+        ),
+      ),
+    ],
+  )
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a", "img"],
+    allowed_attributes={ "a": ["href"], "img": ["src"] },
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a href='http://drop.test/'>http</a><a href='https://ok.test/'>https</a><a href='/rel'>rel</a><a href='#frag'>frag</a><a href='//ok.test/path'>proto</a><img src='https://ok.test/i.png'><img src='/rel.png'>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a>http</a><a href=\"https://ok.test/\">https</a><a>rel</a><a>frag</a><a href=\"https://ok.test/path\">proto</a><img><img>",
+  )
+}
+
+///|
 test "sanitize_dom preserves allowed valueless non-url attributes" {
   let policy = @html_parser.SanitizationPolicy::new(["div"], allowed_attributes={
     "*": [],
