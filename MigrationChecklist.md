@@ -1629,6 +1629,8 @@ reference implementation in `.repos/justhtml`.
       `input_stream_parser_public_regression_test.mbt`.
 - [x] Split noncharacter input-stream parser regression into
       `input_stream_parser_public_regression_test.mbt`.
+- [x] Split deep tree-builder parser regression into
+      `treebuilder_parser_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
