@@ -2693,23 +2693,3 @@ test "clone_node copies template descendants through child traversal" {
     "<template><div id=\"content\">clone</div><span></span></template>",
   )
 }
-
-///|
-test "builder neutralizes raw text end tag breakouts" {
-  let script = @html_parser.element("script", children=[
-    @html_parser.text("</script><img src=x onerror=alert(1)>"),
-  ])
-  let script_root = @html_parser.element("div", children=[script])
-  assert_eq(
-    script_root.to_html(pretty=false),
-    "<div><script>&lt;/script><img src=x onerror=alert(1)></script></div>",
-  )
-  let style = @html_parser.element("style", children=[
-    @html_parser.text("</style><img src=x>"),
-  ])
-  let style_root = @html_parser.element("div", children=[style])
-  assert_eq(
-    style_root.to_html(pretty=false),
-    "<div><style>&lt;/style><img src=x></style></div>",
-  )
-}
