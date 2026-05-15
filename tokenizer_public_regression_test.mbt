@@ -340,6 +340,28 @@ test "tokenize preserves rawtext and rcdata element contents" {
 }
 
 ///|
+test "tokenize keeps similarly named special end tags in text" {
+  let title = @html_parser.tokenize("<title>a</titlex></title>")
+  guard title.tokens[1] is Characters("a</titlex>") else {
+    fail("expected title suffix end tag to stay in text")
+  }
+  guard title.tokens[2] is Tag(end_title) else {
+    fail("expected final title end tag")
+  }
+  assert_true(end_title.kind is EndTag)
+  assert_eq(end_title.name, "title")
+  let style = @html_parser.tokenize("<style>a</stylex></style>")
+  guard style.tokens[1] is Characters("a</stylex>") else {
+    fail("expected style suffix end tag to stay in text")
+  }
+  guard style.tokens[2] is Tag(end_style) else {
+    fail("expected final style end tag")
+  }
+  assert_true(end_style.kind is EndTag)
+  assert_eq(end_style.name, "style")
+}
+
+///|
 test "tokenize reports malformed end tag errors when requested" {
   let result = @html_parser.tokenize("</>", collect_errors=true)
   assert_eq(result.tokens.length(), 1)

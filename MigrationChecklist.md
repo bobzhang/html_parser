@@ -1123,6 +1123,8 @@ reference implementation in `.repos/justhtml`.
       `tokenizer_public_regression_test.mbt`.
 - [x] Split tokenizer rawtext/RCDATA contents regression into
       `tokenizer_public_regression_test.mbt`.
+- [x] Split tokenizer similarly named special end-tag regression into
+      `tokenizer_public_regression_test.mbt`.
 - [x] Split tokenizer malformed end-tag error regression into
       `tokenizer_public_regression_test.mbt`.
 - [x] Split tokenizer bogus-comment fixture regression into
