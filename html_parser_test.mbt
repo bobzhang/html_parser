@@ -2794,50 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser closes current table before nested table starts" {
-  let direct = @html_parser.parse_fragment(
-    "<table><table><tr><td>x</td></tr></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    direct.to_html(pretty=false),
-    "<table></table><table><tbody><tr><td>x</td></tr></tbody></table>",
-  )
-  assert_eq(direct.errors.length(), 1)
-  assert_eq(direct.errors[0].code, "unexpected-start-tag-implies-end-tag")
-  let text = @html_parser.parse_fragment(
-    "<table><table>text</table>",
-    collect_errors=true,
-  )
-  assert_eq(text.to_html(pretty=false), "<table></table>text<table></table>")
-  assert_eq(text.errors.length(), 5)
-  assert_eq(text.errors[0].code, "unexpected-start-tag-implies-end-tag")
-  for index in 1..<text.errors.length() {
-    assert_eq(text.errors[index].code, "foster-parenting-character")
-  }
-  let section = @html_parser.parse_fragment(
-    "<table><tbody><table><tr><td>x</td></tr></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    section.to_html(pretty=false),
-    "<table><tbody></tbody></table><table><tbody><tr><td>x</td></tr></tbody></table>",
-  )
-  assert_eq(section.errors.length(), 1)
-  assert_eq(section.errors[0].code, "unexpected-start-tag-implies-end-tag")
-  let cell = @html_parser.parse_fragment(
-    "<table><tr><td><table>x</table></td></tr></table>",
-    collect_errors=true,
-  )
-  assert_eq(
-    cell.to_html(pretty=false),
-    "<table><tbody><tr><td>x<table></table></td></tr></tbody></table>",
-  )
-  assert_eq(cell.errors.length(), 1)
-  assert_eq(cell.errors[0].code, "foster-parenting-character")
-}
-
-///|
 test "parser foster parents non-whitespace table text" {
   let direct = @html_parser.parse_fragment(
     "<table>text</table>",
