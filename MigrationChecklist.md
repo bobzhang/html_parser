@@ -1597,6 +1597,8 @@ reference implementation in `.repos/justhtml`.
       `parser_locations_public_regression_test.mbt`.
 - [x] Start document modes public regression file with `noscript`
       scripting-mode coverage.
+- [x] Split disabled head `noscript` document-mode regression into
+      `document_modes_public_regression_test.mbt`.
 
 ## Working Rule
 
