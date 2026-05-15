@@ -313,6 +313,28 @@ test "sanitize_dom raise mode reports URL list and base drops" {
 }
 
 ///|
+test "sanitize_dom raises for disallowed standalone root" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={},
+    unsafe_handling=Raise,
+  )
+  let fragment = @html_parser.parse_fragment("<x-foo></x-foo>", sanitize=false)
+  guard fragment.root.children().get(0) is Some(root) else {
+    fail("expected standalone root")
+  }
+  let result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    root,
+    policy~,
+  )
+  match result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(message, "Unsafe tag 'x-foo' (not allowed)")
+    _ => fail("expected sanitize_dom to raise UnsafeHtml")
+  }
+}
+
+///|
 test "sanitize_dom default policy drops unsafe document content" {
   let doc = @html_parser.parse(
     "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",

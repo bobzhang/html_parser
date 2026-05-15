@@ -997,6 +997,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split sanitizer raise-mode URL-list/base regression into
       `security_policy_regression_test.mbt`.
+- [x] Split sanitizer raise-mode standalone-root regression into
+      `security_policy_regression_test.mbt`.
 - [x] Split parser default empty origin metadata regression into
       `parser_public_regression_test.mbt`.
 - [x] Split parser simple element/text origin tracking regression into
