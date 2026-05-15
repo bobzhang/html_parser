@@ -1603,6 +1603,8 @@ reference implementation in `.repos/justhtml`.
       `tokenizer_public_regression_test.mbt`.
 - [x] Split malformed ordinary end-tag recovery regression into
       `parser_errors_public_regression_test.mbt`.
+- [x] Start comment parser public regression file with bogus-comment null
+      replacement coverage.
 
 ## Working Rule
 
