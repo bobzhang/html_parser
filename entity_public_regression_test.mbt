@@ -141,3 +141,105 @@ test "entity decoding covers upstream fixture cases" {
     "\u{201C}quote\u{201D} \u{2018}x\u{2019} \u{2192} \u{2190} \u{2264} \u{2265} \u{2260}",
   )
 }
+
+///|
+test "entity decoding reports upstream fixture errors" {
+  let numeric = @html_parser.tokenize("&#65", collect_errors=true)
+  guard numeric.tokens[0] is Characters("A") else {
+    fail("expected numeric reference token")
+  }
+  assert_eq(numeric.errors.length(), 1)
+  assert_eq(
+    numeric.errors[0].code,
+    "missing-semicolon-after-character-reference",
+  )
+  guard numeric.errors[0].column is Some(4) else {
+    fail("expected numeric missing semicolon at column 4")
+  }
+  let control = @html_parser.tokenize("&#x80", collect_errors=true)
+  guard control.tokens[0] is Characters("\u{20AC}") else {
+    fail("expected Windows-1252 numeric replacement")
+  }
+  assert_eq(control.errors.length(), 2)
+  assert_eq(
+    control.errors[0].code,
+    "missing-semicolon-after-character-reference",
+  )
+  assert_eq(control.errors[1].code, "control-character-reference")
+  guard control.errors[1].column is Some(5) else {
+    fail("expected control reference at column 5")
+  }
+  let noncharacter = @html_parser.tokenize("&#xFDD0;", collect_errors=true)
+  guard noncharacter.tokens[0] is Characters("\u{FDD0}") else {
+    fail("expected noncharacter numeric reference")
+  }
+  assert_eq(noncharacter.errors.length(), 1)
+  assert_eq(noncharacter.errors[0].code, "noncharacter-character-reference")
+  guard noncharacter.errors[0].column is Some(8) else {
+    fail("expected noncharacter reference at column 8")
+  }
+  let named_semicolon = @html_parser.tokenize("&notit;", collect_errors=true)
+  guard named_semicolon.tokens[0] is Characters("¬it;") else {
+    fail("expected legacy prefix match with semicolon")
+  }
+  assert_eq(named_semicolon.errors.length(), 1)
+  assert_eq(
+    named_semicolon.errors[0].code,
+    "missing-semicolon-after-character-reference",
+  )
+  guard named_semicolon.errors[0].column is Some(7) else {
+    fail("expected legacy semicolon error at column 7")
+  }
+  let named_eof = @html_parser.tokenize("&notit", collect_errors=true)
+  guard named_eof.tokens[0] is Characters("¬it") else {
+    fail("expected legacy prefix match without semicolon")
+  }
+  assert_eq(named_eof.errors.length(), 1)
+  assert_eq(
+    named_eof.errors[0].code,
+    "missing-semicolon-after-character-reference",
+  )
+  guard named_eof.errors[0].column is Some(6) else {
+    fail("expected legacy EOF error at column 6")
+  }
+  let fragment = @html_parser.parse_fragment(
+    "&#x80 &#xFDD0; &not",
+    collect_errors=true,
+  )
+  assert_eq(fragment.to_text(separator="", strip=false), "€ \u{FDD0} ¬")
+  assert_eq(fragment.errors.length(), 4)
+  assert_eq(
+    fragment.errors[0].code,
+    "missing-semicolon-after-character-reference",
+  )
+  assert_eq(fragment.errors[1].code, "control-character-reference")
+  assert_eq(fragment.errors[2].code, "noncharacter-character-reference")
+  assert_eq(
+    fragment.errors[3].code,
+    "missing-semicolon-after-character-reference",
+  )
+  let named_legacy = @html_parser.tokenize(
+    "&copy &eacute &frac12 &COPY",
+    collect_errors=true,
+  )
+  guard named_legacy.tokens[0]
+    is Characters("\u{00A9} \u{00E9} \u{00BD} \u{00A9}") else {
+    fail("expected legacy named entity decoding")
+  }
+  assert_eq(named_legacy.errors.length(), 4)
+  for error in named_legacy.errors {
+    assert_eq(error.code, "missing-semicolon-after-character-reference")
+  }
+  let named_prefix = @html_parser.tokenize(
+    "&copycat; &regression &frac12x &notit;",
+    collect_errors=true,
+  )
+  guard named_prefix.tokens[0]
+    is Characters("\u{00A9}cat; \u{00AE}ression \u{00BD}x \u{00AC}it;") else {
+    fail("expected longest legacy prefix decoding")
+  }
+  assert_eq(named_prefix.errors.length(), 4)
+  for error in named_prefix.errors {
+    assert_eq(error.code, "missing-semicolon-after-character-reference")
+  }
+}
