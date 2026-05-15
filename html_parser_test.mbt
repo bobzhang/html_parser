@@ -31,31 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom force_link_rel permits and merges anchor rel tokens" {
-  let default_rel = @html_parser.parse_fragment(
-    "<a href='/x' rel='noopener'>x</a>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(default_rel.root).to_html(pretty=false),
-    "<a href=\"/x\">x</a>",
-  )
-  let forced = @html_parser.parse_fragment(
-    "<a href='https://example.com'>one</a><a href='/x' rel='External\tNOOPENER\nfriend'>two</a><a rel>three</a><a href='javascript:evil' rel='friend'>bad</a>",
-    sanitize=false,
-  )
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["a"],
-    allowed_attributes={ "*": [], "a": ["href"] },
-    force_link_rel=["NoOpener", "noreferrer", "noopener"],
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(forced.root, policy~).to_html(pretty=false),
-    "<a href=\"https://example.com\" rel=\"noopener noreferrer\">one</a><a href=\"/x\" rel=\"external noopener friend noreferrer\">two</a><a rel=\"noopener noreferrer\">three</a><a rel=\"friend noopener noreferrer\">bad</a>",
-  )
-}
-
-///|
 test "sanitize_dom normalizes mixed-case valueless attributes" {
   let policy = @html_parser.SanitizationPolicy::new(["button"], allowed_attributes={
     "*": [],
