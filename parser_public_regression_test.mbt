@@ -98,50 +98,6 @@ test "public parser source locations and scripting mode stay stable" {
 }
 
 ///|
-test "parser recovers malformed ordinary end tags" {
-  let solidus = @html_parser.parse_fragment(
-    "<div>x</div/foo>y",
-    collect_errors=true,
-  )
-  assert_eq(solidus.to_html(pretty=false), "<div>x</div>y")
-  assert_eq(solidus.errors.length(), 1)
-  assert_eq(solidus.errors[0].code, "unexpected-character-after-solidus-in-tag")
-  guard solidus.errors[0].column is Some(13) else {
-    fail("expected ordinary end-tag bad solidus at recovered attr")
-  }
-  let eof = @html_parser.parse_fragment("<div>x</div/foo", collect_errors=true)
-  assert_eq(eof.to_html(pretty=false), "<div>x</div>")
-  assert_eq(eof.errors.length(), 3)
-  assert_eq(eof.errors[0].code, "unexpected-character-after-solidus-in-tag")
-  assert_eq(eof.errors[1].code, "eof-in-tag")
-  assert_eq(eof.errors[2].code, "expected-closing-tag-but-got-eof")
-  guard eof.errors[1].column is Some(15) else {
-    fail("expected EOF in malformed ordinary end tag at final name char")
-  }
-  guard eof.errors[2].column is Some(15) else {
-    fail("expected tree EOF after malformed ordinary end tag")
-  }
-  let null_name = @html_parser.parse_fragment(
-    "<div>x</d\u{0000}iv>y",
-    collect_errors=true,
-  )
-  assert_eq(null_name.to_html(pretty=false), "<div>xy</div>")
-  assert_eq(null_name.errors.length(), 3)
-  assert_eq(null_name.errors[0].code, "unexpected-null-character")
-  assert_eq(null_name.errors[1].code, "unexpected-end-tag")
-  assert_eq(null_name.errors[2].code, "expected-closing-tag-but-got-eof")
-  guard null_name.errors[0].column is Some(10) else {
-    fail("expected null in ordinary end tag at column 10")
-  }
-  guard null_name.errors[1].column is Some(13) else {
-    fail("expected mismatched null end tag at the tag close")
-  }
-  guard null_name.errors[2].column is Some(14) else {
-    fail("expected EOF for still-open element after null end tag")
-  }
-}
-
-///|
 test "parser replaces nulls in bogus comment data" {
   let question = @html_parser.parse_fragment(
     "<?a\u{0000}b>",

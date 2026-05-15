@@ -1601,6 +1601,8 @@ reference implementation in `.repos/justhtml`.
       `document_modes_public_regression_test.mbt`.
 - [x] Split self-closing end-tag tokenizer regression into
       `tokenizer_public_regression_test.mbt`.
+- [x] Split malformed ordinary end-tag recovery regression into
+      `parser_errors_public_regression_test.mbt`.
 
 ## Working Rule
 
