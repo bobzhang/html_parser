@@ -52,3 +52,43 @@ test "parser reports attribute name fixture errors" {
     fail("expected quote attr error at column 7")
   }
 }
+
+///|
+test "parser reports unquoted attribute value fixture errors" {
+  let less = @html_parser.parse_fragment("<div a=b<c>", collect_errors=true)
+  assert_eq(less.to_html(pretty=false), "<div a=\"b&lt;c\"></div>")
+  assert_eq(less.errors.length(), 2)
+  assert_eq(
+    less.errors[0].code,
+    "unexpected-character-in-unquoted-attribute-value",
+  )
+  assert_eq(less.errors[1].code, "expected-closing-tag-but-got-eof")
+  guard less.errors[0].column is Some(9) else {
+    fail("expected unquoted attr value error at column 9")
+  }
+  let numeric = @html_parser.parse_fragment(
+    "<p title=&#x80>x</p>",
+    collect_errors=true,
+  )
+  assert_eq(numeric.to_html(pretty=false), "<p title=\"\u{20AC}\">x</p>")
+  assert_eq(numeric.errors.length(), 2)
+  assert_eq(
+    numeric.errors[0].code,
+    "missing-semicolon-after-character-reference",
+  )
+  assert_eq(numeric.errors[1].code, "control-character-reference")
+  assert_eq(numeric.errors[0].category, "tokenizer")
+  assert_eq(numeric.errors[1].category, "tokenizer")
+  guard numeric.errors[0].column is Some(15) else {
+    fail("expected unquoted attr entity error at tag close")
+  }
+  guard numeric.errors[1].column is Some(15) else {
+    fail("expected unquoted attr control error at tag close")
+  }
+  guard numeric.query_one("p") is Some(paragraph) else {
+    fail("expected parsed paragraph")
+  }
+  guard paragraph.attrs()["title"] is Some("\u{20AC}") else {
+    fail("expected decoded unquoted attribute value")
+  }
+}
