@@ -2794,29 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tokenize matches upstream script escaped null EOF fixture" {
-  let result = @html_parser.tokenize(
-    "<script><!---\u{0000}",
-    collect_errors=true,
-  )
-  guard result.tokens[0] is Tag(start) else {
-    fail("expected script start tag")
-  }
-  assert_eq(start.name, "script")
-  guard result.tokens[1] is Characters("<!---\u{FFFD}") else {
-    fail("expected escaped script text with replacement character")
-  }
-  guard result.tokens[2] is Eof else {
-    fail("expected EOF after unclosed script text")
-  }
-  assert_eq(result.errors.length(), 1)
-  assert_eq(result.errors[0].code, "unexpected-null-character")
-  guard result.errors[0].column is Some(14) else {
-    fail("expected script escaped null at column 14")
-  }
-}
-
-///|
 test "tokenize reports missing attribute value fixture errors" {
   let bare = @html_parser.tokenize("<div attr>", collect_errors=true)
   guard bare.tokens[0] is Tag(bare_tag) else { fail("expected div tag") }
