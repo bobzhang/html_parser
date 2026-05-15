@@ -1519,6 +1519,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split space-separated URL list sanitizer regression into
       `security_policy_regression_test.mbt`.
+- [x] Split standalone node and default URL edge sanitizer regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 

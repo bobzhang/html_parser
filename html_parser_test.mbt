@@ -31,55 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom handles standalone nodes and url edge cases" {
-  let allowed = @html_parser.element(
-    "p",
-    attrs={ "onclick": Some("x"), "title": Some("t") },
-    children=[@html_parser.text("ok")],
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(allowed).to_html(pretty=false),
-    "<p title=\"t\">ok</p>",
-  )
-  let unwrapped = @html_parser.element("sarcasm", children=[
-    @html_parser.text("a"),
-    @html_parser.element("b", children=[@html_parser.text("b")]),
-  ])
-  assert_eq(
-    @html_parser.sanitize_dom(unwrapped).to_html(pretty=false),
-    "a<b>b</b>",
-  )
-  let strict_attrs = @html_parser.fragment(children=[
-    @html_parser.element("div", attrs={ "id": Some("x") }),
-  ])
-  let strict_policy = @html_parser.SanitizationPolicy::new(["div"])
-  assert_eq(
-    @html_parser.sanitize_dom(strict_attrs, policy=strict_policy).to_html(
-      pretty=false,
-    ),
-    "<div></div>",
-  )
-  let foreign = @html_parser.fragment(children=[
-    @html_parser.element("svg", ns="svg", children=[
-      @html_parser.element("title", ns="svg", children=[@html_parser.text("x")]),
-    ]),
-    @html_parser.element("p", children=[@html_parser.text("ok")]),
-  ])
-  assert_eq(
-    @html_parser.sanitize_dom(foreign).to_html(pretty=false),
-    "<p>ok</p>",
-  )
-  let urls = @html_parser.parse_fragment(
-    "<a href='#frag'>f</a><a href='HTTP://ok'>h</a><a href='/rel'>r</a><a href='java\t\nscript:evil'>bad</a><a href='/bad\npath'>control</a><img src='//x'><img src>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(urls.root).to_html(pretty=false),
-    "<a href=\"#frag\">f</a><a href=\"HTTP://ok\">h</a><a href=\"/rel\">r</a><a>bad</a><a>control</a><img><img>",
-  )
-}
-
-///|
 test "parse sanitize flag applies default sanitizer policies" {
   let fragment = @html_parser.parse_fragment(
     "<p onclick=x>ok</p><script>bad</script>",
