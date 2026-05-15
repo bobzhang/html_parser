@@ -1639,6 +1639,9 @@ reference implementation in `.repos/justhtml`.
       `treebuilder_parser_public_regression_test.mbt`.
 - [x] Split paragraph/block auto-close tree-builder regression into
       `treebuilder_parser_public_regression_test.mbt`.
+- [x] Split mixed source-location/scripting parser regression by moving
+      source-location coverage to `parser_locations_public_regression_test.mbt`;
+      scripting coverage already lives in `document_modes_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into

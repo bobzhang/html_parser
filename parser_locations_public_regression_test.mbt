@@ -47,6 +47,31 @@ test "parser tracks simple element and text origins when requested" {
 }
 
 ///|
+test "parser public source locations stay stable" {
+  let located = @html_parser.parse_fragment(
+    "lead\n<p id=x>Hi</p>",
+    track_node_locations=true,
+  )
+  guard located.query_one("p") is Some(paragraph) else {
+    fail("expected parsed paragraph")
+  }
+  guard paragraph.origin_offset() is Some(5) else {
+    fail("expected paragraph origin offset")
+  }
+  guard paragraph.origin_line() is Some(2) else {
+    fail("expected paragraph origin line")
+  }
+  guard paragraph.origin_col() is Some(1) else {
+    fail("expected paragraph origin column")
+  }
+  let children = paragraph.children()
+  assert_eq(children.length(), 1)
+  guard children[0].origin_location() is Some((2, 9)) else {
+    fail("expected text child origin location")
+  }
+}
+
+///|
 test "parser tracks comment and doctype origins when requested" {
   let fragment = @html_parser.parse_fragment(
     "<!--x--><p><!--y--></p>",
