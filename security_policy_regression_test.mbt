@@ -83,6 +83,58 @@ test "sanitize_dom custom policy keeps comments and can drop subtrees" {
 }
 
 ///|
+test "sanitize_dom handles standalone text comment and doctype roots" {
+  assert_eq(@html_parser.sanitize_dom(@html_parser.text("x")).to_html(), "x")
+  let keep_policy = @html_parser.SanitizationPolicy::new(
+    [],
+    allowed_attributes={},
+    drop_comments=false,
+    drop_doctype=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(@html_parser.comment("x"), policy=keep_policy).to_html(
+      pretty=false,
+    ),
+    "<!--x-->",
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(@html_parser.doctype(), policy=keep_policy).to_html(
+      pretty=false,
+    ),
+    "<!DOCTYPE html>",
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(@html_parser.comment("x")).to_html(pretty=false),
+    "",
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(@html_parser.doctype()).to_html(pretty=false),
+    "",
+  )
+  let raise_policy = @html_parser.SanitizationPolicy::new(
+    [],
+    allowed_attributes={},
+    unsafe_handling=Raise,
+  )
+  let comment_result = try? @html_parser.sanitize_dom(
+    @html_parser.comment("x"),
+    policy=raise_policy,
+  )
+  match comment_result {
+    Ok(clean) => assert_eq(clean.to_html(pretty=false), "")
+    Err(_) => fail("dropped comments should not use unsafe raise handling")
+  }
+  let doctype_result = try? @html_parser.sanitize_dom(
+    @html_parser.doctype(),
+    policy=raise_policy,
+  )
+  match doctype_result {
+    Ok(clean) => assert_eq(clean.to_html(pretty=false), "")
+    Err(_) => fail("dropped doctypes should not use unsafe raise handling")
+  }
+}
+
+///|
 test "public URL proxy policy rewrites and strips URLs stably" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,
