@@ -1441,6 +1441,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split sanitizer URL filter before validation regression into
       `security_policy_regression_test.mbt`.
+- [x] Split URL filter debug representation regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 

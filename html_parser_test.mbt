@@ -31,16 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "url filter debug representation stays opaque" {
-  let url_filter = @html_parser.UrlFilter::new(fn(_tag, _attr, value) {
-    Some(value)
-  })
-  let repr = url_filter.to_repr().to_string()
-  assert_true(repr.contains("UrlFilter"))
-  assert_eq(repr.contains("callback"), false)
-}
-
-///|
 test "sanitize_dom validates css url filter rewrites" {
   let url_filter = @html_parser.UrlFilter::new(fn(_tag, attr, value) {
     match attr {

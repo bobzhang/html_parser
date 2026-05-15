@@ -559,6 +559,16 @@ test "sanitize_dom applies URL filter before validation" {
 }
 
 ///|
+test "url filter debug representation stays opaque" {
+  let url_filter = @html_parser.UrlFilter::new(fn(_tag, _attr, value) {
+    Some(value)
+  })
+  let repr = url_filter.to_repr().to_string()
+  assert_true(repr.contains("UrlFilter"))
+  assert_eq(repr.contains("callback"), false)
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
