@@ -1642,6 +1642,9 @@ reference implementation in `.repos/justhtml`.
 - [x] Split mixed source-location/scripting parser regression by moving
       source-location coverage to `parser_locations_public_regression_test.mbt`;
       scripting coverage already lives in `document_modes_public_regression_test.mbt`.
+- [x] Rename the remaining parser smoke regression to
+      `parser_smoke_public_regression_test.mbt` so the old generic parser
+      bucket no longer hides unrelated coverage.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
