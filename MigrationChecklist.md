@@ -1571,6 +1571,8 @@ reference implementation in `.repos/justhtml`.
       `active_formatting_parser_public_regression_test.mbt`.
 - [x] Split foreign table-recovery origin regression into
       `foreign_content_public_regression_test.mbt`.
+- [x] Start special-text parser public regression file with paragraph-closing
+      coverage for `plaintext` and `xmp` starts.
 
 ## Working Rule
 
