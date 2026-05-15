@@ -400,3 +400,183 @@ test "tokenize reports incorrectly closed comments" {
     fail("expected comment close error at reconsumed text")
   }
 }
+
+///|
+test "tokenize reports selected EOF and null fixture errors" {
+  let lt = @html_parser.tokenize("<", collect_errors=true)
+  guard lt.tokens[0] is Characters("<") else { fail("expected literal <") }
+  assert_eq(lt.errors[0].code, "eof-before-tag-name")
+  guard lt.errors[0].column is Some(1) else {
+    fail("expected bare < EOF at the < character")
+  }
+  let end_open = @html_parser.tokenize("</", collect_errors=true)
+  guard end_open.tokens[0] is Characters("</") else {
+    fail("expected literal </")
+  }
+  assert_eq(end_open.errors[0].code, "eof-before-tag-name")
+  guard end_open.errors[0].column is Some(2) else {
+    fail("expected bare </ EOF at the slash")
+  }
+  let unfinished_start = @html_parser.tokenize(
+    "<div foo=\"",
+    collect_errors=true,
+  )
+  assert_eq(unfinished_start.tokens.length(), 1)
+  guard unfinished_start.tokens[0] is Eof else {
+    fail("expected only EOF token for incomplete quoted tag")
+  }
+  assert_eq(unfinished_start.errors.length(), 1)
+  assert_eq(unfinished_start.errors[0].code, "eof-in-tag")
+  guard unfinished_start.errors[0].column is Some(10) else {
+    fail("expected incomplete quoted tag EOF at final quote")
+  }
+  let unfinished_single = @html_parser.tokenize(
+    "<div foo='",
+    collect_errors=true,
+  )
+  assert_eq(unfinished_single.tokens.length(), 1)
+  guard unfinished_single.tokens[0] is Eof else {
+    fail("expected only EOF token for incomplete single-quoted tag")
+  }
+  assert_eq(unfinished_single.errors.length(), 1)
+  assert_eq(unfinished_single.errors[0].code, "eof-in-tag")
+  guard unfinished_single.errors[0].column is Some(10) else {
+    fail("expected incomplete single-quoted tag EOF at final quote")
+  }
+  let unfinished_unquoted = @html_parser.tokenize(
+    "<div foo=bar",
+    collect_errors=true,
+  )
+  assert_eq(unfinished_unquoted.tokens.length(), 1)
+  guard unfinished_unquoted.tokens[0] is Eof else {
+    fail("expected only EOF token for incomplete unquoted tag")
+  }
+  assert_eq(unfinished_unquoted.errors.length(), 1)
+  assert_eq(unfinished_unquoted.errors[0].code, "eof-in-tag")
+  guard unfinished_unquoted.errors[0].column is Some(12) else {
+    fail("expected incomplete unquoted tag EOF at final value character")
+  }
+  let unfinished_end = @html_parser.tokenize("</span", collect_errors=true)
+  assert_eq(unfinished_end.tokens.length(), 1)
+  guard unfinished_end.tokens[0] is Eof else {
+    fail("expected only EOF token for incomplete end tag")
+  }
+  assert_eq(unfinished_end.errors.length(), 1)
+  assert_eq(unfinished_end.errors[0].code, "eof-in-tag")
+  guard unfinished_end.errors[0].column is Some(6) else {
+    fail("expected incomplete end tag EOF at final name character")
+  }
+  let unfinished_start_spaces = @html_parser.tokenize(
+    "<div   ",
+    collect_errors=true,
+  )
+  assert_eq(unfinished_start_spaces.tokens.length(), 1)
+  guard unfinished_start_spaces.tokens[0] is Eof else {
+    fail("expected only EOF token for start tag ending after whitespace")
+  }
+  assert_eq(unfinished_start_spaces.errors.length(), 1)
+  assert_eq(unfinished_start_spaces.errors[0].code, "eof-in-tag")
+  let unfinished_end_spaces = @html_parser.tokenize(
+    "</span   ",
+    collect_errors=true,
+  )
+  assert_eq(unfinished_end_spaces.tokens.length(), 1)
+  guard unfinished_end_spaces.tokens[0] is Eof else {
+    fail("expected only EOF token for end tag ending after whitespace")
+  }
+  assert_eq(unfinished_end_spaces.errors.length(), 1)
+  assert_eq(unfinished_end_spaces.errors[0].code, "eof-in-tag")
+  let unfinished_comment = @html_parser.tokenize("<!--x", collect_errors=true)
+  assert_eq(unfinished_comment.tokens.length(), 2)
+  guard unfinished_comment.tokens[0] is CommentToken("x") else {
+    fail("expected comment token before EOF")
+  }
+  guard unfinished_comment.tokens[1] is Eof else {
+    fail("expected EOF after unfinished comment token")
+  }
+  assert_eq(unfinished_comment.errors.length(), 1)
+  assert_eq(unfinished_comment.errors[0].code, "eof-in-comment")
+  guard unfinished_comment.errors[0].column is Some(5) else {
+    fail("expected unfinished comment EOF at final character")
+  }
+  let nul_text = @html_parser.tokenize("a\u{0000}b", collect_errors=true)
+  guard nul_text.tokens[0] is Characters("a\u{0000}b") else {
+    fail("expected null-preserving text")
+  }
+  assert_eq(nul_text.errors[0].code, "unexpected-null-character")
+  guard nul_text.errors[0].column is Some(2) else {
+    fail("expected null text at column 2")
+  }
+  let nul_attr = @html_parser.tokenize(
+    "<div foo=\"a\u{0000}b\">",
+    collect_errors=true,
+  )
+  guard nul_attr.tokens[0] is Tag(tag) else { fail("expected div tag") }
+  guard tag.attrs["foo"] is Some("a\u{FFFD}b") else {
+    fail("expected replacement char in attr")
+  }
+  assert_eq(nul_attr.errors[0].code, "unexpected-null-character")
+  let nul_single_attr = @html_parser.tokenize(
+    "<div foo='a\u{0000}b'>",
+    collect_errors=true,
+  )
+  guard nul_single_attr.tokens[0] is Tag(single_tag) else {
+    fail("expected div tag with single-quoted null attr")
+  }
+  guard single_tag.attrs["foo"] is Some("a\u{FFFD}b") else {
+    fail("expected replacement char in single-quoted attr")
+  }
+  assert_eq(nul_single_attr.errors.length(), 1)
+  assert_eq(nul_single_attr.errors[0].code, "unexpected-null-character")
+  guard nul_single_attr.errors[0].column is Some(12) else {
+    fail("expected single-quoted null attr at column 12")
+  }
+  let nul_unquoted_attr = @html_parser.tokenize(
+    "<div foo=a\u{0000}b>",
+    collect_errors=true,
+  )
+  guard nul_unquoted_attr.tokens[0] is Tag(unquoted_tag) else {
+    fail("expected div tag with unquoted null attr")
+  }
+  guard unquoted_tag.attrs["foo"] is Some("a\u{FFFD}b") else {
+    fail("expected replacement char in unquoted attr")
+  }
+  assert_eq(nul_unquoted_attr.errors.length(), 1)
+  assert_eq(nul_unquoted_attr.errors[0].code, "unexpected-null-character")
+  let nul_attr_name = @html_parser.tokenize(
+    "<div a\u{0000}b='c'>",
+    collect_errors=true,
+  )
+  guard nul_attr_name.tokens[0] is Tag(attr_name_tag) else {
+    fail("expected div tag")
+  }
+  guard attr_name_tag.attrs["a\u{FFFD}b"] is Some("c") else {
+    fail("expected replacement char in attr name")
+  }
+  assert_eq(nul_attr_name.errors.length(), 1)
+  assert_eq(nul_attr_name.errors[0].code, "unexpected-null-character")
+  guard nul_attr_name.errors[0].column is Some(7) else {
+    fail("expected null attr name at column 7")
+  }
+  let nul_tag_name = @html_parser.tokenize(
+    "<script\u{0000}>x</script>",
+    collect_errors=true,
+  )
+  guard nul_tag_name.tokens[0] is Tag(start) else {
+    fail("expected script start tag")
+  }
+  assert_eq(start.name, "script\u{FFFD}")
+  guard nul_tag_name.tokens[1] is Characters("x") else {
+    fail("expected text after null-mutated script tag")
+  }
+  guard nul_tag_name.tokens[2] is Tag(end_tag) else {
+    fail("expected script end tag")
+  }
+  assert_true(end_tag.kind is EndTag)
+  assert_eq(end_tag.name, "script")
+  assert_eq(nul_tag_name.errors.length(), 1)
+  assert_eq(nul_tag_name.errors[0].code, "unexpected-null-character")
+  guard nul_tag_name.errors[0].column is Some(8) else {
+    fail("expected null tag name at column 8")
+  }
+}
