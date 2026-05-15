@@ -1173,6 +1173,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split parser noscript scripting-mode regression into
       `parser_public_regression_test.mbt`.
+- [x] Split parser disabled-scripting head noscript regression into
+      `parser_public_regression_test.mbt`.
 - [x] Start entity public regression file with upstream fixture coverage in
       `entity_public_regression_test.mbt`.
 - [x] Split entity decoding upstream error regression into
