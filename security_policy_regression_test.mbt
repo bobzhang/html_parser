@@ -50,6 +50,51 @@ test "sanitize_dom lowercases manual DOM attribute names" {
 }
 
 ///|
+test "sanitize_dom reports valueless url and style attributes" {
+  let url_policy = @html_parser.UrlPolicy::new(default_handling=UrlAllow, allow_rules=[
+    @html_parser.UrlPolicyRule::new(
+      "a",
+      "href",
+      @html_parser.UrlRule::new(allowed_schemes=["https"]),
+    ),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a", "span", "div"],
+    allowed_attributes={
+      "*": [],
+      "a": ["href"],
+      "span": ["style"],
+      "div": ["disabled"],
+    },
+    allowed_css_properties=["color"],
+    unsafe_handling=Collect,
+    url_policy~,
+  )
+  policy.reset_collected_security_errors()
+  let root = @html_parser.fragment(children=[
+    @html_parser.element("a", attrs={ "href": None }, children=[
+      @html_parser.text("link"),
+    ]),
+    @html_parser.element("span", attrs={ "style": None }, children=[
+      @html_parser.text("style"),
+    ]),
+    @html_parser.element("div", attrs={ "disabled": None }, children=[
+      @html_parser.text("ok"),
+    ]),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(root, policy~).to_html(pretty=false),
+    "<a>link</a><span>style</span><div disabled>ok</div>",
+  )
+  let errors = policy.collected_security_errors()
+  assert_eq(errors.length(), 2)
+  assert_eq(errors[0].code, "unsafe-html")
+  assert_eq(errors[0].category, "security")
+  assert_eq(errors[1].code, "unsafe-html")
+  assert_eq(errors[1].category, "security")
+}
+
+///|
 test "sanitize_dom default policy drops unsafe document content" {
   let doc = @html_parser.parse(
     "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",
