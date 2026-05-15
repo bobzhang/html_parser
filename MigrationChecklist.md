@@ -1483,6 +1483,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split foreign namespace mXSS reparse sanitizer regression into
       `security_policy_regression_test.mbt`.
+- [x] Split cloned foreign namespace mXSS reparse sanitizer regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 

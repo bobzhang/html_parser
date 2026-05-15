@@ -31,48 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom stabilizes cloned foreign namespace mXSS after reparse" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
-      "img",
-      "src",
-      @html_parser.UrlRule::new(
-        allowed_schemes=[],
-        allow_relative=true,
-        resolve_protocol_relative=None,
-      ),
-    ),
-  ])
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["form", "math", "mtext", "mglyph", "style", "img"],
-    allowed_attributes={ "img": ["src"] },
-    url_policy~,
-    drop_foreign_namespaces=false,
-    drop_content_tags=[],
-  )
-  let parsed = @html_parser.parse_fragment(
-    "<form><math><mtext></form><form><mglyph><style></math><img src onerror=alert(1)>",
-    sanitize=false,
-  )
-  let original = parsed.to_html(pretty=false)
-  let clone = parsed.root.clone_node(deep=true)
-  let sanitized = @html_parser.sanitize_dom(clone, policy~)
-  assert_eq(
-    sanitized.to_html(pretty=false),
-    "<form><math><mtext></mtext></math></form>",
-  )
-  assert_eq(parsed.to_html(pretty=false), original)
-  let reparsed = @html_parser.parse_fragment(
-    sanitized.to_html(pretty=false),
-    sanitize=false,
-  )
-  assert_eq(
-    reparsed.to_html(pretty=false),
-    "<form><math><mtext></mtext></math></form>",
-  )
-}
-
-///|
 test "sanitize_dom stabilizes foreign namespace mXSS for document roots" {
   let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
     @html_parser.UrlPolicyRule::new(
