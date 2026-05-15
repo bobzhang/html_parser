@@ -95,6 +95,67 @@ test "sanitize_dom reports valueless url and style attributes" {
 }
 
 ///|
+test "sanitize_dom can collect and raise unsafe findings" {
+  let safe_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": [] },
+    unsafe_handling=Collect,
+  )
+  let safe_fragment = @html_parser.parse_fragment("<p>ok</p>", sanitize=false)
+  assert_eq(
+    @html_parser.sanitize_dom(safe_fragment.root, policy=safe_policy).to_html(
+      pretty=false,
+    ),
+    "<p>ok</p>",
+  )
+  assert_eq(safe_policy.collected_security_errors().length(), 0)
+
+  let collect_policy = @html_parser.SanitizationPolicy::new(
+    ["p", "a"],
+    allowed_attributes={ "p": [], "a": ["href"] },
+    unsafe_handling=Collect,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<p foo=1>safe<script>bad</script><a href='javascript:alert(1)'>bad</a></p><!--x-->",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy=collect_policy).to_html(
+      pretty=false,
+    ),
+    "<p>safe<a>bad</a></p>",
+  )
+  let errors = collect_policy.collected_security_errors()
+  assert_eq(errors.length(), 3)
+  assert_eq(errors[0].code, "unsafe-html")
+  assert_eq(errors[0].category, "security")
+  assert_eq(errors[0].message, "Unsafe attribute 'foo' (not allowed)")
+  assert_eq(errors[1].message, "Unsafe tag 'script' (dropped content)")
+  assert_eq(errors[2].message, "Unsafe URL in attribute 'href'")
+  collect_policy.reset_collected_security_errors()
+  assert_eq(collect_policy.collected_security_errors().length(), 0)
+
+  let raise_policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": [] },
+    unsafe_handling=Raise,
+  )
+  let unsafe_fragment = @html_parser.parse_fragment(
+    "<p foo=1>safe</p>",
+    sanitize=false,
+  )
+  let result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    unsafe_fragment.root,
+    policy=raise_policy,
+  )
+  match result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(message, "Unsafe attribute 'foo' (not allowed)")
+    _ => fail("expected sanitize_dom to raise UnsafeHtml")
+  }
+}
+
+///|
 test "sanitize_dom default policy drops unsafe document content" {
   let doc = @html_parser.parse(
     "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",
