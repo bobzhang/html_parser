@@ -1575,6 +1575,8 @@ reference implementation in `.repos/justhtml`.
       coverage for `plaintext` and `xmp` starts.
 - [x] Start form-controls parser public regression file with repeated-button
       recovery coverage.
+- [x] Split nested form-start parser regression into
+      `form_controls_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
