@@ -453,6 +453,32 @@ test "sanitize_dom raise mode reports foreign namespace drops" {
 }
 
 ///|
+test "sanitize_dom raise mode reports html namespace foreign root drops" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["svg", "rect"],
+    allowed_attributes={ "rect": ["width", "height"] },
+    drop_foreign_namespaces=true,
+    drop_content_tags=[],
+    unsafe_handling=Raise,
+  )
+  let svg = @html_parser.element("svg", ns="html", children=[
+    @html_parser.element("rect", ns="html", attrs={
+      "width": Some("10"),
+      "height": Some("10"),
+    }),
+  ])
+  let result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
+    svg,
+    policy~,
+  )
+  match result {
+    Err(UnsafeHtml(message)) =>
+      assert_eq(message, "Unsafe tag 'svg' (foreign namespace)")
+    _ => fail("expected html namespace svg root to raise UnsafeHtml")
+  }
+}
+
+///|
 test "sanitize_dom default policy drops unsafe document content" {
   let doc = @html_parser.parse(
     "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",
