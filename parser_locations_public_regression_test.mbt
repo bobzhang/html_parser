@@ -74,6 +74,18 @@ test "parser tracks comment and doctype origins when requested" {
 }
 
 ///|
+test "parse_bytes forwards node origin tracking" {
+  let doc = @html_parser.parse_bytes(b"<p>x</p>", track_node_locations=true)
+  guard doc.query_one("p") is Some(paragraph) else {
+    fail("expected parsed paragraph")
+  }
+  assert_node_origin(paragraph, 0, 1, 1)
+  let children = paragraph.children()
+  assert_eq(children.length(), 1)
+  assert_node_origin(children[0], 3, 1, 4)
+}
+
+///|
 test "parser tracks origins for end-tag recovery elements" {
   let before_html = @html_parser.parse("</br>", track_node_locations=true)
   guard before_html.query_one("br") is Some(before_br) else {

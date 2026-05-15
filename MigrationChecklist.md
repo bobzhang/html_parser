@@ -1593,6 +1593,8 @@ reference implementation in `.repos/justhtml`.
       `parser_locations_public_regression_test.mbt`.
 - [x] Split comment/doctype origin regression into
       `parser_locations_public_regression_test.mbt`.
+- [x] Split `parse_bytes` origin forwarding regression into
+      `parser_locations_public_regression_test.mbt`.
 
 ## Working Rule
 

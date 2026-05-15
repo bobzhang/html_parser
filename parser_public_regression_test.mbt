@@ -57,18 +57,6 @@ test "parser closes open paragraphs before paragraph and block starts" {
 }
 
 ///|
-test "parse_bytes forwards node origin tracking" {
-  let doc = @html_parser.parse_bytes(b"<p>x</p>", track_node_locations=true)
-  guard doc.query_one("p") is Some(paragraph) else {
-    fail("expected parsed paragraph")
-  }
-  assert_node_origin(paragraph, 0, 1, 1)
-  let children = paragraph.children()
-  assert_eq(children.length(), 1)
-  assert_node_origin(children[0], 3, 1, 4)
-}
-
-///|
 test "public parser source locations and scripting mode stay stable" {
   let located = @html_parser.parse_fragment(
     "lead\n<p id=x>Hi</p>",
