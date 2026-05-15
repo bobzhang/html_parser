@@ -1131,6 +1131,8 @@ reference implementation in `.repos/justhtml`.
       `tokenizer_public_regression_test.mbt`.
 - [x] Split tokenizer missing quoted-attribute whitespace regression into
       `tokenizer_public_regression_test.mbt`.
+- [x] Split tokenizer attribute-name fixture regression into
+      `tokenizer_public_regression_test.mbt`.
 - [x] Start entity public regression file with upstream fixture coverage in
       `entity_public_regression_test.mbt`.
 - [x] Split entity decoding upstream error regression into

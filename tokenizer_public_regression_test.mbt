@@ -670,3 +670,42 @@ test "tokenize reports missing whitespace after quoted attribute value" {
     fail("expected missing whitespace at adjacent attr name")
   }
 }
+
+///|
+test "tokenize reports attribute name fixture errors" {
+  let equals = @html_parser.tokenize("<div\r=abc>", collect_errors=true)
+  guard equals.tokens[0] is Tag(eq_tag) else { fail("expected div tag") }
+  guard eq_tag.attrs["=abc"] is Some("") else { fail("expected =abc attr") }
+  assert_eq(equals.errors.length(), 1)
+  assert_eq(
+    equals.errors[0].code,
+    "unexpected-equals-sign-before-attribute-name",
+  )
+  guard equals.errors[0].line is Some(2) else {
+    fail("expected equals error on line 2")
+  }
+  guard equals.errors[0].column is Some(1) else {
+    fail("expected equals error at column 1")
+  }
+  let invalid_char = @html_parser.tokenize("<div a<b>", collect_errors=true)
+  guard invalid_char.tokens[0] is Tag(bad_tag) else { fail("expected div tag") }
+  guard bad_tag.attrs["a<b"] is Some("") else { fail("expected a<b attr") }
+  assert_eq(invalid_char.errors.length(), 1)
+  assert_eq(
+    invalid_char.errors[0].code,
+    "unexpected-character-in-attribute-name",
+  )
+  guard invalid_char.errors[0].column is Some(7) else {
+    fail("expected bad attr char at column 7")
+  }
+  let quote = @html_parser.tokenize("<div a\"b>", collect_errors=true)
+  guard quote.tokens[0] is Tag(quote_tag) else { fail("expected div tag") }
+  guard quote_tag.attrs["a\"b"] is Some("") else {
+    fail("expected quote in attr name")
+  }
+  assert_eq(quote.errors.length(), 1)
+  assert_eq(quote.errors[0].code, "unexpected-character-in-attribute-name")
+  guard quote.errors[0].column is Some(7) else {
+    fail("expected quote attr error at column 7")
+  }
+}
