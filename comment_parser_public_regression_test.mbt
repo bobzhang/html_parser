@@ -54,3 +54,17 @@ test "parser reports incorrectly closed comments" {
     fail("expected comment close error at reconsumed text")
   }
 }
+
+///|
+test "parser reports CRLF comment EOF before missing doctype EOF" {
+  let parsed_crlf_eof = @html_parser.parse("<!----!\r\n", collect_errors=true)
+  assert_eq(parsed_crlf_eof.errors.length(), 2)
+  assert_eq(parsed_crlf_eof.errors[0].code, "eof-in-comment")
+  assert_eq(parsed_crlf_eof.errors[1].code, "expected-doctype-but-got-eof")
+  guard parsed_crlf_eof.errors[0].column is Some(0) else {
+    fail("expected parser comment EOF error at column 0")
+  }
+  guard parsed_crlf_eof.errors[1].column is Some(0) else {
+    fail("expected parser doctype EOF error at column 0")
+  }
+}
