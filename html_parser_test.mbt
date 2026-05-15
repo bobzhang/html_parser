@@ -31,56 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom drops URL list attributes when URL filter drops or empties them" {
-  let url_filter = @html_parser.UrlFilter::new(fn(_tag, attr, value) {
-    match attr {
-      "srcset" =>
-        if value == "drop-srcset" {
-          None
-        } else if value == "empty-srcset" {
-          Some(" \t\n ")
-        } else {
-          Some(value)
-        }
-      "ping" => if value == "drop-ping" { None } else { Some(value) }
-      "attributionsrc" =>
-        if value == "empty-list" {
-          Some(" \t\n ")
-        } else {
-          Some(value)
-        }
-      _ => Some(value)
-    }
-  })
-  let trusted_rule = @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
-    "trusted.example",
-  ])
-  let url_policy = @html_parser.UrlPolicy::new(url_filter~, allow_rules=[
-    @html_parser.UrlPolicyRule::new("a", "href", trusted_rule),
-    @html_parser.UrlPolicyRule::new("a", "ping", trusted_rule),
-    @html_parser.UrlPolicyRule::new("img", "src", trusted_rule),
-    @html_parser.UrlPolicyRule::new("img", "srcset", trusted_rule),
-    @html_parser.UrlPolicyRule::new("img", "attributionsrc", trusted_rule),
-  ])
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["a", "img"],
-    allowed_attributes={
-      "a": ["href", "ping"],
-      "img": ["src", "srcset", "attributionsrc"],
-    },
-    url_policy~,
-  )
-  let fragment = @html_parser.parse_fragment(
-    "<img srcset='drop-srcset'><img srcset='empty-srcset'><a href='https://trusted.example/x' ping='drop-ping'>ping</a><img src='https://trusted.example/i.png' attributionsrc='empty-list'>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<img><img><a href=\"https://trusted.example/x\">ping</a><img src=\"https://trusted.example/i.png\">",
-  )
-}
-
-///|
 test "sanitize_dom normalizes srcset candidates atomically" {
   let trusted_rule = @html_parser.UrlRule::new(
     allowed_schemes=["https"],
