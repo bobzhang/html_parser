@@ -1487,6 +1487,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split document-root foreign namespace mXSS sanitizer regression into
       `security_policy_regression_test.mbt`.
+- [x] Split active foreign integration stabilization sanitizer regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
