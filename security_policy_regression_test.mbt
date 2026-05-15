@@ -164,6 +164,19 @@ test "sanitize_dom hardens rawtext inside template children" {
 }
 
 ///|
+test "sanitize_dom filters allowed style rawtext resource loads" {
+  let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
+  let fragment = @html_parser.parse_fragment(
+    "<style>body{background:u\u{200B}rl(/x.png)}</style><style>body{color:red}</style>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<style></style><style>body{color:red}</style>",
+  )
+}
+
+///|
 test "sanitize_dom strips invisible unicode from text and attributes" {
   let invisible = "\u{FE00}\u{E0100}\u{200B}\u{202E}\u{E000}"
   let fragment = @html_parser.parse_fragment(

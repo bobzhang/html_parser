@@ -31,19 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom filters allowed style rawtext resource loads" {
-  let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
-  let fragment = @html_parser.parse_fragment(
-    "<style>body{background:u\u{200B}rl(/x.png)}</style><style>body{color:red}</style>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<style></style><style>body{color:red}</style>",
-  )
-}
-
-///|
 test "sanitize_dom filters mixed-case style rawtext resource loads" {
   let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
   let style = @html_parser.element("StYlE", children=[
