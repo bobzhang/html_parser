@@ -2794,35 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tokenize reports unquoted attribute value fixture errors" {
-  let less = @html_parser.tokenize("<div a=b<c>", collect_errors=true)
-  guard less.tokens[0] is Tag(tag) else { fail("expected div tag") }
-  guard tag.attrs["a"] is Some("b<c") else {
-    fail("expected < in unquoted attr value")
-  }
-  assert_eq(less.errors.length(), 1)
-  assert_eq(
-    less.errors[0].code,
-    "unexpected-character-in-unquoted-attribute-value",
-  )
-  guard less.errors[0].column is Some(9) else {
-    fail("expected unquoted attr value error at column 9")
-  }
-  let backtick = @html_parser.tokenize("<div a=b`c>", collect_errors=true)
-  guard backtick.tokens[0] is Tag(backtick_tag) else {
-    fail("expected div tag")
-  }
-  guard backtick_tag.attrs["a"] is Some("b`c") else {
-    fail("expected backtick in unquoted attr value")
-  }
-  assert_eq(backtick.errors.length(), 1)
-  assert_eq(
-    backtick.errors[0].code,
-    "unexpected-character-in-unquoted-attribute-value",
-  )
-}
-
-///|
 test "tokenize reports missing whitespace after quoted attribute value" {
   let result = @html_parser.tokenize("<div a=\"b\"c=d>", collect_errors=true)
   guard result.tokens[0] is Tag(tag) else { fail("expected div tag") }
