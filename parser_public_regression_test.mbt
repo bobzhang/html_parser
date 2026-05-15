@@ -184,6 +184,17 @@ test "parser reports EOF for unclosed non-implied elements" {
 }
 
 ///|
+test "parser closes current heading before another heading start" {
+  let fragment = @html_parser.parse_fragment("<p>intro<h1>head<h2>next")
+  assert_eq(
+    fragment.to_html(pretty=false),
+    "<p>intro</p><h1>head</h1><h2>next</h2>",
+  )
+  let nested_block = @html_parser.parse_fragment("<h1>head<div>body</div>")
+  assert_eq(nested_block.to_html(pretty=false), "<h1>head<div>body</div></h1>")
+}
+
+///|
 test "parser closes open paragraphs before paragraph and block starts" {
   let fragment = @html_parser.parse_fragment("<p>one<p>two<div>three</div>")
   assert_eq(
