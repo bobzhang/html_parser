@@ -1466,3 +1466,21 @@ test "parser reports abrupt closing of empty comments" {
     fail("expected abrupt empty dash comment at >")
   }
 }
+
+///|
+test "parser reports incorrectly closed comments" {
+  let bang = @html_parser.parse_fragment("<!--x--!>", collect_errors=true)
+  assert_eq(bang.to_html(pretty=false), "<!--x-->")
+  assert_eq(bang.errors.length(), 1)
+  assert_eq(bang.errors[0].code, "incorrectly-closed-comment")
+  guard bang.errors[0].column is Some(9) else {
+    fail("expected bang close error at >")
+  }
+  let text = @html_parser.parse_fragment("<!--x--y-->", collect_errors=true)
+  assert_eq(text.to_html(pretty=false), "<!--x- -y-->")
+  assert_eq(text.errors.length(), 1)
+  assert_eq(text.errors[0].code, "incorrectly-closed-comment")
+  guard text.errors[0].column is Some(8) else {
+    fail("expected comment close error at reconsumed text")
+  }
+}
