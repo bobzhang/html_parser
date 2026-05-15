@@ -2794,47 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parse error values preserve location message and equality" {
-  let first = @html_parser.ParseError::new("error-code", line=1, column=5)
-  let same = @html_parser.ParseError::new("error-code", line=1, column=5)
-  let other = @html_parser.ParseError::new("other-error", line=1, column=5)
-  assert_true(first == same)
-  assert_true(first != other)
-  guard first.line is Some(1) else {
-    fail("expected explicit parse error line")
-  }
-  guard first.column is Some(5) else {
-    fail("expected explicit parse error column")
-  }
-  assert_eq(first.category, "parse")
-  assert_eq(first.message, "error-code")
-  let detailed = @html_parser.ParseError::new(
-    "test-error",
-    line=5,
-    column=10,
-    category="treebuilder",
-    message="Detailed error",
-  )
-  assert_eq(detailed.code, "test-error")
-  assert_eq(detailed.category, "treebuilder")
-  assert_eq(detailed.message, "Detailed error")
-  guard detailed.line is Some(5) else {
-    fail("expected detailed parse error line")
-  }
-  guard detailed.column is Some(10) else {
-    fail("expected detailed parse error column")
-  }
-  let without_location = @html_parser.ParseError::new(
-    "test-error",
-    message="This is a test error",
-  )
-  assert_true(without_location.line is None)
-  assert_true(without_location.column is None)
-  assert_eq(without_location.category, "parse")
-  assert_eq(without_location.message, "This is a test error")
-}
-
-///|
 test "parse_bytes decodes explicit utf8 and records encoding" {
   let bytes = @utf8.encode("<p>bytes</p>")
   let doc = @html_parser.parse_bytes(bytes, encoding="utf-8")
