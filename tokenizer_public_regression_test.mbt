@@ -356,3 +356,25 @@ test "tokenize replaces nulls in bogus comment data" {
   assert_eq(cdata.errors.length(), 1)
   assert_eq(cdata.errors[0].code, "cdata-in-html-content")
 }
+
+///|
+test "tokenize reports abrupt closing of empty comments" {
+  let simple = @html_parser.tokenize("<!-->", collect_errors=true)
+  guard simple.tokens[0] is CommentToken("") else {
+    fail("expected empty comment")
+  }
+  assert_eq(simple.errors.length(), 1)
+  assert_eq(simple.errors[0].code, "abrupt-closing-of-empty-comment")
+  guard simple.errors[0].column is Some(5) else {
+    fail("expected abrupt empty comment at >")
+  }
+  let dash = @html_parser.tokenize("<!--->", collect_errors=true)
+  guard dash.tokens[0] is CommentToken("") else {
+    fail("expected empty dash comment")
+  }
+  assert_eq(dash.errors.length(), 1)
+  assert_eq(dash.errors[0].code, "abrupt-closing-of-empty-comment")
+  guard dash.errors[0].column is Some(6) else {
+    fail("expected abrupt empty dash comment at >")
+  }
+}
