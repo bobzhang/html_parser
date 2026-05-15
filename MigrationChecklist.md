@@ -1471,6 +1471,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split foreign text-integration descendant sanitizer regression into
       `security_policy_regression_test.mbt`.
+- [x] Split math marker text-integration sanitizer regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
