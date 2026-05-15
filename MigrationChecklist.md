@@ -1531,6 +1531,8 @@ reference implementation in `.repos/justhtml`.
       `parser_errors_public_regression_test.mbt`.
 - [x] Split parser error collection line-column regression into
       `parser_errors_public_regression_test.mbt`.
+- [x] Split treebuilder error position regression into
+      `parser_errors_public_regression_test.mbt`.
 
 ## Working Rule
 
