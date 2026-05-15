@@ -952,3 +952,38 @@ test "parser reports stray table-context end tags" {
   )
   assert_eq(proper_row_group.errors.length(), 0)
 }
+
+///|
+test "parser ignores table structure starts outside table" {
+  let cell = @html_parser.parse_fragment("<td>x</td>", collect_errors=true)
+  assert_eq(cell.to_html(pretty=false), "x")
+  assert_eq(cell.errors.length(), 2)
+  assert_eq(cell.errors[0].code, "unexpected-start-tag-ignored")
+  assert_eq(cell.errors[1].code, "unexpected-end-tag")
+  let row = @html_parser.parse_fragment(
+    "<tr><td>x</td></tr>",
+    collect_errors=true,
+  )
+  assert_eq(row.to_html(pretty=false), "x")
+  assert_eq(row.errors.length(), 4)
+  assert_eq(row.errors[0].code, "unexpected-start-tag-ignored")
+  assert_eq(row.errors[1].code, "unexpected-start-tag-ignored")
+  assert_eq(row.errors[2].code, "unexpected-end-tag")
+  assert_eq(row.errors[3].code, "unexpected-end-tag")
+  let caption = @html_parser.parse_fragment(
+    "<caption>x</caption>",
+    collect_errors=true,
+  )
+  assert_eq(caption.to_html(pretty=false), "x")
+  assert_eq(caption.errors.length(), 2)
+  assert_eq(caption.errors[0].code, "unexpected-start-tag")
+  assert_eq(caption.errors[1].code, "unexpected-end-tag")
+  let colgroup = @html_parser.parse_fragment(
+    "<colgroup><col></colgroup>",
+    collect_errors=true,
+  )
+  assert_eq(colgroup.to_html(pretty=false), "<col>")
+  assert_eq(colgroup.errors.length(), 2)
+  assert_eq(colgroup.errors[0].code, "unexpected-start-tag-ignored")
+  assert_eq(colgroup.errors[1].code, "unexpected-end-tag")
+}
