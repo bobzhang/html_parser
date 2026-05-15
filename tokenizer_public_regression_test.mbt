@@ -114,3 +114,17 @@ test "tokenize matches upstream coverage gap fixtures" {
     fail("expected empty id after equals")
   }
 }
+
+///|
+test "tokenize preserves raw end tags before tree recovery" {
+  let result = @html_parser.tokenize("<p>open</span>")
+  assert_eq(result.tokens.length(), 4)
+  guard result.tokens[0] is Tag(start) else { fail("expected p start tag") }
+  assert_true(start.kind is StartTag)
+  assert_eq(start.name, "p")
+  guard result.tokens[2] is Tag(end_tag) else {
+    fail("expected raw span end tag")
+  }
+  assert_true(end_tag.kind is EndTag)
+  assert_eq(end_tag.name, "span")
+}

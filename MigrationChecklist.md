@@ -1093,6 +1093,8 @@ reference implementation in `.repos/justhtml`.
       coverage in `tokenizer_public_regression_test.mbt`.
 - [x] Split tokenizer upstream coverage-gap fixture regression into
       `tokenizer_public_regression_test.mbt`.
+- [x] Split tokenizer raw end-tag regression into
+      `tokenizer_public_regression_test.mbt`.
 - [x] Start entity public regression file with upstream fixture coverage in
       `entity_public_regression_test.mbt`.
 - [x] Split entity decoding upstream error regression into
