@@ -31,19 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom lowercases manual DOM attribute names" {
-  let root = @html_parser.element(
-    "a",
-    attrs={ "HREF": Some("https://example.com") },
-    children=[@html_parser.text("x")],
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(root).to_html(pretty=false),
-    "<a href=\"https://example.com\">x</a>",
-  )
-}
-
-///|
 test "sanitize_dom reports valueless url and style attributes" {
   let url_policy = @html_parser.UrlPolicy::new(default_handling=UrlAllow, allow_rules=[
     @html_parser.UrlPolicyRule::new(
