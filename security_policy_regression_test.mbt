@@ -177,6 +177,18 @@ test "sanitize_dom filters allowed style rawtext resource loads" {
 }
 
 ///|
+test "sanitize_dom filters mixed-case style rawtext resource loads" {
+  let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
+  let style = @html_parser.element("StYlE", children=[
+    @html_parser.text("@import 'https://evil.example/x.css';"),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(style, policy~).to_html(pretty=false),
+    "<StYlE></StYlE>",
+  )
+}
+
+///|
 test "sanitize_dom strips invisible unicode from text and attributes" {
   let invisible = "\u{FE00}\u{E0100}\u{200B}\u{202E}\u{E000}"
   let fragment = @html_parser.parse_fragment(

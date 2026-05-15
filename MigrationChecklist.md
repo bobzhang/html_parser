@@ -1467,6 +1467,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split style rawtext resource-load filtering regression into
       `security_policy_regression_test.mbt`.
+- [x] Split mixed-case style rawtext resource-load filtering regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 

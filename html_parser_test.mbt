@@ -31,18 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom filters mixed-case style rawtext resource loads" {
-  let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
-  let style = @html_parser.element("StYlE", children=[
-    @html_parser.text("@import 'https://evil.example/x.css';"),
-  ])
-  assert_eq(
-    @html_parser.sanitize_dom(style, policy~).to_html(pretty=false),
-    "<StYlE></StYlE>",
-  )
-}
-
-///|
 test "sanitize_dom strips html descendants inside foreign text integration points" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["svg", "title", "desc", "script", "img", "b", "math", "mtext"],
