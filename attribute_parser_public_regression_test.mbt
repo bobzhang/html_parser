@@ -92,3 +92,18 @@ test "parser reports unquoted attribute value fixture errors" {
     fail("expected decoded unquoted attribute value")
   }
 }
+
+///|
+test "parser reports missing whitespace after quoted attribute value" {
+  let result = @html_parser.parse_fragment(
+    "<div a=\"b\"c=d>",
+    collect_errors=true,
+  )
+  assert_eq(result.to_html(pretty=false), "<div a=\"b\" c=\"d\"></div>")
+  assert_eq(result.errors.length(), 2)
+  assert_eq(result.errors[0].code, "missing-whitespace-between-attributes")
+  assert_eq(result.errors[1].code, "expected-closing-tag-but-got-eof")
+  guard result.errors[0].column is Some(11) else {
+    fail("expected missing whitespace at adjacent attr name")
+  }
+}
