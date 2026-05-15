@@ -1561,6 +1561,8 @@ reference implementation in `.repos/justhtml`.
       `active_formatting_parser_public_regression_test.mbt`.
 - [x] Split active-formatting duplicate-start regression into
       `active_formatting_parser_public_regression_test.mbt`.
+- [x] Split active-formatting applet-marker regression into
+      `active_formatting_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
