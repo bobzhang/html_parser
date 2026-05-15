@@ -1411,6 +1411,8 @@ reference implementation in `.repos/justhtml`.
       `doctype_public_regression_test.mbt`.
 - [x] Split doctype system identifier tail regression into
       `doctype_public_regression_test.mbt`.
+- [x] Split sanitizer rawtext and foreign integration collection regression
+      into `security_policy_regression_test.mbt`.
 
 ## Working Rule
 

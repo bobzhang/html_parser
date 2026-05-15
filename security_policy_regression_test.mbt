@@ -9,6 +9,61 @@ test "public default sanitizer security corpus stays stable" {
 }
 
 ///|
+test "sanitize_dom collects rawtext and foreign integration findings" {
+  let rawtext_policy = @html_parser.SanitizationPolicy::new(
+    ["style"],
+    allowed_attributes={ "style": [] },
+    drop_content_tags=[],
+    unsafe_handling=Collect,
+  )
+  let rawtext = @html_parser.fragment(children=[
+    @html_parser.element("style", children=[
+      @html_parser.text("</style><b>x</b>"),
+    ]),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(rawtext, policy=rawtext_policy).to_html(
+      pretty=false,
+    ),
+    "<style>&lt;/style><b>x</b></style>",
+  )
+  let rawtext_errors = rawtext_policy.collected_security_errors()
+  assert_eq(rawtext_errors.length(), 1)
+  assert_eq(rawtext_errors[0].code, "unsafe-html")
+  assert_eq(rawtext_errors[0].category, "security")
+  assert_eq(
+    rawtext_errors[0].message,
+    "Unsafe raw text inside <style> contains a closing tag sequence",
+  )
+
+  let foreign_policy = @html_parser.SanitizationPolicy::new(
+    ["svg", "title", "script"],
+    allowed_attributes={ "svg": [], "title": [], "script": [] },
+    drop_foreign_namespaces=false,
+    drop_content_tags=[],
+    unsafe_handling=Collect,
+  )
+  let foreign = @html_parser.parse_fragment(
+    "<svg><title>Hello<script>bad</script></title></svg>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(foreign.root, policy=foreign_policy).to_html(
+      pretty=false,
+    ),
+    "<svg><title>Hello</title></svg>",
+  )
+  let foreign_errors = foreign_policy.collected_security_errors()
+  assert_eq(foreign_errors.length(), 1)
+  assert_eq(foreign_errors[0].code, "unsafe-html")
+  assert_eq(foreign_errors[0].category, "security")
+  assert_eq(
+    foreign_errors[0].message,
+    "Unsafe HTML child inside foreign integration point <title> was dropped",
+  )
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
