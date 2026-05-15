@@ -1451,6 +1451,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split sanitizer whitespace URL-list normalization regression into
       `security_policy_regression_test.mbt`.
+- [x] Split sanitizer parsed-authority host allowlist regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 

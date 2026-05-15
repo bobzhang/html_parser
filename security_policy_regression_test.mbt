@@ -709,6 +709,32 @@ test "sanitize_dom normalizes whitespace URL lists atomically" {
 }
 
 ///|
+test "sanitize_dom enforces URL host allowlists on parsed authorities" {
+  let host_rule = @html_parser.UrlRule::new(
+    allowed_schemes=["https", "mailto"],
+    allowed_hosts=["trusted.example", "::1"],
+    allow_relative=false,
+  )
+  let url_policy = @html_parser.UrlPolicy::new(default_allow_relative=false, allow_rules=[
+    @html_parser.UrlPolicyRule::new("a", "href", host_rule),
+    @html_parser.UrlPolicyRule::new("img", "src", host_rule),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a", "img"],
+    allowed_attributes={ "*": [], "a": ["href"], "img": ["src"] },
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a href='//evil.example/x'>proto-bad</a><a href='//trusted.example/x'>proto-ok</a><a href='https://user:pw@trusted.example:8443/x'>userinfo</a><a href='https://[::1]/x'>ipv6</a><a href='https://[]/x'>empty-ipv6</a><a href='https://[::1]x/y'>bad-bracket</a><a href='https://:443/x'>empty-host-port</a><a href='https://'>empty-absolute</a><a href='https://trusted.example?x=1'>query</a><a href='mailto:user@example.com'>mailto</a><img src='https://trusted.example/i.png'><img src='https://evil.example/i.png'>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a>proto-bad</a><a href=\"https://trusted.example/x\">proto-ok</a><a href=\"https://user:pw@trusted.example:8443/x\">userinfo</a><a href=\"https://[::1]/x\">ipv6</a><a>empty-ipv6</a><a>bad-bracket</a><a>empty-host-port</a><a>empty-absolute</a><a href=\"https://trusted.example?x=1\">query</a><a>mailto</a><img src=\"https://trusted.example/i.png\"><img>",
+  )
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
