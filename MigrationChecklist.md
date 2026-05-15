@@ -1547,6 +1547,8 @@ reference implementation in `.repos/justhtml`.
       `parser_errors_public_regression_test.mbt`.
 - [x] Split early ancestor end-tag parser recovery regression into
       `parser_errors_public_regression_test.mbt`.
+- [x] Split mismatched heading end-tag parser recovery regression into
+      `parser_errors_public_regression_test.mbt`.
 
 ## Working Rule
 

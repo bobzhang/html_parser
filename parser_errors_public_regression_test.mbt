@@ -64,6 +64,20 @@ test "parser reports early ancestor end tags after implied end tags" {
 }
 
 ///|
+test "parser closes open headings for mismatched heading end tags" {
+  let doc = @html_parser.parse_fragment(
+    "<h1><span>one</h2>after",
+    collect_errors=true,
+  )
+  assert_eq(doc.to_html(pretty=false), "<h1><span>one</span></h1>after")
+  assert_eq(doc.errors.length(), 1)
+  assert_eq(doc.errors[0].code, "end-tag-too-early")
+  let stray = @html_parser.parse_fragment("</h1>after", collect_errors=true)
+  assert_eq(stray.to_html(pretty=false), "after")
+  assert_eq(stray.errors[0].code, "unexpected-end-tag")
+}
+
+///|
 test "strict mode raises on first parse error" {
   let fragment_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = try? @html_parser.parse_fragment(
     "<p>open</span>",
