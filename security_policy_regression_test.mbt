@@ -201,6 +201,23 @@ test "sanitize_dom handles standalone root element edge cases" {
 }
 
 ///|
+test "sanitize_dom escape handling emits disallowed tags as text" {
+  let fragment = @html_parser.parse_fragment(
+    "<b>Hello <sarcasm title='tone' onclick=x><i onclick=y>world</i><script>bad</script></sarcasm></b>",
+    sanitize=false,
+  )
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["b", "i"],
+    allowed_attributes={ "*": [], "b": [], "i": [] },
+    disallowed_tag_handling=Escape,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<b>Hello &lt;sarcasm title='tone' onclick=x&gt;<i>world</i>&lt;/sarcasm&gt;</b>",
+  )
+}
+
+///|
 test "public URL proxy policy rewrites and strips URLs stably" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,

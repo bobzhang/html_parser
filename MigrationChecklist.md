@@ -973,6 +973,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split standalone sanitizer root edge-case regression into
       `security_policy_regression_test.mbt`.
+- [x] Split sanitizer escape disallowed-tag text regression into
+      `security_policy_regression_test.mbt`.
 - [x] Split parser default empty origin metadata regression into
       `parser_public_regression_test.mbt`.
 - [x] Split parser simple element/text origin tracking regression into
