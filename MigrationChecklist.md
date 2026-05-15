@@ -1071,6 +1071,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split parser bogus-comment null-character regression into
       `parser_public_regression_test.mbt`.
+- [x] Split parser abrupt-empty-comment regression into
+      `parser_public_regression_test.mbt`.
 - [x] Split explicit UTF-8 parse_bytes regression into
       `encoding_public_regression_test.mbt`.
 - [x] Split Windows-1252 parse_bytes fallback regression into
