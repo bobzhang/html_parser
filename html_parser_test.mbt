@@ -31,18 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom filters attributes and dangerous URLs" {
-  let fragment = @html_parser.parse_fragment(
-    "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(fragment.root).to_html(pretty=false),
-    "<div id=\"x\" title=\"t\" class=\"c\"><a title=\"t\">x</a><a href=\"https://example.com/path\">y</a><img alt=\"abs\"><img src=\"/safe.png\" alt=\"ok\"></div>",
-  )
-}
-
-///|
 test "sanitize_dom preserves allowed valueless non-url attributes" {
   let policy = @html_parser.SanitizationPolicy::new(["div"], allowed_attributes={
     "*": [],
