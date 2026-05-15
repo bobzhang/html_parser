@@ -1589,6 +1589,8 @@ reference implementation in `.repos/justhtml`.
       `fragment_parser_public_regression_test.mbt`.
 - [x] Split empty origin metadata regression into
       `parser_locations_public_regression_test.mbt`.
+- [x] Split simple element/text origin regression into
+      `parser_locations_public_regression_test.mbt`.
 
 ## Working Rule
 

@@ -57,30 +57,6 @@ test "parser closes open paragraphs before paragraph and block starts" {
 }
 
 ///|
-test "parser tracks simple element and text origins when requested" {
-  let doc = @html_parser.parse_fragment("<p>hi</p>", track_node_locations=true)
-  guard doc.query_one("p") is Some(paragraph) else {
-    fail("expected parsed paragraph")
-  }
-  assert_node_origin(paragraph, 0, 1, 1)
-  let children = paragraph.children()
-  assert_eq(children.length(), 1)
-  assert_eq(children[0].data(), "hi")
-  assert_node_origin(children[0], 3, 1, 4)
-  let multiline = @html_parser.parse_fragment(
-    "lead\n<p>x</p>",
-    track_node_locations=true,
-  )
-  guard multiline.query_one("p") is Some(multiline_p) else {
-    fail("expected multiline paragraph")
-  }
-  assert_node_origin(multiline_p, 5, 2, 1)
-  let multiline_children = multiline_p.children()
-  assert_eq(multiline_children.length(), 1)
-  assert_node_origin(multiline_children[0], 8, 2, 4)
-}
-
-///|
 test "parser tracks comment and doctype origins when requested" {
   let fragment = @html_parser.parse_fragment(
     "<!--x--><p><!--y--></p>",
