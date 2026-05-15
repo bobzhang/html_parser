@@ -160,6 +160,47 @@ test "sanitize_dom recurses through nested containers and empty templates" {
 }
 
 ///|
+test "sanitize_dom handles standalone root element edge cases" {
+  let unwrap_policy = @html_parser.SanitizationPolicy::new(["div"], allowed_attributes={
+    "*": [],
+    "div": [],
+  })
+  assert_eq(
+    @html_parser.sanitize_dom(
+      @html_parser.element("div", ns="svg"),
+      policy=unwrap_policy,
+    ).to_html(pretty=false),
+    "",
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(
+      @html_parser.element("span", children=[@html_parser.text("x")]),
+      policy=unwrap_policy,
+    ).to_html(pretty=false),
+    "x",
+  )
+  let drop_content_policy = @html_parser.SanitizationPolicy::new(
+    ["div", "img"],
+    allowed_attributes={ "*": [], "div": [], "img": ["src"] },
+    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    drop_content_tags=["SCRIPT"],
+    disallowed_tag_handling=Unwrap,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(
+      @html_parser.element("ScRiPt", children=[
+        @html_parser.element("img", attrs={
+          "src": Some("pixel"),
+          "onerror": Some("alert(1)"),
+        }),
+      ]),
+      policy=drop_content_policy,
+    ).to_html(pretty=false),
+    "",
+  )
+}
+
+///|
 test "public URL proxy policy rewrites and strips URLs stably" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,
