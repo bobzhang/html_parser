@@ -1625,6 +1625,8 @@ reference implementation in `.repos/justhtml`.
       `special_text_parser_public_regression_test.mbt`.
 - [x] Start input-stream parser public regression file with BOM/CRLF
       normalization coverage.
+- [x] Split null-character parser integration regression into
+      `input_stream_parser_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
