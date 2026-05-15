@@ -31,19 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom document policy preserves shell and doctype" {
-  let doc = @html_parser.parse(
-    "<!DOCTYPE html><!--x--><html><head><title>T</title><script>bad</script></head><body><p onclick=x>ok</p></body></html>",
-    sanitize=false,
-  )
-  let sanitized = @html_parser.sanitize_dom(doc.root)
-  assert_eq(
-    sanitized.to_html(pretty=false),
-    "<!DOCTYPE html><html><head><title>T</title></head><body><p>ok</p></body></html>",
-  )
-}
-
-///|
 test "sanitize_dom custom policy keeps comments and can drop subtrees" {
   let keep_shell = @html_parser.parse(
     "<!DOCTYPE html><!--x--><p>ok</p><span>kept text</span>",

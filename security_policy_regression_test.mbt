@@ -35,6 +35,19 @@ test "sanitize_dom default policy keeps table captions" {
 }
 
 ///|
+test "sanitize_dom document policy preserves shell and doctype" {
+  let doc = @html_parser.parse(
+    "<!DOCTYPE html><!--x--><html><head><title>T</title><script>bad</script></head><body><p onclick=x>ok</p></body></html>",
+    sanitize=false,
+  )
+  let sanitized = @html_parser.sanitize_dom(doc.root)
+  assert_eq(
+    sanitized.to_html(pretty=false),
+    "<!DOCTYPE html><html><head><title>T</title></head><body><p>ok</p></body></html>",
+  )
+}
+
+///|
 test "public URL proxy policy rewrites and strips URLs stably" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,
