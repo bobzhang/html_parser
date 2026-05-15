@@ -2794,20 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser treats legacy raw text elements as text" {
-  let doc = @html_parser.parse_fragment(
-    "<iframe><b>x</b></iframe><noembed><i>y</i></noembed><noscript><em>z</em></noscript>",
-  )
-  assert_eq(
-    doc.to_html(pretty=false),
-    "<iframe>&lt;b&gt;x&lt;/b&gt;</iframe><noembed>&lt;i&gt;y&lt;/i&gt;</noembed><noscript>&lt;em&gt;z&lt;/em&gt;</noscript>",
-  )
-  assert_eq(doc.query("b").length(), 0)
-  assert_eq(doc.query("i").length(), 0)
-  assert_eq(doc.query("em").length(), 0)
-}
-
-///|
 test "parser honors scripting enabled for noscript text mode" {
   let enabled = @html_parser.parse_fragment(
     "<noscript><b>Hi</b></noscript>",

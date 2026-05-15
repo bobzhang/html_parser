@@ -1187,6 +1187,8 @@ reference implementation in `.repos/justhtml`.
       non-void coverage in `legacy_elements_public_regression_test.mbt`.
 - [x] Split legacy element select-mode keygen/frame regression into
       `legacy_elements_public_regression_test.mbt`.
+- [x] Split legacy raw-text iframe/noembed/noscript regression into
+      `legacy_elements_public_regression_test.mbt`.
 - [x] Split legacy element document-body frame-start regression into
       `legacy_elements_public_regression_test.mbt`.
 - [x] Start document frameset regression file with outside-body scaffolding
