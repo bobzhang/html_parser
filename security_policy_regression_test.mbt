@@ -1414,6 +1414,33 @@ test "sanitize_dom drops base href even when allowlisted" {
 }
 
 ///|
+test "sanitize_dom drops url-like attributes without exact url rules" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["a", "img", "blockquote", "object", "p", "form", "button", "video"],
+    allowed_attributes={
+      "a": ["href", "ping"],
+      "img": ["src", "srcset", "attributionsrc", "poster"],
+      "video": ["poster"],
+      "form": ["action"],
+      "button": ["formaction"],
+      "blockquote": ["cite"],
+      "object": ["data"],
+      "p": ["background", "data-x"],
+    },
+    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    drop_content_tags=[],
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<a href='https://example.com' ping='https://trusted.example/p https://evil.example/p'>x</a><img src='/ok.png' srcset='/one.png 1x' attributionsrc='https://evil.example/register' poster='/poster.png'><video poster='/poster.png'></video><form action='/submit'></form><button formaction='/submit'>go</button><blockquote cite='https://evil.example/q'></blockquote><object data='/payload'></object><p background='/bg.png' data-x='ok'>t</p>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<a>x</a><img><video></video><form></form><button>go</button><blockquote></blockquote><object></object><p data-x=\"ok\">t</p>",
+  )
+}
+
+///|
 test "sanitize_dom preserves allowed valueless non-url attributes" {
   let policy = @html_parser.SanitizationPolicy::new(["div"], allowed_attributes={
     "*": [],
