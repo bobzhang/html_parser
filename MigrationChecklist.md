@@ -1157,6 +1157,8 @@ reference implementation in `.repos/justhtml`.
       `tokenizer_public_regression_test.mbt`.
 - [x] Split parser leading BOM/CRLF normalization regression into
       `parser_public_regression_test.mbt`.
+- [x] Split parser null-character text/attribute/text-mode regression into
+      `parser_public_regression_test.mbt`.
 - [x] Start entity public regression file with upstream fixture coverage in
       `entity_public_regression_test.mbt`.
 - [x] Split entity decoding upstream error regression into
