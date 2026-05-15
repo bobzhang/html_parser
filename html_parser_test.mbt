@@ -2794,28 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tokenize normalizes BOM and CRLF edge cases" {
-  let bom = @html_parser.tokenize("\u{FEFF}<div>")
-  guard bom.tokens[0] is Tag(tag) else { fail("expected div start tag") }
-  assert_eq(tag.name, "div")
-  let text = @html_parser.tokenize("abc\r\ndef\rghi")
-  guard text.tokens[0] is Characters(data) else {
-    fail("expected character token")
-  }
-  assert_eq(data, "abc\ndef\nghi")
-  let comment = @html_parser.tokenize("<!-- a\rb -->")
-  guard comment.tokens[0] is CommentToken(data) else {
-    fail("expected comment")
-  }
-  assert_eq(data, " a\nb ")
-  let attr = @html_parser.tokenize("<div title=\"a\rb\">")
-  guard attr.tokens[0] is Tag(attr_tag) else { fail("expected attr tag") }
-  guard attr_tag.attrs["title"] is Some("a\nb") else {
-    fail("expected normalized attr")
-  }
-}
-
-///|
 test "tokenize matches upstream CR and LF normalization fixtures" {
   let bom = @html_parser.tokenize("\u{FEFF}<div>", collect_errors=true)
   guard bom.tokens[0] is Tag(bom_tag) else {
