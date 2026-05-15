@@ -1159,6 +1159,8 @@ reference implementation in `.repos/justhtml`.
       `parser_public_regression_test.mbt`.
 - [x] Split parser null-character text/attribute/text-mode regression into
       `parser_public_regression_test.mbt`.
+- [x] Split mixed noncharacter input-stream regression into tokenizer and parser
+      public regression tests.
 - [x] Start entity public regression file with upstream fixture coverage in
       `entity_public_regression_test.mbt`.
 - [x] Split entity decoding upstream error regression into

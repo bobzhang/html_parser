@@ -1033,3 +1033,51 @@ test "tokenize handles comment EOF branch variants" {
     fail("expected null EOF at column 6")
   }
 }
+
+///|
+test "tokenize reports noncharacters in input stream" {
+  let tokens = @html_parser.tokenize("ab\u{FDD0}cd", collect_errors=true)
+  guard tokens.tokens[0] is Characters("ab\u{FDD0}cd") else {
+    fail("expected noncharacter to stay in character token")
+  }
+  assert_eq(tokens.errors.length(), 1)
+  assert_eq(tokens.errors[0].code, "noncharacter-in-input-stream")
+  guard tokens.errors[0].column is Some(3) else {
+    fail("expected data-state noncharacter at column 3")
+  }
+  let multiline = @html_parser.tokenize("a\nb\u{FDD0}c", collect_errors=true)
+  assert_eq(multiline.errors.length(), 1)
+  assert_eq(multiline.errors[0].code, "noncharacter-in-input-stream")
+  guard multiline.errors[0].line is Some(2) else {
+    fail("expected multiline noncharacter on line 2")
+  }
+  guard multiline.errors[0].column is Some(2) else {
+    fail("expected multiline noncharacter at column 2")
+  }
+  let invalid_open = @html_parser.tokenize("<\u{FDD0}", collect_errors=true)
+  guard invalid_open.tokens[0] is Characters("<\u{FDD0}") else {
+    fail("expected invalid tag open as text")
+  }
+  assert_eq(invalid_open.errors.length(), 3)
+  assert_eq(invalid_open.errors[0].code, "noncharacter-in-input-stream")
+  assert_eq(invalid_open.errors[1].code, "invalid-first-character-of-tag-name")
+  assert_eq(invalid_open.errors[2].code, "noncharacter-in-input-stream")
+  let invalid_xml = @html_parser.tokenize(
+    "<\u{000C}\u{FDD0}&lt;",
+    collect_errors=true,
+    xml_coercion=true,
+  )
+  guard invalid_xml.tokens[0] is Characters("< �<") else {
+    fail("expected invalid tag-open text to decode and XML-coerce")
+  }
+  assert_eq(invalid_xml.errors.length(), 2)
+  assert_eq(invalid_xml.errors[0].code, "invalid-first-character-of-tag-name")
+  assert_eq(invalid_xml.errors[1].code, "noncharacter-in-input-stream")
+  let invalid_null = @html_parser.tokenize("<\u{0000}", collect_errors=true)
+  guard invalid_null.tokens[0] is Characters("<\u{0000}") else {
+    fail("expected invalid tag-open null text")
+  }
+  assert_eq(invalid_null.errors.length(), 2)
+  assert_eq(invalid_null.errors[0].code, "invalid-first-character-of-tag-name")
+  assert_eq(invalid_null.errors[1].code, "unexpected-null-character")
+}
