@@ -1583,6 +1583,8 @@ reference implementation in `.repos/justhtml`.
       end-tag coverage.
 - [x] Split ruby annotation start-exclusion regression into
       `ruby_parser_public_regression_test.mbt`.
+- [x] Split foreign namespace/name adjustment regression into
+      `foreign_content_public_regression_test.mbt`.
 
 ## Working Rule
 
