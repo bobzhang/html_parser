@@ -1573,6 +1573,8 @@ reference implementation in `.repos/justhtml`.
       `foreign_content_public_regression_test.mbt`.
 - [x] Start special-text parser public regression file with paragraph-closing
       coverage for `plaintext` and `xmp` starts.
+- [x] Start form-controls parser public regression file with repeated-button
+      recovery coverage.
 
 ## Working Rule
 
