@@ -942,3 +942,50 @@ test "tokenize matches upstream CR and LF normalization fixtures" {
   }
   assert_eq(comment.errors.length(), 0)
 }
+
+///|
+test "tokenize handles comment dash EOF and null edge cases" {
+  let crlf_eof = @html_parser.tokenize("<!----!\r\n", collect_errors=true)
+  guard crlf_eof.tokens[0] is CommentToken("--!\n") else {
+    fail("expected CRLF EOF comment data")
+  }
+  assert_eq(crlf_eof.errors.length(), 1)
+  assert_eq(crlf_eof.errors[0].code, "eof-in-comment")
+  guard crlf_eof.errors[0].line is Some(2) else {
+    fail("expected EOF comment error on line 2")
+  }
+  guard crlf_eof.errors[0].column is Some(0) else {
+    fail("expected EOF comment error at column 0")
+  }
+  let bang_null = @html_parser.tokenize(
+    "<!--x--!\u{0000}-->",
+    collect_errors=true,
+  )
+  guard bang_null.tokens[0] is CommentToken("x--!�") else {
+    fail("expected replacement after --! null")
+  }
+  assert_eq(bang_null.errors.length(), 1)
+  assert_eq(bang_null.errors[0].code, "unexpected-null-character")
+  guard bang_null.errors[0].column is Some(9) else {
+    fail("expected --! null error at column 9")
+  }
+  let incorrectly_closed = @html_parser.tokenize(
+    "<!--x---a-->",
+    collect_errors=true,
+  )
+  guard incorrectly_closed.tokens[0] is CommentToken("x---a") else {
+    fail("expected incorrectly closed dash run data")
+  }
+  assert_eq(incorrectly_closed.errors.length(), 1)
+  assert_eq(incorrectly_closed.errors[0].code, "incorrectly-closed-comment")
+  guard incorrectly_closed.errors[0].column is Some(9) else {
+    fail("expected incorrect close error at column 9")
+  }
+  let dash_null = @html_parser.tokenize("<!--x--\u{0000}>", collect_errors=true)
+  guard dash_null.tokens[0] is CommentToken("x--�>") else {
+    fail("expected replacement after -- null")
+  }
+  assert_eq(dash_null.errors.length(), 2)
+  assert_eq(dash_null.errors[0].code, "unexpected-null-character")
+  assert_eq(dash_null.errors[1].code, "eof-in-comment")
+}
