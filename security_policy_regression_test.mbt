@@ -569,6 +569,45 @@ test "url filter debug representation stays opaque" {
 }
 
 ///|
+test "sanitize_dom validates css url filter rewrites" {
+  let url_filter = @html_parser.UrlFilter::new(fn(_tag, attr, value) {
+    match attr {
+      "style:background-image" =>
+        match value {
+          "/drop.png" => None
+          "/empty.png" => Some("")
+          "/space.png" => Some("/x y")
+          "/ok.png" => Some("/proxied.png")
+          _ => Some(value)
+        }
+      _ => Some(value)
+    }
+  })
+  let css_rule = @html_parser.UrlRule::new(
+    allowed_schemes=[],
+    allow_relative=true,
+    resolve_protocol_relative=None,
+  )
+  let url_policy = @html_parser.UrlPolicy::new(url_filter~, allow_rules=[
+    @html_parser.UrlPolicyRule::new("*", "style:background-image", css_rule),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["p"],
+    allowed_attributes={ "p": ["style"] },
+    allowed_css_properties=["background-image", "color"],
+    url_policy~,
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<p style=\"background-image: url('/drop.png'); color: red\">drop</p><p style=\"background-image: url('/empty.png'); color: blue\">empty</p><p style=\"background-image: url('/space.png'); color: green\">space</p><p style=\"background-image: url('/ok.png'); color: purple\">ok</p>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<p style=\"color: red\">drop</p><p style=\"color: blue\">empty</p><p style=\"color: green\">space</p><p style=\"background-image: url('/proxied.png'); color: purple\">ok</p>",
+  )
+}
+
+///|
 test "sanitize_dom filters attributes and dangerous URLs" {
   let fragment = @html_parser.parse_fragment(
     "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t class=c data-x=y><a href='javascript:alert(1)' title='t'>x</a><a href='//example.com/path'>y</a><img src='https://x' alt=abs><img src='/safe.png' onerror=x alt=ok></div>",
