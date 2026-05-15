@@ -479,6 +479,20 @@ test "sanitize_dom raise mode reports html namespace foreign root drops" {
 }
 
 ///|
+test "sanitize_dom drop mode returns empty fragment for disallowed standalone root" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    [],
+    allowed_attributes={},
+    disallowed_tag_handling=Drop,
+  )
+  let root = @html_parser.element("x-foo", children=[@html_parser.text("bad")])
+  let sanitized = @html_parser.sanitize_dom(root, policy~)
+  assert_true(sanitized.kind() is Fragment)
+  assert_eq(sanitized.children().length(), 0)
+  assert_eq(sanitized.to_html(pretty=false), "")
+}
+
+///|
 test "sanitize_dom default policy drops unsafe document content" {
   let doc = @html_parser.parse(
     "<!DOCTYPE html><!--x--><p onclick=alert(1)>ok</p><script>alert(1)</script>",

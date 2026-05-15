@@ -31,20 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom drop mode returns empty fragment for disallowed standalone root" {
-  let policy = @html_parser.SanitizationPolicy::new(
-    [],
-    allowed_attributes={},
-    disallowed_tag_handling=Drop,
-  )
-  let root = @html_parser.element("x-foo", children=[@html_parser.text("bad")])
-  let sanitized = @html_parser.sanitize_dom(root, policy~)
-  assert_true(sanitized.kind() is Fragment)
-  assert_eq(sanitized.children().length(), 0)
-  assert_eq(sanitized.to_html(pretty=false), "")
-}
-
-///|
 test "sanitize_dom collects rawtext and foreign integration findings" {
   let rawtext_policy = @html_parser.SanitizationPolicy::new(
     ["style"],
