@@ -13,17 +13,6 @@ test "parser handles nested tags attributes comments and doctype" {
 }
 
 ///|
-test "parser closes current heading before another heading start" {
-  let fragment = @html_parser.parse_fragment("<p>intro<h1>head<h2>next")
-  assert_eq(
-    fragment.to_html(pretty=false),
-    "<p>intro</p><h1>head</h1><h2>next</h2>",
-  )
-  let nested_block = @html_parser.parse_fragment("<h1>head<div>body</div>")
-  assert_eq(nested_block.to_html(pretty=false), "<h1>head<div>body</div></h1>")
-}
-
-///|
 test "parser ignores self closing slash on non void html elements" {
   let div = @html_parser.parse_fragment("<div/>x")
   assert_eq(div.to_html(pretty=false), "<div>x</div>")
