@@ -1553,6 +1553,8 @@ reference implementation in `.repos/justhtml`.
       `parser_errors_public_regression_test.mbt`.
 - [x] Split `image` start-tag parser regression into
       `parser_errors_public_regression_test.mbt`.
+- [x] Start parser location public regression file with end-tag recovery
+      origin coverage in `parser_locations_public_regression_test.mbt`.
 
 ## Working Rule
 
