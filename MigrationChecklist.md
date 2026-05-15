@@ -1425,6 +1425,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split sanitizer CSS URL policy rule regression into
       `security_policy_regression_test.mbt`.
+- [x] Split sanitizer CSS URL comment rejection regression into
+      `security_policy_regression_test.mbt`.
 
 ## Working Rule
 
