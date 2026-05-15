@@ -98,24 +98,6 @@ test "public parser source locations and scripting mode stay stable" {
 }
 
 ///|
-test "parser reports abrupt closing of empty comments" {
-  let simple = @html_parser.parse_fragment("<!-->", collect_errors=true)
-  assert_eq(simple.to_html(pretty=false), "<!---->")
-  assert_eq(simple.errors.length(), 1)
-  assert_eq(simple.errors[0].code, "abrupt-closing-of-empty-comment")
-  guard simple.errors[0].column is Some(5) else {
-    fail("expected abrupt empty comment at >")
-  }
-  let dash = @html_parser.parse_fragment("<!--->", collect_errors=true)
-  assert_eq(dash.to_html(pretty=false), "<!---->")
-  assert_eq(dash.errors.length(), 1)
-  assert_eq(dash.errors[0].code, "abrupt-closing-of-empty-comment")
-  guard dash.errors[0].column is Some(6) else {
-    fail("expected abrupt empty dash comment at >")
-  }
-}
-
-///|
 test "parser reports incorrectly closed comments" {
   let bang = @html_parser.parse_fragment("<!--x--!>", collect_errors=true)
   assert_eq(bang.to_html(pretty=false), "<!--x-->")

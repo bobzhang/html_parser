@@ -1605,6 +1605,8 @@ reference implementation in `.repos/justhtml`.
       `parser_errors_public_regression_test.mbt`.
 - [x] Start comment parser public regression file with bogus-comment null
       replacement coverage.
+- [x] Split abrupt empty-comment close parser regression into
+      `comment_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
