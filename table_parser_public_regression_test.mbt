@@ -987,3 +987,43 @@ test "parser ignores table structure starts outside table" {
   assert_eq(colgroup.errors[0].code, "unexpected-start-tag-ignored")
   assert_eq(colgroup.errors[1].code, "unexpected-end-tag")
 }
+
+///|
+test "parser reports EOF in unfinished tables" {
+  let table = @html_parser.parse_fragment(
+    "<table><tr><td>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    table.to_html(pretty=false),
+    "<table><tbody><tr><td>x</td></tr></tbody></table>",
+  )
+  assert_eq(table.errors.length(), 1)
+  assert_eq(table.errors[0].code, "eof-in-table")
+  guard table.errors[0].column is Some(16) else {
+    fail("expected table EOF error at final input column")
+  }
+  let caption = @html_parser.parse_fragment(
+    "<table><caption>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    caption.to_html(pretty=false),
+    "<table><caption>x</caption></table>",
+  )
+  assert_eq(caption.errors.length(), 1)
+  assert_eq(caption.errors[0].code, "expected-closing-tag-but-got-eof")
+  guard caption.errors[0].column is Some(17) else {
+    fail("expected caption EOF to follow body-mode EOF reporting")
+  }
+  let nested = @html_parser.parse_fragment(
+    "<table><caption><div>x",
+    collect_errors=true,
+  )
+  assert_eq(
+    nested.to_html(pretty=false),
+    "<table><caption><div>x</div></caption></table>",
+  )
+  assert_eq(nested.errors.length(), 1)
+  assert_eq(nested.errors[0].code, "expected-closing-tag-but-got-eof")
+}
