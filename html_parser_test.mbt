@@ -2794,26 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tokenize reports malformed end tag errors when requested" {
-  let result = @html_parser.tokenize("</>", collect_errors=true)
-  assert_eq(result.tokens.length(), 1)
-  assert_eq(result.errors.length(), 1)
-  assert_eq(result.errors[0].code, "empty-end-tag")
-  guard result.errors[0].column is Some(3) else {
-    fail("expected empty end tag error at >")
-  }
-  let invalid = @html_parser.tokenize("</ >", collect_errors=true)
-  guard invalid.tokens[0] is CommentToken(" ") else {
-    fail("expected invalid end tag as bogus comment")
-  }
-  assert_eq(invalid.errors.length(), 1)
-  assert_eq(invalid.errors[0].code, "invalid-first-character-of-tag-name")
-  guard invalid.errors[0].column is Some(3) else {
-    fail("expected invalid end tag error after slash")
-  }
-}
-
-///|
 test "tokenize handles selected bogus comment fixture cases" {
   let processing = @html_parser.tokenize("<?foo>")
   guard processing.tokens[0] is CommentToken("?foo") else {

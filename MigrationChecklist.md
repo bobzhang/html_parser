@@ -1103,6 +1103,8 @@ reference implementation in `.repos/justhtml`.
       `tokenizer_public_regression_test.mbt`.
 - [x] Split tokenizer rawtext/RCDATA bad-solidus end-tag regression into
       `tokenizer_public_regression_test.mbt`.
+- [x] Split tokenizer malformed end-tag error regression into
+      `tokenizer_public_regression_test.mbt`.
 - [x] Start entity public regression file with upstream fixture coverage in
       `entity_public_regression_test.mbt`.
 - [x] Split entity decoding upstream error regression into
