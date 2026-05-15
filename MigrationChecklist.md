@@ -1607,6 +1607,8 @@ reference implementation in `.repos/justhtml`.
       replacement coverage.
 - [x] Split abrupt empty-comment close parser regression into
       `comment_parser_public_regression_test.mbt`.
+- [x] Split incorrectly-closed comment parser regression into
+      `comment_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
