@@ -1645,6 +1645,8 @@ reference implementation in `.repos/justhtml`.
 - [x] Rename the remaining parser smoke regression to
       `parser_smoke_public_regression_test.mbt` so the old generic parser
       bucket no longer hides unrelated coverage.
+- [x] Split sanitizer parse-entrypoint regressions out of the large security
+      policy file into `sanitize_entrypoints_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into

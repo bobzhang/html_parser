@@ -403,6 +403,7 @@ def main(argv: list[str]) -> int:
         "public_regression_helpers_test.mbt",
         "public_api_regression_test.mbt",
         "sanitize_fixtures_test.mbt",
+        "sanitize_entrypoints_public_regression_test.mbt",
         "security_policy_regression_test.mbt",
         "select_parser_public_regression_test.mbt",
         "serializer_public_regression_test.mbt",
