@@ -341,6 +341,31 @@ test "public serializer contexts keep escaping stable" {
 }
 
 ///|
+test "url serialization context uses text content and utf8 percent encoding" {
+  let text = @html_parser.text(" https://example.com/foo bar ")
+  assert_eq(
+    text.to_html(pretty=false, context=Url),
+    "https://example.com/foo%20bar",
+  )
+  let div = @html_parser.element("div", children=[
+    @html_parser.text("  /path/to/thing?q=a b  "),
+  ])
+  assert_eq(div.to_html(pretty=false, context=Url), "/path/to/thing?q=a%20b")
+  let unicode = @html_parser.text("caf\u{00E9}/\u{2603}?x=1&y=two words%")
+  assert_eq(
+    unicode.to_html(pretty=false, context=Url),
+    "caf%C3%A9/%E2%98%83?x=1&y=two%20words%25",
+  )
+  let controls = @html_parser.text(
+    "\u{0001}\u{0004}\u{0006}\u{000B}\u{000D}\u{000F}\u{007F}",
+  )
+  assert_eq(
+    controls.to_html(pretty=false, context=Url),
+    "%01%04%06%0B%0D%0F%7F",
+  )
+}
+
+///|
 test "js string serialization context escapes special characters" {
   let markup = @html_parser.parse_fragment("<b>Hi</b>")
   assert_eq(
