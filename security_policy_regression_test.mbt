@@ -264,6 +264,24 @@ test "sanitize_dom escape handling preserves disallowed template children" {
 }
 
 ///|
+test "sanitize_dom removes parser escape-only text outside escape mode" {
+  let fragment = @html_parser.parse_fragment(
+    "safe <!DOCTYPE and y>z",
+    context=@html_parser.FragmentContext::new("div"),
+    sanitize=false,
+  )
+  let policy = @html_parser.SanitizationPolicy::new(
+    [],
+    allowed_attributes={ "*": [] },
+    disallowed_tag_handling=Drop,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "safe z",
+  )
+}
+
+///|
 test "public URL proxy policy rewrites and strips URLs stably" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,
