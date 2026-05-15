@@ -1577,6 +1577,8 @@ reference implementation in `.repos/justhtml`.
       recovery coverage.
 - [x] Split nested form-start parser regression into
       `form_controls_parser_public_regression_test.mbt`.
+- [x] Split stored form-element end-tag parser regression into
+      `form_controls_parser_public_regression_test.mbt`.
 
 ## Working Rule
 
