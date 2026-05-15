@@ -1555,6 +1555,8 @@ reference implementation in `.repos/justhtml`.
       `parser_errors_public_regression_test.mbt`.
 - [x] Start parser location public regression file with end-tag recovery
       origin coverage in `parser_locations_public_regression_test.mbt`.
+- [x] Start active-formatting parser public regression file with paragraph
+      recovery reconstruction coverage.
 
 ## Working Rule
 
