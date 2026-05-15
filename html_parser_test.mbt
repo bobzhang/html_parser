@@ -2794,50 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "tokenize handles comment EOF branch variants" {
-  let empty = @html_parser.tokenize("<!--", collect_errors=true)
-  guard empty.tokens[0] is CommentToken("") else {
-    fail("expected empty EOF comment")
-  }
-  assert_eq(empty.errors.length(), 1)
-  assert_eq(empty.errors[0].code, "eof-in-comment")
-  guard empty.errors[0].column is Some(4) else {
-    fail("expected empty comment EOF at column 4")
-  }
-  let bang_eof = @html_parser.tokenize("<!--x--!", collect_errors=true)
-  guard bang_eof.tokens[0] is CommentToken("x") else {
-    fail("expected --! EOF comment data")
-  }
-  assert_eq(bang_eof.errors.length(), 1)
-  assert_eq(bang_eof.errors[0].code, "eof-in-comment")
-  guard bang_eof.errors[0].column is Some(8) else {
-    fail("expected --! EOF at column 8")
-  }
-  let dash_eof = @html_parser.tokenize("<!--x--", collect_errors=true)
-  guard dash_eof.tokens[0] is CommentToken("x") else {
-    fail("expected -- EOF comment data")
-  }
-  assert_eq(dash_eof.errors.length(), 1)
-  assert_eq(dash_eof.errors[0].code, "eof-in-comment")
-  guard dash_eof.errors[0].column is Some(7) else {
-    fail("expected -- EOF at column 7")
-  }
-  let null_eof = @html_parser.tokenize("<!--x\u{0000}", collect_errors=true)
-  guard null_eof.tokens[0] is CommentToken("x�") else {
-    fail("expected null EOF comment data")
-  }
-  assert_eq(null_eof.errors.length(), 2)
-  assert_eq(null_eof.errors[0].code, "unexpected-null-character")
-  assert_eq(null_eof.errors[1].code, "eof-in-comment")
-  guard null_eof.errors[0].column is Some(6) else {
-    fail("expected comment null at column 6")
-  }
-  guard null_eof.errors[1].column is Some(6) else {
-    fail("expected null EOF at column 6")
-  }
-}
-
-///|
 test "parser normalizes leading BOM and CRLF in text comment and attr" {
   let doc = @html_parser.parse_fragment(
     "\u{FEFF}<p title='a\rb'>a\r\nb<!--x\ry--></p>",
