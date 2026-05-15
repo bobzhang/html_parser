@@ -13,18 +13,6 @@ test "parser handles nested tags attributes comments and doctype" {
 }
 
 ///|
-test "parser ignores self closing slash on non void html elements" {
-  let div = @html_parser.parse_fragment("<div/>x")
-  assert_eq(div.to_html(pretty=false), "<div>x</div>")
-  let paragraph = @html_parser.parse_fragment("<p/>x")
-  assert_eq(paragraph.to_html(pretty=false), "<p>x</p>")
-  let script = @html_parser.parse_fragment("<script/>x</script>")
-  assert_eq(script.to_html(pretty=false), "<script>x</script>")
-  let voids = @html_parser.parse_fragment("<br/>x<img/>")
-  assert_eq(voids.to_html(pretty=false), "<br>x<img>")
-}
-
-///|
 test "parser closes open paragraphs before paragraph and block starts" {
   let fragment = @html_parser.parse_fragment("<p>one<p>two<div>three</div>")
   assert_eq(
