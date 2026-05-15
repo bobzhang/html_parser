@@ -1500,3 +1500,15 @@ test "parser reports missing attribute value after equals only" {
     fail("expected missing value at column 11")
   }
 }
+
+///|
+test "parser keeps first duplicate attribute value" {
+  let doc = @html_parser.parse_fragment(
+    "<p id=first id=second class=a class=b>text</p>",
+    collect_errors=true,
+  )
+  assert_eq(doc.to_html(pretty=false), "<p id=\"first\" class=\"a\">text</p>")
+  assert_eq(doc.errors.length(), 2)
+  assert_eq(doc.errors[0].code, "duplicate-attribute")
+  assert_eq(doc.errors[1].code, "duplicate-attribute")
+}

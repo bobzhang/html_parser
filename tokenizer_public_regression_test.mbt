@@ -709,3 +709,15 @@ test "tokenize reports attribute name fixture errors" {
     fail("expected quote attr error at column 7")
   }
 }
+
+///|
+test "tokenize keeps first duplicate attribute value" {
+  let tokens = @html_parser.tokenize("<div a=1 a=2 a=3>", collect_errors=true)
+  guard tokens.tokens[0] is Tag(tag) else { fail("expected div tag") }
+  guard tag.attrs["a"] is Some("1") else {
+    fail("expected first duplicate value")
+  }
+  assert_eq(tokens.errors.length(), 2)
+  assert_eq(tokens.errors[0].code, "duplicate-attribute")
+  assert_eq(tokens.errors[1].code, "duplicate-attribute")
+}
