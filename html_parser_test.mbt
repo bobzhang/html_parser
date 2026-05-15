@@ -2794,33 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parser reports attribute name fixture errors" {
-  let equals = @html_parser.parse_fragment("<div =abc>", collect_errors=true)
-  guard equals.query_one("div") is Some(eq_node) else { fail("expected div") }
-  assert_true(eq_node.attrs().contains("=abc"))
-  assert_eq(equals.errors.length(), 2)
-  assert_eq(
-    equals.errors[0].code,
-    "unexpected-equals-sign-before-attribute-name",
-  )
-  assert_eq(equals.errors[1].code, "expected-closing-tag-but-got-eof")
-  guard equals.errors[0].column is Some(6) else {
-    fail("expected equals attr error at column 6")
-  }
-  let bad_char = @html_parser.parse_fragment("<div a\"b>", collect_errors=true)
-  guard bad_char.query_one("div") is Some(bad_node) else {
-    fail("expected div")
-  }
-  assert_true(bad_node.attrs().contains("a\"b"))
-  assert_eq(bad_char.errors.length(), 2)
-  assert_eq(bad_char.errors[0].code, "unexpected-character-in-attribute-name")
-  assert_eq(bad_char.errors[1].code, "expected-closing-tag-but-got-eof")
-  guard bad_char.errors[0].column is Some(7) else {
-    fail("expected quote attr error at column 7")
-  }
-}
-
-///|
 test "parser reports unquoted attribute value fixture errors" {
   let less = @html_parser.parse_fragment("<div a=b<c>", collect_errors=true)
   assert_eq(less.to_html(pretty=false), "<div a=\"b&lt;c\"></div>")
