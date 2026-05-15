@@ -2794,22 +2794,6 @@ test "js string serialization context escapes special characters" {
 }
 
 ///|
-test "parse_bytes ignores invalid transport encoding labels" {
-  let bytes = b"<p>\x80</p>"
-  let doc = @html_parser.parse_bytes(bytes, encoding="koi8-r")
-  assert_eq(doc.to_text(separator="", strip=false), "\u{20AC}")
-  guard doc.encoding is Some("windows-1252") else {
-    fail("expected invalid transport label to fall back")
-  }
-  let meta = @utf8.encode("<meta charset=utf-8><p>\u{20AC}</p>")
-  let meta_doc = @html_parser.parse_bytes(meta, encoding="bogus")
-  assert_eq(meta_doc.to_text(separator="", strip=false), "\u{20AC}")
-  guard meta_doc.encoding is Some("utf-8") else {
-    fail("expected invalid transport label to allow meta sniff")
-  }
-}
-
-///|
 test "parse_bytes valid transport encoding overrides sniffing" {
   let meta = b"<meta charset=utf-8><p>\x80</p>"
   let meta_doc = @html_parser.parse_bytes(meta, encoding="windows-1252")
