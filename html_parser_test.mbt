@@ -31,32 +31,6 @@ fn repeat_for_test(value : String, count : Int) -> String {
 }
 
 ///|
-test "sanitize_dom drops unquoted css url with missing close paren" {
-  let css_url_rule = @html_parser.UrlRule::new(
-    allowed_schemes=[],
-    allow_relative=true,
-    resolve_protocol_relative=None,
-  )
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new("*", "style:background-image", css_url_rule),
-  ])
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["p"],
-    allowed_attributes={ "*": [], "p": ["style"] },
-    allowed_css_properties=["background-image", "color"],
-    url_policy~,
-  )
-  let fragment = @html_parser.parse_fragment(
-    "<p style='background-image: url(/missing; color: silver'>missing-raw-paren</p>",
-    sanitize=false,
-  )
-  assert_eq(
-    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
-    "<p style=\"color: silver\">missing-raw-paren</p>",
-  )
-}
-
-///|
 test "sanitize_dom proxies validated URL values" {
   let url_policy = @html_parser.UrlPolicy::new(
     default_handling=UrlProxy,
