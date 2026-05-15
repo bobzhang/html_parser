@@ -937,6 +937,8 @@ reference implementation in `.repos/justhtml`.
       `serializer_public_regression_test.mbt`.
 - [x] Split pretty serializer whitespace-only fragment regression into
       `serializer_public_regression_test.mbt`.
+- [x] Split JS string serialization context regression into
+      `serializer_public_regression_test.mbt`.
 - [x] Split builder foreign element-name regression into
       `builder_public_regression_test.mbt`.
 - [x] Split builder DOM helper invariants into
