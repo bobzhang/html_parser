@@ -949,6 +949,8 @@ reference implementation in `.repos/justhtml`.
       `builder_public_regression_test.mbt`.
 - [x] Split deep clone traversal regression into
       `builder_public_regression_test.mbt`.
+- [x] Split deeply nested parsed tree-builder regression into
+      `parser_public_regression_test.mbt`.
 - [x] Split builder foreign element-name regression into
       `builder_public_regression_test.mbt`.
 - [x] Split builder DOM helper invariants into

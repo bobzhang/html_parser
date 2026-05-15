@@ -2221,3 +2221,16 @@ test "parser treats similarly named special end tags as text" {
   assert_eq(xmp.errors.length(), 1)
   assert_eq(xmp.errors[0].code, "expected-doctype-but-got-start-tag")
 }
+
+///|
+test "tree builder finishes deeply nested parsed HTML without recursion" {
+  let html = repeat_for_test("<div>", 1200) +
+    "x" +
+    repeat_for_test("</div>", 1200)
+  let doc = @html_parser.parse(html)
+  assert_eq(doc.to_text(separator="", strip=false), "x")
+  guard doc.query_one("div") is Some(first_div) else {
+    fail("expected parsed deep div")
+  }
+  assert_eq(first_div.to_text(separator="", strip=false), "x")
+}
