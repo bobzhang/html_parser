@@ -113,6 +113,61 @@ test "sanitize_dom preserves math marker exceptions in text integration points" 
 }
 
 ///|
+test "sanitize_dom drops active foreign mutation tags when allowlisted" {
+  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
+    @html_parser.UrlPolicyRule::new(
+      "image",
+      "href",
+      @html_parser.UrlRule::new(
+        allowed_schemes=[],
+        allow_fragment=true,
+        allow_relative=false,
+      ),
+    ),
+    @html_parser.UrlPolicyRule::new(
+      "set",
+      "href",
+      @html_parser.UrlRule::new(
+        allowed_schemes=[],
+        allow_fragment=true,
+        allow_relative=false,
+      ),
+    ),
+    @html_parser.UrlPolicyRule::new(
+      "animate",
+      "href",
+      @html_parser.UrlRule::new(
+        allowed_schemes=[],
+        allow_fragment=true,
+        allow_relative=false,
+      ),
+    ),
+  ])
+  let policy = @html_parser.SanitizationPolicy::new(
+    [
+      "svg", "image", "set", "animate", "foreignobject", "script", "math", "annotation-xml",
+    ],
+    allowed_attributes={
+      "image": ["id", "href", "width", "height"],
+      "set": ["href", "attributeName", "to", "begin"],
+      "animate": ["href", "attributeName", "values", "dur"],
+      "annotation-xml": ["encoding"],
+    },
+    url_policy~,
+    drop_foreign_namespaces=false,
+    drop_content_tags=[],
+  )
+  let fragment = @html_parser.parse_fragment(
+    "<svg><image id='img' href='#ok' width='10' height='10'></image><set href='#img' attributeName='href' to='https://evil.example/pwn' begin='0s'></set><animate href='#img' attributeName='href' values='https://evil.example/pwn;#ok' dur='1s'></animate><foreignObject><script>bad</script></foreignObject></svg><math><annotation-xml encoding='text/html'><script>bad</script></annotation-xml></math>",
+    sanitize=false,
+  )
+  assert_eq(
+    @html_parser.sanitize_dom(fragment.root, policy~).to_html(pretty=false),
+    "<svg><image id=\"img\" href=\"#ok\" width=\"10\" height=\"10\"></image></svg><math></math>",
+  )
+}
+
+///|
 test "sanitize_dom hardens allowed rawtext element contents" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["style", "script", "img", "span"],
