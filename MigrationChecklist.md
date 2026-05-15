@@ -1069,6 +1069,8 @@ reference implementation in `.repos/justhtml`.
       `encoding_public_regression_test.mbt`.
 - [x] Split Windows-1252 parse_bytes fallback regression into
       `encoding_public_regression_test.mbt`.
+- [x] Split ISO-8859-2 parse_bytes label regression into
+      `encoding_public_regression_test.mbt`.
 - [x] Start legacy element regression file with fragment keygen/frame empty
       non-void coverage in `legacy_elements_public_regression_test.mbt`.
 - [x] Split legacy element select-mode keygen/frame regression into
