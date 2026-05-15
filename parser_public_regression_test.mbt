@@ -224,66 +224,6 @@ test "parser reports noncharacters in input stream" {
 }
 
 ///|
-fn assert_script_fragment_eof(
-  source : StringView,
-  expected_html : String,
-  expected_column : Int,
-) -> Unit raise {
-  let doc = @html_parser.parse_fragment(source, collect_errors=true)
-  assert_eq(doc.to_html(pretty=false), expected_html)
-  assert_eq(doc.errors.length(), 1)
-  assert_eq(doc.errors[0].code, "expected-named-closing-tag-but-got-eof")
-  guard doc.errors[0].line is Some(line) else {
-    fail("expected script EOF line")
-  }
-  assert_eq(line, 1)
-  guard doc.errors[0].column is Some(column) else {
-    fail("expected script EOF column")
-  }
-  assert_eq(column, expected_column)
-}
-
-///|
-test "parser reports special text EOF like tree builder" {
-  let script = @html_parser.parse_fragment("<script>x", collect_errors=true)
-  assert_eq(script.to_html(pretty=false), "<script>x</script>")
-  assert_eq(script.errors.length(), 1)
-  assert_eq(script.errors[0].code, "expected-named-closing-tag-but-got-eof")
-  guard script.errors[0].column is Some(9) else {
-    fail("expected script EOF at final text column")
-  }
-  let textarea = @html_parser.parse_fragment(
-    "<textarea>\nx",
-    collect_errors=true,
-  )
-  assert_eq(textarea.to_html(pretty=false), "<textarea>x</textarea>")
-  assert_eq(textarea.errors.length(), 1)
-  assert_eq(textarea.errors[0].code, "expected-closing-tag-but-got-eof")
-  guard textarea.errors[0].line is Some(2) else {
-    fail("expected textarea EOF on second line")
-  }
-  guard textarea.errors[0].column is Some(1) else {
-    fail("expected textarea EOF at final text column")
-  }
-  let xmp = @html_parser.parse_fragment("<xmp>x", collect_errors=true)
-  assert_eq(xmp.errors[0].code, "expected-named-closing-tag-but-got-eof")
-  let iframe = @html_parser.parse_fragment("<iframe>x", collect_errors=true)
-  assert_eq(iframe.errors[0].code, "expected-closing-tag-but-got-eof")
-  assert_script_fragment_eof("<script><!--", "<script><!--</script>", 12)
-  assert_script_fragment_eof("<script><!---", "<script><!---</script>", 13)
-  assert_script_fragment_eof("<script><!--a--", "<script><!--a--</script>", 15)
-  assert_script_fragment_eof(
-    "<script><!--<script>x", "<script><!--<script>x</script>", 21,
-  )
-  assert_script_fragment_eof(
-    "<script><!--<script>--", "<script><!--<script>--</script>", 22,
-  )
-  assert_script_fragment_eof(
-    "<script><!--<script>--<", "<script><!--<script>--<</script>", 23,
-  )
-}
-
-///|
 test "parser matches malformed special text end tags after solidus" {
   let title = @html_parser.parse(
     "<title>a</title/foo><p>b",
