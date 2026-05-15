@@ -1523,6 +1523,8 @@ reference implementation in `.repos/justhtml`.
       `security_policy_regression_test.mbt`.
 - [x] Split parse-time default sanitizer policy regression into
       `security_policy_regression_test.mbt`.
+- [x] Rename the remaining shared black-box test helpers from
+      `html_parser_test.mbt` to `public_regression_helpers_test.mbt`.
 
 ## Working Rule
 
