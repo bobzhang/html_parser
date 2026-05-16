@@ -54,52 +54,6 @@ test "sanitize_dom collects rawtext and foreign integration findings" {
 }
 
 ///|
-test "sanitize_dom raise mode reports active foreign mutation tags" {
-  let fragment_rule = @html_parser.UrlRule::new(
-    allowed_schemes=[],
-    allow_relative=false,
-    allow_fragment=true,
-  )
-  let policy = @html_parser.SanitizationPolicy::new(
-    ["svg", "image", "set"],
-    allowed_attributes={
-      "image": ["id", "href", "width", "height"],
-      "set": ["href", "attributeName", "to", "begin"],
-    },
-    url_policy=@html_parser.UrlPolicy::new(allow_rules=[
-      @html_parser.UrlPolicyRule::new("image", "href", fragment_rule),
-      @html_parser.UrlPolicyRule::new("set", "href", fragment_rule),
-    ]),
-    drop_foreign_namespaces=false,
-    drop_content_tags=[],
-    unsafe_handling=Raise,
-  )
-  let svg = @html_parser.element("svg", ns="svg", children=[
-    @html_parser.element("image", ns="svg", attrs={
-      "id": Some("img"),
-      "href": Some("#ok"),
-      "width": Some("10"),
-      "height": Some("10"),
-    }),
-    @html_parser.element("set", ns="svg", attrs={
-      "href": Some("#img"),
-      "attributeName": Some("href"),
-      "to": Some("https://evil.example/pwn"),
-      "begin": Some("0s"),
-    }),
-  ])
-  let result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    svg,
-    policy~,
-  )
-  match result {
-    Err(UnsafeHtml(message)) =>
-      assert_eq(message, "Unsafe tag 'set' (active foreign content)")
-    _ => fail("expected active foreign content to raise UnsafeHtml")
-  }
-}
-
-///|
 test "sanitize_dom treats html namespace svg roots as foreign for active tags" {
   let policy = @html_parser.SanitizationPolicy::new(
     ["svg", "rect", "set"],

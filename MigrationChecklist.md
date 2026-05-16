@@ -1653,6 +1653,8 @@ reference implementation in `.repos/justhtml`.
       `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split foreign SVG URL-function attribute sanitizer regressions into
       `sanitize_foreign_content_public_regression_test.mbt`.
+- [x] Split raise-mode active foreign sanitizer regression into
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
