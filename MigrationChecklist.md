@@ -1665,6 +1665,8 @@ reference implementation in `.repos/justhtml`.
       `sanitize_css_public_regression_test.mbt`.
 - [x] Split URL proxy sanitizer regressions into
       `sanitize_url_proxy_public_regression_test.mbt`.
+- [x] Split URL filter, list, and host validation sanitizer regressions into
+      `sanitize_url_filter_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
