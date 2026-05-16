@@ -1661,6 +1661,8 @@ reference implementation in `.repos/justhtml`.
       `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split rawtext, template, and style-resource sanitizer regressions into
       `sanitize_rawtext_public_regression_test.mbt`.
+- [x] Split CSS property, CSS URL, and CSS preset sanitizer regressions into
+      `sanitize_css_public_regression_test.mbt`.
 - [x] Start attribute parser public regression file with missing-value
       recovery coverage.
 - [x] Split duplicate-attribute parser regression into
