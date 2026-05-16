@@ -214,3 +214,44 @@ test "sanitize_dom raise mode reports active foreign mutation tags" {
     _ => fail("expected active foreign content to raise UnsafeHtml")
   }
 }
+
+///|
+test "sanitize_dom treats html namespace svg roots as foreign for active tags" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["svg", "rect", "set"],
+    allowed_attributes={ "rect": ["width"], "set": ["begin"] },
+    drop_foreign_namespaces=false,
+    drop_content_tags=[],
+  )
+  let svg = @html_parser.element("svg", ns="html", children=[
+    @html_parser.element("set", ns="html", attrs={ "begin": Some("0s") }),
+    @html_parser.element("rect", ns="html", attrs={ "width": Some("10") }),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(svg, policy~).to_html(pretty=false),
+    "<svg><rect width=\"10\"></rect></svg>",
+  )
+}
+
+///|
+test "sanitize_dom drops html namespace foreign roots when namespace dropping is enabled" {
+  let policy = @html_parser.SanitizationPolicy::new(
+    ["svg", "rect", "math", "mtext", "p"],
+    allowed_attributes={ "rect": ["width"], "p": ["id"] },
+    drop_foreign_namespaces=true,
+    drop_content_tags=[],
+  )
+  let fragment = @html_parser.fragment(children=[
+    @html_parser.element("svg", ns="html", children=[
+      @html_parser.element("rect", ns="html", attrs={ "width": Some("10") }),
+    ]),
+    @html_parser.element("math", ns="html", children=[
+      @html_parser.element("mtext", ns="html", children=[@html_parser.text("x")]),
+    ]),
+    @html_parser.element("p", ns="html", attrs={ "id": Some("kept") }),
+  ])
+  assert_eq(
+    @html_parser.sanitize_dom(fragment, policy~).to_html(pretty=false),
+    "<p id=\"kept\"></p>",
+  )
+}
