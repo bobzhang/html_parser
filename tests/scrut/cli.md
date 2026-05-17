@@ -8,7 +8,7 @@ stdin, file IO, stdout, stderr, and process exit codes.
 
 ```scrut
 $ "$JUSTHTML_CLI" --version
-justhtml 0.1.4
+justhtml 0.1.5
 ```
 
 ## Help
