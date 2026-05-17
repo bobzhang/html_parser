@@ -142,7 +142,7 @@ printf '<p>Hello <b>MoonBit</b></p>' \
 Black-box CLI integration tests live in `tests/scrut` and run with:
 
 ```sh
-bash scripts/check_scrut_cli.sh
+moon run --target native scripts/check_scrut_cli.mbtx
 ```
 
 ## Development Checks

@@ -22,6 +22,10 @@ for path in sorted(pathlib.Path("scripts").glob("*.py")):
     ast.parse(path.read_text(), filename=str(path))
 PY
 
+for script in scripts/*.mbtx; do
+  moon run --target native --build-only "$script" > /dev/null
+done
+
 python3 - <<'PY'
 import pathlib
 import subprocess
@@ -31,6 +35,7 @@ expected_shebangs = {
     ".py": "#!/usr/bin/env python3",
     ".sh": "#!/usr/bin/env bash",
 }
+no_shebang_extensions = {".mbtx"}
 tracked_scripts = subprocess.run(
     ["git", "ls-files", "scripts/*"],
     check=True,
@@ -41,18 +46,20 @@ tracked_scripts = subprocess.run(
 ok = True
 for script in tracked_scripts:
     path = pathlib.Path(script)
-    expected_shebang = expected_shebangs.get(path.suffix)
-    if expected_shebang is None:
+    if not path.is_file():
+        print(f"tracked validation helper is not a file: {script}", file=sys.stderr)
+        ok = False
+        continue
+    if path.suffix in no_shebang_extensions:
+        continue
+    if path.suffix not in expected_shebangs:
         print(
             f"tracked validation helper has unsupported extension: {script}",
             file=sys.stderr,
         )
         ok = False
         continue
-    if not path.is_file():
-        print(f"tracked validation helper is not a file: {script}", file=sys.stderr)
-        ok = False
-        continue
+    expected_shebang = expected_shebangs[path.suffix]
     text = path.read_text()
     first_line = text.splitlines()[0] if text else ""
     if first_line != expected_shebang:
@@ -132,7 +139,7 @@ check_interfaces_code=$?
 bash scripts/smoke_native_cli.sh \
   --bad-option > "$tmp_out" 2> "$smoke_native_cli_err"
 smoke_native_cli_code=$?
-bash scripts/check_scrut_cli.sh \
+moon run --target native scripts/check_scrut_cli.mbtx \
   --bad-option > "$tmp_out" 2> "$scrut_cli_err"
 scrut_cli_code=$?
 python3 scripts/check_release_version.py \
@@ -158,7 +165,7 @@ test "$smoke_native_cli_code" -eq 2
 grep -F "usage: bash scripts/smoke_native_cli.sh" "$smoke_native_cli_err" \
   > /dev/null
 test "$scrut_cli_code" -eq 2
-grep -F "usage: bash scripts/check_scrut_cli.sh" "$scrut_cli_err" \
+grep -F "usage: moon run --target native scripts/check_scrut_cli.mbtx" "$scrut_cli_err" \
   > /dev/null
 test "$release_version_code" -eq 2
 grep -F "usage: python3 scripts/check_release_version.py" \
