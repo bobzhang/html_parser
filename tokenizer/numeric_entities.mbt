@@ -67,6 +67,11 @@ fn is_character_reference_control(value : Int) -> Bool {
 }
 
 ///|
+/// Apply HTML's numeric character-reference replacement table.
+///
+/// This maps NUL to U+FFFD and the legacy Windows-1252 control range entries
+/// used by HTML. Values not listed in the table are returned unchanged; callers
+/// remain responsible for range validation and diagnostic reporting.
 pub fn html_numeric_entity_replacement(value : Int) -> Int {
   match value {
     0 => 0xFFFD

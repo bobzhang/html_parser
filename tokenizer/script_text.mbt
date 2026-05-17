@@ -1,4 +1,11 @@
 ///|
+/// Scan `<script>` raw text using HTML script-data state transitions.
+///
+/// `start` is the UTF-16 offset where script data begins. The scanner preserves
+/// script text up to a matching `</script` end tag, handles escaped and
+/// double-escaped script states, normalizes CRLF and bare CR to LF, and replaces
+/// null characters with U+FFFD while collecting diagnostics. `end_start` points
+/// at the `<` of the matching end tag when one is found.
 pub fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
   let out = StringBuilder::new(size_hint=input.length() - start)
   let errors : Array[SpecialTextError] = []
