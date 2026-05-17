@@ -151,11 +151,7 @@ fn doctype_test_format(node : @dom.Node) -> String {
       Some(value) => value
       None => ""
     }
-    out.write_string(" \"")
-    out.write_string(public_id)
-    out.write_string("\" \"")
-    out.write_string(system_id)
-    out.write_char('"')
+    out <+ " \"\{public_id}\" \"\{system_id}\""
   }
   out.write_char('>')
   out.to_string()
