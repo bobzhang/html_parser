@@ -1,9 +1,20 @@
 ///|
+/// Decode HTML character references in text or attribute context.
+///
+/// This is the data-only form of `decode_entities_with_errors`: recognized
+/// numeric and named references are decoded, CRLF and bare CR normalize to LF,
+/// and diagnostics are discarded. Set `in_attribute=true` to apply HTML's
+/// ambiguous-ampersand rule for legacy references in attribute values.
 pub fn decode_entities(input : StringView, in_attribute~ : Bool) -> String {
   decode_entities_with_errors(input, in_attribute~).data
 }
 
 ///|
+/// Decode HTML character references and collect parse diagnostics.
+///
+/// Numeric references use the HTML replacement table, named references support
+/// the legacy no-semicolon forms allowed by HTML, and non-reference ampersands
+/// remain literal. Error offsets are relative to `input`.
 pub fn decode_entities_with_errors(
   input : StringView,
   in_attribute~ : Bool,
@@ -35,6 +46,11 @@ pub fn decode_entities_with_errors(
 }
 
 ///|
+/// Decode an attribute value and collect character-reference diagnostics.
+///
+/// This uses attribute context for ambiguous ampersands, then replaces literal
+/// null characters in the decoded value with U+FFFD. Null replacement here does
+/// not add an extra entity-decoding diagnostic.
 pub fn decode_attribute_value_with_errors(
   input : StringView,
 ) -> EntityDecodeResult {

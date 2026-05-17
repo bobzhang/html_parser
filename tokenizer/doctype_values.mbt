@@ -1,4 +1,10 @@
 ///|
+/// Parse a quoted doctype identifier beginning at `start`.
+///
+/// `start` should point at either a single or double quote. The result contains
+/// the normalized value if a quote was present, the next UTF-16 offset to scan,
+/// and whether a matching closing quote was consumed. Null-character errors
+/// are appended to `errors`.
 pub fn parse_quoted_doctype_value_at(
   input : StringView,
   start : Int,
@@ -26,6 +32,11 @@ pub fn parse_quoted_doctype_value_at(
 }
 
 ///|
+/// Normalize a doctype identifier slice.
+///
+/// Scans `input[start:end]`, replacing null characters with U+FFFD and
+/// reporting `unexpected-null-character` at their original offsets. CRLF and
+/// bare CR are normalized to LF; all other characters are copied unchanged.
 pub fn normalize_doctype_value(
   input : StringView,
   start : Int,
@@ -59,6 +70,11 @@ pub fn normalize_doctype_value(
 }
 
 ///|
+/// Normalize a doctype name slice for token emission.
+///
+/// ASCII uppercase letters are folded to lowercase. Null characters are
+/// replaced with U+FFFD and reported in the returned error list. Offsets in
+/// those errors refer to the original `input`.
 pub fn parse_lower_name_value_replacing_nulls(
   input : StringView,
   start : Int,
@@ -92,6 +108,11 @@ pub fn parse_lower_name_value_replacing_nulls(
 }
 
 ///|
+/// Return the UTF-16 offset used for doctype EOF diagnostics.
+///
+/// EOF after a final newline reports `input.length()`. Other non-empty inputs
+/// report the offset of the last character, matching tokenizer diagnostic
+/// positions.
 pub fn doctype_eof_error_offset(input : StringView) -> Int {
   if @syn.input_ends_with_newline(input) {
     input.length()

@@ -1,14 +1,25 @@
 ///|
+/// Return whether `ch` can begin an HTML tag name in this tokenizer.
+///
+/// The tokenizer accepts ASCII letters as tag-name starts. Other characters
+/// after `<` are treated as invalid tag opens or text, depending on context.
 pub fn is_tag_name_start(ch : Char) -> Bool {
   ch.is_ascii_alphabetic()
 }
 
 ///|
+/// Return whether `ch` terminates a tag name.
+///
+/// Tag names end before ASCII whitespace, `/`, or `>`.
 pub fn is_tag_name_end(ch : Char) -> Bool {
   ch.is_ascii_whitespace() || ch == '/' || ch == '>'
 }
 
 ///|
+/// Return whether special-text content for `name` decodes entities.
+///
+/// HTML RCDATA elements `title` and `textarea` decode character references;
+/// raw-text elements such as `style`, `script`, and `xmp` do not.
 pub fn special_text_decodes_entities(name : StringView) -> Bool {
   match name {
     "title" | "textarea" => true
@@ -34,6 +45,11 @@ fn is_special_text_element(name : StringView) -> Bool {
 }
 
 ///|
+/// Find a matching special-text end tag.
+///
+/// Searches from UTF-16 offset `start` for `</` followed by `name`, comparing
+/// the tag name ASCII-case-insensitively. A match must be followed by `>`, `/`,
+/// or ASCII whitespace. The returned offset points at the `<` of the end tag.
 pub fn find_matching_end_tag(
   input : StringView,
   start : Int,
@@ -60,6 +76,10 @@ pub fn find_matching_end_tag(
 }
 
 ///|
+/// Return the diagnostic offset for a matching special-text end tag.
+///
+/// Starting at the end tag's `<`, this returns the offset of the closing `>` if
+/// present; otherwise it returns the EOF diagnostic offset for `input`.
 pub fn matching_end_tag_error_pos(input : StringView, start : Int) -> Int {
   let mut pos = start
   while pos < input.length() {

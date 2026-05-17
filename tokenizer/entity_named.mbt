@@ -61,6 +61,13 @@ fn longest_legacy_named_entity(
 }
 
 ///|
+/// Consume a named character reference beginning at `start`.
+///
+/// `start` must point at the `&`. Returns `None` when the following text is not
+/// a recognized named reference. The returned `next` offset points just after
+/// the consumed reference, and `errors` records missing-semicolon diagnostics
+/// for legacy matches. Attribute context blocks legacy references followed by
+/// an ASCII alphanumeric character or `=`.
 pub fn consume_named_entity_with_errors(
   input : StringView,
   start : Int,
@@ -120,6 +127,11 @@ pub fn consume_named_entity_with_errors(
 }
 
 ///|
+/// Return whether a legacy named reference is blocked in attribute context.
+///
+/// HTML keeps `&copyx` and `&copy=` literal in attributes instead of decoding
+/// the legacy `&copy` reference. `next` is the offset immediately after the
+/// legacy entity name that would otherwise be consumed.
 pub fn legacy_entity_blocked_in_attribute(
   input : StringView,
   next : Int,

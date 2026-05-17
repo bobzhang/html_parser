@@ -1,4 +1,10 @@
 ///|
+/// Scan HTML comment data starting immediately after a `<!--` opener.
+///
+/// `start` is a UTF-16 code-unit offset in `input`. The returned `data`
+/// normalizes CRLF and bare CR to LF and replaces null characters with U+FFFD.
+/// `end` is the offset after the consumed comment closer, or `input.length()`
+/// when the scan reaches EOF. Parse errors use offsets in the original input.
 pub fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
   let out = StringBuilder::new(size_hint=input.length() - start)
   let errors : Array[CommentScanError] = []

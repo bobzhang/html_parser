@@ -1,4 +1,10 @@
 ///|
+/// Parse the PUBLIC and SYSTEM identifiers from a doctype tail.
+///
+/// `input` is the slice after the doctype name and before the closing `>`, or
+/// the slice to EOF when the doctype is not closed. `closed` tells the parser
+/// whether the original doctype had a closing `>`. Error offsets are relative
+/// to `input`; callers that pass a source slice should add the slice start.
 pub fn parse_doctype_external(
   input : StringView,
   closed : Bool,
