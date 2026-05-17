@@ -61,7 +61,7 @@ def main(argv: list[str]) -> int:
         "scripts/check_tests.sh",
         "scripts/check_coverage.sh",
         "scripts/smoke_native_cli.sh",
-        "scripts/check_scrut_cli.sh",
+        "scripts/check_scrut_cli.mbtx",
         "scripts/verify_mooncakes_package.sh",
     ]
     for helper in ci_helpers:
@@ -73,7 +73,7 @@ def main(argv: list[str]) -> int:
         "scripts/check_coverage.sh",
         "scripts/check_interfaces.sh",
         "scripts/smoke_native_cli.sh",
-        "scripts/check_scrut_cli.sh",
+        "scripts/check_scrut_cli.mbtx",
         "scripts/verify_mooncakes_package.sh",
         "scripts/check_release_version.py",
         "scripts/check_fixture_sync.py",

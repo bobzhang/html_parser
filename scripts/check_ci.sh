@@ -108,7 +108,7 @@ step "Build and smoke test native CLI"
 bash scripts/smoke_native_cli.sh
 
 step "Run Scrut native CLI tests"
-bash scripts/check_scrut_cli.sh
+moon run --target native scripts/check_scrut_cli.mbtx
 
 step "Verify Mooncakes package"
 if [[ "$skip_mooncakes_without_credentials" == true ]]; then

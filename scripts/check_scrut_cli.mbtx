@@ -1,0 +1,108 @@
+///|
+#borrow(command)
+extern "C" fn c_system(command : Bytes) -> Int = "system"
+
+///|
+#borrow(path)
+extern "C" fn c_access(path : Bytes, mode : Int) -> Int = "access"
+
+///|
+#borrow(data)
+extern "C" fn c_write(fd : Int, data : Bytes, count : Int) -> Int = "write"
+
+///|
+extern "C" fn c_exit(code : Int) -> Unit = "exit"
+
+///|
+fn main {
+  let all_args = @env.args()
+  let args = if all_args.is_empty() { all_args[:] } else { all_args[1:] }
+  if !args.is_empty() {
+    usage()
+    c_exit(2)
+  }
+  let scrut_bin = match @env.get_env_var("SCRUT_BIN") {
+    Some(value) => value
+    None => "scrut"
+  }
+  if scrut_bin.contains_char('/') {
+    if !is_executable(scrut_bin) {
+      die("SCRUT_BIN is not executable: " + scrut_bin)
+    }
+  } else if !command_succeeds("command -v " + shell_quote(scrut_bin) + " > /dev/null") {
+    die("scrut is required; set SCRUT_BIN or install scrut in PATH")
+  }
+  run_or_die(
+    "moon run --target native --release --build-only cmd/main > /dev/null",
+  )
+  let cwd = match @env.current_dir() {
+    Some(value) => value
+    None => {
+      die("failed to resolve current working directory")
+      ""
+    }
+  }
+  let cli_path = cwd + "/_build/native/release/build/cmd/main/main.exe"
+  @env.set_env_var("JUSTHTML_CLI", cli_path)
+  if !is_executable(cli_path) {
+    die("native CLI binary was not built: " + cli_path)
+  }
+  run_or_die(shell_quote(scrut_bin) + " test tests/scrut")
+}
+
+///|
+fn usage() -> Unit {
+  eprintln("usage: moon run --target native scripts/check_scrut_cli.mbtx")
+}
+
+///|
+fn die(message : String) -> Unit {
+  eprintln(message)
+  c_exit(1)
+}
+
+///|
+fn run_or_die(command : String) -> Unit {
+  if !command_succeeds(command) {
+    c_exit(1)
+  }
+}
+
+///|
+fn command_succeeds(command : String) -> Bool {
+  c_system(@utf8.encode(command)) == 0
+}
+
+///|
+fn is_executable(path : String) -> Bool {
+  c_access(@utf8.encode(path), 1) == 0
+}
+
+///|
+fn eprintln(message : String) -> Unit {
+  write_stderr(message + "\n")
+}
+
+///|
+fn write_stderr(message : String) -> Unit {
+  let data = @utf8.encode(message)
+  let _ = c_write(2, data, data.length())
+}
+
+///|
+fn shell_quote(value : String) -> String {
+  if value.is_empty() {
+    return "''"
+  }
+  let out = @buffer.new()
+  out.write_string("'")
+  for ch in value.iter() {
+    if ch == '\'' {
+      out.write_string("'\\''")
+    } else {
+      out.write_char(ch)
+    }
+  }
+  out.write_string("'")
+  out.to_string()
+}
