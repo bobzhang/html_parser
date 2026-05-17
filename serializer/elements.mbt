@@ -1,4 +1,7 @@
 ///|
+/// Return whether an HTML element is void and must not serialize an end tag.
+///
+/// `name` is compared against the lowercase HTML void-element set.
 pub fn is_void_element(name : StringView) -> Bool {
   match name {
     "area"

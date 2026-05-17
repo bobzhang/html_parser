@@ -104,6 +104,11 @@ fn validate_serialization_quote(quote : Char) -> Char raise @core.HtmlError {
 }
 
 ///|
+/// Serialize a start tag without validating element or attribute names.
+///
+/// Attribute values are escaped and may use the requested quote character, but
+/// callers must ensure `node.name` and all attribute names are already safe for
+/// serialization. Use the checked serializer path for untrusted names.
 pub fn serialize_start_tag_unchecked(node : @dom.Node, quote : Char) -> String {
   let out = StringBuilder::new()
   out.write_char('<')
