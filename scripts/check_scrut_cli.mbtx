@@ -45,9 +45,9 @@ async fn run_scrut_cli_check() -> Int {
     Some(value) => value
     None => "scrut"
   }
-  if scrut_bin.contains_char('/') {
-    if !@fs.can_execute(scrut_bin) {
-      eprintln("SCRUT_BIN is not executable: " + scrut_bin)
+  if scrut_bin.contains_char('/') || scrut_bin.contains_char('\\') {
+    if !@fs.exists(scrut_bin) {
+      eprintln("SCRUT_BIN does not exist: " + scrut_bin)
       return 1
     }
   } else if !command_exists(scrut_bin) {
@@ -71,7 +71,7 @@ async fn run_scrut_cli_check() -> Int {
     }
   }
   let cli_path = cwd + "/_build/native/release/build/cmd/main/main.exe"
-  if !@fs.can_execute(cli_path) {
+  if !@fs.exists(cli_path) {
     eprintln("native CLI binary was not built: " + cli_path)
     return 1
   }
@@ -84,10 +84,10 @@ async fn run_scrut_cli_check() -> Int {
 
 ///|
 async fn command_exists(command : String) -> Bool {
-  @process.run(
-    "sh",
-    ["-c", "command -v \"$1\" > /dev/null", "sh", command],
-  ) == 0
+  let _ = @process.collect_output(command, ["--version"]) catch {
+    _ => return false
+  }
+  true
 }
 
 ///|

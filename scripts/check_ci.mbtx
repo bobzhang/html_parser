@@ -1,10 +1,14 @@
 import {
   "moonbitlang/async@0.19.0",
+  "moonbitlang/async@0.19.0/fs",
   "moonbitlang/async@0.19.0/process",
   "moonbitlang/async@0.19.0/stdio",
   "moonbitlang/core/argparse",
   "moonbitlang/core/buffer",
+  "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/env",
+  "moonbitlang/core/json",
+  "moonbitlang/x@0.4.43/crypto",
 }
 
 ///|
@@ -177,23 +181,24 @@ async fn check_ci(args : ArrayView[String]) -> Int {
   if code != 0 { return code }
   code = run_step("Check migration docs", run_check_migration_docs)
   if code != 0 { return code }
-  code = run_step("Check vendored fixture sync", () => run_check_fixture_sync(""))
+  code = run_step("Check vendored fixture sync", () => run_check_fixture_sync(false))
   if code != 0 { return code }
   code = run_step("Check vendored fixture manifest", run_check_fixture_manifest)
   if code != 0 { return code }
   code = run_step("Check package metadata", run_check_package_metadata)
   if code != 0 { return code }
-  code = run_step("Check formatting", () => run_command("moon fmt --check"))
+  code = run_step("Check formatting", () => @process.run("moon", ["fmt", "--check"]))
   if code != 0 { return code }
   code = run_step("Check generated interfaces", run_check_interfaces)
   if code != 0 { return code }
-  code = run_step("Type check default target", () => run_command("moon check --warn-list +73"))
+  code = run_step("Type check default target", () =>
+    @process.run("moon", ["check", "--warn-list", "+73"]))
   if code != 0 { return code }
   code = run_step("Type check all targets", () =>
-    run_command("moon check --target all --warn-list +73"))
+    @process.run("moon", ["check", "--target", "all", "--warn-list", "+73"]))
   if code != 0 { return code }
   code = run_step("Type check native CLI", () =>
-    run_command("moon check --target native cmd/main --warn-list +73"))
+    @process.run("moon", ["check", "--target", "native", "cmd/main", "--warn-list", "+73"]))
   if code != 0 { return code }
   code = run_step("Run tests with count floor", run_check_tests)
   if code != 0 { return code }
@@ -281,7 +286,7 @@ async fn check_fixture_sync(args : ArrayView[String]) -> Int {
     eprintln("usage: moon run --target native scripts/check_ci.mbtx check-fixture-sync [--require-reference]")
     return 2
   }
-  run_check_fixture_sync(shell_join(args))
+  run_check_fixture_sync(args.length() == 1)
 }
 
 ///|
@@ -350,300 +355,1845 @@ async fn check_publish_archive(args : ArrayView[String]) -> Int {
     eprintln("usage: moon run --target native scripts/check_ci.mbtx check-publish-archive [zip-path]")
     return 2
   }
-  run_check_publish_archive(shell_join(args))
+  let archive = if args.is_empty() { "" } else { args[0] }
+  run_check_publish_archive(archive)
 }
 
 ///|
 async fn run_check_release_version() -> Int {
-  run_python(check_release_version_source(), "")
+  let metadata = match read_json_object("moon.mod.json") {
+    Some(value) => value
+    None => return 1
+  }
+  let version = match json_string(metadata, "version") {
+    Some(value) => value
+    None => {
+      eprintln("moon.mod.json field 'version' must be a non-empty string")
+      return 1
+    }
+  }
+  let cli_files = git_ls_files(["cli/*.mbt"])
+  let cli_sources = @buffer.new()
+  for path in cli_files {
+    match read_text(path) {
+      Some(text) => cli_sources.write_string(text + "\n")
+      None => {
+        eprintln("could not read " + path)
+        return 1
+      }
+    }
+  }
+  let cli_version = find_cli_version(cli_sources.to_string())
+  match cli_version {
+    None => {
+      eprintln("could not find cli_version()")
+      return 1
+    }
+    Some(value) => if value != version {
+      eprintln("cli_version " + value + " != module version " + version)
+      return 1
+    }
+  }
+  let cli_test = match read_text("cli_test.mbt") {
+    Some(value) => value
+    None => {
+      eprintln("cli_test.mbt does not exist")
+      return 1
+    }
+  }
+  let expected_test = "assert_eq(version.stdout, \"justhtml " + version + "\\n\")"
+  if !cli_test.contains(expected_test) {
+    eprintln("CLI --version test does not assert the module version")
+    return 1
+  }
+  0
 }
 
 ///|
 async fn run_check_validation_inventory() -> Int {
-  run_python(check_validation_inventory_source(), "")
+  let expected_scripts = ["scripts/check_ci.mbtx", "scripts/check_scrut_cli.mbtx"]
+  let actual_scripts = git_ls_files(["scripts/*"])
+  let mut ok = true
+  ok = require_all_tracked(expected_scripts, actual_scripts, "expected MoonBit script is not tracked: ") && ok
+  for path in actual_scripts {
+    if path.has_suffix(".sh") || path.has_suffix(".py") {
+      eprintln("tracked script must not use shell or Python extension: " + path)
+      ok = false
+    } else if !path.has_suffix(".mbtx") {
+      eprintln("tracked script has unsupported extension: " + path)
+      ok = false
+    }
+  }
+  let ci_text = match read_text("scripts/check_ci.mbtx") {
+    Some(value) => value
+    None => return 1
+  }
+  for command in validation_commands() {
+    ok = require_text(ci_text, command, "scripts/check_ci.mbtx") && ok
+  }
+  let scrut_text = match read_text("scripts/check_scrut_cli.mbtx") {
+    Some(value) => value
+    None => return 1
+  }
+  ok = require_text(
+    scrut_text,
+    "usage: moon run --target native scripts/check_scrut_cli.mbtx",
+    "scripts/check_scrut_cli.mbtx",
+  ) && ok
+  if ok { 0 } else { 1 }
 }
 
 ///|
 async fn run_check_github_workflows() -> Int {
-  run_python(check_github_workflows_source(), "")
+  let expected_workflows = [
+    ".github/workflows/ci.yml",
+    ".github/workflows/copilot-setup-steps.yml",
+  ]
+  let actual_workflows = git_ls_files([".github/workflows/*.yml"])
+  let mut ok = true
+  ok = require_all_tracked(expected_workflows, actual_workflows, "expected GitHub workflow is not tracked: ") && ok
+  for path in actual_workflows {
+    if !expected_workflows.contains(path) {
+      eprintln("tracked GitHub workflow is missing from validation: " + path)
+      ok = false
+    }
+  }
+  let workflow = ".github/workflows/ci.yml"
+  let text = match read_text(workflow) {
+    Some(value) => value
+    None => {
+      eprintln(".github/workflows/ci.yml does not exist")
+      return 1
+    }
+  }
+  for needle in [
+    "name: CI",
+    "pull_request:",
+    "workflow_dispatch:",
+    "branches:\n      - main",
+    "permissions:\n      contents: read",
+    "curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash",
+    "echo \"$HOME/.moon/bin\" >> \"$GITHUB_PATH\"",
+    "run: moon version --all",
+    "run: moon update",
+    "run: moon run --target native scripts/check_ci.mbtx --skip-without-credentials",
+  ] {
+    ok = require_text(text, needle, workflow) && ok
+  }
+  let check_ci_refs = count_occurrences(text, "scripts/check_ci.mbtx")
+  if check_ci_refs != 1 {
+    eprintln(
+      ".github/workflows/ci.yml must invoke scripts/check_ci.mbtx exactly once, found " +
+      check_ci_refs.to_string(),
+    )
+    ok = false
+  }
+  for needle in [
+    "run: moon check",
+    "run: moon fmt",
+    "run: moon test",
+    "run: moon coverage",
+    "run: moon publish",
+  ] {
+    ok = require_absent(text, needle, workflow) && ok
+  }
+  let copilot = ".github/workflows/copilot-setup-steps.yml"
+  match read_text(copilot) {
+    None => {
+      eprintln(".github/workflows/copilot-setup-steps.yml does not exist")
+      ok = false
+    }
+    Some(copilot_text) => for needle in [
+      "name: \"Copilot Setup Steps\"",
+      "workflow_dispatch:",
+      "push:\n    paths:\n      - .github/workflows/copilot-setup-steps.yml",
+      "pull_request:\n    paths:\n      - .github/workflows/copilot-setup-steps.yml",
+      "copilot-setup-steps:",
+      "runs-on: ubuntu-latest",
+      "permissions:",
+      "contents: read",
+      "uses: actions/checkout@v5",
+      "curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash",
+      "echo \"$HOME/.moon/bin\" >> \"$GITHUB_PATH\"",
+      "moon version --all",
+      "moon update",
+    ] {
+      ok = require_text(copilot_text, needle, copilot) && ok
+    }
+  }
+  if ok { 0 } else { 1 }
 }
 
 ///|
 async fn run_check_source_layout() -> Int {
-  run_python(check_source_layout_source(), "")
+  let tracked = git_ls_files([])
+  let mut ok = true
+  ok = require_all_tracked(required_top_level_files(), tracked, "required top-level project file is not tracked: ") && ok
+  ok = require_all_tracked(required_root_modules(), tracked, "expected root package module is not tracked: ") && ok
+  ok = require_all_tracked(required_fixture_files(), tracked, "expected vendored fixture is not tracked: ") && ok
+  let package_dirs = package_dirs_from_tracked(tracked)
+  if !package_dirs.contains(".") {
+    eprintln("root package moon.pkg is not tracked")
+    ok = false
+  }
+  for package_dir in package_dirs {
+    let prefix = if package_dir == "." { "" } else { package_dir + "/" }
+    let interface_path = prefix + "pkg.generated.mbti"
+    if !tracked.contains(interface_path) {
+      eprintln("package " + package_dir + " must track " + interface_path)
+      ok = false
+    }
+    if !package_has_source(tracked, prefix) {
+      eprintln("package " + package_dir + " must contain tracked MoonBit source")
+      ok = false
+    }
+  }
+  let package_prefixes = package_prefixes_from_tracked(tracked)
+  for path in tracked {
+    if is_source_like(path) && !package_prefixes.contains(parent_prefix(path)) {
+      eprintln("tracked source file is outside a MoonBit package: " + path)
+      ok = false
+    }
+    if is_forbidden_tracked_path(path) {
+      eprintln("generated/reference checkout path must not be tracked: " + path)
+      ok = false
+    }
+  }
+  if ok { 0 } else { 1 }
 }
 
 ///|
 async fn run_check_test_inventory() -> Int {
-  run_python(check_test_inventory_source(), "")
+  let expected_count = 621
+  let expected_sha256 = "003310be7f8dd73053618cd4189916d3dce071219b3a766f439a0c80a966ea72"
+  let inventory : Array[String] = []
+  for path in git_ls_files(["*.mbt", "*.mbt.md"]) {
+    match read_text(path) {
+      None => {
+        eprintln("could not read " + path)
+        return 1
+      }
+      Some(text) => {
+        for name in test_declarations(text) {
+          inventory.push(path + ":" + name)
+        }
+      }
+    }
+  }
+  sort_strings(inventory)
+  let observed_count = inventory.length()
+  let observed_sha256 = sha256_text(join_lines(inventory))
+  let mut ok = true
+  if observed_count != expected_count {
+    eprintln(
+      "MoonBit test inventory count changed: expected " + expected_count.to_string() +
+      ", observed " + observed_count.to_string(),
+    )
+    ok = false
+  }
+  let duplicates = duplicate_items(inventory)
+  if !duplicates.is_empty() {
+    eprintln("MoonBit test inventory contains duplicate declarations:")
+    for item in duplicates {
+      eprintln("  " + item)
+    }
+    ok = false
+  }
+  if observed_sha256 != expected_sha256 {
+    eprintln(
+      "MoonBit test inventory hash changed: expected " + expected_sha256 +
+      ", observed " + observed_sha256,
+    )
+    eprintln("Review the test declaration changes before updating this guard.")
+    ok = false
+  }
+  if ok { 0 } else { 1 }
 }
 
 ///|
 async fn run_check_moonbit_style() -> Int {
-  run_python(check_moonbit_style_source(), "")
+  let mut ok = true
+  for path in git_ls_files(["*.mbt"]) {
+    match read_text(path) {
+      None => {
+        eprintln("could not read " + path)
+        ok = false
+      }
+      Some(text) => if !text.contains("///|") {
+        eprintln(path + " must use block-style separators marked by '///|'")
+        ok = false
+      }
+    }
+  }
+  if ok { 0 } else { 1 }
 }
 
 ///|
 async fn run_check_gitignore() -> Int {
-  run_python(check_gitignore_source(), "")
+  let text = match read_text(".gitignore") {
+    Some(value) => value
+    None => {
+      eprintln(".gitignore does not exist")
+      return 1
+    }
+  }
+  let ignored = gitignore_rules(text)
+  let mut ok = true
+  for rule in [".DS_Store", "_build/", ".mooncakes/", ".moonagent/", ".repos/", "__pycache__/"] {
+    if !ignored.contains(rule) {
+      eprintln(".gitignore must contain " + rule)
+      ok = false
+    }
+  }
+  if ok { 0 } else { 1 }
 }
 
 ///|
 async fn run_check_githooks() -> Int {
-  run_python(check_githooks_source(), "")
+  let expected = [".githooks/README.md", ".githooks/pre-commit"]
+  let actual = git_ls_files([".githooks/*"])
+  let mut ok = true
+  ok = require_all_tracked(expected, actual, "expected Git hook file is not tracked: ") && ok
+  for path in actual {
+    if !expected.contains(path) {
+      eprintln("tracked Git hook file is missing from validation: " + path)
+      ok = false
+    }
+  }
+  let hook = ".githooks/pre-commit"
+  let hook_text = match read_text(hook) {
+    Some(value) => value
+    None => {
+      eprintln(".githooks/pre-commit does not exist")
+      ok = false
+      ""
+    }
+  }
+  if !@fs.can_execute(hook) {
+    eprintln(".githooks/pre-commit must be executable")
+    ok = false
+  }
+  for needle in [
+    "#!/usr/bin/env bash",
+    "set -euo pipefail",
+    "git rev-parse --show-toplevel",
+    "moon run --target native scripts/check_ci.mbtx --skip-without-credentials",
+  ] {
+    ok = require_text(hook_text, needle, hook) && ok
+  }
+  let readme = ".githooks/README.md"
+  let readme_text = match read_text(readme) {
+    Some(value) => value
+    None => {
+      eprintln(".githooks/README.md does not exist")
+      ok = false
+      ""
+    }
+  }
+  for needle in [
+    "git config core.hooksPath .githooks",
+    "moon run --target native scripts/check_ci.mbtx --skip-without-credentials",
+  ] {
+    ok = require_text(readme_text, needle, readme) && ok
+  }
+  if ok { 0 } else { 1 }
 }
 
 ///|
 async fn run_check_migration_docs() -> Int {
-  run_python(check_migration_docs_source(), "")
+  let mut ok = true
+  for doc in migration_doc_needles() {
+    let (path, needles) = doc
+    match read_text(path) {
+      None => {
+        eprintln("required migration document is missing: " + path)
+        ok = false
+      }
+      Some(text) => for needle in needles {
+        ok = require_text_collapsed(text, needle, path) && ok
+      }
+    }
+  }
+  if ok { 0 } else { 1 }
 }
 
 ///|
-async fn run_check_fixture_sync(args : String) -> Int {
-  run_python(check_fixture_sync_source(), args)
+async fn run_check_fixture_sync(require_reference : Bool) -> Int {
+  let reference_root = match @env.get_env_var("JUSTHTML_REFERENCE_ROOT") {
+    Some(value) => value
+    None => ".repos/justhtml"
+  }
+  if !@fs.exists(reference_root) {
+    let message = "Skipping fixture sync check because reference checkout is absent: " + reference_root
+    if require_reference {
+      eprintln(message)
+      return 1
+    }
+    write_stdout(message + "\n")
+    return 0
+  }
+  let mut ok = true
+  for pair in fixture_pairs() {
+    let (local_rel, reference_rel) = pair
+    let local_path = "tests/fixtures/justhtml/" + local_rel
+    let reference_path = reference_root + "/" + reference_rel
+    match read_bytes(local_path) {
+      None => {
+        eprintln("missing vendored fixture: " + local_path)
+        ok = false
+        continue
+      }
+      Some(local_data) => match read_bytes(reference_path) {
+        None => {
+          eprintln("missing reference fixture: " + reference_path)
+          ok = false
+        }
+        Some(reference_data) => if local_data != reference_data {
+          eprintln("vendored fixture differs from reference: " + local_rel)
+          ok = false
+        }
+      }
+    }
+  }
+  if ok { 0 } else { 1 }
 }
 
 ///|
 async fn run_check_fixture_manifest() -> Int {
-  run_python(check_fixture_manifest_source(), "")
+  let tracked = git_ls_files(["tests/fixtures/justhtml/**"])
+  let manifest = fixture_manifest()
+  let expected : Array[String] = []
+  for entry in manifest {
+    let (path, _, _) = entry
+    expected.push(path)
+  }
+  let mut ok = true
+  ok = require_all_tracked(expected, tracked, "fixture manifest entry is not tracked: ") && ok
+  for path in tracked {
+    if !expected.contains(path) {
+      eprintln("tracked fixture is missing from manifest: " + path)
+      ok = false
+    }
+  }
+  for entry in manifest {
+    let (path, expected_size, expected_sha256) = entry
+    match read_bytes(path) {
+      None => {
+        eprintln("fixture manifest entry is missing from disk: " + path)
+        ok = false
+      }
+      Some(data) => {
+        let actual_sha256 = @crypto.bytes_to_hex_string(@crypto.sha256(data))
+        if data.length() != expected_size {
+          eprintln(
+            "fixture size changed for " + path + ": " + data.length().to_string() +
+            " != " + expected_size.to_string(),
+          )
+          ok = false
+        }
+        if actual_sha256 != expected_sha256 {
+          eprintln(
+            "fixture sha256 changed for " + path + ": " + actual_sha256 +
+            " != " + expected_sha256,
+          )
+          ok = false
+        }
+      }
+    }
+  }
+  if ok { 0 } else { 1 }
 }
 
 ///|
 async fn run_check_package_metadata() -> Int {
-  run_python(check_package_metadata_source(), "")
+  let metadata = match read_json_object("moon.mod.json") {
+    Some(value) => value
+    None => return 1
+  }
+  let mut ok = true
+  let name = expect_metadata_string(metadata, "name")
+  let version = expect_metadata_string(metadata, "version")
+  let readme = expect_metadata_string(metadata, "readme")
+  let repository = expect_metadata_string(metadata, "repository")
+  let license_id = expect_metadata_string(metadata, "license")
+  let description = expect_metadata_string(metadata, "description")
+  ok = name is Some(_) && version is Some(_) && readme is Some(_) && repository is Some(_) &&
+    license_id is Some(_) && description is Some(_) && ok
+  ok = check_keywords(metadata) && ok
+  let mut readme_text = ""
+  match (name, version, readme) {
+    (Some(package_name), Some(package_version), Some(readme_path)) => {
+      if !valid_package_name(package_name) {
+        eprintln("package name " + package_name + " must use owner/package form")
+        ok = false
+      }
+      if !valid_semver(package_version) {
+        eprintln("version " + package_version + " must look like a semantic version")
+        ok = false
+      }
+      if invalid_repo_relative_path(readme_path) {
+        eprintln("readme path " + readme_path + " must stay inside the repository")
+        ok = false
+      } else {
+        match read_text(readme_path) {
+          None => {
+            eprintln("readme path " + readme_path + " does not exist")
+            ok = false
+          }
+          Some(text) => {
+            readme_text = text
+            match read_text("README.md") {
+              None => {
+                eprintln("README.md must exist for GitHub rendering")
+                ok = false
+              }
+              Some(github_readme) => if github_readme != readme_text {
+                eprintln("README.md must resolve to or match the configured Mooncakes readme " + readme_path)
+                ok = false
+              }
+            }
+          }
+        }
+      }
+      if !readme_text.is_empty() {
+        let expected_heading = "# " + package_name
+        if !first_lines(readme_text, 5).contains(expected_heading) {
+          eprintln("README must start with heading " + expected_heading)
+          ok = false
+        }
+        let expected_install = "moon add " + package_name
+        if !readme_text.contains(expected_install) {
+          eprintln("README must document " + expected_install)
+          ok = false
+        }
+        let expected_import = "\"" + package_name + "\""
+        if !readme_text.contains(expected_import) {
+          eprintln("README must show import path " + expected_import)
+          ok = false
+        }
+      }
+    }
+    _ => ok = false
+  }
+  match (name, repository) {
+    (Some(package_name), Some(repo)) => {
+      let expected_repository = "https://github.com/" + package_name
+      if repo != expected_repository {
+        eprintln("repository " + repo + " != expected " + expected_repository)
+        ok = false
+      }
+    }
+    _ => ()
+  }
+  match license_id {
+    Some(value) => {
+      if value != "Apache-2.0" {
+        eprintln("license " + value + " must be 'Apache-2.0'")
+        ok = false
+      }
+      match read_text("LICENSE") {
+        None => {
+          eprintln("LICENSE file does not exist")
+          ok = false
+        }
+        Some(text) => if !text.contains("Apache License") || !text.contains("Version 2.0") {
+          eprintln("LICENSE file does not contain Apache License 2.0 text")
+          ok = false
+        }
+      }
+    }
+    None => ok = false
+  }
+  match description {
+    Some(value) => if value.length() > 200 {
+      eprintln("moon.mod.json description should stay concise")
+      ok = false
+    }
+    None => ok = false
+  }
+  ok = check_native_cli_metadata(name) && ok
+  if ok { 0 } else { 1 }
 }
 
 ///|
-async fn run_check_publish_archive(args : String) -> Int {
-  run_python(check_publish_archive_source(), args)
+async fn run_check_publish_archive(archive_arg : String) -> Int {
+  let archive = if archive_arg.is_empty() {
+    match expected_archive_path() {
+      Some(value) => value
+      None => return 1
+    }
+  } else {
+    archive_arg
+  }
+  if !@fs.exists(archive) {
+    eprintln("Mooncakes archive does not exist: " + archive)
+    return 1
+  }
+  let entries = match read_zip_entries(archive) {
+    Some(value) => value
+    None => return 1
+  }
+  let names = [ for entry in entries => entry.name ]
+  let required = expected_published_files()
+  let mut ok = true
+  for name in duplicate_items(names) {
+    eprintln("Mooncakes archive contains duplicate path: " + name)
+    ok = false
+  }
+  for path in required {
+    if !names.contains(path) {
+      eprintln("Mooncakes archive is missing required file: " + path)
+      ok = false
+    }
+  }
+  for name in names {
+    if archive_path_unsafe(name) {
+      eprintln("Mooncakes archive contains unsafe path: " + name)
+      ok = false
+    }
+    if archive_path_forbidden(name) {
+      eprintln("Mooncakes archive contains non-package path: " + name)
+      ok = false
+    }
+    if name.contains("/__pycache__/") || name.has_suffix(".pyc") {
+      eprintln("Mooncakes archive contains Python bytecode/cache path: " + name)
+      ok = false
+    }
+  }
+  if names.contains("README.md") && names.contains("README.mbt.md") {
+    let readme = zip_entry(entries, "README.md")
+    let mbt_readme = zip_entry(entries, "README.mbt.md")
+    match (readme, mbt_readme) {
+      (Some(left), Some(right)) => if left.uncompressed_size != right.uncompressed_size ||
+        left.crc32 != right.crc32 {
+        eprintln("Mooncakes archive README.md must match README.mbt.md")
+        ok = false
+      }
+      _ => {
+        eprintln("failed to read README entries from Mooncakes archive")
+        ok = false
+      }
+    }
+  }
+  if ok { 0 } else { 1 }
 }
 
 ///|
 async fn run_check_scripts() -> Int {
-  let script =
-    #|bad_scripts="$(git ls-files 'scripts/*.sh' 'scripts/*.py')"
-    #|if [[ -n "$bad_scripts" ]]; then
-    #|  printf 'tracked scripts must be MoonBit .mbtx files, found:\n%s\n' "$bad_scripts" >&2
-    #|  exit 1
-    #|fi
-    #|
-    #|tracked_scripts="$(git ls-files 'scripts/*')"
-    #|if [[ -z "$tracked_scripts" ]]; then
-    #|  echo 'No tracked scripts found.' >&2
-    #|  exit 1
-    #|fi
-    #|while IFS= read -r script; do
-    #|  case "$script" in
-    #|    scripts/*.mbtx)
-    #|      moon run --target native --build-only "$script" > /dev/null
-    #|      ;;
-    #|    *)
-    #|      echo "tracked script has unsupported extension: $script" >&2
-    #|      exit 1
-    #|      ;;
-    #|  esac
-    #|done <<< "$tracked_scripts"
-    #|
-    #|tmp_out="$(mktemp)"
-    #|check_ci_err="$(mktemp)"
-    #|scrut_cli_err="$(mktemp)"
-    #|trap 'rm -f "$tmp_out" "$check_ci_err" "$scrut_cli_err"' EXIT
-    #|
-    #|set +e
-    #|moon run --target native scripts/check_ci.mbtx --bad-option > "$tmp_out" 2> "$check_ci_err"
-    #|check_ci_code=$?
-    #|moon run --target native scripts/check_scrut_cli.mbtx --bad-option > "$tmp_out" 2> "$scrut_cli_err"
-    #|scrut_cli_code=$?
-    #|set -e
-    #|
-    #|test "$check_ci_code" -ne 0
-    #|grep -F "usage: moon run --target native scripts/check_ci.mbtx [--skip-without-credentials]" "$check_ci_err" > /dev/null
-    #|test "$scrut_cli_code" -ne 0
-    #|grep -F "usage: moon run --target native scripts/check_scrut_cli.mbtx" "$scrut_cli_err" > /dev/null
-  run_bash(script)
+  let bad_scripts = git_ls_files(["scripts/*.sh", "scripts/*.py"])
+  if !bad_scripts.is_empty() {
+    eprintln("tracked scripts must be MoonBit .mbtx files, found:")
+    for script in bad_scripts {
+      eprintln(script)
+    }
+    return 1
+  }
+  let tracked_scripts = git_ls_files(["scripts/*"])
+  if tracked_scripts.is_empty() {
+    eprintln("No tracked scripts found.")
+    return 1
+  }
+  for script in tracked_scripts {
+    if script.has_suffix(".mbtx") {
+      let code = @process.run(
+        "moon",
+        ["run", "--target", "native", "--build-only", script],
+      )
+      if code != 0 {
+        return code
+      }
+    } else {
+      eprintln("tracked script has unsupported extension: " + script)
+      return 1
+    }
+  }
+  if !check_bad_option(
+    "scripts/check_ci.mbtx",
+    "usage: moon run --target native scripts/check_ci.mbtx [--skip-without-credentials]",
+  ) {
+    return 1
+  }
+  if !check_bad_option(
+    "scripts/check_scrut_cli.mbtx",
+    "usage: moon run --target native scripts/check_scrut_cli.mbtx",
+  ) {
+    return 1
+  }
+  0
 }
 
 ///|
 async fn run_check_interfaces() -> Int {
-  let script =
-    #|moon info
-    #|
-    #|interface_files=()
-    #|while IFS= read -r path; do
-    #|  interface_files+=("$path")
-    #|done < <(git ls-files -- "pkg.generated.mbti" "*/pkg.generated.mbti")
-    #|if [[ "${#interface_files[@]}" -eq 0 ]]; then
-    #|  echo "No tracked pkg.generated.mbti files found." >&2
-    #|  exit 1
-    #|fi
-    #|
-    #|git diff --exit-code -- "${interface_files[@]}"
-  run_bash(script)
+  let info_code = @process.run("moon", ["info"])
+  if info_code != 0 {
+    return info_code
+  }
+  let interface_files = git_ls_files(["pkg.generated.mbti", "*/pkg.generated.mbti"])
+  if interface_files.is_empty() {
+    eprintln("No tracked pkg.generated.mbti files found.")
+    return 1
+  }
+  let args = ["diff", "--exit-code", "--"]
+  for path in interface_files {
+    args.push(path)
+  }
+  @process.run("git", args)
 }
 
 ///|
 async fn run_check_tests() -> Int {
-  let script =
-    #|min_tests=614
-    #|
-    #|run_test_target() {
-    #|  local label="$1"
-    #|  shift
-    #|
-    #|  printf '\n==> Run %s tests\n' "$label"
-    #|  local output
-    #|  local exit_code
-    #|  set +e
-    #|  output="$(moon test "$@" 2>&1)"
-    #|  exit_code=$?
-    #|  set -e
-    #|  printf '%s\n' "$output"
-    #|  if (( exit_code != 0 )); then
-    #|    exit "$exit_code"
-    #|  fi
-    #|
-    #|  local summary
-    #|  summary="$(
-    #|    printf '%s\n' "$output" \
-    #|      | sed -n 's/^Total tests: \([0-9][0-9]*\), passed: \([0-9][0-9]*\), failed: \([0-9][0-9]*\)\.$/\1 \2 \3/p' \
-    #|      | tail -n 1
-    #|  )"
-    #|  if [[ -z "$summary" ]]; then
-    #|    echo "moon test output did not include a parseable summary for $label" >&2
-    #|    exit 1
-    #|  fi
-    #|
-    #|  local total passed failed
-    #|  read -r total passed failed <<< "$summary"
-    #|  if (( total < min_tests )); then
-    #|    echo "$label target ran $total tests, expected at least $min_tests" >&2
-    #|    exit 1
-    #|  fi
-    #|  if (( failed != 0 || passed != total )); then
-    #|    echo "$label target reported total=$total passed=$passed failed=$failed" >&2
-    #|    exit 1
-    #|  fi
-    #|}
-    #|
-    #|run_test_target "default"
-    #|run_test_target "JS" --target js
-    #|run_test_target "native" --target native
-  run_bash(script)
+  let mut code = run_test_target("default", [])
+  if code != 0 { return code }
+  code = run_test_target("JS", ["--target", "js"])
+  if code != 0 { return code }
+  run_test_target("native", ["--target", "native"])
 }
 
 ///|
 async fn run_check_coverage() -> Int {
-  let script =
-    #|coverage="$(moon coverage analyze)"
-    #|printf '%s\n' "$coverage"
-    #|printf '%s\n' "$coverage" | grep -F "All source files are fully covered"
-  run_bash(script)
+  let (code, output) = @process.collect_output_merged("moon", ["coverage", "analyze"])
+  let text = output.text()
+  write_stdout(text)
+  if code != 0 {
+    return code
+  }
+  if text.contains("All source files are fully covered") {
+    0
+  } else {
+    eprintln("moon coverage analyze output did not report full source coverage")
+    1
+  }
 }
 
 ///|
 async fn run_smoke_native_cli() -> Int {
-  let script =
-    #|moon run --target native --release --build-only cmd/main
-    #|
-    #|cli="_build/native/release/build/cmd/main/main.exe"
-    #|tmpdir="$(mktemp -d)"
-    #|trap 'rm -rf "$tmpdir"' EXIT
-    #|
-    #|printf '<article><p>Hi <b>there</b></p><p>Bye</p></article>' \
-    #|  | "$cli" - --selector p --format text > "$tmpdir/text.txt"
-    #|diff -u <(printf 'Hi there\nBye\n') "$tmpdir/text.txt"
-    #|
-    #|set +e
-    #|printf '<p>Hello</p>' \
-    #|  | "$cli" - --selector '.does-not-exist' > "$tmpdir/empty.txt"
-    #|code=$?
-    #|set -e
-    #|test "$code" -eq 1
-    #|test ! -s "$tmpdir/empty.txt"
-    #|
-    #|"$cli" tests/fixtures/justhtml/data/wikipedia.html \
-    #|  --format markdown > "$tmpdir/wikipedia.md"
-    #|
-    #|first_line="$(grep -m1 -v '^[[:space:]]*$' "$tmpdir/wikipedia.md")"
-    #|case "$first_line" in
-    #|  \<img*) ;;
-    #|  *)
-    #|    echo "Expected Wikipedia Markdown to start with body image, got: $first_line" >&2
-    #|    exit 1
-    #|    ;;
-    #|esac
-    #|
-    #|grep -F 'The Free Encyclopedia' "$tmpdir/wikipedia.md"
-    #|grep -F '(https://en.wikipedia.org/)' "$tmpdir/wikipedia.md"
-    #|grep -F '[Wikiquote Free quote compendium](https://www.wikiquote.org/)' "$tmpdir/wikipedia.md"
-    #|grep -F '[MediaWiki Free &amp; open wiki software](https://www.mediawiki.org/)' "$tmpdir/wikipedia.md"
-    #|grep -F '[Wikisource Free content library](https://www.wikisource.org/)' "$tmpdir/wikipedia.md"
-    #|grep -F '[Wikispecies Free species directory](https://species.wikimedia.org/)' "$tmpdir/wikipedia.md"
-    #|grep -F '[Wikifunctions Free function library](https://www.wikifunctions.org/)' "$tmpdir/wikipedia.md"
-    #|grep -F '[Meta-Wiki Community coordination &amp; documentation](https://meta.wikimedia.org/)' "$tmpdir/wikipedia.md"
-  run_bash(script)
+  let build_code = @process.run(
+    "moon",
+    ["run", "--target", "native", "--release", "--build-only", "cmd/main"],
+  )
+  if build_code != 0 {
+    return build_code
+  }
+  let cli = "_build/native/release/build/cmd/main/main.exe"
+  if !@fs.exists(cli) {
+    eprintln("native CLI binary was not built: " + cli)
+    return 1
+  }
+  let tmpdir = @fs.tmpdir(prefix="html_parser_check_ci")
+  let smoke_input = tmpdir + "/smoke.html"
+  @fs.write_file(
+    smoke_input,
+    "<article><p>Hi <b>there</b></p><p>Bye</p></article>",
+    create_mode=CreateOrTruncate,
+  )
+  let (text_code, text_out, text_err) = @process.collect_output(
+    cli,
+    [smoke_input, "--selector", "p", "--format", "text"],
+  )
+  if text_code != 0 {
+    eprintln(text_err.text())
+    cleanup_tmpdir(tmpdir)
+    return text_code
+  }
+  if text_out.text() != "Hi there\nBye\n" {
+    eprintln("unexpected text extraction output:")
+    eprintln(text_out.text())
+    cleanup_tmpdir(tmpdir)
+    return 1
+  }
+  let empty_input = tmpdir + "/empty.html"
+  @fs.write_file(empty_input, "<p>Hello</p>", create_mode=CreateOrTruncate)
+  let (empty_code, empty_out, empty_err) = @process.collect_output(
+    cli,
+    [empty_input, "--selector", ".does-not-exist"],
+  )
+  if empty_code != 1 || !empty_out.text().is_empty() {
+    eprintln("missing-selector smoke test expected exit code 1 and empty stdout")
+    eprintln(empty_err.text())
+    cleanup_tmpdir(tmpdir)
+    return 1
+  }
+  let (wiki_code, wiki_out, wiki_err) = @process.collect_output(
+    cli,
+    ["tests/fixtures/justhtml/data/wikipedia.html", "--format", "markdown"],
+  )
+  if wiki_code != 0 {
+    eprintln(wiki_err.text())
+    cleanup_tmpdir(tmpdir)
+    return wiki_code
+  }
+  let wikipedia = wiki_out.text()
+  match first_nonblank_line(wikipedia) {
+    Some(line) => if !line.has_prefix("<img") {
+      eprintln("Expected Wikipedia Markdown to start with body image, got: " + line)
+      cleanup_tmpdir(tmpdir)
+      return 1
+    }
+    None => {
+      eprintln("Wikipedia Markdown output was empty")
+      cleanup_tmpdir(tmpdir)
+      return 1
+    }
+  }
+  let markdown_needles = [
+    "The Free Encyclopedia",
+    "(https://en.wikipedia.org/)",
+    "[Wikiquote Free quote compendium](https://www.wikiquote.org/)",
+    "[MediaWiki Free &amp; open wiki software](https://www.mediawiki.org/)",
+    "[Wikisource Free content library](https://www.wikisource.org/)",
+    "[Wikispecies Free species directory](https://species.wikimedia.org/)",
+    "[Wikifunctions Free function library](https://www.wikifunctions.org/)",
+    "[Meta-Wiki Community coordination &amp; documentation](https://meta.wikimedia.org/)",
+  ]
+  for needle in markdown_needles {
+    if !wikipedia.contains(needle) {
+      eprintln("Wikipedia Markdown output is missing: " + needle)
+      cleanup_tmpdir(tmpdir)
+      return 1
+    }
+  }
+  cleanup_tmpdir(tmpdir)
+  0
 }
 
 ///|
 async fn run_check_scrut_cli() -> Int {
-  run_command("moon run --target native scripts/check_scrut_cli.mbtx")
+  @process.run("moon", ["run", "--target", "native", "scripts/check_scrut_cli.mbtx"])
 }
 
 ///|
 async fn run_verify_mooncakes_package(skip_without_credentials : Bool) -> Int {
-  let skip = if skip_without_credentials { "true" } else { "false" }
-  let script =
-    #|if [[ "$skip_without_credentials" == true && ! -f "$HOME/.moon/credentials.json" ]]; then
-    #|  echo "Skipping Mooncakes dry-run because this runner is not logged in."
-    #|  exit 0
-    #|fi
-    #|
-    #|set +e
-    #|output="$(moon publish --dry-run 2>&1)"
-    #|exit_code=$?
-    #|set -e
-    #|
-    #|printf '%s\n' "$output"
-    #|
-    #|if [[ "$exit_code" -eq 0 ]]; then
-    #|  moon run --target native scripts/check_ci.mbtx check-publish-archive
-    #|  exit 0
-    #|fi
-    #|
-    #|if printf '%s\n' "$output" | grep -Fq "Dry run completed successfully"; then
-    #|  moon run --target native scripts/check_ci.mbtx check-publish-archive
-    #|  echo "Accepted Mooncakes dry-run success response."
-    #|  exit 0
-    #|fi
-    #|
-    #|if printf '%s\n' "$output" | grep -Fq "duplicated with an existing version"; then
-    #|  moon run --target native scripts/check_ci.mbtx check-publish-archive
-    #|  echo "Accepted already-published Mooncakes package version."
-    #|  exit 0
-    #|fi
-    #|
-    #|exit "$exit_code"
-  run_bash("skip_without_credentials=" + skip + "\n" + script)
-}
-
-///|
-async fn run_command(command : String) -> Int {
-  @process.run("bash", ["-e", "-u", "-o", "pipefail", "-c", command])
-}
-
-///|
-async fn run_bash(script : String) -> Int {
-  @process.run("bash", ["-e", "-u", "-o", "pipefail", "-c", script])
-}
-
-///|
-async fn run_python(source : String, args : String) -> Int {
-  let command = if args.is_empty() {
-    "python3 - <<'PY'\n" + source + "\nPY"
-  } else {
-    "python3 - " + args + " <<'PY'\n" + source + "\nPY"
+  if skip_without_credentials && !has_moon_credentials() {
+    write_stdout("Skipping Mooncakes dry-run because this runner is not logged in.\n")
+    return 0
   }
-  run_bash(command)
+  let (exit_code, output) = @process.collect_output_merged("moon", ["publish", "--dry-run"])
+  let text = output.text()
+  write_stdout(text)
+  if exit_code == 0 {
+    return run_check_publish_archive("")
+  }
+  if text.contains("Dry run completed successfully") {
+    let archive_code = run_check_publish_archive("")
+    if archive_code != 0 { return archive_code }
+    write_stdout("Accepted Mooncakes dry-run success response.\n")
+    return 0
+  }
+  if text.contains("duplicated with an existing version") {
+    let archive_code = run_check_publish_archive("")
+    if archive_code != 0 { return archive_code }
+    write_stdout("Accepted already-published Mooncakes package version.\n")
+    return 0
+  }
+  exit_code
+}
+
+///|
+async fn check_bad_option(script : String, usage : String) -> Bool {
+  let (code, _stdout, stderr) = @process.collect_output(
+    "moon",
+    ["run", "--target", "native", script, "--bad-option"],
+  )
+  if code == 0 {
+    eprintln(script + " accepted an invalid option")
+    return false
+  }
+  let message = stderr.text()
+  if !message.contains(usage) {
+    eprintln(script + " invalid-option output did not contain expected usage")
+    eprintln(message)
+    return false
+  }
+  true
+}
+
+///|
+async fn run_test_target(label : String, args : ArrayView[String]) -> Int {
+  write_stdout("\n==> Run " + label + " tests\n")
+  let moon_args = ["test"]
+  for arg in args {
+    moon_args.push(arg)
+  }
+  let (code, output) = @process.collect_output_merged("moon", moon_args)
+  let text = output.text()
+  write_stdout(text)
+  if code != 0 {
+    return code
+  }
+  let min_tests = 614
+  match parse_test_summary(text) {
+    None => {
+      eprintln("moon test output did not include a parseable summary for " + label)
+      1
+    }
+    Some((total, passed, failed)) => {
+      if total < min_tests {
+        eprintln(
+          label + " target ran " + total.to_string() + " tests, expected at least " +
+          min_tests.to_string(),
+        )
+        return 1
+      }
+      if failed != 0 || passed != total {
+        eprintln(
+          label + " target reported total=" + total.to_string() + " passed=" +
+          passed.to_string() + " failed=" + failed.to_string(),
+        )
+        return 1
+      }
+      0
+    }
+  }
+}
+
+///|
+fn parse_test_summary(output : String) -> (Int, Int, Int)? {
+  let prefix = "Total tests: "
+  for raw_line in output.split("\n") {
+    let line = raw_line.to_owned()
+    if !line.has_prefix(prefix) || !line.has_suffix(".") {
+      continue
+    }
+    let summary = line.unsafe_substring(start=prefix.length(), end=line.length() - 1)
+    match summary.split_once(", passed: ") {
+      Some((total_text, rest)) =>
+        match rest.to_owned().split_once(", failed: ") {
+          Some((passed_text, failed_text)) =>
+            match (
+              parse_non_negative_int(total_text.to_owned()),
+              parse_non_negative_int(passed_text.to_owned()),
+              parse_non_negative_int(failed_text.to_owned()),
+            ) {
+              (Some(total), Some(passed), Some(failed)) => return Some((total, passed, failed))
+              _ => ()
+            }
+          None => ()
+        }
+      None => ()
+    }
+  }
+  None
+}
+
+///|
+fn parse_non_negative_int(text : String) -> Int? {
+  if text.is_empty() {
+    return None
+  }
+  let mut value = 0
+  for ch in text.iter() {
+    if !ch.is_ascii_digit() {
+      return None
+    }
+    value = value * 10 + ch.to_int() - '0'.to_int()
+  }
+  Some(value)
+}
+
+///|
+fn first_nonblank_line(text : String) -> String? {
+  for raw_line in text.split("\n") {
+    let line = raw_line.to_owned()
+    if !line.trim().is_empty() {
+      return Some(line)
+    }
+  }
+  None
+}
+
+///|
+async fn cleanup_tmpdir(path : String) -> Unit {
+  @fs.rmdir(path, recursive=true) catch { _ => () }
+}
+
+///|
+async fn has_moon_credentials() -> Bool {
+  for variable in ["HOME", "USERPROFILE"] {
+    match @env.get_env_var(variable) {
+      Some(home) => if @fs.exists(home + "/.moon/credentials.json") {
+        return true
+      }
+      None => ()
+    }
+  }
+  false
+}
+
+///|
+async fn git_ls_files(patterns : ArrayView[String]) -> Array[String] {
+  let args = ["ls-files"]
+  for pattern in patterns {
+    args.push(pattern)
+  }
+  let (code, stdout, stderr) = @process.collect_output("git", args)
+  if code != 0 {
+    eprintln(stderr.text())
+    []
+  } else {
+    split_lines(stdout.text())
+  }
+}
+
+///|
+async fn read_text(path : String) -> String? {
+  let data = @fs.read_file(path) catch { _ => return None }
+  Some(data.text())
+}
+
+///|
+async fn read_bytes(path : String) -> Bytes? {
+  let data = @fs.read_file(path) catch { _ => return None }
+  Some(data.binary())
+}
+
+///|
+async fn read_json_object(path : String) -> Map[String, Json]? {
+  let text = match read_text(path) {
+    Some(value) => value
+    None => return None
+  }
+  let json = @json.parse(text) catch {
+    error => {
+      eprintln(path + " is not valid JSON: " + error.to_string())
+      return None
+    }
+  }
+  let object : Map[String, Json] = @json.from_json(json) catch {
+    error => {
+      eprintln(path + " must contain a JSON object: " + error.to_string())
+      return None
+    }
+  }
+  Some(object)
+}
+
+///|
+fn json_string(object : Map[String, Json], key : String) -> String? {
+  match object.get(key) {
+    None => None
+    Some(value) => {
+      let string : String = @json.from_json(value) catch { _ => return None }
+      if string.is_empty() { None } else { Some(string) }
+    }
+  }
+}
+
+///|
+async fn expect_metadata_string(object : Map[String, Json], key : String) -> String? {
+  match json_string(object, key) {
+    Some(value) => Some(value)
+    None => {
+      eprintln("moon.mod.json field '" + key + "' must be a non-empty string")
+      None
+    }
+  }
+}
+
+///|
+fn split_lines(text : String) -> Array[String] {
+  let lines : Array[String] = []
+  for line in text.split("\n") {
+    let owned = line.to_owned()
+    if !owned.is_empty() {
+      lines.push(owned)
+    }
+  }
+  lines
+}
+
+///|
+fn sort_strings(values : Array[String]) -> Unit {
+  values.sort_by((left, right) => left.lexical_compare(right))
+}
+
+///|
+async fn require_all_tracked(expected : ArrayView[String], actual : ArrayView[String], prefix : String) -> Bool {
+  let mut ok = true
+  for path in expected {
+    if !actual.contains(path) {
+      eprintln(prefix + path)
+      ok = false
+    }
+  }
+  ok
+}
+
+///|
+async fn require_text(text : String, needle : String, label : String) -> Bool {
+  if text.contains(needle) {
+    true
+  } else {
+    eprintln(label + " must contain " + needle)
+    false
+  }
+}
+
+///|
+async fn require_absent(text : String, needle : String, label : String) -> Bool {
+  if text.contains(needle) {
+    eprintln(label + " must not contain " + needle)
+    false
+  } else {
+    true
+  }
+}
+
+///|
+async fn require_text_collapsed(text : String, needle : String, label : String) -> Bool {
+  if text.contains(needle) || collapse_whitespace(text).contains(collapse_whitespace(needle)) {
+    true
+  } else {
+    eprintln(label + " must contain " + needle)
+    false
+  }
+}
+
+///|
+fn count_occurrences(text : String, needle : String) -> Int {
+  if needle.is_empty() {
+    0
+  } else {
+    text.split(needle).to_array().length() - 1
+  }
+}
+
+///|
+fn collapse_whitespace(text : String) -> String {
+  let out = @buffer.new()
+  let mut in_space = false
+  for ch in text.iter() {
+    if is_space(ch) {
+      if !in_space && !out.is_empty() {
+        out.write_string(" ")
+      }
+      in_space = true
+    } else {
+      out.write_char(ch)
+      in_space = false
+    }
+  }
+  out.to_string().trim().to_owned()
+}
+
+///|
+fn is_space(ch : Char) -> Bool {
+  ch == ' ' || ch == '\n' || ch == '\r' || ch == '\t'
+}
+
+///|
+fn find_cli_version(text : String) -> String? {
+  match text.after("fn cli_version() -> String {") {
+    Some(rest) => quoted_name(rest.to_owned())
+    None => None
+  }
+}
+
+///|
+fn sha256_text(text : String) -> String {
+  @crypto.bytes_to_hex_string(@crypto.sha256(@utf8.encode(text)))
+}
+
+///|
+fn join_lines(lines : ArrayView[String]) -> String {
+  let out = @buffer.new()
+  for line in lines {
+    out.write_string(line)
+    out.write_string("\n")
+  }
+  out.to_string()
+}
+
+///|
+fn test_declarations(text : String) -> Array[String] {
+  let tests : Array[String] = []
+  for line_view in text.split("\n") {
+    let line = line_view.to_owned().trim_start().to_owned()
+    let body = match line.strip_prefix("async ") {
+      Some(rest) => rest.to_owned()
+      None => line
+    }
+    if body.has_prefix("test ") {
+      match quoted_name(body) {
+        Some(name) => tests.push(name)
+        None => ()
+      }
+    }
+  }
+  tests
+}
+
+///|
+fn quoted_name(text : String) -> String? {
+  let start = match text.find("\"") {
+    Some(index) => index + 1
+    None => return None
+  }
+  let rest = text.unsafe_substring(start=start, end=text.length())
+  let out = @buffer.new()
+  let mut escaped = false
+  for ch in rest.iter() {
+    if escaped {
+      out.write_char('\\')
+      out.write_char(ch)
+      escaped = false
+    } else if ch == '\\' {
+      escaped = true
+    } else if ch == '"' {
+      return Some(out.to_string())
+    } else {
+      out.write_char(ch)
+    }
+  }
+  if escaped {
+    out.write_char('\\')
+  }
+  None
+}
+
+///|
+fn duplicate_items(items : Array[String]) -> Array[String] {
+  let sorted = items.copy()
+  sort_strings(sorted)
+  let duplicates : Array[String] = []
+  let mut previous : String? = None
+  let mut previous_count = 0
+  for item in sorted {
+    match previous {
+      Some(value) if value == item => {
+        previous_count += 1
+        if previous_count == 2 {
+          duplicates.push(item)
+        }
+      }
+      _ => {
+        previous = Some(item)
+        previous_count = 1
+      }
+    }
+  }
+  duplicates
+}
+
+///|
+fn gitignore_rules(text : String) -> Array[String] {
+  let rules : Array[String] = []
+  for line_view in text.split("\n") {
+    let line = line_view.to_owned().trim().to_owned()
+    if !line.is_empty() && !line.trim_start().to_owned().has_prefix("#") {
+      rules.push(line)
+    }
+  }
+  rules
+}
+
+///|
+fn validation_commands() -> Array[String] {
+  [
+    "check-release-version",
+    "check-scripts",
+    "check-validation-inventory",
+    "check-github-workflows",
+    "check-source-layout",
+    "check-test-inventory",
+    "check-moonbit-style",
+    "check-gitignore",
+    "check-githooks",
+    "check-migration-docs",
+    "check-fixture-sync",
+    "check-fixture-manifest",
+    "check-package-metadata",
+    "check-interfaces",
+    "check-tests",
+    "check-coverage",
+    "smoke-native-cli",
+    "check-scrut-cli",
+    "verify-mooncakes-package",
+    "check-publish-archive",
+  ]
+}
+
+///|
+fn required_top_level_files() -> Array[String] {
+  [
+    "moon.mod.json",
+    "moon.pkg",
+    "pkg.generated.mbti",
+    "README.mbt.md",
+    "README.md",
+    "LICENSE",
+    "Python2MoonBit.md",
+    "MigrationChecklist.md",
+  ]
+}
+
+///|
+fn required_root_modules() -> Array[String] {
+  [
+    "html_parser.mbt",
+    "parser.mbt",
+    "tokens.mbt",
+    "dom.mbt",
+    "serialize.mbt",
+    "sanitize.mbt",
+    "transforms.mbt",
+    "markdown.mbt",
+    "linkify.mbt",
+    "stream.mbt",
+    "cli.mbt",
+    "types.mbt",
+  ]
+}
+
+///|
+fn required_fixture_files() -> Array[String] {
+  [
+    "tests/fixtures/justhtml/LICENSE.justhtml",
+    "tests/fixtures/justhtml/README.upstream.md",
+    "tests/fixtures/justhtml/data/wikipedia.html",
+    "tests/fixtures/justhtml/justhtml-sanitize-tests/cases.json",
+    "tests/fixtures/justhtml/justhtml-tests/entities.test",
+    "tests/fixtures/justhtml/justhtml-tests/tokenizer_edge_cases.test",
+    "tests/fixtures/justhtml/justhtml-tests/treebuilder_coverage.dat",
+    "tests/fixtures/justhtml/linkify-it/fixtures/links.txt",
+    "tests/fixtures/justhtml/linkify-it/fixtures/not_links.txt",
+  ]
+}
+
+///|
+fn package_dirs_from_tracked(tracked : ArrayView[String]) -> Array[String] {
+  let dirs : Array[String] = []
+  for path in tracked {
+    if path == "moon.pkg" {
+      if !dirs.contains(".") {
+        dirs.push(".")
+      }
+    } else {
+      match path.strip_suffix("/moon.pkg") {
+        Some(dir) => {
+          let owned = dir.to_owned()
+          if !dirs.contains(owned) {
+            dirs.push(owned)
+          }
+        }
+        None => ()
+      }
+    }
+  }
+  sort_strings(dirs)
+  dirs
+}
+
+///|
+fn package_prefixes_from_tracked(tracked : ArrayView[String]) -> Array[String] {
+  let prefixes : Array[String] = []
+  for dir in package_dirs_from_tracked(tracked) {
+    let prefix = if dir == "." { "" } else { dir + "/" }
+    if !prefixes.contains(prefix) {
+      prefixes.push(prefix)
+    }
+  }
+  prefixes
+}
+
+///|
+fn package_has_source(tracked : ArrayView[String], prefix : String) -> Bool {
+  for path in tracked {
+    if path.has_prefix(prefix) {
+      let rest = path.unsafe_substring(start=prefix.length(), end=path.length())
+      if !rest.contains("/") && (path.has_suffix(".mbt") || path.has_suffix(".mbt.md")) {
+        return true
+      }
+    }
+  }
+  false
+}
+
+///|
+fn parent_prefix(path : String) -> String {
+  match path.rev_split_once("/") {
+    Some((parent, _)) => parent.to_owned() + "/"
+    None => ""
+  }
+}
+
+///|
+fn is_source_like(path : String) -> Bool {
+  path.has_suffix(".mbt") || path.has_suffix(".mbt.md") || path.has_suffix(".mbti") ||
+  path.has_suffix(".c")
+}
+
+///|
+fn is_forbidden_tracked_path(path : String) -> Bool {
+  for prefix in [".mooncakes/", ".moonagent/", ".repos/", "_build/", "__pycache__/"] {
+    if path.has_prefix(prefix) {
+      return true
+    }
+  }
+  path == ".DS_Store" || path.has_suffix("/.DS_Store") || path.contains("/__pycache__/") ||
+  path.has_suffix(".pyc")
+}
+
+///|
+fn migration_doc_needles() -> Array[(String, Array[String])] {
+  [
+    (
+      "Python2MoonBit.md",
+      [
+        "# Python to MoonBit Porting Notes",
+        "MoonBit `String` is UTF-16 encoded",
+        "`s[i]` returns a `UInt16` code unit",
+        "`for ch in s` iterates Unicode-safe `Char` values",
+        "Prefer `StringView` for parser cursors and slices",
+        "manual `get_char(pos)` loops",
+        "advance by `ch.utf16_len()`",
+        "Do not run every `BytesView` through UTF-8 lossy decoding",
+        "Treat the current Python source as the oracle",
+        "`.repos/justhtml`",
+        "## CLI and Native I/O",
+        "`cmd/main/moon.pkg`",
+        "\"native-stub\": [ \"cli_io.c\" ]",
+        "Mooncakes",
+      ],
+    ),
+    (
+      "MigrationChecklist.md",
+      [
+        "# JustHTML to MoonBit Migration Checklist",
+        "## Remaining Feature Work",
+        "## Post-Completion Audits",
+        "Mooncakes package metadata, GitHub repository, and CI",
+        "Port one feature slice at a time",
+      ],
+    ),
+    (
+      "README.mbt.md",
+      [
+        "moon run --target native scripts/check_ci.mbtx --skip-without-credentials",
+        "GitHub workflow drift",
+        "tracked workflow inventory",
+        "Copilot setup workflow",
+        "source layout",
+        "test-name inventory",
+        "migration docs",
+        "local Git hook wiring",
+        "MoonBit script inventory",
+        "validation-inventory wiring",
+        "vendored fixture sync",
+        "vendored fixture manifest hashes",
+        "tests with a count floor",
+        "native CLI smoke behavior",
+        "Mooncakes package validation",
+        "dynamic Mooncakes archive inventory/content checks",
+      ],
+    ),
+  ]
+}
+
+///|
+fn fixture_pairs() -> Array[(String, String)] {
+  [
+    ("LICENSE.justhtml", "LICENSE"),
+    ("data/wikipedia.html", "tests/data/wikipedia.html"),
+    ("justhtml-sanitize-tests/cases.json", "tests/justhtml-sanitize-tests/cases.json"),
+    ("justhtml-tests/branch_coverage.dat", "tests/justhtml-tests/branch_coverage.dat"),
+    ("justhtml-tests/coverage_gaps.test", "tests/justhtml-tests/coverage_gaps.test"),
+    ("justhtml-tests/empty_stack_edge_cases.dat", "tests/justhtml-tests/empty_stack_edge_cases.dat"),
+    ("justhtml-tests/entities.test", "tests/justhtml-tests/entities.test"),
+    ("justhtml-tests/iframe_srcdoc.dat", "tests/justhtml-tests/iframe_srcdoc.dat"),
+    ("justhtml-tests/tokenizer_edge_cases.test", "tests/justhtml-tests/tokenizer_edge_cases.test"),
+    ("justhtml-tests/treebuilder_coverage.dat", "tests/justhtml-tests/treebuilder_coverage.dat"),
+    ("justhtml-tests/xml_coercion.dat", "tests/justhtml-tests/xml_coercion.dat"),
+    ("justhtml-tests/xml_coercion_coverage.test", "tests/justhtml-tests/xml_coercion_coverage.test"),
+    ("linkify-it/LICENSE.txt", "tests/linkify-it/LICENSE.txt"),
+    ("linkify-it/README.md", "tests/linkify-it/README.md"),
+    ("linkify-it/fixtures/links.txt", "tests/linkify-it/fixtures/links.txt"),
+    ("linkify-it/fixtures/not_links.txt", "tests/linkify-it/fixtures/not_links.txt"),
+  ]
+}
+
+///|
+fn fixture_manifest() -> Array[(String, Int, String)] {
+  [
+    ("tests/fixtures/justhtml/LICENSE.justhtml", 1256, "fc806f290894e4f219467135fb21f33048f8d5a817f0f8284246d72da29d572e"),
+    ("tests/fixtures/justhtml/README.md", 589, "b761becfae2a02c3a2ae8657c168c4f811e56bf4b0f81ceeb2aa02143cc571c1"),
+    ("tests/fixtures/justhtml/README.upstream.md", 1204, "b51b5f6a500839651edb0e0725857fa1cdc8454fd15fc628e8e422acd0cc5805"),
+    ("tests/fixtures/justhtml/data/wikipedia.html", 157021, "76c08f0bcbce67ab64d016e8956e4f04429ab3dd50a40c586e75aa2eb00c9ab0"),
+    ("tests/fixtures/justhtml/justhtml-sanitize-tests/cases.json", 25981, "c8ae8f94d2c1e863af7f6b3599ef7ccc2295aa6c745ba1c588b53c6e0f80a5dc"),
+    ("tests/fixtures/justhtml/justhtml-tests/branch_coverage.dat", 7561, "747006af474730392736d9494aa7b21c147cf53ad45c253002bd5fc17175e127"),
+    ("tests/fixtures/justhtml/justhtml-tests/coverage_gaps.test", 1506, "2163c6790cf15854c9191dc36b26e7f0932654c18254bd0c6b55ba02f57f6c18"),
+    ("tests/fixtures/justhtml/justhtml-tests/empty_stack_edge_cases.dat", 1197, "ca421e79a47dfa25401d7e7a5041a5089457c1d31eddbd3714ecd5ff91738e9b"),
+    ("tests/fixtures/justhtml/justhtml-tests/entities.test", 1512, "b9e5c0572d68e8b39f796fcaa6109ecc3db3c8e0463909e7abcab7fcc0576189"),
+    ("tests/fixtures/justhtml/justhtml-tests/iframe_srcdoc.dat", 169, "27f1ec4c45f653230df3432c1c75124c72b095efc977d2f74bc54ff840bafa64"),
+    ("tests/fixtures/justhtml/justhtml-tests/tokenizer_edge_cases.test", 7891, "09c3fc08d3d925a0adb7c5a43354dec49170e32991bb4276369c0e06781fe93a"),
+    ("tests/fixtures/justhtml/justhtml-tests/treebuilder_coverage.dat", 3858, "3e68d02f2d2ddf1c5c8dd905681e613ffafb08f07ec8267bceb964863e34a421"),
+    ("tests/fixtures/justhtml/justhtml-tests/xml_coercion.dat", 650, "c88887f5d4e7782be09ad27c09531ddd40ddae3b2d203a2f645504bfe3265c27"),
+    ("tests/fixtures/justhtml/justhtml-tests/xml_coercion_coverage.test", 328, "cbc10430c037150bb95d25c0ed011c4c0c3c7ee08f704f462b6453da63612221"),
+    ("tests/fixtures/justhtml/linkify-it/LICENSE.txt", 1058, "95e3f7f0e81e9b4940cdfaa1956aaff5e4dfd2fb1565041e7c78eb9a606f23e3"),
+    ("tests/fixtures/justhtml/linkify-it/README.md", 355, "adb5a81e57ce228b417d1f95577f688381bdf3ef8834d40ca7b00767e36f1b55"),
+    ("tests/fixtures/justhtml/linkify-it/fixtures/links.txt", 6492, "f3413613c047d2d351b16ebba9c632baa74cfa0d8e253f00483299ed6e2953b9"),
+    ("tests/fixtures/justhtml/linkify-it/fixtures/not_links.txt", 763, "857d0168381df03d82acb120ad507accf2e3a9e9c7c520d9dc859d028143d3af"),
+  ]
+}
+
+///|
+async fn check_keywords(metadata : Map[String, Json]) -> Bool {
+  match metadata.get("keywords") {
+    None => {
+      eprintln("moon.mod.json field 'keywords' must be a non-empty list")
+      false
+    }
+    Some(value) => {
+      let keywords : Array[Json] = @json.from_json(value) catch {
+        _ => {
+          eprintln("moon.mod.json field 'keywords' must be a non-empty list")
+          return false
+        }
+      }
+      if keywords.is_empty() {
+        eprintln("moon.mod.json field 'keywords' must be a non-empty list")
+        return false
+      }
+      let mut ok = true
+      for keyword_json in keywords {
+        let keyword : String = @json.from_json(keyword_json) catch {
+          _ => {
+            ok = false
+            continue
+          }
+        }
+        if keyword.is_empty() {
+          ok = false
+        }
+      }
+      if !ok {
+        eprintln("moon.mod.json field 'keywords' must contain only non-empty strings")
+      }
+      ok
+    }
+  }
+}
+
+///|
+fn valid_package_name(name : String) -> Bool {
+  match name.split_once("/") {
+    Some((owner, pkg)) => !owner.is_empty() && !pkg.is_empty() &&
+      valid_package_segment(owner.to_owned()) && valid_package_segment(pkg.to_owned())
+    None => false
+  }
+}
+
+///|
+fn valid_package_segment(segment : String) -> Bool {
+  let allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789_.-"
+  for ch in segment.iter() {
+    if !allowed.contains_char(ch) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn valid_semver(version : String) -> Bool {
+  let mut core = version
+  match version.split_once("+") {
+    Some((left, build)) => {
+      if !valid_semver_suffix(build.to_owned()) {
+        return false
+      }
+      core = left.to_owned()
+    }
+    None => ()
+  }
+  let mut numeric = core
+  match core.split_once("-") {
+    Some((left, prerelease)) => {
+      if !valid_semver_suffix(prerelease.to_owned()) {
+        return false
+      }
+      numeric = left.to_owned()
+    }
+    None => ()
+  }
+  let mut part_count = 0
+  for part in numeric.split(".") {
+    part_count += 1
+    if part_count > 3 {
+      return false
+    }
+    if part.is_empty() {
+      return false
+    }
+    for ch in part.iter() {
+      if ch < '0' || ch > '9' {
+        return false
+      }
+    }
+  }
+  part_count == 3
+}
+
+///|
+fn valid_semver_suffix(value : String) -> Bool {
+  if value.is_empty() {
+    return false
+  }
+  let allowed = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789.-"
+  for ch in value.iter() {
+    if !allowed.contains_char(ch) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+fn invalid_repo_relative_path(path : String) -> Bool {
+  path.has_prefix("/") || path == ".." || path.has_prefix("../") || path.contains("/../") ||
+  path.has_suffix("/..")
+}
+
+///|
+fn first_lines(text : String, count : Int) -> Array[String] {
+  let lines : Array[String] = []
+  let mut seen = 0
+  for line in text.split("\n") {
+    if seen >= count {
+      break
+    }
+    lines.push(line.to_owned())
+    seen += 1
+  }
+  lines
+}
+
+///|
+async fn check_native_cli_metadata(name : String?) -> Bool {
+  let cli_pkg = read_text("cmd/main/moon.pkg")
+  let cli_main = read_text("cmd/main/main.mbt")
+  let cli_stub = read_text("cmd/main/cli_io.c")
+  let mut ok = true
+  match (cli_pkg, cli_main, cli_stub) {
+    (Some(pkg_text), Some(main_text), Some(stub_text)) => {
+      let package_needles = [
+        "supported_targets = \"+native\"",
+        "\"is-main\": true",
+        "\"native-stub\": [ \"cli_io.c\" ]",
+      ]
+      for needle in package_needles {
+        ok = require_text(pkg_text, needle, "cmd/main/moon.pkg") && ok
+      }
+      match name {
+        Some(package_name) => ok = require_text(pkg_text, "\"" + package_name + "\"", "cmd/main/moon.pkg") && ok
+        None => ok = false
+      }
+      for symbol in [
+        "html_parser_cli_read_stdin",
+        "html_parser_cli_read_file",
+        "html_parser_cli_write_stdout",
+        "html_parser_cli_write_stderr",
+        "html_parser_cli_write_file",
+        "html_parser_cli_exit",
+      ] {
+        ok = require_text(main_text, symbol, "cmd/main/main.mbt") && ok
+        ok = require_text(stub_text, symbol, "cmd/main/cli_io.c") && ok
+      }
+    }
+    _ => {
+      if cli_pkg is None { eprintln("native CLI package does not exist: cmd/main/moon.pkg") }
+      if cli_main is None { eprintln("native CLI entrypoint does not exist: cmd/main/main.mbt") }
+      if cli_stub is None { eprintln("native CLI C stub does not exist: cmd/main/cli_io.c") }
+      ok = false
+    }
+  }
+  ok
+}
+
+///|
+async fn expected_archive_path() -> String? {
+  let metadata = match read_json_object("moon.mod.json") {
+    Some(value) => value
+    None => return None
+  }
+  let name = match json_string(metadata, "name") {
+    Some(value) => value
+    None => {
+      eprintln("moon.mod.json field 'name' must use owner/package form")
+      return None
+    }
+  }
+  let version = match json_string(metadata, "version") {
+    Some(value) => value
+    None => {
+      eprintln("moon.mod.json field 'version' must be a non-empty string")
+      return None
+    }
+  }
+  match name.split_once("/") {
+    Some((owner, pkg)) => Some(
+      "_build/publish/" + owner.to_owned() + "-" + pkg.to_owned() + "-" + version + ".zip",
+    )
+    None => {
+      eprintln("moon.mod.json field 'name' must use owner/package form")
+      None
+    }
+  }
+}
+
+///|
+async fn expected_published_files() -> Array[String] {
+  let expected : Array[String] = []
+  for path in git_ls_files([]) {
+    let name = basename(path)
+    let parent = dirname(path)
+    if name == "moon.mod.json" || name == "moon.pkg" || name == "LICENSE" {
+      expected.push(path)
+    } else if parent == "." && path.has_suffix(".md") {
+      expected.push(path)
+    } else if path.has_prefix("scripts/") {
+      expected.push(path)
+    } else if path.has_prefix("tests/fixtures/justhtml/") {
+      expected.push(path)
+    } else if is_source_like(path) {
+      expected.push(path)
+    }
+  }
+  expected
+}
+
+///|
+fn basename(path : String) -> String {
+  match path.rev_split_once("/") {
+    Some((_, name)) => name.to_owned()
+    None => path
+  }
+}
+
+///|
+fn dirname(path : String) -> String {
+  match path.rev_split_once("/") {
+    Some((parent, _)) => parent.to_owned()
+    None => "."
+  }
+}
+
+///|
+fn archive_path_unsafe(name : String) -> Bool {
+  name.has_prefix("/") || ("/" + name).contains("/../")
+}
+
+///|
+fn archive_path_forbidden(name : String) -> Bool {
+  for prefix in [".git/", ".github/", ".githooks/", ".repos/", "_build/", "node_modules/", "__pycache__/"] {
+    if name.has_prefix(prefix) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+struct ZipEntry {
+  name : String
+  crc32 : Int64
+  uncompressed_size : Int
+}
+
+///|
+async fn read_zip_entries(archive : String) -> Array[ZipEntry]? {
+  let data = match read_bytes(archive) {
+    Some(value) => value
+    None => {
+      eprintln("failed to read Mooncakes archive: " + archive)
+      return None
+    }
+  }
+  let eocd = match find_zip_eocd(data) {
+    Some(value) => value
+    None => {
+      eprintln("Mooncakes archive is missing ZIP end-of-central-directory record")
+      return None
+    }
+  }
+  let entry_count = zip_le_u16(data, eocd + 10)
+  let central_size = zip_le_u32_int(data, eocd + 12)
+  let central_offset = zip_le_u32_int(data, eocd + 16)
+  if central_offset < 0 || central_size < 0 ||
+    central_offset + central_size > data.length() {
+    eprintln("Mooncakes archive has an invalid ZIP central directory range")
+    return None
+  }
+  let entries : Array[ZipEntry] = []
+  let mut pos = central_offset
+  for _ in 0..<entry_count {
+    if pos + 46 > data.length() || zip_le_u32_int(data, pos) != 33639248 {
+      eprintln("Mooncakes archive has an invalid ZIP central directory entry")
+      return None
+    }
+    let crc32 = zip_le_u32_i64(data, pos + 16)
+    let uncompressed_size = zip_le_u32_int(data, pos + 24)
+    let name_len = zip_le_u16(data, pos + 28)
+    let extra_len = zip_le_u16(data, pos + 30)
+    let comment_len = zip_le_u16(data, pos + 32)
+    let name_start = pos + 46
+    let next = name_start + name_len + extra_len + comment_len
+    if next > data.length() {
+      eprintln("Mooncakes archive has a truncated ZIP central directory entry")
+      return None
+    }
+    let name = @utf8.decode_lossy(data.view(start=name_start, end=name_start + name_len))
+    entries.push(ZipEntry::{ name, crc32, uncompressed_size })
+    pos = next
+  }
+  Some(entries)
+}
+
+///|
+fn find_zip_eocd(data : Bytes) -> Int? {
+  if data.length() < 22 {
+    return None
+  }
+  let lower = Int::max(0, data.length() - 22 - 65535)
+  let mut pos = data.length() - 22
+  while pos >= lower {
+    if zip_le_u32_int(data, pos) == 101010256 &&
+      pos + 22 + zip_le_u16(data, pos + 20) == data.length() {
+      return Some(pos)
+    }
+    pos -= 1
+  }
+  None
+}
+
+///|
+fn zip_entry(entries : ArrayView[ZipEntry], name : String) -> ZipEntry? {
+  for entry in entries {
+    if entry.name == name {
+      return Some(entry)
+    }
+  }
+  None
+}
+
+///|
+fn zip_le_u16(data : Bytes, offset : Int) -> Int {
+  data[offset].to_int() + data[offset + 1].to_int() * 256
+}
+
+///|
+fn zip_le_u32_int(data : Bytes, offset : Int) -> Int {
+  data[offset].to_int() +
+  data[offset + 1].to_int() * 256 +
+  data[offset + 2].to_int() * 65536 +
+  data[offset + 3].to_int() * 16777216
+}
+
+///|
+fn zip_le_u32_i64(data : Bytes, offset : Int) -> Int64 {
+  Int64::from_int(data[offset].to_int()) +
+  Int64::from_int(data[offset + 1].to_int()) * 256L +
+  Int64::from_int(data[offset + 2].to_int()) * 65536L +
+  Int64::from_int(data[offset + 3].to_int()) * 16777216L
 }
 
 ///|
@@ -680,1824 +2230,4 @@ async fn write_stderr(message : String) -> Unit {
 ///|
 async fn write_stdout(message : String) -> Unit {
   @stdio.stdout.write(message)
-}
-
-///|
-fn shell_join(values : ArrayView[String]) -> String {
-  let out = @buffer.new()
-  let mut first = true
-  for value in values {
-    if first {
-      first = false
-    } else {
-      out.write_string(" ")
-    }
-    out.write_string(shell_quote(value))
-  }
-  out.to_string()
-}
-
-///|
-fn shell_quote(value : String) -> String {
-  if value.is_empty() {
-    return "''"
-  }
-  let out = @buffer.new()
-  out.write_string("'")
-  for ch in value.iter() {
-    if ch == '\'' {
-      out.write_string("'\\''")
-    } else {
-      out.write_char(ch)
-    }
-  }
-  out.write_string("'")
-  out.to_string()
-}
-
-///|
-fn check_release_version_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check that release version metadata stays in sync."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import json
-    #|import pathlib
-    #|import re
-    #|import sys
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if argv:
-    #|        print("usage: moon run --target native scripts/check_ci.mbtx check-release-version", file=sys.stderr)
-    #|        return 2
-    #|
-    #|    version = json.loads((ROOT / "moon.mod.json").read_text())["version"]
-    #|    cli_sources = "\n".join(
-    #|        path.read_text() for path in sorted((ROOT / "cli").glob("*.mbt"))
-    #|    )
-    #|    cli_test = (ROOT / "cli_test.mbt").read_text()
-    #|
-    #|    cli_match = re.search(
-    #|        r'fn cli_version\(\) -> String \{\s*"([^"]+)"\s*\}',
-    #|        cli_sources,
-    #|    )
-    #|    if cli_match is None:
-    #|        print("could not find cli_version()", file=sys.stderr)
-    #|        return 1
-    #|
-    #|    cli_version = cli_match.group(1)
-    #|    if cli_version != version:
-    #|        print(
-    #|            f"cli_version {cli_version!r} != module version {version!r}",
-    #|            file=sys.stderr,
-    #|        )
-    #|        return 1
-    #|
-    #|    expected_test = f'assert_eq(version.stdout, "justhtml {version}\\n")'
-    #|    if expected_test not in cli_test:
-    #|        print(
-    #|            "CLI --version test does not assert the module version",
-    #|            file=sys.stderr,
-    #|        )
-    #|        return 1
-    #|
-    #|    return 0
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
-}
-
-///|
-fn check_validation_inventory_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check that validation helper scripts are wired into the local CI graph."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import pathlib
-    #|import subprocess
-    #|import sys
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|
-    #|def error(message: str) -> None:
-    #|    print(message, file=sys.stderr)
-    #|
-    #|
-    #|def require_text(text: str, needle: str, label: str) -> bool:
-    #|    if needle not in text:
-    #|        error(f"{label} must contain {needle!r}")
-    #|        return False
-    #|    return True
-    #|
-    #|
-    #|def tracked_scripts() -> set[str]:
-    #|    result = subprocess.run(
-    #|        ["git", "ls-files", "scripts/*"],
-    #|        cwd=ROOT,
-    #|        check=True,
-    #|        capture_output=True,
-    #|        text=True,
-    #|    )
-    #|    return set(result.stdout.splitlines())
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if argv:
-    #|        error("usage: moon run --target native scripts/check_ci.mbtx check-validation-inventory")
-    #|        return 2
-    #|
-    #|    expected_scripts = {
-    #|        "scripts/check_ci.mbtx",
-    #|        "scripts/check_scrut_cli.mbtx",
-    #|    }
-    #|    actual_scripts = tracked_scripts()
-    #|    ok = True
-    #|
-    #|    for path in sorted(expected_scripts - actual_scripts):
-    #|        error(f"expected MoonBit script is not tracked: {path}")
-    #|        ok = False
-    #|    for path in sorted(actual_scripts):
-    #|        if path.endswith((".sh", ".py")):
-    #|            error(f"tracked script must not use shell or Python extension: {path}")
-    #|            ok = False
-    #|        elif not path.endswith(".mbtx"):
-    #|            error(f"tracked script has unsupported extension: {path}")
-    #|            ok = False
-    #|
-    #|    ci_text = (ROOT / "scripts" / "check_ci.mbtx").read_text()
-    #|    for command in [
-    #|        "check-release-version",
-    #|        "check-scripts",
-    #|        "check-validation-inventory",
-    #|        "check-github-workflows",
-    #|        "check-source-layout",
-    #|        "check-test-inventory",
-    #|        "check-moonbit-style",
-    #|        "check-gitignore",
-    #|        "check-githooks",
-    #|        "check-migration-docs",
-    #|        "check-fixture-sync",
-    #|        "check-fixture-manifest",
-    #|        "check-package-metadata",
-    #|        "check-interfaces",
-    #|        "check-tests",
-    #|        "check-coverage",
-    #|        "smoke-native-cli",
-    #|        "check-scrut-cli",
-    #|        "verify-mooncakes-package",
-    #|        "check-publish-archive",
-    #|    ]:
-    #|        ok = require_text(ci_text, command, "scripts/check_ci.mbtx") and ok
-    #|
-    #|    scrut_text = (ROOT / "scripts" / "check_scrut_cli.mbtx").read_text()
-    #|    ok = require_text(
-    #|        scrut_text,
-    #|        "usage: moon run --target native scripts/check_scrut_cli.mbtx",
-    #|        "scripts/check_scrut_cli.mbtx",
-    #|    ) and ok
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
-}
-
-///|
-fn check_github_workflows_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check that GitHub Actions workflows stay wired to local validation."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import pathlib
-    #|import subprocess
-    #|import sys
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|
-    #|def error(message: str) -> None:
-    #|    print(message, file=sys.stderr)
-    #|
-    #|
-    #|def require_text(text: str, needle: str, label: str) -> bool:
-    #|    if needle not in text:
-    #|        error(f"{label} must contain {needle!r}")
-    #|        return False
-    #|    return True
-    #|
-    #|
-    #|def require_absent(text: str, needle: str, label: str) -> bool:
-    #|    if needle in text:
-    #|        error(f"{label} must not contain {needle!r}")
-    #|        return False
-    #|    return True
-    #|
-    #|
-    #|def tracked_workflows() -> set[str]:
-    #|    result = subprocess.run(
-    #|        ["git", "ls-files", ".github/workflows/*.yml"],
-    #|        cwd=ROOT,
-    #|        check=True,
-    #|        capture_output=True,
-    #|        text=True,
-    #|    )
-    #|    return set(result.stdout.splitlines())
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if argv:
-    #|        error("usage: moon run --target native scripts/check_ci.mbtx check-github-workflows")
-    #|        return 2
-    #|
-    #|    expected_workflows = {
-    #|        ".github/workflows/ci.yml",
-    #|        ".github/workflows/copilot-setup-steps.yml",
-    #|    }
-    #|    actual_workflows = tracked_workflows()
-    #|    ok = True
-    #|    for path in sorted(expected_workflows - actual_workflows):
-    #|        error(f"expected GitHub workflow is not tracked: {path}")
-    #|        ok = False
-    #|    for path in sorted(actual_workflows - expected_workflows):
-    #|        error(f"tracked GitHub workflow is missing from validation: {path}")
-    #|        ok = False
-    #|
-    #|    workflow = ROOT / ".github" / "workflows" / "ci.yml"
-    #|    if not workflow.is_file():
-    #|        error(".github/workflows/ci.yml does not exist")
-    #|        return 1
-    #|
-    #|    text = workflow.read_text()
-    #|    for needle in [
-    #|        "name: CI",
-    #|        "pull_request:",
-    #|        "workflow_dispatch:",
-    #|        "branches:\n      - main",
-    #|        "permissions:\n      contents: read",
-    #|        "curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash",
-    #|        'echo "$HOME/.moon/bin" >> "$GITHUB_PATH"',
-    #|        "run: moon version --all",
-    #|        "run: moon run --target native scripts/check_ci.mbtx --skip-without-credentials",
-    #|    ]:
-    #|        ok = require_text(text, needle, ".github/workflows/ci.yml") and ok
-    #|
-    #|    check_ci_refs = text.count("scripts/check_ci.mbtx")
-    #|    if check_ci_refs != 1:
-    #|        error(
-    #|            ".github/workflows/ci.yml must invoke scripts/check_ci.mbtx "
-    #|            f"exactly once, found {check_ci_refs}",
-    #|        )
-    #|        ok = False
-    #|
-    #|    for direct_moon_command in [
-    #|        "run: moon check",
-    #|        "run: moon fmt",
-    #|        "run: moon test",
-    #|        "run: moon coverage",
-    #|        "run: moon publish",
-    #|    ]:
-    #|        ok = require_absent(text, direct_moon_command, ".github/workflows/ci.yml") and ok
-    #|
-    #|    copilot_workflow = ROOT / ".github" / "workflows" / "copilot-setup-steps.yml"
-    #|    if not copilot_workflow.is_file():
-    #|        error(".github/workflows/copilot-setup-steps.yml does not exist")
-    #|        ok = False
-    #|    else:
-    #|        copilot_text = copilot_workflow.read_text()
-    #|        for needle in [
-    #|            'name: "Copilot Setup Steps"',
-    #|            "workflow_dispatch:",
-    #|            "push:\n    paths:\n      - .github/workflows/copilot-setup-steps.yml",
-    #|            "pull_request:\n    paths:\n      - .github/workflows/copilot-setup-steps.yml",
-    #|            "copilot-setup-steps:",
-    #|            "runs-on: ubuntu-latest",
-    #|            "permissions:",
-    #|            "contents: read",
-    #|            "uses: actions/checkout@v5",
-    #|            "curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash",
-    #|            'echo "$HOME/.moon/bin" >> "$GITHUB_PATH"',
-    #|            "moon version --all",
-    #|            "moon update",
-    #|        ]:
-    #|            ok = require_text(
-    #|                copilot_text,
-    #|                needle,
-    #|                ".github/workflows/copilot-setup-steps.yml",
-    #|            ) and ok
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
-}
-
-///|
-fn check_source_layout_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check that tracked source files stay in publishable package locations."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import pathlib
-    #|import subprocess
-    #|import sys
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|
-    #|def error(message: str) -> None:
-    #|    print(message, file=sys.stderr)
-    #|
-    #|
-    #|def git_tracked_files() -> set[str]:
-    #|    result = subprocess.run(
-    #|        ["git", "ls-files"],
-    #|        cwd=ROOT,
-    #|        check=True,
-    #|        capture_output=True,
-    #|        text=True,
-    #|    )
-    #|    return set(result.stdout.splitlines())
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if argv:
-    #|        error("usage: moon run --target native scripts/check_ci.mbtx check-source-layout")
-    #|        return 2
-    #|
-    #|    tracked = git_tracked_files()
-    #|    ok = True
-    #|
-    #|    required_top_level = {
-    #|        "moon.mod.json",
-    #|        "moon.pkg",
-    #|        "pkg.generated.mbti",
-    #|        "README.mbt.md",
-    #|        "README.md",
-    #|        "LICENSE",
-    #|        "Python2MoonBit.md",
-    #|        "MigrationChecklist.md",
-    #|    }
-    #|    for path in sorted(required_top_level):
-    #|        if path not in tracked:
-    #|            error(f"required top-level project file is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_root_modules = {
-    #|        "html_parser.mbt",
-    #|        "parser.mbt",
-    #|        "tokens.mbt",
-    #|        "dom.mbt",
-    #|        "serialize.mbt",
-    #|        "sanitize.mbt",
-    #|        "transforms.mbt",
-    #|        "markdown.mbt",
-    #|        "linkify.mbt",
-    #|        "stream.mbt",
-    #|        "cli.mbt",
-    #|        "types.mbt",
-    #|    }
-    #|    for path in sorted(required_root_modules):
-    #|        if path not in tracked:
-    #|            error(f"expected root package module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_tokenizer_modules = {
-    #|        "tokenizer/attributes.mbt",
-    #|        "tokenizer/comments.mbt",
-    #|        "tokenizer/comment_scan.mbt",
-    #|        "tokenizer/comment_scan_helpers.mbt",
-    #|        "tokenizer/comment_scan_types.mbt",
-    #|        "tokenizer/doctype.mbt",
-    #|        "tokenizer/doctype_helpers.mbt",
-    #|        "tokenizer/doctype_public.mbt",
-    #|        "tokenizer/doctype_system.mbt",
-    #|        "tokenizer/doctype_tokens.mbt",
-    #|        "tokenizer/doctype_types.mbt",
-    #|        "tokenizer/doctype_values.mbt",
-    #|        "tokenizer/driver.mbt",
-    #|        "tokenizer/entity.mbt",
-    #|        "tokenizer/entity_named.mbt",
-    #|        "tokenizer/entity_types.mbt",
-    #|        "tokenizer/named_entities.mbt",
-    #|        "tokenizer/numeric_entities.mbt",
-    #|        "tokenizer/script_text.mbt",
-    #|        "tokenizer/script_text_helpers.mbt",
-    #|        "tokenizer/script_text_types.mbt",
-    #|        "tokenizer/source.mbt",
-    #|        "tokenizer/special_text.mbt",
-    #|        "tokenizer/special_text_tokens.mbt",
-    #|        "tokenizer/state.mbt",
-    #|        "tokenizer/tag_tail.mbt",
-    #|        "tokenizer/tags.mbt",
-    #|        "tokenizer/text.mbt",
-    #|        "tokenizer/types.mbt",
-    #|    }
-    #|    for path in sorted(required_tokenizer_modules):
-    #|        if path not in tracked:
-    #|            error(f"expected tokenizer package module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_tokenizer_tests = {
-    #|        "tokenizer/source_wbtest.mbt",
-    #|        "tokenizer/special_text_wbtest.mbt",
-    #|    }
-    #|    for path in sorted(required_tokenizer_tests):
-    #|        if path not in tracked:
-    #|            error(f"expected tokenizer package test module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_sanitize_modules = {
-    #|        "sanitize/attributes.mbt",
-    #|        "sanitize/content.mbt",
-    #|        "sanitize/css.mbt",
-    #|        "sanitize/namespaces.mbt",
-    #|        "sanitize/nodes.mbt",
-    #|        "sanitize/observer.mbt",
-    #|        "sanitize/policy.mbt",
-    #|        "sanitize/sanitize.mbt",
-    #|        "sanitize/syntax.mbt",
-    #|        "sanitize/text.mbt",
-    #|        "sanitize/types.mbt",
-    #|        "sanitize/url.mbt",
-    #|        "sanitize/url_host.mbt",
-    #|        "sanitize/url_lists.mbt",
-    #|        "sanitize/url_proxy.mbt",
-    #|        "sanitize/url_scheme.mbt",
-    #|    }
-    #|    for path in sorted(required_sanitize_modules):
-    #|        if path not in tracked:
-    #|            error(f"expected sanitize package module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_sanitize_tests = {
-    #|        "sanitize/sanitize_wbtest.mbt",
-    #|    }
-    #|    for path in sorted(required_sanitize_tests):
-    #|        if path not in tracked:
-    #|            error(f"expected sanitize package test module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_linkify_modules = {
-    #|        "linkify/config.mbt",
-    #|        "linkify/dom.mbt",
-    #|        "linkify/host.mbt",
-    #|        "linkify/href.mbt",
-    #|        "linkify/linkify.mbt",
-    #|        "linkify/punycode.mbt",
-    #|        "linkify/scan.mbt",
-    #|        "linkify/syntax.mbt",
-    #|        "linkify/tld.mbt",
-    #|        "linkify/validate.mbt",
-    #|    }
-    #|    for path in sorted(required_linkify_modules):
-    #|        if path not in tracked:
-    #|            error(f"expected linkify package module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_linkify_tests = {
-    #|        "linkify/dom_wbtest.mbt",
-    #|        "linkify/linkify_wbtest.mbt",
-    #|        "linkify/punycode_wbtest.mbt",
-    #|    }
-    #|    for path in sorted(required_linkify_tests):
-    #|        if path not in tracked:
-    #|            error(f"expected linkify package test module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_selector_modules = {
-    #|        "selector/attributes.mbt",
-    #|        "selector/basic.mbt",
-    #|        "selector/budget.mbt",
-    #|        "selector/identity.mbt",
-    #|        "selector/limited.mbt",
-    #|        "selector/limits.mbt",
-    #|        "selector/parse.mbt",
-    #|        "selector/pseudo.mbt",
-    #|        "selector/query.mbt",
-    #|        "selector/selector.mbt",
-    #|        "selector/simple.mbt",
-    #|        "selector/structural.mbt",
-    #|        "selector/syntax.mbt",
-    #|        "selector/text.mbt",
-    #|        "selector/traversal.mbt",
-    #|        "selector/validation.mbt",
-    #|    }
-    #|    for path in sorted(required_selector_modules):
-    #|        if path not in tracked:
-    #|            error(f"expected selector package module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_selector_tests = {
-    #|        "selector/selector_wbtest.mbt",
-    #|    }
-    #|    for path in sorted(required_selector_tests):
-    #|        if path not in tracked:
-    #|            error(f"expected selector package test module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_transform_modules = {
-    #|        "transform/attributes.mbt",
-    #|        "transform/builders.mbt",
-    #|        "transform/decide.mbt",
-    #|        "transform/linkify.mbt",
-    #|        "transform/node_drop.mbt",
-    #|        "transform/node_edit.mbt",
-    #|        "transform/normalization.mbt",
-    #|        "transform/pipeline.mbt",
-    #|        "transform/prune.mbt",
-    #|        "transform/reporting.mbt",
-    #|        "transform/selectors.mbt",
-    #|        "transform/spec.mbt",
-    #|        "transform/url_style.mbt",
-    #|        "transform/whitespace.mbt",
-    #|    }
-    #|    for path in sorted(required_transform_modules):
-    #|        if path not in tracked:
-    #|            error(f"expected transform package module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_transform_tests = {
-    #|        "transform/transform_wbtest.mbt",
-    #|    }
-    #|    for path in sorted(required_transform_tests):
-    #|        if path not in tracked:
-    #|            error(f"expected transform package test module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_parser_modules = {
-    #|        "parser/adoption_agency.mbt",
-    #|        "parser/active_formatting_entries.mbt",
-    #|        "parser/active_formatting.mbt",
-    #|        "parser/api.mbt",
-    #|        "parser/attributes.mbt",
-    #|        "parser/body_tags.mbt",
-    #|        "parser/caption.mbt",
-    #|        "parser/column_group.mbt",
-    #|        "parser/diagnostics.mbt",
-    #|        "parser/document_attrs.mbt",
-    #|        "parser/document_shell.mbt",
-    #|        "parser/end_tags.mbt",
-    #|        "parser/fragment_shell.mbt",
-    #|        "parser/fragment_context.mbt",
-    #|        "parser/fragment_table_context.mbt",
-    #|        "parser/frameset.mbt",
-    #|        "parser/frameset_replacement.mbt",
-    #|        "parser/foreign_adjustments.mbt",
-    #|        "parser/foreign_content.mbt",
-    #|        "parser/form.mbt",
-    #|        "parser/foreign_namespace.mbt",
-    #|        "parser/foreign_table_recovery.mbt",
-    #|        "parser/document_head.mbt",
-    #|        "parser/head_noscript.mbt",
-    #|        "parser/markup.mbt",
-    #|        "parser/node_origin.mbt",
-    #|        "parser/parser.mbt",
-    #|        "parser/scaffold_existing.mbt",
-    #|        "parser/scaffold.mbt",
-    #|        "parser/scaffold_text.mbt",
-    #|        "parser/scope.mbt",
-    #|        "parser/select.mbt",
-    #|        "parser/selected_content.mbt",
-    #|        "parser/special_elements.mbt",
-    #|        "parser/special_text.mbt",
-    #|        "parser/start_tag_dispatch.mbt",
-    #|        "parser/start_tag_insertion.mbt",
-    #|        "parser/start_tags.mbt",
-    #|        "parser/stack.mbt",
-    #|        "parser/state.mbt",
-    #|        "parser/syntax.mbt",
-    #|        "parser/table_end_tags.mbt",
-    #|        "parser/table_foster.mbt",
-    #|        "parser/table_fragment_context.mbt",
-    #|        "parser/table_normalize.mbt",
-    #|        "parser/table_context.mbt",
-    #|        "parser/table_start_closure.mbt",
-    #|        "parser/table_text_foster.mbt",
-    #|        "parser/template_column_group.mbt",
-    #|        "parser/template_context.mbt",
-    #|        "parser/template_table_context.mbt",
-    #|        "parser/text.mbt",
-    #|        "parser/types.mbt",
-    #|        "parser/xml_coercion.mbt",
-    #|    }
-    #|    for path in sorted(required_parser_modules):
-    #|        if path not in tracked:
-    #|            error(f"expected parser package module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_parser_tests = {
-    #|        "parser/active_formatting_wbtest.mbt",
-    #|        "parser/cursor_text_wbtest.mbt",
-    #|        "parser/defensive_wbtest.mbt",
-    #|        "parser/detached_recovery_wbtest.mbt",
-    #|        "parser/document_modes_wbtest.mbt",
-    #|        "parser/dom_selector_wbtest.mbt",
-    #|        "parser/foreign_adjustments_wbtest.mbt",
-    #|        "parser/insertion_helpers_wbtest.mbt",
-    #|        "parser/sanitize_rawtext_wbtest.mbt",
-    #|        "parser/scaffold_wbtest.mbt",
-    #|        "parser/scanner_wbtest.mbt",
-    #|        "parser/table_wbtest.mbt",
-    #|        "parser/tokenizer_helpers_wbtest.mbt",
-    #|    }
-    #|    for path in sorted(required_parser_tests):
-    #|        if path not in tracked:
-    #|            error(f"expected parser package test module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_cli_modules = {
-    #|        "cli/args.mbt",
-    #|        "cli/cli.mbt",
-    #|        "cli/model.mbt",
-    #|        "cli/parse.mbt",
-    #|        "cli/pipeline.mbt",
-    #|        "cli/render.mbt",
-    #|        "cli/safety.mbt",
-    #|        "cli/select.mbt",
-    #|    }
-    #|    for path in sorted(required_cli_modules):
-    #|        if path not in tracked:
-    #|            error(f"expected cli package module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_cli_tests = {
-    #|        "cli/cli_wbtest.mbt",
-    #|    }
-    #|    for path in sorted(required_cli_tests):
-    #|        if path not in tracked:
-    #|            error(f"expected cli package test module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_markdown_modules = {
-    #|        "markdown/blocks.mbt",
-    #|        "markdown/builder.mbt",
-    #|        "markdown/code.mbt",
-    #|        "markdown/link.mbt",
-    #|        "markdown/markdown.mbt",
-    #|        "markdown/walk.mbt",
-    #|    }
-    #|    for path in sorted(required_markdown_modules):
-    #|        if path not in tracked:
-    #|            error(f"expected markdown package module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_markdown_tests = {
-    #|        "markdown/markdown_wbtest.mbt",
-    #|    }
-    #|    for path in sorted(required_markdown_tests):
-    #|        if path not in tracked:
-    #|            error(f"expected markdown package test module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_serializer_modules = {
-    #|        "serializer/compact.mbt",
-    #|        "serializer/elements.mbt",
-    #|        "serializer/escape.mbt",
-    #|        "serializer/pretty.mbt",
-    #|        "serializer/rawtext.mbt",
-    #|        "serializer/serializer.mbt",
-    #|        "serializer/start_tag.mbt",
-    #|        "serializer/test_format.mbt",
-    #|        "serializer/text.mbt",
-    #|        "serializer/whitespace.mbt",
-    #|    }
-    #|    for path in sorted(required_serializer_modules):
-    #|        if path not in tracked:
-    #|            error(f"expected serializer package module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_serializer_tests = {
-    #|        "serializer/serializer_wbtest.mbt",
-    #|    }
-    #|    for path in sorted(required_serializer_tests):
-    #|        if path not in tracked:
-    #|            error(f"expected serializer package test module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_root_tests = {
-    #|        "builder_public_regression_test.mbt",
-    #|        "cli_test.mbt",
-    #|        "cli_public_regression_test.mbt",
-    #|        "constructor_public_regression_test.mbt",
-    #|        "dom_public_regression_test.mbt",
-    #|        "doctype_public_regression_test.mbt",
-    #|        "document_frameset_public_regression_test.mbt",
-    #|        "encoding_fixtures_test.mbt",
-    #|        "encoding_public_regression_test.mbt",
-    #|        "golden_output_regression_test.mbt",
-    #|        "linkify_dom_test.mbt",
-    #|        "linkify_fixtures_test.mbt",
-    #|        "linkify_public_regression_test.mbt",
-    #|        "linkify_test.mbt",
-    #|        "legacy_elements_public_regression_test.mbt",
-    #|        "list_parser_public_regression_test.mbt",
-    #|        "parser_errors_public_regression_test.mbt",
-    #|        "parser_smoke_public_regression_test.mbt",
-    #|        "public_regression_helpers_test.mbt",
-    #|        "public_api_regression_test.mbt",
-    #|        "sanitize_fixtures_test.mbt",
-    #|        "sanitize_attributes_public_regression_test.mbt",
-    #|        "sanitize_css_public_regression_test.mbt",
-    #|        "sanitize_document_roots_public_regression_test.mbt",
-    #|        "sanitize_entrypoints_public_regression_test.mbt",
-    #|        "sanitize_foreign_content_public_regression_test.mbt",
-    #|        "sanitize_rawtext_public_regression_test.mbt",
-    #|        "sanitize_unsafe_handling_public_regression_test.mbt",
-    #|        "sanitize_url_filter_public_regression_test.mbt",
-    #|        "sanitize_url_policy_public_regression_test.mbt",
-    #|        "sanitize_url_proxy_public_regression_test.mbt",
-    #|        "select_parser_public_regression_test.mbt",
-    #|        "serializer_public_regression_test.mbt",
-    #|        "selector_public_regression_test.mbt",
-    #|        "stream_test.mbt",
-    #|        "table_parser_public_regression_test.mbt",
-    #|        "text_markdown_public_regression_test.mbt",
-    #|        "token_stream_regression_test.mbt",
-    #|        "tokenizer_fixtures_test.mbt",
-    #|        "transform_public_regression_test.mbt",
-    #|        "transforms_test.mbt",
-    #|        "treebuilder_fixtures_test.mbt",
-    #|        "xml_coercion_public_regression_test.mbt",
-    #|    }
-    #|    for path in sorted(required_root_tests):
-    #|        if path not in tracked:
-    #|            error(f"expected root package test module is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    package_dirs = {
-    #|        str(pathlib.PurePosixPath(path).parent)
-    #|        for path in tracked
-    #|        if pathlib.PurePosixPath(path).name == "moon.pkg"
-    #|    }
-    #|    package_dirs = {"." if package_dir == "." else package_dir for package_dir in package_dirs}
-    #|    if "." not in package_dirs:
-    #|        error("root package moon.pkg is not tracked")
-    #|        ok = False
-    #|
-    #|    for package_dir in sorted(package_dirs):
-    #|        prefix = "" if package_dir == "." else f"{package_dir}/"
-    #|        interface_path = f"{prefix}pkg.generated.mbti"
-    #|        if interface_path not in tracked:
-    #|            error(f"package {package_dir} must track {interface_path}")
-    #|            ok = False
-    #|        has_package_source = any(
-    #|            path.startswith(prefix)
-    #|            and "/" not in path[len(prefix):]
-    #|            and (path.endswith(".mbt") or path.endswith(".mbt.md"))
-    #|            for path in tracked
-    #|        )
-    #|        if not has_package_source:
-    #|            error(f"package {package_dir} must contain tracked MoonBit source")
-    #|            ok = False
-    #|
-    #|    package_prefixes = {"" if package_dir == "." else f"{package_dir}/" for package_dir in package_dirs}
-    #|    for path in sorted(tracked):
-    #|        if not (
-    #|            path.endswith(".mbt")
-    #|            or path.endswith(".mbt.md")
-    #|            or path.endswith(".mbti")
-    #|            or path.endswith(".c")
-    #|        ):
-    #|            continue
-    #|        parent = str(pathlib.PurePosixPath(path).parent)
-    #|        prefix = "" if parent == "." else f"{parent}/"
-    #|        if prefix not in package_prefixes:
-    #|            error(f"tracked source file is outside a MoonBit package: {path}")
-    #|            ok = False
-    #|
-    #|    forbidden_prefixes = (
-    #|        ".mooncakes/",
-    #|        ".moonagent/",
-    #|        ".repos/",
-    #|        "_build/",
-    #|        "__pycache__/",
-    #|    )
-    #|    for path in sorted(tracked):
-    #|        if (
-    #|            path.startswith(forbidden_prefixes)
-    #|            or path.endswith("/.DS_Store")
-    #|            or path == ".DS_Store"
-    #|            or "/__pycache__/" in f"/{path}/"
-    #|            or path.endswith(".pyc")
-    #|        ):
-    #|            error(f"generated/reference checkout path must not be tracked: {path}")
-    #|            ok = False
-    #|
-    #|    required_fixtures = {
-    #|        "tests/fixtures/justhtml/LICENSE.justhtml",
-    #|        "tests/fixtures/justhtml/README.upstream.md",
-    #|        "tests/fixtures/justhtml/data/wikipedia.html",
-    #|        "tests/fixtures/justhtml/justhtml-sanitize-tests/cases.json",
-    #|        "tests/fixtures/justhtml/justhtml-tests/entities.test",
-    #|        "tests/fixtures/justhtml/justhtml-tests/tokenizer_edge_cases.test",
-    #|        "tests/fixtures/justhtml/justhtml-tests/treebuilder_coverage.dat",
-    #|        "tests/fixtures/justhtml/linkify-it/fixtures/links.txt",
-    #|        "tests/fixtures/justhtml/linkify-it/fixtures/not_links.txt",
-    #|    }
-    #|    for path in sorted(required_fixtures):
-    #|        if path not in tracked:
-    #|            error(f"expected vendored fixture is not tracked: {path}")
-    #|            ok = False
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
-}
-
-///|
-fn check_test_inventory_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check that tracked MoonBit test declarations do not drift silently."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import hashlib
-    #|import pathlib
-    #|import re
-    #|import subprocess
-    #|import sys
-    #|from collections import Counter
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|EXPECTED_COUNT = 621
-    #|EXPECTED_SHA256 = (
-    #|    "003310be7f8dd73053618cd4189916d3dce071219b3a766f439a0c80a966ea72"
-    #|)
-    #|TEST_DECLARATION = re.compile(
-    #|    r'^\s*(?:async\s+)?test\s+"((?:[^"\\]|\\.)*)"',
-    #|    re.MULTILINE,
-    #|)
-    #|
-    #|
-    #|def error(message: str) -> None:
-    #|    print(message, file=sys.stderr)
-    #|
-    #|
-    #|def tracked_moonbit_sources() -> list[pathlib.Path]:
-    #|    result = subprocess.run(
-    #|        ["git", "ls-files", "*.mbt", "*.mbt.md"],
-    #|        cwd=ROOT,
-    #|        check=True,
-    #|        capture_output=True,
-    #|        text=True,
-    #|    )
-    #|    return [ROOT / path for path in result.stdout.splitlines()]
-    #|
-    #|
-    #|def test_inventory() -> list[str]:
-    #|    inventory: list[str] = []
-    #|    for path in tracked_moonbit_sources():
-    #|        text = path.read_text()
-    #|        rel_path = path.relative_to(ROOT).as_posix()
-    #|        for match in TEST_DECLARATION.finditer(text):
-    #|            inventory.append(f"{rel_path}:{match.group(1)}")
-    #|    return sorted(inventory)
-    #|
-    #|
-    #|def inventory_hash(inventory: list[str]) -> str:
-    #|    payload = "".join(f"{item}\n" for item in inventory)
-    #|    return hashlib.sha256(payload.encode()).hexdigest()
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if argv:
-    #|        error("usage: moon run --target native scripts/check_ci.mbtx check-test-inventory")
-    #|        return 2
-    #|
-    #|    inventory = test_inventory()
-    #|    observed_count = len(inventory)
-    #|    observed_hash = inventory_hash(inventory)
-    #|    ok = True
-    #|
-    #|    if observed_count != EXPECTED_COUNT:
-    #|        error(
-    #|            "MoonBit test inventory count changed: "
-    #|            f"expected {EXPECTED_COUNT}, observed {observed_count}"
-    #|        )
-    #|        ok = False
-    #|
-    #|    duplicates = sorted(item for item, count in Counter(inventory).items() if count > 1)
-    #|    if duplicates:
-    #|        error("MoonBit test inventory contains duplicate declarations:")
-    #|        for item in duplicates:
-    #|            error(f"  {item}")
-    #|        ok = False
-    #|
-    #|    if observed_hash != EXPECTED_SHA256:
-    #|        error(
-    #|            "MoonBit test inventory hash changed: "
-    #|            f"expected {EXPECTED_SHA256}, observed {observed_hash}"
-    #|        )
-    #|        error("Review the test declaration changes before updating this guard.")
-    #|        ok = False
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
-}
-
-///|
-fn check_moonbit_style_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check project MoonBit source style conventions."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import pathlib
-    #|import subprocess
-    #|import sys
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|
-    #|def error(message: str) -> None:
-    #|    print(message, file=sys.stderr)
-    #|
-    #|
-    #|def tracked_moonbit_files() -> list[pathlib.Path]:
-    #|    result = subprocess.run(
-    #|        ["git", "ls-files", "*.mbt"],
-    #|        cwd=ROOT,
-    #|        check=True,
-    #|        capture_output=True,
-    #|        text=True,
-    #|    )
-    #|    return [ROOT / path for path in result.stdout.splitlines()]
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if argv:
-    #|        error("usage: moon run --target native scripts/check_ci.mbtx check-moonbit-style")
-    #|        return 2
-    #|
-    #|    ok = True
-    #|    for path in tracked_moonbit_files():
-    #|        text = path.read_text()
-    #|        if "///|" not in text:
-    #|            error(
-    #|                f"{path.relative_to(ROOT)} must use block-style separators "
-    #|                "marked by '///|'",
-    #|            )
-    #|            ok = False
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
-}
-
-///|
-fn check_gitignore_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check ignore rules for generated, local, and reference-checkout paths."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import pathlib
-    #|import sys
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|
-    #|def error(message: str) -> None:
-    #|    print(message, file=sys.stderr)
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if argv:
-    #|        error("usage: moon run --target native scripts/check_ci.mbtx check-gitignore")
-    #|        return 2
-    #|
-    #|    gitignore = ROOT / ".gitignore"
-    #|    if not gitignore.is_file():
-    #|        error(".gitignore does not exist")
-    #|        return 1
-    #|
-    #|    ignored = {
-    #|        line.strip()
-    #|        for line in gitignore.read_text().splitlines()
-    #|        if line.strip() and not line.lstrip().startswith("#")
-    #|    }
-    #|    required = {
-    #|        ".DS_Store",
-    #|        "_build/",
-    #|        ".mooncakes/",
-    #|        ".moonagent/",
-    #|        ".repos/",
-    #|        "__pycache__/",
-    #|    }
-    #|
-    #|    ok = True
-    #|    for rule in sorted(required):
-    #|        if rule not in ignored:
-    #|            error(f".gitignore must contain {rule!r}")
-    #|            ok = False
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
-}
-
-///|
-fn check_githooks_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check local Git hook wiring for the shared validation entrypoint."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import pathlib
-    #|import stat
-    #|import subprocess
-    #|import sys
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|
-    #|def error(message: str) -> None:
-    #|    print(message, file=sys.stderr)
-    #|
-    #|
-    #|def require_text(path: pathlib.Path, text: str, needle: str) -> bool:
-    #|    if needle not in text:
-    #|        error(f"{path.relative_to(ROOT)} must contain {needle!r}")
-    #|        return False
-    #|    return True
-    #|
-    #|
-    #|def tracked_githook_files() -> set[str]:
-    #|    result = subprocess.run(
-    #|        ["git", "ls-files", ".githooks/*"],
-    #|        cwd=ROOT,
-    #|        check=True,
-    #|        capture_output=True,
-    #|        text=True,
-    #|    )
-    #|    return set(result.stdout.splitlines())
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if argv:
-    #|        error("usage: moon run --target native scripts/check_ci.mbtx check-githooks")
-    #|        return 2
-    #|
-    #|    hook = ROOT / ".githooks" / "pre-commit"
-    #|    readme = ROOT / ".githooks" / "README.md"
-    #|    ok = True
-    #|    expected_hook_files = {
-    #|        ".githooks/README.md",
-    #|        ".githooks/pre-commit",
-    #|    }
-    #|    actual_hook_files = tracked_githook_files()
-    #|    for path in sorted(expected_hook_files - actual_hook_files):
-    #|        error(f"expected Git hook file is not tracked: {path}")
-    #|        ok = False
-    #|    for path in sorted(actual_hook_files - expected_hook_files):
-    #|        error(f"tracked Git hook file is missing from validation: {path}")
-    #|        ok = False
-    #|
-    #|    if not hook.is_file():
-    #|        error(".githooks/pre-commit does not exist")
-    #|        ok = False
-    #|        hook_text = ""
-    #|    else:
-    #|        mode = hook.stat().st_mode
-    #|        if not mode & stat.S_IXUSR:
-    #|            error(".githooks/pre-commit must be executable")
-    #|            ok = False
-    #|        hook_text = hook.read_text()
-    #|
-    #|    for needle in [
-    #|        "#!/usr/bin/env bash",
-    #|        "set -euo pipefail",
-    #|        "git rev-parse --show-toplevel",
-    #|        "moon run --target native scripts/check_ci.mbtx --skip-without-credentials",
-    #|    ]:
-    #|        ok = require_text(hook, hook_text, needle) and ok
-    #|
-    #|    if not readme.is_file():
-    #|        error(".githooks/README.md does not exist")
-    #|        ok = False
-    #|        readme_text = ""
-    #|    else:
-    #|        readme_text = readme.read_text()
-    #|
-    #|    for needle in [
-    #|        "git config core.hooksPath .githooks",
-    #|        "moon run --target native scripts/check_ci.mbtx --skip-without-credentials",
-    #|    ]:
-    #|        ok = require_text(readme, readme_text, needle) and ok
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
-}
-
-///|
-fn check_migration_docs_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check that migration notes keep the critical porting gotchas documented."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import pathlib
-    #|import sys
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|
-    #|def error(message: str) -> None:
-    #|    print(message, file=sys.stderr)
-    #|
-    #|
-    #|def collapse_whitespace(text: str) -> str:
-    #|    return " ".join(text.split())
-    #|
-    #|
-    #|def require_text(path: pathlib.Path, text: str, needle: str) -> bool:
-    #|    if needle not in text and (
-    #|        collapse_whitespace(needle) not in collapse_whitespace(text)
-    #|    ):
-    #|        error(f"{path.relative_to(ROOT)} must contain {needle!r}")
-    #|        return False
-    #|    return True
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if argv:
-    #|        error("usage: moon run --target native scripts/check_ci.mbtx check-migration-docs")
-    #|        return 2
-    #|
-    #|    docs = {
-    #|        ROOT / "Python2MoonBit.md": [
-    #|            "# Python to MoonBit Porting Notes",
-    #|            "MoonBit `String` is UTF-16 encoded",
-    #|            "`s[i]` returns a `UInt16` code unit",
-    #|            "`for ch in s` iterates Unicode-safe `Char` values",
-    #|            "Prefer `StringView` for parser cursors and slices",
-    #|            "manual `get_char(pos)` loops",
-    #|            "advance by `ch.utf16_len()`",
-    #|            "Do not run every `BytesView` through UTF-8 lossy decoding",
-    #|            "Treat the current Python source as the oracle",
-    #|            "`.repos/justhtml`",
-    #|            "## CLI and Native I/O",
-    #|            "`cmd/main/moon.pkg`",
-    #|            "\"native-stub\": [ \"cli_io.c\" ]",
-    #|            "Mooncakes",
-    #|        ],
-    #|        ROOT / "MigrationChecklist.md": [
-    #|            "# JustHTML to MoonBit Migration Checklist",
-    #|            "## Remaining Feature Work",
-    #|            "## Post-Completion Audits",
-    #|            "Mooncakes package metadata, GitHub repository, and CI",
-    #|            "Port one feature slice at a time",
-    #|        ],
-    #|        ROOT / "README.mbt.md": [
-    #|            "moon run --target native scripts/check_ci.mbtx --skip-without-credentials",
-    #|            "GitHub workflow drift",
-    #|            "tracked workflow inventory",
-    #|            "Copilot setup workflow",
-    #|            "source layout",
-    #|            "test-name inventory",
-    #|            "migration docs",
-    #|            "local Git hook wiring",
-    #|            "MoonBit script inventory",
-    #|            "validation-inventory wiring",
-    #|            "vendored fixture sync",
-    #|            "vendored fixture manifest hashes",
-    #|            "tests with a count floor",
-    #|            "native CLI smoke behavior",
-    #|            "Mooncakes package validation",
-    #|            "dynamic Mooncakes archive inventory/content checks",
-    #|        ],
-    #|    }
-    #|
-    #|    ok = True
-    #|    for path, needles in docs.items():
-    #|        if not path.is_file():
-    #|            error(f"required migration document is missing: {path.relative_to(ROOT)}")
-    #|            ok = False
-    #|            continue
-    #|        text = path.read_text()
-    #|        for needle in needles:
-    #|            ok = require_text(path, text, needle) and ok
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
-}
-
-///|
-fn check_fixture_sync_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check vendored JustHTML fixtures against the local reference checkout."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import os
-    #|import pathlib
-    #|import sys
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|DEFAULT_REFERENCE_ROOT = ROOT / ".repos" / "justhtml"
-    #|REFERENCE_ROOT = pathlib.Path(
-    #|    os.environ.get("JUSTHTML_REFERENCE_ROOT", str(DEFAULT_REFERENCE_ROOT)),
-    #|)
-    #|VENDORED_ROOT = ROOT / "tests" / "fixtures" / "justhtml"
-    #|
-    #|FIXTURE_PAIRS = [
-    #|    ("LICENSE.justhtml", "LICENSE"),
-    #|    ("data/wikipedia.html", "tests/data/wikipedia.html"),
-    #|    (
-    #|        "justhtml-sanitize-tests/cases.json",
-    #|        "tests/justhtml-sanitize-tests/cases.json",
-    #|    ),
-    #|    (
-    #|        "justhtml-tests/branch_coverage.dat",
-    #|        "tests/justhtml-tests/branch_coverage.dat",
-    #|    ),
-    #|    ("justhtml-tests/coverage_gaps.test", "tests/justhtml-tests/coverage_gaps.test"),
-    #|    (
-    #|        "justhtml-tests/empty_stack_edge_cases.dat",
-    #|        "tests/justhtml-tests/empty_stack_edge_cases.dat",
-    #|    ),
-    #|    ("justhtml-tests/entities.test", "tests/justhtml-tests/entities.test"),
-    #|    ("justhtml-tests/iframe_srcdoc.dat", "tests/justhtml-tests/iframe_srcdoc.dat"),
-    #|    (
-    #|        "justhtml-tests/tokenizer_edge_cases.test",
-    #|        "tests/justhtml-tests/tokenizer_edge_cases.test",
-    #|    ),
-    #|    (
-    #|        "justhtml-tests/treebuilder_coverage.dat",
-    #|        "tests/justhtml-tests/treebuilder_coverage.dat",
-    #|    ),
-    #|    ("justhtml-tests/xml_coercion.dat", "tests/justhtml-tests/xml_coercion.dat"),
-    #|    (
-    #|        "justhtml-tests/xml_coercion_coverage.test",
-    #|        "tests/justhtml-tests/xml_coercion_coverage.test",
-    #|    ),
-    #|    ("linkify-it/LICENSE.txt", "tests/linkify-it/LICENSE.txt"),
-    #|    ("linkify-it/README.md", "tests/linkify-it/README.md"),
-    #|    ("linkify-it/fixtures/links.txt", "tests/linkify-it/fixtures/links.txt"),
-    #|    ("linkify-it/fixtures/not_links.txt", "tests/linkify-it/fixtures/not_links.txt"),
-    #|]
-    #|
-    #|
-    #|def usage() -> None:
-    #|    print(
-    #|        "usage: moon run --target native scripts/check_ci.mbtx check-fixture-sync [--require-reference]",
-    #|        file=sys.stderr,
-    #|    )
-    #|
-    #|
-    #|def main() -> int:
-    #|    require_reference = False
-    #|    if len(sys.argv) > 2:
-    #|        usage()
-    #|        return 2
-    #|    if len(sys.argv) == 2:
-    #|        if sys.argv[1] != "--require-reference":
-    #|            usage()
-    #|            return 2
-    #|        require_reference = True
-    #|
-    #|    if not REFERENCE_ROOT.is_dir():
-    #|        message = (
-    #|            "Skipping fixture sync check because reference checkout is absent: "
-    #|            f"{REFERENCE_ROOT}"
-    #|        )
-    #|        if require_reference:
-    #|            print(message, file=sys.stderr)
-    #|            return 1
-    #|        print(message)
-    #|        return 0
-    #|
-    #|    ok = True
-    #|    for local_rel, reference_rel in FIXTURE_PAIRS:
-    #|        local_path = VENDORED_ROOT / local_rel
-    #|        reference_path = REFERENCE_ROOT / reference_rel
-    #|        if not local_path.is_file():
-    #|            print(f"missing vendored fixture: {local_path}", file=sys.stderr)
-    #|            ok = False
-    #|            continue
-    #|        if not reference_path.is_file():
-    #|            print(f"missing reference fixture: {reference_path}", file=sys.stderr)
-    #|            ok = False
-    #|            continue
-    #|        if local_path.read_bytes() != reference_path.read_bytes():
-    #|            print(
-    #|                f"vendored fixture differs from reference: {local_rel}",
-    #|                file=sys.stderr,
-    #|            )
-    #|            ok = False
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main())
-  source
-}
-
-///|
-fn check_fixture_manifest_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check the checked-in JustHTML fixture subset against its manifest."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import hashlib
-    #|import pathlib
-    #|import subprocess
-    #|import sys
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|MANIFEST = {
-    #|    "tests/fixtures/justhtml/LICENSE.justhtml": (
-    #|        1256,
-    #|        "fc806f290894e4f219467135fb21f33048f8d5a817f0f8284246d72da29d572e",
-    #|    ),
-    #|    "tests/fixtures/justhtml/README.md": (
-    #|        589,
-    #|        "b761becfae2a02c3a2ae8657c168c4f811e56bf4b0f81ceeb2aa02143cc571c1",
-    #|    ),
-    #|    "tests/fixtures/justhtml/README.upstream.md": (
-    #|        1204,
-    #|        "b51b5f6a500839651edb0e0725857fa1cdc8454fd15fc628e8e422acd0cc5805",
-    #|    ),
-    #|    "tests/fixtures/justhtml/data/wikipedia.html": (
-    #|        157021,
-    #|        "76c08f0bcbce67ab64d016e8956e4f04429ab3dd50a40c586e75aa2eb00c9ab0",
-    #|    ),
-    #|    "tests/fixtures/justhtml/justhtml-sanitize-tests/cases.json": (
-    #|        25981,
-    #|        "c8ae8f94d2c1e863af7f6b3599ef7ccc2295aa6c745ba1c588b53c6e0f80a5dc",
-    #|    ),
-    #|    "tests/fixtures/justhtml/justhtml-tests/branch_coverage.dat": (
-    #|        7561,
-    #|        "747006af474730392736d9494aa7b21c147cf53ad45c253002bd5fc17175e127",
-    #|    ),
-    #|    "tests/fixtures/justhtml/justhtml-tests/coverage_gaps.test": (
-    #|        1506,
-    #|        "2163c6790cf15854c9191dc36b26e7f0932654c18254bd0c6b55ba02f57f6c18",
-    #|    ),
-    #|    "tests/fixtures/justhtml/justhtml-tests/empty_stack_edge_cases.dat": (
-    #|        1197,
-    #|        "ca421e79a47dfa25401d7e7a5041a5089457c1d31eddbd3714ecd5ff91738e9b",
-    #|    ),
-    #|    "tests/fixtures/justhtml/justhtml-tests/entities.test": (
-    #|        1512,
-    #|        "b9e5c0572d68e8b39f796fcaa6109ecc3db3c8e0463909e7abcab7fcc0576189",
-    #|    ),
-    #|    "tests/fixtures/justhtml/justhtml-tests/iframe_srcdoc.dat": (
-    #|        169,
-    #|        "27f1ec4c45f653230df3432c1c75124c72b095efc977d2f74bc54ff840bafa64",
-    #|    ),
-    #|    "tests/fixtures/justhtml/justhtml-tests/tokenizer_edge_cases.test": (
-    #|        7891,
-    #|        "09c3fc08d3d925a0adb7c5a43354dec49170e32991bb4276369c0e06781fe93a",
-    #|    ),
-    #|    "tests/fixtures/justhtml/justhtml-tests/treebuilder_coverage.dat": (
-    #|        3858,
-    #|        "3e68d02f2d2ddf1c5c8dd905681e613ffafb08f07ec8267bceb964863e34a421",
-    #|    ),
-    #|    "tests/fixtures/justhtml/justhtml-tests/xml_coercion.dat": (
-    #|        650,
-    #|        "c88887f5d4e7782be09ad27c09531ddd40ddae3b2d203a2f645504bfe3265c27",
-    #|    ),
-    #|    "tests/fixtures/justhtml/justhtml-tests/xml_coercion_coverage.test": (
-    #|        328,
-    #|        "cbc10430c037150bb95d25c0ed011c4c0c3c7ee08f704f462b6453da63612221",
-    #|    ),
-    #|    "tests/fixtures/justhtml/linkify-it/LICENSE.txt": (
-    #|        1058,
-    #|        "95e3f7f0e81e9b4940cdfaa1956aaff5e4dfd2fb1565041e7c78eb9a606f23e3",
-    #|    ),
-    #|    "tests/fixtures/justhtml/linkify-it/README.md": (
-    #|        355,
-    #|        "adb5a81e57ce228b417d1f95577f688381bdf3ef8834d40ca7b00767e36f1b55",
-    #|    ),
-    #|    "tests/fixtures/justhtml/linkify-it/fixtures/links.txt": (
-    #|        6492,
-    #|        "f3413613c047d2d351b16ebba9c632baa74cfa0d8e253f00483299ed6e2953b9",
-    #|    ),
-    #|    "tests/fixtures/justhtml/linkify-it/fixtures/not_links.txt": (
-    #|        763,
-    #|        "857d0168381df03d82acb120ad507accf2e3a9e9c7c520d9dc859d028143d3af",
-    #|    ),
-    #|}
-    #|
-    #|
-    #|def error(message: str) -> None:
-    #|    print(message, file=sys.stderr)
-    #|
-    #|
-    #|def tracked_fixture_files() -> set[str]:
-    #|    result = subprocess.run(
-    #|        ["git", "ls-files", "tests/fixtures/justhtml/**"],
-    #|        cwd=ROOT,
-    #|        check=True,
-    #|        capture_output=True,
-    #|        text=True,
-    #|    )
-    #|    return set(result.stdout.splitlines())
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if argv:
-    #|        error("usage: moon run --target native scripts/check_ci.mbtx check-fixture-manifest")
-    #|        return 2
-    #|
-    #|    ok = True
-    #|    tracked = tracked_fixture_files()
-    #|    expected = set(MANIFEST)
-    #|    for path in sorted(expected - tracked):
-    #|        error(f"fixture manifest entry is not tracked: {path}")
-    #|        ok = False
-    #|    for path in sorted(tracked - expected):
-    #|        error(f"tracked fixture is missing from manifest: {path}")
-    #|        ok = False
-    #|
-    #|    for path, (expected_size, expected_sha256) in sorted(MANIFEST.items()):
-    #|        file = ROOT / path
-    #|        if not file.is_file():
-    #|            error(f"fixture manifest entry is missing from disk: {path}")
-    #|            ok = False
-    #|            continue
-    #|        data = file.read_bytes()
-    #|        actual_sha256 = hashlib.sha256(data).hexdigest()
-    #|        if len(data) != expected_size:
-    #|            error(
-    #|                f"fixture size changed for {path}: "
-    #|                f"{len(data)} != {expected_size}",
-    #|            )
-    #|            ok = False
-    #|        if actual_sha256 != expected_sha256:
-    #|            error(
-    #|                f"fixture sha256 changed for {path}: "
-    #|                f"{actual_sha256} != {expected_sha256}",
-    #|            )
-    #|            ok = False
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
-}
-
-///|
-fn check_package_metadata_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check Mooncakes package metadata and README install snippets."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import json
-    #|import pathlib
-    #|import re
-    #|import sys
-    #|from typing import Any
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|
-    #|def error(message: str) -> None:
-    #|    print(message, file=sys.stderr)
-    #|
-    #|
-    #|def expect_string(metadata: dict[str, Any], field: str) -> str | None:
-    #|    value = metadata.get(field)
-    #|    if not isinstance(value, str) or value == "":
-    #|        error(f"moon.mod.json field {field!r} must be a non-empty string")
-    #|        return None
-    #|    return value
-    #|
-    #|
-    #|def file_text(path: pathlib.Path, label: str) -> str | None:
-    #|    if not path.is_file():
-    #|        error(f"{label} does not exist: {path.relative_to(ROOT)}")
-    #|        return None
-    #|    return path.read_text()
-    #|
-    #|
-    #|def require_text(text: str, needle: str, label: str) -> bool:
-    #|    if needle not in text:
-    #|        error(f"{label} must contain {needle!r}")
-    #|        return False
-    #|    return True
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if argv:
-    #|        error("usage: moon run --target native scripts/check_ci.mbtx check-package-metadata")
-    #|        return 2
-    #|
-    #|    metadata = json.loads((ROOT / "moon.mod.json").read_text())
-    #|    ok = True
-    #|
-    #|    name = expect_string(metadata, "name")
-    #|    version = expect_string(metadata, "version")
-    #|    readme = expect_string(metadata, "readme")
-    #|    repository = expect_string(metadata, "repository")
-    #|    license_id = expect_string(metadata, "license")
-    #|    description = expect_string(metadata, "description")
-    #|
-    #|    keywords = metadata.get("keywords")
-    #|    if not isinstance(keywords, list) or not keywords:
-    #|        error("moon.mod.json field 'keywords' must be a non-empty list")
-    #|        ok = False
-    #|    elif not all(isinstance(keyword, str) and keyword for keyword in keywords):
-    #|        error("moon.mod.json field 'keywords' must contain only non-empty strings")
-    #|        ok = False
-    #|
-    #|    if name is None or version is None or readme is None:
-    #|        ok = False
-    #|    else:
-    #|        if re.fullmatch(r"[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+", name) is None:
-    #|            error(f"package name {name!r} must use owner/package form")
-    #|            ok = False
-    #|
-    #|        semver = r"\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?(?:\+[0-9A-Za-z.-]+)?"
-    #|        if re.fullmatch(semver, version) is None:
-    #|            error(f"version {version!r} must look like a semantic version")
-    #|            ok = False
-    #|
-    #|        readme_path = pathlib.PurePosixPath(readme)
-    #|        if readme_path.is_absolute() or ".." in readme_path.parts:
-    #|            error(f"readme path {readme!r} must stay inside the repository")
-    #|            ok = False
-    #|            readme_text = ""
-    #|        else:
-    #|            readme_file = ROOT / readme_path
-    #|            if not readme_file.is_file():
-    #|                error(f"readme path {readme!r} does not exist")
-    #|                ok = False
-    #|                readme_text = ""
-    #|            else:
-    #|                readme_text = readme_file.read_text()
-    #|                github_readme = ROOT / "README.md"
-    #|                if not github_readme.exists():
-    #|                    error("README.md must exist for GitHub rendering")
-    #|                    ok = False
-    #|                elif (
-    #|                    github_readme.resolve() != readme_file.resolve()
-    #|                    and github_readme.read_text() != readme_text
-    #|                ):
-    #|                    error(
-    #|                        "README.md must resolve to or match the configured "
-    #|                        f"Mooncakes readme {readme!r}",
-    #|                    )
-    #|                    ok = False
-    #|
-    #|        if readme_text:
-    #|            expected_install = f"moon add {name}"
-    #|            expected_import = f'"{name}"'
-    #|            expected_heading = f"# {name}"
-    #|            if expected_heading not in readme_text.splitlines()[:5]:
-    #|                error(f"README must start with heading {expected_heading!r}")
-    #|                ok = False
-    #|            if expected_install not in readme_text:
-    #|                error(f"README must document {expected_install!r}")
-    #|                ok = False
-    #|            if expected_import not in readme_text:
-    #|                error(f"README must show import path {expected_import!r}")
-    #|                ok = False
-    #|
-    #|    if name is not None and repository is not None:
-    #|        expected_repository = f"https://github.com/{name}"
-    #|        if repository != expected_repository:
-    #|            error(
-    #|                f"repository {repository!r} != expected {expected_repository!r}",
-    #|            )
-    #|            ok = False
-    #|
-    #|    if license_id is not None:
-    #|        if license_id != "Apache-2.0":
-    #|            error(f"license {license_id!r} must be 'Apache-2.0'")
-    #|            ok = False
-    #|        license_text = (ROOT / "LICENSE").read_text()
-    #|        if "Apache License" not in license_text or "Version 2.0" not in license_text:
-    #|            error("LICENSE file does not contain Apache License 2.0 text")
-    #|            ok = False
-    #|
-    #|    if description is not None and len(description) > 200:
-    #|        error("moon.mod.json description should stay concise")
-    #|        ok = False
-    #|
-    #|    cli_pkg = file_text(ROOT / "cmd" / "main" / "moon.pkg", "native CLI package")
-    #|    cli_main = file_text(ROOT / "cmd" / "main" / "main.mbt", "native CLI entrypoint")
-    #|    cli_stub = file_text(ROOT / "cmd" / "main" / "cli_io.c", "native CLI C stub")
-    #|    if cli_pkg is None or cli_main is None or cli_stub is None:
-    #|        ok = False
-    #|    else:
-    #|        package_needles = [
-    #|            'supported_targets = "+native"',
-    #|            '"is-main": true',
-    #|            '"native-stub": [ "cli_io.c" ]',
-    #|        ]
-    #|        if name is not None:
-    #|            package_needles.append(f'"{name}"')
-    #|        for needle in package_needles:
-    #|            ok = require_text(cli_pkg, needle, "cmd/main/moon.pkg") and ok
-    #|        for symbol in [
-    #|            "html_parser_cli_read_stdin",
-    #|            "html_parser_cli_read_file",
-    #|            "html_parser_cli_write_stdout",
-    #|            "html_parser_cli_write_stderr",
-    #|            "html_parser_cli_write_file",
-    #|            "html_parser_cli_exit",
-    #|        ]:
-    #|            ok = require_text(cli_main, symbol, "cmd/main/main.mbt") and ok
-    #|            ok = require_text(cli_stub, symbol, "cmd/main/cli_io.c") and ok
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
-}
-
-///|
-fn check_publish_archive_source() -> String {
-  let source =
-    #|#!/usr/bin/env python3
-    #|"""Check the Mooncakes dry-run archive for expected package contents."""
-    #|
-    #|from __future__ import annotations
-    #|
-    #|import collections
-    #|import json
-    #|import pathlib
-    #|import subprocess
-    #|import sys
-    #|import zipfile
-    #|
-    #|
-    #|ROOT = pathlib.Path.cwd()
-    #|
-    #|
-    #|def error(message: str) -> None:
-    #|    print(message, file=sys.stderr)
-    #|
-    #|
-    #|def expected_archive_path() -> pathlib.Path | None:
-    #|    metadata = json.loads((ROOT / "moon.mod.json").read_text())
-    #|    name = metadata.get("name")
-    #|    version = metadata.get("version")
-    #|    if not isinstance(name, str) or "/" not in name:
-    #|        error("moon.mod.json field 'name' must use owner/package form")
-    #|        return None
-    #|    if not isinstance(version, str) or version == "":
-    #|        error("moon.mod.json field 'version' must be a non-empty string")
-    #|        return None
-    #|    owner, package = name.split("/", 1)
-    #|    return ROOT / "_build" / "publish" / f"{owner}-{package}-{version}.zip"
-    #|
-    #|
-    #|def tracked_files() -> set[str]:
-    #|    result = subprocess.run(
-    #|        ["git", "ls-files"],
-    #|        cwd=ROOT,
-    #|        check=True,
-    #|        capture_output=True,
-    #|        text=True,
-    #|    )
-    #|    return set(result.stdout.splitlines())
-    #|
-    #|
-    #|def expected_published_files() -> set[str]:
-    #|    expected: set[str] = set()
-    #|    for path in tracked_files():
-    #|        pure = pathlib.PurePosixPath(path)
-    #|        if pure.name in {"moon.mod.json", "moon.pkg", "LICENSE"}:
-    #|            expected.add(path)
-    #|        elif pure.parent == pathlib.PurePosixPath(".") and pure.suffix == ".md":
-    #|            expected.add(path)
-    #|        elif path.startswith("scripts/"):
-    #|            expected.add(path)
-    #|        elif path.startswith("tests/fixtures/justhtml/"):
-    #|            expected.add(path)
-    #|        elif path.endswith((".mbt", ".mbt.md", ".mbti", ".c")):
-    #|            expected.add(path)
-    #|    return expected
-    #|
-    #|
-    #|def main(argv: list[str]) -> int:
-    #|    if len(argv) > 1 or (argv and argv[0].startswith("-")):
-    #|        error("usage: moon run --target native scripts/check_ci.mbtx check-publish-archive [zip-path]")
-    #|        return 2
-    #|
-    #|    archive = pathlib.Path(argv[0]) if argv else expected_archive_path()
-    #|    if archive is None:
-    #|        return 1
-    #|    if not archive.is_file():
-    #|        error(f"Mooncakes archive does not exist: {archive}")
-    #|        return 1
-    #|
-    #|    ok = True
-    #|    with zipfile.ZipFile(archive) as zf:
-    #|        name_list = zf.namelist()
-    #|        names = set(name_list)
-    #|
-    #|        for name, count in sorted(collections.Counter(name_list).items()):
-    #|            if count > 1:
-    #|                error(f"Mooncakes archive contains duplicate path: {name}")
-    #|                ok = False
-    #|
-    #|        required = expected_published_files()
-    #|        for path in sorted(required):
-    #|            if path not in names:
-    #|                error(f"Mooncakes archive is missing required file: {path}")
-    #|                ok = False
-    #|
-    #|        forbidden_prefixes = (
-    #|            ".git/",
-    #|            ".github/",
-    #|            ".githooks/",
-    #|            ".repos/",
-    #|            "_build/",
-    #|            "node_modules/",
-    #|            "__pycache__/",
-    #|        )
-    #|        for name in sorted(names):
-    #|            if name.startswith("/") or "/../" in f"/{name}":
-    #|                error(f"Mooncakes archive contains unsafe path: {name}")
-    #|                ok = False
-    #|            if name.startswith(forbidden_prefixes):
-    #|                error(f"Mooncakes archive contains non-package path: {name}")
-    #|                ok = False
-    #|            if "/__pycache__/" in f"/{name}/" or name.endswith(".pyc"):
-    #|                error(f"Mooncakes archive contains Python bytecode/cache path: {name}")
-    #|                ok = False
-    #|
-    #|        if "README.md" in names and "README.mbt.md" in names:
-    #|            if zf.read("README.md") != zf.read("README.mbt.md"):
-    #|                error("Mooncakes archive README.md must match README.mbt.md")
-    #|                ok = False
-    #|
-    #|    return 0 if ok else 1
-    #|
-    #|
-    #|if __name__ == "__main__":
-    #|    raise SystemExit(main(sys.argv[1:]))
-  source
 }
