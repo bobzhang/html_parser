@@ -1,108 +1,96 @@
-///|
-#borrow(command)
-extern "C" fn c_system(command : Bytes) -> Int = "system"
+import {
+  "moonbitlang/async@0.19.0",
+  "moonbitlang/async@0.19.0/fs",
+  "moonbitlang/async@0.19.0/process",
+  "moonbitlang/async@0.19.0/stdio",
+  "moonbitlang/core/argparse",
+  "moonbitlang/core/env",
+}
 
 ///|
-#borrow(path)
-extern "C" fn c_access(path : Bytes, mode : Int) -> Int = "access"
-
-///|
-#borrow(data)
-extern "C" fn c_write(fd : Int, data : Bytes, count : Int) -> Int = "write"
-
-///|
-extern "C" fn c_exit(code : Int) -> Unit = "exit"
-
-///|
-fn main {
+async fn main {
   let all_args = @env.args()
   let args = if all_args.is_empty() { all_args[:] } else { all_args[1:] }
-  if !args.is_empty() {
-    usage()
-    c_exit(2)
+  validate_args(args)
+  let code = run_scrut_cli_check()
+  if code != 0 {
+    fail("check_scrut_cli failed")
   }
+}
+
+///|
+fn check_scrut_cli_command() -> @argparse.Command {
+  @argparse.Command(
+    "check_scrut_cli",
+    about="Build the native CLI and run Scrut tests.",
+    disable_help_subcommand=true,
+  )
+}
+
+///|
+async fn validate_args(args : ArrayView[String]) -> Unit {
+  let command = check_scrut_cli_command()
+  let _ = command.parse(argv=args, env={}) catch {
+    error => {
+      eprintln(error.to_string())
+      eprintln("usage: moon run --target native scripts/check_scrut_cli.mbtx")
+      fail("invalid arguments")
+    }
+  }
+}
+
+///|
+async fn run_scrut_cli_check() -> Int {
   let scrut_bin = match @env.get_env_var("SCRUT_BIN") {
     Some(value) => value
     None => "scrut"
   }
   if scrut_bin.contains_char('/') {
-    if !is_executable(scrut_bin) {
-      die("SCRUT_BIN is not executable: " + scrut_bin)
+    if !@fs.can_execute(scrut_bin) {
+      eprintln("SCRUT_BIN is not executable: " + scrut_bin)
+      return 1
     }
-  } else if !command_succeeds("command -v " + shell_quote(scrut_bin) + " > /dev/null") {
-    die("scrut is required; set SCRUT_BIN or install scrut in PATH")
+  } else if !command_exists(scrut_bin) {
+    eprintln("scrut is required; set SCRUT_BIN or install scrut in PATH")
+    return 1
   }
-  run_or_die(
-    "moon run --target native --release --build-only cmd/main > /dev/null",
+
+  let build_code = @process.run(
+    "moon",
+    ["run", "--target", "native", "--release", "--build-only", "cmd/main"],
   )
+  if build_code != 0 {
+    return build_code
+  }
+
   let cwd = match @env.current_dir() {
     Some(value) => value
     None => {
-      die("failed to resolve current working directory")
-      ""
+      eprintln("failed to resolve current working directory")
+      return 1
     }
   }
   let cli_path = cwd + "/_build/native/release/build/cmd/main/main.exe"
-  @env.set_env_var("JUSTHTML_CLI", cli_path)
-  if !is_executable(cli_path) {
-    die("native CLI binary was not built: " + cli_path)
+  if !@fs.can_execute(cli_path) {
+    eprintln("native CLI binary was not built: " + cli_path)
+    return 1
   }
-  run_or_die(shell_quote(scrut_bin) + " test tests/scrut")
+  @process.run(
+    scrut_bin,
+    ["test", "tests/scrut"],
+    extra_env={"JUSTHTML_CLI": cli_path},
+  )
 }
 
 ///|
-fn usage() -> Unit {
-  eprintln("usage: moon run --target native scripts/check_scrut_cli.mbtx")
+async fn command_exists(command : String) -> Bool {
+  @process.run(
+    "sh",
+    ["-c", "command -v \"$1\" > /dev/null", "sh", command],
+  ) == 0
 }
 
 ///|
-fn die(message : String) -> Unit {
-  eprintln(message)
-  c_exit(1)
-}
-
-///|
-fn run_or_die(command : String) -> Unit {
-  if !command_succeeds(command) {
-    c_exit(1)
-  }
-}
-
-///|
-fn command_succeeds(command : String) -> Bool {
-  c_system(@utf8.encode(command)) == 0
-}
-
-///|
-fn is_executable(path : String) -> Bool {
-  c_access(@utf8.encode(path), 1) == 0
-}
-
-///|
-fn eprintln(message : String) -> Unit {
-  write_stderr(message + "\n")
-}
-
-///|
-fn write_stderr(message : String) -> Unit {
-  let data = @utf8.encode(message)
-  let _ = c_write(2, data, data.length())
-}
-
-///|
-fn shell_quote(value : String) -> String {
-  if value.is_empty() {
-    return "''"
-  }
-  let out = @buffer.new()
-  out.write_string("'")
-  for ch in value.iter() {
-    if ch == '\'' {
-      out.write_string("'\\''")
-    } else {
-      out.write_char(ch)
-    }
-  }
-  out.write_string("'")
-  out.to_string()
+async fn eprintln(message : String) -> Unit {
+  @stdio.stderr.write(message + "\n")
 }
