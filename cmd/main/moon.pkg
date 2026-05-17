@@ -1,5 +1,6 @@
 import {
   "bobzhang/html_parser",
+  "moonbitlang/core/argparse",
   "moonbitlang/core/env",
   "moonbitlang/core/encoding/utf8",
 }
