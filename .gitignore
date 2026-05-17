@@ -3,4 +3,5 @@ _build/
 .mooncakes/
 .moonagent/
 .repos/
+/scrut
 __pycache__/

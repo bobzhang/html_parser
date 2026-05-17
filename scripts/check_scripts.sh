@@ -73,6 +73,7 @@ check_ci_err="$(mktemp)"
 check_coverage_err="$(mktemp)"
 check_interfaces_err="$(mktemp)"
 smoke_native_cli_err="$(mktemp)"
+scrut_cli_err="$(mktemp)"
 release_version_err="$(mktemp)"
 fixture_require_err="$(mktemp)"
 fixture_arg_err="$(mktemp)"
@@ -92,7 +93,7 @@ trap '
   rm -rf "$tmp_home"
   rm -f "$tmp_out" "$verify_err" "$check_scripts_err" "$check_ci_err"
   rm -f "$check_coverage_err" "$check_interfaces_err"
-  rm -f "$smoke_native_cli_err" "$release_version_err"
+  rm -f "$smoke_native_cli_err" "$scrut_cli_err" "$release_version_err"
   rm -f "$fixture_require_err" "$fixture_arg_err"
   rm -f "$fixture_manifest_arg_err"
   rm -f "$workflow_arg_err"
@@ -131,6 +132,9 @@ check_interfaces_code=$?
 bash scripts/smoke_native_cli.sh \
   --bad-option > "$tmp_out" 2> "$smoke_native_cli_err"
 smoke_native_cli_code=$?
+bash scripts/check_scrut_cli.sh \
+  --bad-option > "$tmp_out" 2> "$scrut_cli_err"
+scrut_cli_code=$?
 python3 scripts/check_release_version.py \
   --bad-option > "$tmp_out" 2> "$release_version_err"
 release_version_code=$?
@@ -152,6 +156,9 @@ grep -F "usage: bash scripts/check_interfaces.sh" "$check_interfaces_err" \
   > /dev/null
 test "$smoke_native_cli_code" -eq 2
 grep -F "usage: bash scripts/smoke_native_cli.sh" "$smoke_native_cli_err" \
+  > /dev/null
+test "$scrut_cli_code" -eq 2
+grep -F "usage: bash scripts/check_scrut_cli.sh" "$scrut_cli_err" \
   > /dev/null
 test "$release_version_code" -eq 2
 grep -F "usage: python3 scripts/check_release_version.py" \
