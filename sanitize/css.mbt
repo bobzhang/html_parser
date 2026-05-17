@@ -52,6 +52,12 @@ fn css_safety_normalize(value : StringView) -> String? {
 }
 
 ///|
+/// Conservatively detect CSS values that can load external resources.
+///
+/// This returns `true` for imports, `url(...)`, image-set-like functions,
+/// legacy browser extension hooks, and values that cannot be normalized safely
+/// because of escapes or malformed comments. It is a prefilter; URL-bearing
+/// declarations still need URL-policy validation before they are kept.
 pub fn css_value_may_load_external_resource(value : StringView) -> Bool {
   match css_safety_normalize(value) {
     None => true

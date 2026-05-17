@@ -128,6 +128,13 @@ pub fn sanitize_dom(
 }
 
 ///|
+/// Sanitize a DOM node in place with optional observer callbacks.
+///
+/// When `policy` is `None`, document roots use the document policy and other
+/// roots use the fragment policy. The observer is notified about sanitizer
+/// rewrites and unsafe input reports. Non-document/non-fragment roots are
+/// sanitized through a temporary fragment wrapper; the returned node may
+/// therefore be the original node or a fragment containing surviving nodes.
 pub fn sanitize_dom_with_observer(
   node : @dom.Node,
   policy : SanitizationPolicy?,

@@ -12,6 +12,11 @@ fn sanitize_namespace_is_foreign(node : @dom.Node) -> Bool {
 }
 
 ///|
+/// Return whether a node is treated as foreign-content for sanitization.
+///
+/// A node is effectively foreign when it or an ancestor has a non-HTML
+/// namespace, or when it appears under an `svg` or `math` element name. This is
+/// used to harden URL-bearing attributes and active foreign-content elements.
 pub fn node_is_effectively_foreign(node : @dom.Node) -> Bool {
   let mut current = Some(node)
   while current is Some(current_node) {

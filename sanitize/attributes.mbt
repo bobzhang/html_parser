@@ -58,6 +58,12 @@ fn sanitize_attribute_value(
 }
 
 ///|
+/// Sanitize a single attribute value with this policy.
+///
+/// `tag_name` and `attr_name` should already be normalized to lowercase. URL
+/// attributes, URL lists, foreign SVG-like URL function attributes, and inline
+/// style values are validated through the policy. Returns `None` when the
+/// attribute value should be dropped.
 pub fn SanitizationPolicy::sanitize_attribute_value(
   self : SanitizationPolicy,
   tag_name : String,
@@ -75,6 +81,12 @@ pub fn SanitizationPolicy::sanitize_attribute_value(
 }
 
 ///|
+/// Sanitize the value of an inline `style` attribute.
+///
+/// Only declarations whose property names are in `allowed_css_properties` are
+/// kept. Declarations that may load external resources are kept only when their
+/// `url(...)` values pass the policy's URL rules. Returns `None` when no safe
+/// declaration remains.
 pub fn SanitizationPolicy::sanitize_inline_style_value(
   self : SanitizationPolicy,
   tag_name : String,
@@ -84,6 +96,10 @@ pub fn SanitizationPolicy::sanitize_inline_style_value(
 }
 
 ///|
+/// Split HTML whitespace-separated tokens into a unique normalized list.
+///
+/// Tokens are trimmed, ASCII-lowercased, and appended to `tokens` only when
+/// non-empty and not already present. Existing token order is preserved.
 pub fn push_html_whitespace_tokens(
   tokens : Array[String],
   value : StringView,
