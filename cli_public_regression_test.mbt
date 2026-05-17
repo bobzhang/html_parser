@@ -101,7 +101,7 @@ test "public CLI immediate help and version plans stay stable" {
   })
   assert_eq(read_paths.length(), 0)
   assert_eq(version.exit_code, 0)
-  assert_eq(version.stdout, "justhtml 0.1.5\n")
+  assert_eq(version.stdout, "justhtml 0.1.6\n")
   assert_eq(version.stderr, "")
 }
 

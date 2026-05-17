@@ -27,7 +27,7 @@ test "CLI help version and read plan" {
   assert_true(no_args.stderr.contains("usage: justhtml"))
   let version = @html_parser.run_cli_bytes(["--version"], b"")
   assert_eq(version.exit_code, 0)
-  assert_eq(version.stdout, "justhtml 0.1.5\n")
+  assert_eq(version.stdout, "justhtml 0.1.6\n")
   guard @html_parser.cli_read_plan(["-", "--selector", "p", "--format", "text"])
     is CliReadPath("-") else {
     fail("expected CLI to ask for stdin input")
