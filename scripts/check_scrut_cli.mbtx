@@ -70,7 +70,7 @@ async fn run_scrut_cli_check() -> Int {
       return 1
     }
   }
-  let cli_path = cwd + "/_build/native/release/build/cmd/main/main.exe"
+  let cli_path = cwd + "/_build/native/release/build/bobzhang/html_parser/cmd/main/main.exe"
   if !@fs.exists(cli_path) {
     eprintln("native CLI binary was not built: " + cli_path)
     return 1

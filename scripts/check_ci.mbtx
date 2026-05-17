@@ -564,8 +564,8 @@ async fn run_check_source_layout() -> Int {
 
 ///|
 async fn run_check_test_inventory() -> Int {
-  let expected_count = 621
-  let expected_sha256 = "003310be7f8dd73053618cd4189916d3dce071219b3a766f439a0c80a966ea72"
+  let expected_count = 629
+  let expected_sha256 = "8f891f095b742b4c8a9d8cc049ca2e271e2f77891641759969764303c908162c"
   let inventory : Array[String] = []
   for path in git_ls_files(["*.mbt", "*.mbt.md"]) {
     match read_text(path) {
@@ -1074,7 +1074,7 @@ async fn run_smoke_native_cli() -> Int {
   if build_code != 0 {
     return build_code
   }
-  let cli = "_build/native/release/build/cmd/main/main.exe"
+  let cli = "_build/native/release/build/bobzhang/html_parser/cmd/main/main.exe"
   if !@fs.exists(cli) {
     eprintln("native CLI binary was not built: " + cli)
     return 1
@@ -1615,6 +1615,7 @@ fn validation_commands() -> Array[String] {
 ///|
 fn required_top_level_files() -> Array[String] {
   [
+    "moon.work",
     "moon.mod.json",
     "moon.pkg",
     "pkg.generated.mbti",
