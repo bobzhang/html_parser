@@ -74,6 +74,10 @@ fn is_tokenizer_error_code(code : StringView) -> Bool {
 }
 
 ///|
+/// Classify a parse-error code by the subsystem that normally reports it.
+///
+/// Known tokenizer error codes return `"tokenizer"`. Other codes are treated
+/// as tree-builder/parser diagnostics and return `"treebuilder"`.
 pub fn parser_error_category(code : StringView) -> String {
   if is_tokenizer_error_code(code) {
     "tokenizer"

@@ -43,6 +43,10 @@ pub fn linkify_dom(
 }
 
 ///|
+/// Return the default element names whose descendants are not linkified.
+///
+/// The list includes existing anchors and text contexts where automatic link
+/// insertion would change code, raw text, or whitespace-preserving content.
 pub fn linkify_default_dom_skip_tags() -> Array[String] {
   ["a", "code", "pre", "script", "style", "textarea"]
 }
@@ -108,6 +112,11 @@ fn linkify_text_child_at(
 }
 
 ///|
+/// Replace one text child with text and anchor nodes for precomputed matches.
+///
+/// `matches` must use UTF-16 offsets into `child.data`. The helper detaches the
+/// original child, inserts replacement nodes at `index`, preserves the parent's
+/// namespace for generated anchors, and returns the number of inserted nodes.
 pub fn linkify_text_child_at_matches(
   parent : @dom.Node,
   index : Int,

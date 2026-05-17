@@ -11,6 +11,11 @@ fn serialize_comment_data(value : StringView) -> String {
 }
 
 ///|
+/// Escape raw-text end-tag openings that would prematurely close `tag_name`.
+///
+/// Case-insensitive `</tag_name` sequences followed by `>`, `/`, whitespace,
+/// or EOF are rewritten by escaping only the `<` as `&lt;`. Other text is left
+/// unchanged.
 pub fn neutralize_rawtext_end_tag_sequences(
   value : StringView,
   tag_name : StringView,

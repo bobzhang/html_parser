@@ -87,6 +87,9 @@ fn is_url_safe_byte(byte : Byte) -> Bool {
 }
 
 ///|
+/// Append one byte as an uppercase percent-encoded triplet.
+///
+/// The output form is `%HH`, using hexadecimal digits `0`-`9` and `A`-`F`.
 pub fn write_percent_encoded_byte(out : StringBuilder, byte : Byte) -> Unit {
   let value = byte.to_int()
   out.write_char('%')
@@ -118,6 +121,10 @@ fn hex_digit_upper(value : Int) -> Char {
 }
 
 ///|
+/// Return whether `value` contains `needle`.
+///
+/// This scans by `Char`, so non-BMP characters are treated as single
+/// characters even though MoonBit string offsets are UTF-16 code units.
 pub fn string_contains_char(value : StringView, needle : Char) -> Bool {
   for ch in value {
     if ch == needle {

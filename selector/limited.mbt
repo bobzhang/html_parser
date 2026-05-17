@@ -166,6 +166,11 @@ fn matches_selector_list_with_context(
 }
 
 ///|
+/// Test whether `node` matches a selector under explicit resource limits.
+///
+/// The selector is validated against `limits` before matching. Invalid
+/// selectors return `false`; selectors that exceed configured depth, length, or
+/// match-budget limits raise `HtmlError`.
 pub fn matches_with_limits(
   node : @dom.Node,
   selector : StringView,
