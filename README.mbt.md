@@ -116,7 +116,7 @@ test "readme CLI reader example" {
     paths.push(path)
     @utf8.encode("<p>Hello <b>MoonBit</b></p>")
   })
-  assert_eq(paths, ["-"])
+  @test.assert_eq(paths, ["-"])
   assert_eq(result.exit_code, 0)
   assert_eq(result.stdout, "Hello MoonBit\n")
 }

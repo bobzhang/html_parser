@@ -594,6 +594,8 @@ reference implementation in `.repos/justhtml`.
       and README installation-documentation updates.
 - [x] Prepared `0.1.3` so the published package includes the sanitizer
       regression-file refactor and updated validation manifests.
+- [x] Prepared `0.1.4` so the published package includes warning-free
+      Debug-based test assertions.
 - [x] Added a CI release-version consistency check tying `moon.mod.json`,
       CLI `--version`, and the exact CLI version test together.
 - [x] Moved the release-version consistency check into a reusable local script

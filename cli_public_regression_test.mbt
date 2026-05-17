@@ -29,7 +29,7 @@ test "public CLI read plan and reader output workflow stays stable" {
     read_paths.push(path)
     b"<article><h2>T</h2><p>A <b>B</b></p></article>"
   })
-  assert_eq(read_paths, ["-"])
+  @test.assert_eq(read_paths, ["-"])
   assert_eq(result.exit_code, 0)
   assert_eq(result.stdout, "")
   assert_eq(result.stderr, "")
@@ -101,7 +101,7 @@ test "public CLI immediate help and version plans stay stable" {
   })
   assert_eq(read_paths.length(), 0)
   assert_eq(version.exit_code, 0)
-  assert_eq(version.stdout, "justhtml 0.1.3\n")
+  assert_eq(version.stdout, "justhtml 0.1.4\n")
   assert_eq(version.stderr, "")
 }
 

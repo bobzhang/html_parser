@@ -116,7 +116,7 @@ test "public callback transform pipeline stays stable" {
     doc.to_html(pretty=false),
     "<div><p data-seen=\"p\">Keep <span>x!</span></p></div><!--done-->",
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "hook:#document-fragment", "report:Edited document root", "node:#document-fragment",
     "hook:p", "report:Decide -> drop 'p' (matched selector 'p')", "node:p", "hook:span",
     "report:Edited <span> (matched selector 'span')", "node:span", "hook:p", "report:Edited attributes on <p> (matched selector 'p.keep')",

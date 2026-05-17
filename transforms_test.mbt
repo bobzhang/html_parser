@@ -173,7 +173,7 @@ test "decide star can act on comments while selectors only visit elements" {
       @html_parser.TransformSpec::decide("*", keep_seen),
     ]),
   )
-  assert_eq(seen_all, ["p", "#text"])
+  @test.assert_eq(seen_all, ["p", "#text"])
 
   let decide_comment : (@html_parser.Node) -> @html_parser.DecideAction = fn(
     node,
@@ -247,7 +247,7 @@ test "decide star can act on comments while selectors only visit elements" {
     ]),
   )
   assert_eq(selected.root.to_html(pretty=false), "<!--x-->")
-  assert_eq(seen, ["p"])
+  @test.assert_eq(seen, ["p"])
 }
 
 ///|
@@ -318,7 +318,7 @@ test "decide reports non-keep actions exactly" {
     ]),
   )
   assert_eq(doc.root.to_html(pretty=false), "<span>z</span>")
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "hook:p", "report:Decide -> drop 'p' (matched selector '*')", "node:p",
   ])
 }
@@ -370,8 +370,8 @@ test "drop_foreign_namespaces drops only non-html elements" {
   for child in root.children() {
     names.push(child.name())
   }
-  assert_eq(names, ["#comment", "#doctype", "p"])
-  assert_eq(events, [
+  @test.assert_eq(names, ["#comment", "#doctype", "p"])
+  @test.assert_eq(events, [
     "hook:svg", "report:Unsafe tag 'svg' (foreign namespace)", "node:svg", "hook:math",
     "report:Unsafe tag 'math' (foreign namespace)", "node:math",
   ])
@@ -821,7 +821,7 @@ test "prune_empty reports exact callbacks and preserves void roots" {
     ]),
   )
   assert_eq(doc.root.to_html(pretty=false), "<br><hr>")
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "hook:p", "report:Pruned empty <p> (matched selector '*')", "node:p",
   ])
 }
@@ -858,7 +858,7 @@ test "stage transform reports implicit stage index and skips disabled stage" {
       ),
     ]),
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "hook:#document-fragment", "report:Stage 2", "node:#document-fragment",
   ])
   assert_eq(
@@ -895,7 +895,7 @@ test "nested stage transforms are flattened without nested hooks" {
       ),
     ]),
   )
-  assert_eq(events, ["outer:#document-fragment", "report:Stage 1"])
+  @test.assert_eq(events, ["outer:#document-fragment", "report:Stage 1"])
   assert_eq(
     root.to_html(pretty=false),
     "<p><a href=\"http://example.com\">example.com</a></p>",
@@ -1104,7 +1104,7 @@ test "attribute transforms cover no-op and boolean attribute branches" {
     merged.to_html(pretty=false),
     "<a rel=\"noopener\"></a><a rel=\"noopener\"></a>",
   )
-  assert_eq(events, ["a"])
+  @test.assert_eq(events, ["a"])
 
   let merge_noops = @html_parser.fragment(children=[
     @html_parser.element("a", attrs={ "rel": Some("friend") }),
@@ -1267,7 +1267,7 @@ test "sanitize transform hooks and reports unsafe mutations" {
       @html_parser.TransformSpec::sanitize(policy~, hook~, report~),
     ]),
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "hook:p", "report:Unsafe attribute 'onclick' (matched forbidden pattern 'on*')",
     "node:p", "hook:#text", "report:Stripped invisible Unicode from text node", "node:#text",
     "hook:#comment", "report:Dropped comment", "node:#comment", "hook:script", "report:Unsafe tag 'script' (dropped content)",
@@ -1291,7 +1291,7 @@ test "sanitize transform supports hook-only and report-only observers" {
       @html_parser.TransformSpec::sanitize(policy~, hook~),
     ]),
   )
-  assert_eq(hook_events, ["p", "#comment"])
+  @test.assert_eq(hook_events, ["p", "#comment"])
   assert_eq(hook_doc.root.to_html(pretty=false), "<p>x</p>")
 
   let reports : Array[String] = []
@@ -1308,7 +1308,7 @@ test "sanitize transform supports hook-only and report-only observers" {
       @html_parser.TransformSpec::sanitize(policy~, report~),
     ]),
   )
-  assert_eq(reports, ["Unsafe attribute 'foo' (not allowed):p"])
+  @test.assert_eq(reports, ["Unsafe attribute 'foo' (not allowed):p"])
   assert_eq(report_doc.root.to_html(pretty=false), "<p>x</p>")
 }
 
@@ -1342,7 +1342,7 @@ test "sanitize transform comment and doctype drops are structural reports" {
     Ok(clean) => assert_eq(clean.to_html(pretty=false), "<p>ok</p>")
     Err(_) => fail("comment and doctype drops should not use unsafe handling")
   }
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "hook:#doctype", "report:Dropped doctype", "node:#doctype", "hook:#comment",
     "report:Dropped comment", "node:#comment",
   ])
@@ -1373,7 +1373,7 @@ test "sanitize transform reports invisible Unicode attribute stripping" {
       @html_parser.TransformSpec::sanitize(policy~, hook~, report~),
     ]),
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "hook:p", "report:Stripped invisible Unicode from attribute(s): title", "node:p",
   ])
   assert_eq(doc.root.to_html(pretty=false), "<p title=\"ab\">ok</p>")
@@ -1394,7 +1394,7 @@ test "unchanged sanitize transform does not call hooks" {
       @html_parser.TransformSpec::sanitize(hook~, report~),
     ]),
   )
-  assert_eq(events, [])
+  @test.assert_eq(events, [])
   assert_eq(doc.root.to_html(pretty=false), "<p id=\"x\">safe</p>")
 }
 
@@ -1415,7 +1415,7 @@ test "edit_document invokes callback once on root" {
       }),
     ]),
   )
-  assert_eq(seen, ["#document-fragment"])
+  @test.assert_eq(seen, ["#document-fragment"])
   let sections = root.query("section")
   assert_eq(sections.length(), 1)
   assert_true(sections[0].attrs().get("data-root") is Some(Some("1")))
@@ -1440,7 +1440,7 @@ test "edit invokes callback for matching elements" {
       }),
     ]),
   )
-  assert_eq(seen, ["p"])
+  @test.assert_eq(seen, ["p"])
   assert_eq(p.query("b").length(), 1)
   assert_eq(span.query("b").length(), 0)
   assert_true(p.query("b")[0].attrs().get("data-seen") is Some(Some("yes")))
@@ -1577,7 +1577,7 @@ test "transform hooks and reports run for changed transforms" {
       @html_parser.TransformSpec::drop_doctype(hook~, report~),
     ]),
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "hook:p", "report:Set attributes on <p> (matched selector 'p')", "node:p", "report:Unsafe attribute 'onclick' (matched forbidden pattern 'on*')",
     "node:p", "hook:p", "hook:script", "report:Dropped <script> (matched selector 'script')",
     "node:script", "hook:#comment", "report:Dropped comment", "node:#comment", "hook:#doctype",
@@ -1617,7 +1617,7 @@ test "drop_attrs reports exact forbidden patterns before hook" {
       ),
     ]),
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "report:Unsafe attribute 'onclick' (matched forbidden pattern 'on*')", "node:div",
     "hook:div", "report:Unsafe attribute 'xml:lang' (matched forbidden pattern '*:*')",
     "node:div", "hook:div", "report:Unsafe attribute 'srcdoc' (matched forbidden pattern 'srcdoc')",
@@ -1661,7 +1661,7 @@ test "allowlist_attrs reports exact unsafe attributes before hook" {
       ),
     ]),
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "report:Unsafe attribute 'bad' (not allowed)", "node:a", "hook:a", "report:Unsafe attribute 'href' (not allowed)",
     "node:span", "hook:span",
   ])
@@ -1700,7 +1700,7 @@ test "unchanged attribute transforms do not call hooks" {
       ),
     ]),
   )
-  assert_eq(events, [])
+  @test.assert_eq(events, [])
   assert_eq(
     root.to_html(pretty=false),
     "<p id=\"x\"></p><span style=\"color: red\"></span>",
@@ -1749,7 +1749,7 @@ test "edit hooks and reports follow Python callback ordering" {
       ),
     ]),
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "hook:#document-fragment", "report:Edited document root", "node:#document-fragment",
     "edit-document:#document-fragment", "hook:p", "report:Edited <p> (matched selector 'p')",
     "node:p", "edit:p", "edit-attrs:p", "hook:p", "report:Edited attributes on <p> (matched selector 'p')",
@@ -1787,7 +1787,7 @@ test "merge_attrs hook report matches Python message" {
       ),
     ]),
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "hook:a", "report:Merged tokens into attribute 'rel' on <a>", "node:a",
   ])
   assert_eq(root.to_html(pretty=false), "<a rel=\"noreferrer noopener\">x</a>")
@@ -1815,7 +1815,7 @@ test "text transform hooks and reports run before text replacement" {
       @html_parser.TransformSpec::linkify(hook~, report~),
     ]),
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "hook:#text:visit example.com  now", "report:Collapsed whitespace in text node",
     "node:#text:visit example.com  now", "hook:#text:visit example.com now", "report:Linkified 1 link(s) in text node",
     "node:#text:visit example.com now",
@@ -1842,7 +1842,7 @@ test "unchanged text transforms do not call hooks" {
       @html_parser.TransformSpec::linkify(hook~, report~),
     ]),
   )
-  assert_eq(events, [])
+  @test.assert_eq(events, [])
   assert_eq(root.to_html(pretty=false), "<p>plain</p><a>example.com</a>")
 }
 
@@ -1863,7 +1863,9 @@ test "linkify transform can replace standalone text root" {
     root.to_html(pretty=false),
     "Go <a href=\"http://example.com\">example.com</a>",
   )
-  assert_eq(events, ["hook:#text", "report:Linkified 1 link(s) in text node"])
+  @test.assert_eq(events, [
+    "hook:#text", "report:Linkified 1 link(s) in text node",
+  ])
 }
 
 ///|
@@ -2019,7 +2021,7 @@ test "drop_url_attrs reports exact unsafe URL reasons before hook" {
       ),
     ]),
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "report:Unsafe URL in attribute 'href'", "node:a", "hook:a", "report:Unsafe URL in attribute 'src' (no rule)",
     "node:a", "hook:a", "report:Unsafe URL in attribute 'href' (base tag)", "node:base",
     "hook:base", "report:Unsafe URL in attribute 'content' (meta refresh)", "node:meta",
@@ -2127,7 +2129,7 @@ test "allow_style_attrs reports unsafe inline style before hook" {
       ),
     ]),
   )
-  assert_eq(events, [
+  @test.assert_eq(events, [
     "report:Unsafe inline style in attribute 'style'", "node:span", "hook:span",
     "report:Unsafe inline style in attribute 'style'", "node:span", "hook:span",
     "hook:span",

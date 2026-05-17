@@ -6,3 +6,7 @@ import {
   "bobzhang/html_parser/serializer" @ser,
   "moonbitlang/core/encoding/utf8" @utf8,
 }
+
+import {
+  "moonbitlang/core/test" @test,
+} for "wbtest"

@@ -74,7 +74,7 @@ test "sanitizer scanners preserve astral URL and token boundaries" {
   )
   let tokens : Array[String] = []
   push_html_whitespace_tokens(tokens, "NoOpener 😀 noreferrer")
-  assert_eq(tokens, ["noopener", "😀", "noreferrer"])
+  @test.assert_eq(tokens, ["noopener", "😀", "noreferrer"])
 }
 
 ///|
