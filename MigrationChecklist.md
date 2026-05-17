@@ -960,53 +960,53 @@ reference implementation in `.repos/justhtml`.
 - [x] Split builder insert/replace graph invariant regression into
       `builder_public_regression_test.mbt`.
 - [x] Split default sanitizer unsafe document regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split default sanitizer table-caption regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split default document sanitizer shell/doctype regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split custom sanitizer comment/drop policy regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split standalone sanitizer text/comment/doctype root regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split recursive sanitizer container/template regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split standalone sanitizer root edge-case regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split sanitizer escape disallowed-tag text regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split sanitizer escape standalone-fragment regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split sanitizer escape template-child regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split sanitizer parser escape-only text regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split parser escape-only serializer regression into
       `serializer_public_regression_test.mbt`.
 - [x] Split sanitizer default attribute/URL filtering regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split sanitizer allowed valueless non-URL attribute regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_attributes_public_regression_test.mbt`.
 - [x] Split sanitizer manual-DOM attribute lowercasing regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_attributes_public_regression_test.mbt`.
 - [x] Split sanitizer valueless URL/style attribute reporting regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_attributes_public_regression_test.mbt`.
 - [x] Split sanitizer collect/reset/raise unsafe handling regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_unsafe_handling_public_regression_test.mbt`.
 - [x] Split sanitizer raise-mode dangerous attribute/URL regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_unsafe_handling_public_regression_test.mbt`.
 - [x] Split sanitizer raise-mode URL-list/base regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_unsafe_handling_public_regression_test.mbt`.
 - [x] Split sanitizer raise-mode standalone-root regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_unsafe_handling_public_regression_test.mbt`.
 - [x] Split sanitizer raise-mode dropped-content/child-tag regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_unsafe_handling_public_regression_test.mbt`.
 - [x] Split sanitizer raise-mode foreign-namespace regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_unsafe_handling_public_regression_test.mbt`.
 - [x] Split sanitizer raise-mode HTML-namespace foreign-root regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_unsafe_handling_public_regression_test.mbt`.
 - [x] Split sanitizer drop-mode standalone-root empty-fragment regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_document_roots_public_regression_test.mbt`.
 - [x] Split parser default empty origin metadata regression into
       `parser_public_regression_test.mbt`.
 - [x] Split parser simple element/text origin tracking regression into
@@ -1412,117 +1412,117 @@ reference implementation in `.repos/justhtml`.
 - [x] Split doctype system identifier tail regression into
       `doctype_public_regression_test.mbt`.
 - [x] Split sanitizer rawtext and foreign integration collection regression
-      into `security_policy_regression_test.mbt`.
+      into `sanitize_rawtext_public_regression_test.mbt`.
 - [x] Split sanitizer invisible-Unicode text and attribute regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_attributes_public_regression_test.mbt`.
 - [x] Split sanitizer invisible-Unicode preservation policy regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_attributes_public_regression_test.mbt`.
 - [x] Split sanitizer forced-link `rel` merge regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_attributes_public_regression_test.mbt`.
 - [x] Split sanitizer mixed-case valueless attribute regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_attributes_public_regression_test.mbt`.
 - [x] Split sanitizer inline-style property allowlist regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_css_public_regression_test.mbt`.
 - [x] Split sanitizer CSS URL policy rule regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_css_public_regression_test.mbt`.
 - [x] Split sanitizer CSS URL comment rejection regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_css_public_regression_test.mbt`.
 - [x] Split sanitizer malformed CSS URL regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_css_public_regression_test.mbt`.
 - [x] Split sanitizer missing CSS URL close-paren regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_css_public_regression_test.mbt`.
 - [x] Split sanitizer URL proxy value regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_proxy_public_regression_test.mbt`.
 - [x] Split sanitizer URL proxy fail-closed config regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_proxy_public_regression_test.mbt`.
 - [x] Split sanitizer URL proxy invalid scheme-like prefix regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_proxy_public_regression_test.mbt`.
 - [x] Split sanitizer malformed URL scheme with relatives disabled regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_filter_public_regression_test.mbt`.
 - [x] Split sanitizer URL filter before validation regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_filter_public_regression_test.mbt`.
 - [x] Split URL filter debug representation regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_filter_public_regression_test.mbt`.
 - [x] Split sanitizer CSS URL filter rewrite regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_filter_public_regression_test.mbt`.
 - [x] Split sanitizer URL-list filter drop/empty regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_filter_public_regression_test.mbt`.
 - [x] Split sanitizer srcset candidate normalization regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_filter_public_regression_test.mbt`.
 - [x] Split sanitizer whitespace URL-list normalization regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_filter_public_regression_test.mbt`.
 - [x] Split sanitizer parsed-authority host allowlist regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_filter_public_regression_test.mbt`.
 - [x] Split conservative CSS text preset sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_css_public_regression_test.mbt`.
 - [x] Split rawtext element content hardening regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_rawtext_public_regression_test.mbt`.
 - [x] Split textarea markdown passthrough breakout regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_rawtext_public_regression_test.mbt`.
 - [x] Split empty rawtext and disabled invisible stripping regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_rawtext_public_regression_test.mbt`.
 - [x] Split rawtext end-tag boundary neutralization regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_rawtext_public_regression_test.mbt`.
 - [x] Split template-child rawtext hardening regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_rawtext_public_regression_test.mbt`.
 - [x] Split style rawtext resource-load filtering regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_rawtext_public_regression_test.mbt`.
 - [x] Split mixed-case style rawtext resource-load filtering regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_rawtext_public_regression_test.mbt`.
 - [x] Split foreign text-integration descendant sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split math marker text-integration sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split active foreign mutation sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split active foreign mutation raise-mode sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split HTML-namespace active foreign sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split HTML-namespace foreign root dropping sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split foreign namespace mXSS reparse sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split cloned foreign namespace mXSS reparse sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split document-root foreign namespace mXSS sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split active foreign integration stabilization sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split foreign stabilization fragment-return sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split allowed template content sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_rawtext_public_regression_test.mbt`.
 - [x] Split disallowed template unwrapping sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_rawtext_public_regression_test.mbt`.
 - [x] Split foreign URL-function attribute drop sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split foreign URL-function exact-rule sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_foreign_content_public_regression_test.mbt`.
 - [x] Split meta refresh content-attribute sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split base href sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split URL-like attribute drop-without-rule sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split single URL-like attribute rule sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split custom URL policy rule sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split empty URL value sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split decoded control-character URL value sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split URL policy host allowlist sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split srcset URL policy sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split space-separated URL list sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split standalone node and default URL edge sanitizer regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_url_policy_public_regression_test.mbt`.
 - [x] Split parse-time default sanitizer policy regression into
-      `security_policy_regression_test.mbt`.
+      `sanitize_entrypoints_public_regression_test.mbt`.
 - [x] Rename the remaining shared black-box test helpers from
       `html_parser_test.mbt` to `public_regression_helpers_test.mbt`.
 - [x] Start parser error public regression file with parser error modes and
