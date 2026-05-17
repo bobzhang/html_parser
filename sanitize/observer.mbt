@@ -1,10 +1,20 @@
 ///|
+/// Observer callbacks for sanitizer-driven DOM rewrites.
+///
+/// The node hook runs for events that have an associated DOM node. The report
+/// callback receives every sanitizer event message and the optional related
+/// node, including unsafe input that was stripped or collected.
 pub struct SanitizeTransformObserver {
   priv hook : ((@dom.Node) -> Unit)?
   priv report_callback : ((String, @dom.Node?) -> Unit)?
 }
 
 ///|
+/// Construct sanitizer observer callbacks.
+///
+/// Pass `None` for either callback to observe only reports or only affected
+/// nodes. Both callbacks are best-effort notifications; they do not change the
+/// sanitizer decision.
 pub fn SanitizeTransformObserver::new(
   hook : ((@dom.Node) -> Unit)?,
   report_callback : ((String, @dom.Node?) -> Unit)?,

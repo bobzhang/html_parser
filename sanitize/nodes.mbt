@@ -1,4 +1,8 @@
 ///|
+/// Remove one child from `parent` and detach its parent pointer.
+///
+/// `index` must be a valid child index. The removed node's `parent` field is
+/// cleared only when it still points at `parent`.
 pub fn remove_child_at(parent : @dom.Node, index : Int) -> Unit {
   let child = parent.children[index]
   ignore(parent.children.remove(index))
@@ -9,6 +13,11 @@ pub fn remove_child_at(parent : @dom.Node, index : Int) -> Unit {
 }
 
 ///|
+/// Replace one child with its own children.
+///
+/// The child at `index` is removed, detached from `parent`, and its children
+/// are inserted into `parent` at the same position with updated parent
+/// pointers. Returns the number of inserted children.
 pub fn unwrap_child_at(parent : @dom.Node, index : Int) -> Int {
   let child = parent.children[index]
   ignore(parent.children.remove(index))
@@ -28,6 +37,10 @@ pub fn unwrap_child_at(parent : @dom.Node, index : Int) -> Int {
 }
 
 ///|
+/// Return the literal closing tag used when escaping a node as text.
+///
+/// Void elements do not get an end tag. Other elements return `</name>` using
+/// the node's current tag name.
 pub fn escaped_end_tag_for(node : @dom.Node) -> String? {
   if @ser.is_void_element(node.name) {
     None

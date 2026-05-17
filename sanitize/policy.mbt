@@ -21,6 +21,10 @@ fn string_array_contains(values : Array[String], needle : String) -> Bool {
 }
 
 ///|
+/// Append `value` to `values` if it is non-empty and absent.
+///
+/// Existing order is preserved, making this suitable for normalized allowlists
+/// and token merges where duplicate entries should be ignored.
 pub fn push_unique_string(values : Array[String], value : String) -> Unit {
   if value != "" && !string_array_contains(values, value) {
     values.push(value)
@@ -224,6 +228,10 @@ pub fn SanitizationPolicy::collected_security_errors(
 }
 
 ///|
+/// Return the selector limits used by this policy.
+///
+/// Sanitizer transforms use these limits when selector-based hooks are
+/// evaluated during sanitization.
 pub fn SanitizationPolicy::selector_limits(
   self : SanitizationPolicy,
 ) -> @sel.SelectorLimits {
@@ -242,6 +250,11 @@ fn sanitize_allowed_attributes_to_arrays(
 }
 
 ///|
+/// Return a copy of this policy with additional allowed tag names.
+///
+/// Extra tags are trimmed, ASCII-lowercased, deduplicated, and merged with the
+/// existing allowlist. Other policy settings, including URL rules and unsafe
+/// handling, are preserved.
 pub fn SanitizationPolicy::with_extra_allowed_tags(
   self : SanitizationPolicy,
   extra_tags : Array[String],
@@ -270,6 +283,11 @@ pub fn SanitizationPolicy::with_extra_allowed_tags(
 }
 
 ///|
+/// Return whether this policy has an exact URL rule for a tag and attribute.
+///
+/// `tag_name` and `attr_name` should be normalized lowercase names. The default
+/// URL handling is not considered a rule; this checks only explicit
+/// tag/attribute bindings.
 pub fn SanitizationPolicy::has_url_rule(
   self : SanitizationPolicy,
   tag_name : String,

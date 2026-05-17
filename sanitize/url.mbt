@@ -113,16 +113,25 @@ fn sanitize_single_url_attribute_value(
 }
 
 ///|
+/// Return whether `name` carries a comma-separated image candidate URL list.
+///
+/// Inputs should be normalized lowercase attribute names.
 pub fn is_srcset_like_attr(name : String) -> Bool {
   name == "srcset" || name == "imagesrcset"
 }
 
 ///|
+/// Return whether `name` carries a space-separated URL list.
+///
+/// Inputs should be normalized lowercase attribute names.
 pub fn is_space_separated_url_list_attr(name : String) -> Bool {
   name == "ping" || name == "attributionsrc"
 }
 
 ///|
+/// Return whether `name` is a single URL-bearing HTML attribute.
+///
+/// Inputs should be normalized lowercase attribute names.
 pub fn is_single_url_like_attr(name : String) -> Bool {
   match name {
     "href"
@@ -138,6 +147,10 @@ pub fn is_single_url_like_attr(name : String) -> Bool {
 }
 
 ///|
+/// Return whether a foreign-content attribute can load URLs through CSS syntax.
+///
+/// These SVG-style presentation attributes are checked for resource-loading CSS
+/// functions when the node is effectively foreign.
 pub fn is_foreign_url_function_like_attr(name : String) -> Bool {
   match name {
     "clip-path"
