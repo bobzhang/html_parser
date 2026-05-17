@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "bobzhang/html_parser_examples"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn compact_fragment(String) -> String raise
+
+pub fn pretty_fragment(String, indent_size? : Int) -> String raise
+
+pub fn run_htmlfmt(ArrayView[String]) -> HtmlFmtResult raise
+
+// Errors
+
+// Types and methods
+pub(all) struct HtmlFmtResult {
+  exit_code : Int
+  stdout : String
+  stderr : String
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

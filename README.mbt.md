@@ -131,12 +131,13 @@ stdin/file IO. Build it from this repository with:
 moon run --target native --release --build-only cmd/main
 ```
 
-The executable is written to `_build/native/release/build/cmd/main/main.exe`.
+The executable is written to
+`_build/native/release/build/bobzhang/html_parser/cmd/main/main.exe`.
 For example:
 
 ```sh
 printf '<p>Hello <b>MoonBit</b></p>' \
-  | _build/native/release/build/cmd/main/main.exe - --format text
+  | _build/native/release/build/bobzhang/html_parser/cmd/main/main.exe - --format text
 ```
 
 Black-box CLI integration tests live in `tests/scrut` and run with:
@@ -144,6 +145,17 @@ Black-box CLI integration tests live in `tests/scrut` and run with:
 ```sh
 moon run --target native scripts/check_scrut_cli.mbtx
 ```
+
+## Workspace Examples
+
+This repository also has a `moon.work` workspace with an `examples` module for
+runnable documentation. The formatter example uses the local parser checkout:
+
+```sh
+moon run --target native examples/cmd/htmlfmt -- "<article><p>Hello <b>MoonBit</b></p></article>"
+```
+
+The examples documentation lives in `examples/README.mbt.md`.
 
 ## Development Checks
 

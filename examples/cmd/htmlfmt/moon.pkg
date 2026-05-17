@@ -1,0 +1,10 @@
+import {
+  "bobzhang/html_parser_examples",
+  "moonbitlang/core/env",
+}
+
+supported_targets = "+native"
+
+options(
+  "is-main": true,
+)
