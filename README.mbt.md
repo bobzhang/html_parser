@@ -139,6 +139,12 @@ printf '<p>Hello <b>MoonBit</b></p>' \
   | _build/native/release/build/cmd/main/main.exe - --format text
 ```
 
+Black-box CLI integration tests live in `tests/scrut` and run with:
+
+```sh
+bash scripts/check_scrut_cli.sh
+```
+
 ## Development Checks
 
 Run the same validation entrypoint used by CI:
@@ -156,5 +162,5 @@ test-name inventory, migration docs, local Git hook wiring, vendored fixture syn
 `.repos/justhtml` is present, vendored fixture manifest hashes, package
 metadata, formatting, generated interfaces, all supported targets,
 default/JS/native tests with a count floor, coverage, native CLI smoke
-behavior, Mooncakes package validation, and dynamic Mooncakes archive
-inventory/content checks.
+behavior, Scrut CLI integration tests, Mooncakes package validation, and
+dynamic Mooncakes archive inventory/content checks.

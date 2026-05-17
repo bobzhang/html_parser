@@ -26,5 +26,18 @@ jobs:
       - name: Show MoonBit version
         run: moon version --all
 
+      - name: Set up DotSlash
+        uses: facebook/install-dotslash@latest
+
+      - name: Set up Scrut
+        env:
+          SCRUT_VERSION: v0.4.3
+        run: |
+          curl --proto '=https' --tlsv1.2 -LsSf \
+            "https://github.com/facebookincubator/scrut/releases/download/${SCRUT_VERSION}/scrut" \
+            > scrut
+          chmod +x scrut
+          echo "SCRUT_BIN=$PWD/scrut" >> "$GITHUB_ENV"
+
       - name: Run repository checks
         run: bash scripts/check_ci.sh --skip-without-credentials
