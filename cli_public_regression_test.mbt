@@ -8,7 +8,7 @@ fn cli_public_optional(value : String?) -> String {
 
 ///|
 test "public CLI read plan and reader output workflow stays stable" {
-  let args = [
+  let args : ReadOnlyArray[String] = [
     "-", "--fragment", "--selector", "article", "--allow-tags", "article,h2,p,b",
     "--format", "markdown", "--output", "out.md",
   ]
