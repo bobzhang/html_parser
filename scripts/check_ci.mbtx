@@ -1,26 +1,112 @@
-///|
-#borrow(command)
-extern "C" fn c_system(command : Bytes) -> Int = "system"
+import {
+  "moonbitlang/async@0.19.0",
+  "moonbitlang/async@0.19.0/process",
+  "moonbitlang/async@0.19.0/stdio",
+  "moonbitlang/core/argparse",
+  "moonbitlang/core/buffer",
+  "moonbitlang/core/env",
+}
 
 ///|
-#borrow(data)
-extern "C" fn c_write(fd : Int, data : Bytes, count : Int) -> Int = "write"
-
-///|
-extern "C" fn c_exit(code : Int) -> Unit = "exit"
-
-///|
-fn main {
+async fn main {
   let all_args = @env.args()
   let args = if all_args.is_empty() { all_args[:] } else { all_args[1:] }
+  validate_args(args)
   let code = dispatch(args)
   if code != 0 {
-    c_exit(code)
+    fail("check_ci failed")
   }
 }
 
 ///|
-fn dispatch(args : ArrayView[String]) -> Int {
+async fn validate_args(args : ArrayView[String]) -> Unit {
+  let command = check_ci_command()
+  let _ = command.parse(argv=args, env={}) catch {
+    error => {
+      eprintln(error.to_string())
+      usage_main()
+      fail("invalid arguments")
+    }
+  }
+}
+
+///|
+fn check_ci_command() -> @argparse.Command {
+  @argparse.Command(
+    "check_ci",
+    about="Run repository validation checks.",
+    flags=[
+      @argparse.FlagArg(
+        "skip-without-credentials",
+        long="skip-without-credentials",
+      ),
+    ],
+    subcommands=[
+      check_ci_subcommand(),
+      check_no_arg_subcommand("check-release-version"),
+      check_no_arg_subcommand("check-scripts"),
+      check_no_arg_subcommand("check-validation-inventory"),
+      check_no_arg_subcommand("check-github-workflows"),
+      check_no_arg_subcommand("check-source-layout"),
+      check_no_arg_subcommand("check-test-inventory"),
+      check_no_arg_subcommand("check-moonbit-style"),
+      check_no_arg_subcommand("check-gitignore"),
+      check_no_arg_subcommand("check-githooks"),
+      check_no_arg_subcommand("check-migration-docs"),
+      @argparse.Command(
+        "check-fixture-sync",
+        flags=[@argparse.FlagArg("require-reference", long="require-reference")],
+      ),
+      check_no_arg_subcommand("check-fixture-manifest"),
+      check_no_arg_subcommand("check-package-metadata"),
+      check_no_arg_subcommand("check-interfaces"),
+      check_no_arg_subcommand("check-tests"),
+      check_no_arg_subcommand("check-coverage"),
+      check_no_arg_subcommand("smoke-native-cli"),
+      check_no_arg_subcommand("check-scrut-cli"),
+      @argparse.Command(
+        "verify-mooncakes-package",
+        flags=[
+          @argparse.FlagArg(
+            "skip-without-credentials",
+            long="skip-without-credentials",
+          ),
+        ],
+      ),
+      @argparse.Command(
+        "check-publish-archive",
+        positionals=[
+          @argparse.PositionArg(
+            "zip-path",
+            num_args=@argparse.ValueRange(lower=0, upper=1),
+          ),
+        ],
+      ),
+    ],
+    disable_help_subcommand=true,
+  )
+}
+
+///|
+fn check_ci_subcommand() -> @argparse.Command {
+  @argparse.Command(
+    "check-ci",
+    flags=[
+      @argparse.FlagArg(
+        "skip-without-credentials",
+        long="skip-without-credentials",
+      ),
+    ],
+  )
+}
+
+///|
+fn check_no_arg_subcommand(name : String) -> @argparse.Command {
+  @argparse.Command(name)
+}
+
+///|
+async fn dispatch(args : ArrayView[String]) -> Int {
   if args.is_empty() || args[0].has_prefix("--") {
     return check_ci(args)
   }
@@ -56,7 +142,7 @@ fn dispatch(args : ArrayView[String]) -> Int {
 }
 
 ///|
-fn check_ci(args : ArrayView[String]) -> Int {
+async fn check_ci(args : ArrayView[String]) -> Int {
   let skip_mooncakes_without_credentials = match args.length() {
     0 => false
     1 => if args[0] == "--skip-without-credentials" {
@@ -91,21 +177,23 @@ fn check_ci(args : ArrayView[String]) -> Int {
   if code != 0 { return code }
   code = run_step("Check migration docs", run_check_migration_docs)
   if code != 0 { return code }
-  code = run_step("Check vendored fixture sync", fn() { run_check_fixture_sync("") })
+  code = run_step("Check vendored fixture sync", () => run_check_fixture_sync(""))
   if code != 0 { return code }
   code = run_step("Check vendored fixture manifest", run_check_fixture_manifest)
   if code != 0 { return code }
   code = run_step("Check package metadata", run_check_package_metadata)
   if code != 0 { return code }
-  code = run_step("Check formatting", fn() { run_command("moon fmt --check") })
+  code = run_step("Check formatting", () => run_command("moon fmt --check"))
   if code != 0 { return code }
   code = run_step("Check generated interfaces", run_check_interfaces)
   if code != 0 { return code }
-  code = run_step("Type check default target", fn() { run_command("moon check --warn-list +73") })
+  code = run_step("Type check default target", () => run_command("moon check --warn-list +73"))
   if code != 0 { return code }
-  code = run_step("Type check all targets", fn() { run_command("moon check --target all --warn-list +73") })
+  code = run_step("Type check all targets", () =>
+    run_command("moon check --target all --warn-list +73"))
   if code != 0 { return code }
-  code = run_step("Type check native CLI", fn() { run_command("moon check --target native cmd/main --warn-list +73") })
+  code = run_step("Type check native CLI", () =>
+    run_command("moon check --target native cmd/main --warn-list +73"))
   if code != 0 { return code }
   code = run_step("Run tests with count floor", run_check_tests)
   if code != 0 { return code }
@@ -117,78 +205,78 @@ fn check_ci(args : ArrayView[String]) -> Int {
   if code != 0 { return code }
   run_step(
     "Verify Mooncakes package",
-    fn() { run_verify_mooncakes_package(skip_mooncakes_without_credentials) },
+    () => run_verify_mooncakes_package(skip_mooncakes_without_credentials),
   )
 }
 
 ///|
-fn run_step(label : String, check : () -> Int) -> Int {
+async fn run_step(label : String, check : async () -> Int) -> Int {
   write_stdout("\n==> " + label + "\n")
   check()
 }
 
 ///|
-fn check_release_version(args : ArrayView[String]) -> Int {
+async fn check_release_version(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-release-version") { return 2 }
   run_check_release_version()
 }
 
 ///|
-fn check_scripts(args : ArrayView[String]) -> Int {
+async fn check_scripts(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-scripts") { return 2 }
   run_check_scripts()
 }
 
 ///|
-fn check_validation_inventory(args : ArrayView[String]) -> Int {
+async fn check_validation_inventory(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-validation-inventory") { return 2 }
   run_check_validation_inventory()
 }
 
 ///|
-fn check_github_workflows(args : ArrayView[String]) -> Int {
+async fn check_github_workflows(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-github-workflows") { return 2 }
   run_check_github_workflows()
 }
 
 ///|
-fn check_source_layout(args : ArrayView[String]) -> Int {
+async fn check_source_layout(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-source-layout") { return 2 }
   run_check_source_layout()
 }
 
 ///|
-fn check_test_inventory(args : ArrayView[String]) -> Int {
+async fn check_test_inventory(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-test-inventory") { return 2 }
   run_check_test_inventory()
 }
 
 ///|
-fn check_moonbit_style(args : ArrayView[String]) -> Int {
+async fn check_moonbit_style(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-moonbit-style") { return 2 }
   run_check_moonbit_style()
 }
 
 ///|
-fn check_gitignore(args : ArrayView[String]) -> Int {
+async fn check_gitignore(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-gitignore") { return 2 }
   run_check_gitignore()
 }
 
 ///|
-fn check_githooks(args : ArrayView[String]) -> Int {
+async fn check_githooks(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-githooks") { return 2 }
   run_check_githooks()
 }
 
 ///|
-fn check_migration_docs(args : ArrayView[String]) -> Int {
+async fn check_migration_docs(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-migration-docs") { return 2 }
   run_check_migration_docs()
 }
 
 ///|
-fn check_fixture_sync(args : ArrayView[String]) -> Int {
+async fn check_fixture_sync(args : ArrayView[String]) -> Int {
   if args.length() > 1 || (args.length() == 1 && args[0] != "--require-reference") {
     eprintln("usage: moon run --target native scripts/check_ci.mbtx check-fixture-sync [--require-reference]")
     return 2
@@ -197,49 +285,49 @@ fn check_fixture_sync(args : ArrayView[String]) -> Int {
 }
 
 ///|
-fn check_fixture_manifest(args : ArrayView[String]) -> Int {
+async fn check_fixture_manifest(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-fixture-manifest") { return 2 }
   run_check_fixture_manifest()
 }
 
 ///|
-fn check_package_metadata(args : ArrayView[String]) -> Int {
+async fn check_package_metadata(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-package-metadata") { return 2 }
   run_check_package_metadata()
 }
 
 ///|
-fn check_interfaces(args : ArrayView[String]) -> Int {
+async fn check_interfaces(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-interfaces") { return 2 }
   run_check_interfaces()
 }
 
 ///|
-fn check_tests(args : ArrayView[String]) -> Int {
+async fn check_tests(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-tests") { return 2 }
   run_check_tests()
 }
 
 ///|
-fn check_coverage(args : ArrayView[String]) -> Int {
+async fn check_coverage(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-coverage") { return 2 }
   run_check_coverage()
 }
 
 ///|
-fn smoke_native_cli(args : ArrayView[String]) -> Int {
+async fn smoke_native_cli(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx smoke-native-cli") { return 2 }
   run_smoke_native_cli()
 }
 
 ///|
-fn check_scrut_cli(args : ArrayView[String]) -> Int {
+async fn check_scrut_cli(args : ArrayView[String]) -> Int {
   if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-scrut-cli") { return 2 }
   run_check_scrut_cli()
 }
 
 ///|
-fn verify_mooncakes_package(args : ArrayView[String]) -> Int {
+async fn verify_mooncakes_package(args : ArrayView[String]) -> Int {
   let skip_without_credentials = match args.length() {
     0 => false
     1 => if args[0] == "--skip-without-credentials" {
@@ -257,7 +345,7 @@ fn verify_mooncakes_package(args : ArrayView[String]) -> Int {
 }
 
 ///|
-fn check_publish_archive(args : ArrayView[String]) -> Int {
+async fn check_publish_archive(args : ArrayView[String]) -> Int {
   if args.length() > 1 || (args.length() == 1 && args[0].has_prefix("-")) {
     eprintln("usage: moon run --target native scripts/check_ci.mbtx check-publish-archive [zip-path]")
     return 2
@@ -266,72 +354,72 @@ fn check_publish_archive(args : ArrayView[String]) -> Int {
 }
 
 ///|
-fn run_check_release_version() -> Int {
+async fn run_check_release_version() -> Int {
   run_python(check_release_version_source(), "")
 }
 
 ///|
-fn run_check_validation_inventory() -> Int {
+async fn run_check_validation_inventory() -> Int {
   run_python(check_validation_inventory_source(), "")
 }
 
 ///|
-fn run_check_github_workflows() -> Int {
+async fn run_check_github_workflows() -> Int {
   run_python(check_github_workflows_source(), "")
 }
 
 ///|
-fn run_check_source_layout() -> Int {
+async fn run_check_source_layout() -> Int {
   run_python(check_source_layout_source(), "")
 }
 
 ///|
-fn run_check_test_inventory() -> Int {
+async fn run_check_test_inventory() -> Int {
   run_python(check_test_inventory_source(), "")
 }
 
 ///|
-fn run_check_moonbit_style() -> Int {
+async fn run_check_moonbit_style() -> Int {
   run_python(check_moonbit_style_source(), "")
 }
 
 ///|
-fn run_check_gitignore() -> Int {
+async fn run_check_gitignore() -> Int {
   run_python(check_gitignore_source(), "")
 }
 
 ///|
-fn run_check_githooks() -> Int {
+async fn run_check_githooks() -> Int {
   run_python(check_githooks_source(), "")
 }
 
 ///|
-fn run_check_migration_docs() -> Int {
+async fn run_check_migration_docs() -> Int {
   run_python(check_migration_docs_source(), "")
 }
 
 ///|
-fn run_check_fixture_sync(args : String) -> Int {
+async fn run_check_fixture_sync(args : String) -> Int {
   run_python(check_fixture_sync_source(), args)
 }
 
 ///|
-fn run_check_fixture_manifest() -> Int {
+async fn run_check_fixture_manifest() -> Int {
   run_python(check_fixture_manifest_source(), "")
 }
 
 ///|
-fn run_check_package_metadata() -> Int {
+async fn run_check_package_metadata() -> Int {
   run_python(check_package_metadata_source(), "")
 }
 
 ///|
-fn run_check_publish_archive(args : String) -> Int {
+async fn run_check_publish_archive(args : String) -> Int {
   run_python(check_publish_archive_source(), args)
 }
 
 ///|
-fn run_check_scripts() -> Int {
+async fn run_check_scripts() -> Int {
   let script =
     #|bad_scripts="$(git ls-files 'scripts/*.sh' 'scripts/*.py')"
     #|if [[ -n "$bad_scripts" ]]; then
@@ -368,15 +456,15 @@ fn run_check_scripts() -> Int {
     #|scrut_cli_code=$?
     #|set -e
     #|
-    #|test "$check_ci_code" -eq 2
+    #|test "$check_ci_code" -ne 0
     #|grep -F "usage: moon run --target native scripts/check_ci.mbtx [--skip-without-credentials]" "$check_ci_err" > /dev/null
-    #|test "$scrut_cli_code" -eq 2
+    #|test "$scrut_cli_code" -ne 0
     #|grep -F "usage: moon run --target native scripts/check_scrut_cli.mbtx" "$scrut_cli_err" > /dev/null
   run_bash(script)
 }
 
 ///|
-fn run_check_interfaces() -> Int {
+async fn run_check_interfaces() -> Int {
   let script =
     #|moon info
     #|
@@ -394,7 +482,7 @@ fn run_check_interfaces() -> Int {
 }
 
 ///|
-fn run_check_tests() -> Int {
+async fn run_check_tests() -> Int {
   let script =
     #|min_tests=614
     #|
@@ -444,7 +532,7 @@ fn run_check_tests() -> Int {
 }
 
 ///|
-fn run_check_coverage() -> Int {
+async fn run_check_coverage() -> Int {
   let script =
     #|coverage="$(moon coverage analyze)"
     #|printf '%s\n' "$coverage"
@@ -453,7 +541,7 @@ fn run_check_coverage() -> Int {
 }
 
 ///|
-fn run_smoke_native_cli() -> Int {
+async fn run_smoke_native_cli() -> Int {
   let script =
     #|moon run --target native --release --build-only cmd/main
     #|
@@ -497,12 +585,12 @@ fn run_smoke_native_cli() -> Int {
 }
 
 ///|
-fn run_check_scrut_cli() -> Int {
+async fn run_check_scrut_cli() -> Int {
   run_command("moon run --target native scripts/check_scrut_cli.mbtx")
 }
 
 ///|
-fn run_verify_mooncakes_package(skip_without_credentials : Bool) -> Int {
+async fn run_verify_mooncakes_package(skip_without_credentials : Bool) -> Int {
   let skip = if skip_without_credentials { "true" } else { "false" }
   let script =
     #|if [[ "$skip_without_credentials" == true && ! -f "$HOME/.moon/credentials.json" ]]; then
@@ -539,17 +627,17 @@ fn run_verify_mooncakes_package(skip_without_credentials : Bool) -> Int {
 }
 
 ///|
-fn run_command(command : String) -> Int {
-  if c_system(@utf8.encode(command)) == 0 { 0 } else { 1 }
+async fn run_command(command : String) -> Int {
+  @process.run("bash", ["-e", "-u", "-o", "pipefail", "-c", command])
 }
 
 ///|
-fn run_bash(script : String) -> Int {
-  run_command("bash -euo pipefail -c " + shell_quote(script))
+async fn run_bash(script : String) -> Int {
+  @process.run("bash", ["-e", "-u", "-o", "pipefail", "-c", script])
 }
 
 ///|
-fn run_python(source : String, args : String) -> Int {
+async fn run_python(source : String, args : String) -> Int {
   let command = if args.is_empty() {
     "python3 - <<'PY'\n" + source + "\nPY"
   } else {
@@ -559,7 +647,7 @@ fn run_python(source : String, args : String) -> Int {
 }
 
 ///|
-fn expect_no_args(args : ArrayView[String], usage : String) -> Bool {
+async fn expect_no_args(args : ArrayView[String], usage : String) -> Bool {
   if args.is_empty() {
     true
   } else {
@@ -569,31 +657,29 @@ fn expect_no_args(args : ArrayView[String], usage : String) -> Bool {
 }
 
 ///|
-fn usage_main() -> Unit {
+async fn usage_main() -> Unit {
   eprintln("usage: moon run --target native scripts/check_ci.mbtx [--skip-without-credentials]")
   eprintln("       moon run --target native scripts/check_ci.mbtx <check-subcommand>")
 }
 
 ///|
-fn usage_check_ci() -> Unit {
+async fn usage_check_ci() -> Unit {
   eprintln("usage: moon run --target native scripts/check_ci.mbtx [--skip-without-credentials]")
 }
 
 ///|
-fn eprintln(message : String) -> Unit {
+async fn eprintln(message : String) -> Unit {
   write_stderr(message + "\n")
 }
 
 ///|
-fn write_stderr(message : String) -> Unit {
-  let data = @utf8.encode(message)
-  let _ = c_write(2, data, data.length())
+async fn write_stderr(message : String) -> Unit {
+  @stdio.stderr.write(message)
 }
 
 ///|
-fn write_stdout(message : String) -> Unit {
-  let data = @utf8.encode(message)
-  let _ = c_write(1, data, data.length())
+async fn write_stdout(message : String) -> Unit {
+  @stdio.stdout.write(message)
 }
 
 ///|

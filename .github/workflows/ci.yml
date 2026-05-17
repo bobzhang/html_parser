@@ -26,6 +26,9 @@ jobs:
       - name: Show MoonBit version
         run: moon version --all
 
+      - name: Update MoonBit registry
+        run: moon update
+
       - name: Set up DotSlash
         uses: facebook/install-dotslash@latest
 
