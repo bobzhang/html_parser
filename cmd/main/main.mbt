@@ -8,24 +8,10 @@ fn main {
 ///|
 fn run_native_cli(args : ArrayView[String]) -> @html_parser.CliResult {
   let command = native_cli_command()
-  let matches = command.parse(argv=args, env={}) catch {
+  let _ = command.parse(argv=args, env={}) catch {
     error => return cli_parse_failure(error.to_string())
   }
-  if cli_flag(matches, "help") {
-    return cli_immediate(0, stdout=@html_parser.cli_help())
-  }
-  if cli_flag(matches, "version") {
-    return @html_parser.run_cli_with_reader(["--version"], read_cli_input)
-  }
-  let path = match cli_value(matches, "path") {
-    Some(path) => path
-    None => return cli_immediate(1, stderr=@html_parser.cli_help())
-  }
-  if path.has_prefix("-") && path != "-" {
-    return cli_arg_error("unknown option: \{path}")
-  }
-  let normalized = cli_normalized_args(matches, path)
-  @html_parser.run_cli_with_reader(normalized[:], read_cli_input)
+  @html_parser.run_cli_with_reader(args, read_cli_input)
 }
 
 ///|
@@ -64,72 +50,6 @@ fn native_cli_option(name : String) -> @argparse.OptionArg {
 }
 
 ///|
-fn cli_normalized_args(
-  matches : @argparse.Matches,
-  path : String,
-) -> Array[String] {
-  let normalized : Array[String] = []
-  cli_push_option(normalized, matches, "format", "--format")
-  cli_push_option(normalized, matches, "output", "--output")
-  cli_push_option(normalized, matches, "selector", "--selector")
-  cli_push_option(normalized, matches, "allow-tags", "--allow-tags")
-  cli_push_option(normalized, matches, "separator", "--separator")
-  cli_push_flag(normalized, matches, "unsafe", "--unsafe")
-  cli_push_flag(normalized, matches, "cleanup", "--cleanup")
-  cli_push_flag(normalized, matches, "first", "--first")
-  cli_push_flag(normalized, matches, "fragment", "--fragment")
-  cli_push_flag(normalized, matches, "strict", "--strict")
-  cli_push_flag(
-    normalized, matches, "separator-blocks-only", "--separator-blocks-only",
-  )
-  cli_push_flag(normalized, matches, "strip", "--strip")
-  cli_push_flag(normalized, matches, "no-strip", "--no-strip")
-  normalized.push(path)
-  normalized
-}
-
-///|
-fn cli_push_option(
-  normalized : Array[String],
-  matches : @argparse.Matches,
-  name : String,
-  option : String,
-) -> Unit {
-  match cli_value(matches, name) {
-    Some(value) => {
-      normalized.push(option)
-      normalized.push(value)
-    }
-    None => ()
-  }
-}
-
-///|
-fn cli_push_flag(
-  normalized : Array[String],
-  matches : @argparse.Matches,
-  name : String,
-  flag : String,
-) -> Unit {
-  if cli_flag(matches, name) {
-    normalized.push(flag)
-  }
-}
-
-///|
-fn cli_value(matches : @argparse.Matches, name : String) -> String? {
-  match matches.values.get(name) {
-    Some(values) if values.length() > 0 => Some(values[values.length() - 1])
-    _ => None
-  }
-}
-
-///|
-fn cli_flag(matches : @argparse.Matches, name : String) -> Bool {
-  matches.flags.get(name).unwrap_or(false)
-}
-
-///|
 fn cli_parse_failure(message : String) -> @html_parser.CliResult {
   let first_line = cli_first_line(message)
   cli_immediate(2, stderr="\{first_line}\n\n\{@html_parser.cli_help()}")
@@ -143,11 +63,6 @@ fn cli_first_line(message : String) -> String {
   } else {
     lines[0].to_owned()
   }
-}
-
-///|
-fn cli_arg_error(message : String) -> @html_parser.CliResult {
-  cli_immediate(2, stderr="error: \{message}\n\n\{@html_parser.cli_help()}")
 }
 
 ///|

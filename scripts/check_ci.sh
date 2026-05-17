@@ -107,6 +107,9 @@ bash scripts/check_coverage.sh
 step "Build and smoke test native CLI"
 bash scripts/smoke_native_cli.sh
 
+step "Run Scrut native CLI tests"
+bash scripts/check_scrut_cli.sh
+
 step "Verify Mooncakes package"
 if [[ "$skip_mooncakes_without_credentials" == true ]]; then
   bash scripts/verify_mooncakes_package.sh --skip-without-credentials
