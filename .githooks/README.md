@@ -24,5 +24,5 @@ To use this pre-commit hook:
 The hook calls:
 
 ```bash
-bash scripts/check_ci.sh --skip-without-credentials
+moon run --target native scripts/check_ci.mbtx --skip-without-credentials
 ```
