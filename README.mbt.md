@@ -150,13 +150,13 @@ moon run --target native scripts/check_scrut_cli.mbtx
 Run the same validation entrypoint used by CI:
 
 ```sh
-bash scripts/check_ci.sh --skip-without-credentials
+moon run --target native scripts/check_ci.mbtx --skip-without-credentials
 ```
 
 Drop `--skip-without-credentials` when logged in locally and checking the full
 Mooncakes dry-run path. The script checks release-version consistency,
-validation-script syntax and argument smoke paths, helper suffix/shebang
-conventions, validation-inventory wiring, GitHub workflow drift and tracked
+MoonBit script inventory and argument smoke paths, validation-inventory wiring,
+GitHub workflow drift and tracked
 workflow inventory including the Copilot setup workflow, source layout,
 test-name inventory, migration docs, local Git hook wiring, vendored fixture sync when
 `.repos/justhtml` is present, vendored fixture manifest hashes, package
