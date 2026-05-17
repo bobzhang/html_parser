@@ -24,14 +24,12 @@ fn node_to_html_compact(
       out.write_string("<!DOCTYPE")
       if node.data != "" {
         validate_serializable_tag_name(node.data)
-        out.write_char(' ')
-        out.write_string(node.data)
+        out <+ " \{node.data}"
       }
       match node.public_id {
         Some(value) => {
-          out.write_string(" PUBLIC \"")
-          out.write_string(escape_attr_value(value, '"'))
-          out.write_char('"')
+          let escaped = escape_attr_value(value, '"')
+          out <+ " PUBLIC \"\{escaped}\""
         }
         None => ()
       }
@@ -40,9 +38,8 @@ fn node_to_html_compact(
           if node.public_id is None {
             out.write_string(" SYSTEM")
           }
-          out.write_string(" \"")
-          out.write_string(escape_attr_value(value, '"'))
-          out.write_char('"')
+          let escaped = escape_attr_value(value, '"')
+          out <+ " \"\{escaped}\""
         }
         None => ()
       }
@@ -56,9 +53,7 @@ fn node_to_html_compact(
         for child in node.children {
           out.write_string(node_to_html_compact(child, quote))
         }
-        out.write_string("</")
-        out.write_string(node.name)
-        out.write_char('>')
+        out <+ "</\{node.name}>"
       }
       out.to_string()
     }
