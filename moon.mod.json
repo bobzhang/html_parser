@@ -1,6 +1,7 @@
 {
   "name": "bobzhang/html_parser",
   "version": "0.1.6",
+  "preferred-target": "native",
   "readme": "README.mbt.md",
   "repository": "https://github.com/bobzhang/html_parser",
   "license": "Apache-2.0",

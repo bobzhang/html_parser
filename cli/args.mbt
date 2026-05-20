@@ -1,32 +1,77 @@
 ///|
-fn cli_option_value_from_equals(arg : String, option : String) -> String? {
-  let prefix = "\{option}="
-  if !arg.has_prefix(prefix) {
-    return None
-  }
-  Some(arg[prefix.length():arg.length()].to_owned())
+fn cli_command() -> @argparse.Command {
+  Command(
+    "justhtml",
+    flags=[
+      FlagArg("help", short='h', long="help"),
+      FlagArg("version", long="version"),
+      FlagArg("unsafe", long="unsafe"),
+      FlagArg("cleanup", long="cleanup"),
+      FlagArg("first", long="first"),
+      FlagArg("fragment", long="fragment"),
+      FlagArg("strict", long="strict"),
+      FlagArg("separator-blocks-only", long="separator-blocks-only"),
+      FlagArg("strip", long="strip"),
+      FlagArg("no-strip", long="no-strip"),
+    ],
+    options=[
+      cli_option("format"),
+      cli_option("output"),
+      cli_option("selector"),
+      cli_option("allow-tags"),
+      cli_option("separator"),
+    ],
+    positionals=[
+      PositionArg(
+        "path",
+        num_args=ValueRange(lower=0, upper=1),
+        allow_hyphen_values=true,
+      ),
+    ],
+    disable_help_flag=true,
+    disable_version_flag=true,
+    disable_help_subcommand=true,
+  )
 }
 
 ///|
-fn cli_read_option_value(
-  args : ArrayView[String],
-  index : Int,
-  option : String,
-) -> (String?, Int, CliResult?) {
-  let arg = args[index]
-  match cli_option_value_from_equals(arg, option) {
-    Some(value) => (Some(value), index + 1, None)
-    None =>
-      if arg == option {
-        if index + 1 >= args.length() {
-          (None, index + 1, Some(cli_arg_error("\{option} requires a value")))
-        } else {
-          (Some(args[index + 1]), index + 2, None)
-        }
-      } else {
-        (None, index, None)
-      }
+fn cli_option(name : String) -> @argparse.OptionArg {
+  OptionArg(name, action=Append, allow_hyphen_values=true)
+}
+
+///|
+fn cli_matches_flag(matches : @argparse.Matches, name : String) -> Bool {
+  match matches.flags.get(name) {
+    Some(value) => value
+    None => false
   }
+}
+
+///|
+fn cli_first_value(matches : @argparse.Matches, name : String) -> String? {
+  match matches.values.get(name) {
+    Some(values) => if values.length() == 0 { None } else { Some(values[0]) }
+    None => None
+  }
+}
+
+///|
+fn cli_last_value(matches : @argparse.Matches, name : String) -> String? {
+  match matches.values.get(name) {
+    Some(values) => Some(values[values.length() - 1])
+    None => None
+  }
+}
+
+///|
+fn cli_first_line(message : String) -> String {
+  let lines = [ for line in message.split("\n") => line ]
+  lines[0].to_owned()
+}
+
+///|
+fn cli_argparse_error(message : String) -> CliResult {
+  cli_exit(2, stderr="\{cli_first_line(message)}\n\n\{cli_help()}")
 }
 
 ///|
@@ -40,27 +85,36 @@ fn cli_parse_format(value : String) -> CliFormat? {
 }
 
 ///|
+fn cli_strip_conflict_message(args : ArrayView[String]) -> String {
+  for arg in args {
+    match arg {
+      "--strip" => return "--no-strip conflicts with --strip"
+      "--no-strip" => return "--strip conflicts with --no-strip"
+      _ => ()
+    }
+  }
+  "--strip conflicts with --no-strip"
+}
+
+///|
 fn cli_parse_args(args : ArrayView[String]) -> CliParseResult {
-  let options = cli_default_options()
   if args.length() == 0 {
     return CliParseExit(cli_exit(1, stderr=cli_help()))
   }
-  let mut index = 0
-  while index < args.length() {
-    let arg = args[index]
-    if arg == "--help" || arg == "-h" {
-      return CliParseExit(cli_exit(0, stdout=cli_help()))
-    }
-    if arg == "--version" {
-      return CliParseExit(cli_exit(0, stdout="justhtml \{cli_version()}\n"))
-    }
-    let (format_value, next_index, format_error) = cli_read_option_value(
-      args, index, "--format",
-    )
-    if format_error is Some(error) {
-      return CliParseExit(error)
-    }
-    if format_value is Some(value) {
+  let command = cli_command()
+  let matches = command.parse(argv=args, env={}) catch {
+    error => return CliParseExit(cli_argparse_error(error.to_string()))
+  }
+  if cli_matches_flag(matches, "help") {
+    return CliParseExit(cli_exit(0, stdout=cli_help()))
+  }
+  if cli_matches_flag(matches, "version") {
+    return CliParseExit(cli_exit(0, stdout="justhtml \{cli_version()}\n"))
+  }
+
+  let options = cli_default_options()
+  match cli_last_value(matches, "format") {
+    Some(value) =>
       match cli_parse_format(value) {
         Some(format) => options.format = format
         None =>
@@ -68,96 +122,41 @@ fn cli_parse_args(args : ArrayView[String]) -> CliParseResult {
             cli_arg_error("--format must be one of: html, text, markdown"),
           )
       }
-      index = next_index
-      continue
-    }
-    let (output_value, next_index, output_error) = cli_read_option_value(
-      args, index, "--output",
-    )
-    if output_error is Some(error) {
-      return CliParseExit(error)
-    }
-    if output_value is Some(value) {
-      options.output_path = Some(value)
-      index = next_index
-      continue
-    }
-    let (selector_value, next_index, selector_error) = cli_read_option_value(
-      args, index, "--selector",
-    )
-    if selector_error is Some(error) {
-      return CliParseExit(error)
-    }
-    if selector_value is Some(value) {
-      options.selector = Some(value)
-      index = next_index
-      continue
-    }
-    let (allow_tags_value, next_index, allow_tags_error) = cli_read_option_value(
-      args, index, "--allow-tags",
-    )
-    if allow_tags_error is Some(error) {
-      return CliParseExit(error)
-    }
-    if allow_tags_value is Some(value) {
-      options.allow_tags = Some(value)
-      index = next_index
-      continue
-    }
-    let (separator_value, next_index, separator_error) = cli_read_option_value(
-      args, index, "--separator",
-    )
-    if separator_error is Some(error) {
-      return CliParseExit(error)
-    }
-    if separator_value is Some(value) {
-      options.separator = value
-      index = next_index
-      continue
-    }
-    match arg {
-      "--unsafe" => options.unsafe_mode = true
-      "--cleanup" => options.cleanup = true
-      "--first" => options.first = true
-      "--fragment" => options.fragment = true
-      "--strict" => options.strict = true
-      "--separator-blocks-only" => options.separator_blocks_only = true
-      "--strip" => {
-        if options.strip_seen && !options.strip {
-          return CliParseExit(
-            cli_arg_error("--strip conflicts with --no-strip"),
-          )
-        }
-        options.strip = true
-        options.strip_seen = true
-      }
-      "--no-strip" => {
-        if options.strip_seen && options.strip {
-          return CliParseExit(
-            cli_arg_error("--no-strip conflicts with --strip"),
-          )
-        }
-        options.strip = false
-        options.strip_seen = true
-      }
-      _ =>
-        if arg.has_prefix("-") && arg != "-" {
-          return CliParseExit(cli_arg_error("unknown option: \{arg}"))
-        } else {
-          if options.path is Some(_) {
-            return CliParseExit(
-              cli_arg_error("only one input path is supported"),
-            )
-          }
-          options.path = Some(arg)
-        }
-    }
-    index += 1
+    None => ()
   }
-  if options.path is None {
-    CliParseExit(cli_exit(1, stderr=cli_help()))
-  } else {
-    CliParsed(options)
+  options.output_path = cli_last_value(matches, "output")
+  options.selector = cli_last_value(matches, "selector")
+  options.allow_tags = cli_last_value(matches, "allow-tags")
+  match cli_last_value(matches, "separator") {
+    Some(value) => options.separator = value
+    None => ()
+  }
+  options.unsafe_mode = cli_matches_flag(matches, "unsafe")
+  options.cleanup = cli_matches_flag(matches, "cleanup")
+  options.first = cli_matches_flag(matches, "first")
+  options.fragment = cli_matches_flag(matches, "fragment")
+  options.strict = cli_matches_flag(matches, "strict")
+  options.separator_blocks_only = cli_matches_flag(
+    matches, "separator-blocks-only",
+  )
+
+  let strip = cli_matches_flag(matches, "strip")
+  let no_strip = cli_matches_flag(matches, "no-strip")
+  if strip && no_strip {
+    return CliParseExit(cli_arg_error(cli_strip_conflict_message(args)))
+  }
+  if no_strip {
+    options.strip = false
+  } else if strip {
+    options.strip = true
+  }
+
+  match cli_first_value(matches, "path") {
+    Some(path) => {
+      options.path = Some(path)
+      CliParsed(options)
+    }
+    None => CliParseExit(cli_exit(1, stderr=cli_help()))
   }
 }
 

@@ -1,4 +1,5 @@
 ///|
+#coverage.skip
 fn main {
   let all_args = @env.args()
   let args = if all_args.is_empty() { all_args[:] } else { all_args[1:] }
@@ -6,6 +7,7 @@ fn main {
 }
 
 ///|
+#coverage.skip
 fn run_native_cli(args : ArrayView[String]) -> @html_parser.CliResult {
   let command = native_cli_command()
   let _ = command.parse(argv=args, env={}) catch {
@@ -15,6 +17,7 @@ fn run_native_cli(args : ArrayView[String]) -> @html_parser.CliResult {
 }
 
 ///|
+#coverage.skip
 fn native_cli_command() -> @argparse.Command {
   Command(
     "justhtml",
@@ -45,17 +48,20 @@ fn native_cli_command() -> @argparse.Command {
 }
 
 ///|
+#coverage.skip
 fn native_cli_option(name : String) -> @argparse.OptionArg {
   OptionArg(name, action=Append, allow_hyphen_values=true)
 }
 
 ///|
+#coverage.skip
 fn cli_parse_failure(message : String) -> @html_parser.CliResult {
   let first_line = cli_first_line(message)
   cli_immediate(2, stderr="\{first_line}\n\n\{@html_parser.cli_help()}")
 }
 
 ///|
+#coverage.skip
 fn cli_first_line(message : String) -> String {
   let lines = [ for line in message.split("\n") => line ]
   if lines.length() == 0 {
@@ -66,6 +72,7 @@ fn cli_first_line(message : String) -> String {
 }
 
 ///|
+#coverage.skip
 fn cli_immediate(
   code : Int,
   stdout? : String = "",
@@ -81,6 +88,7 @@ fn cli_immediate(
 }
 
 ///|
+#coverage.skip
 fn read_cli_input(path : String) -> Bytes {
   if path == "-" {
     cli_read_stdin()
@@ -90,6 +98,7 @@ fn read_cli_input(path : String) -> Bytes {
 }
 
 ///|
+#coverage.skip
 fn emit_cli_result(result : @html_parser.CliResult) -> Unit {
   match (result.file_output_path, result.file_output_content) {
     (Some(path), Some(content)) =>
