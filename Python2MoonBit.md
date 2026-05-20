@@ -1988,16 +1988,16 @@ JustHTML from Python to MoonBit.
   forcing an allocation.
 - Python's `argparse` handles `--option value`, `--option=value`, missing value
   errors, and usage-prefixed diagnostics automatically. The MoonBit CLI parser
-  is hand-written, so test each option shape explicitly, including conflict
-  pairs such as `--strip` and `--no-strip`, unknown options, and duplicate
-  positional paths.
-- Avoid adding a MoonBit dependency just for CLI I/O unless it is published in
-  the registry used by CI and Mooncakes. A tiny executable-local C stub listed
-  in `cmd/main/moon.pkg` with `"native-stub": [ "cli_io.c" ]` keeps the library
-  package dependency-free while still reading raw stdin/file bytes.
-- MoonBit `String` is UTF-16, while C file APIs expect byte strings. Encode
-  paths and output with `@utf8.encode` before calling FFI stubs, and pass
-  `Bytes` parameters with `#borrow(...)`.
+  now uses `moonbitlang/core/argparse`, so keep testing each option shape,
+  conflict pairs such as `--strip` and `--no-strip`, unknown options, and
+  duplicate positional paths.
+- Keep CLI-only dependencies out of the library package. The native executable
+  declares `moonbitlang/async` in `cmd/main/moon.pkg`, using
+  `moonbitlang/async/fs` and `moonbitlang/async/stdio` for raw stdin/file
+  bytes, stdout/stderr, and output files without custom C stubs. Keep that
+  dependency published in the Mooncakes registry before relying on it in CI.
+- MoonBit `String` is UTF-16. Use the async filesystem and stdio APIs from the
+  executable wrapper instead of manually encoding paths and output for C FFI.
 - Use raw `Bytes` for CLI input so HTML encoding detection can mirror Python's
   byte-oriented CLI path. Decode only inside the parser/fragment helper, not in
   the process wrapper.

@@ -1,13 +1,13 @@
 import {
   "bobzhang/html_parser",
-  "moonbitlang/core/argparse",
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/stdio",
   "moonbitlang/core/env",
-  "moonbitlang/core/encoding/utf8",
 }
 
 supported_targets = "+native"
 
 options(
   "is-main": true,
-  "native-stub": [ "cli_io.c" ],
 )

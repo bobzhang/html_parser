@@ -21,13 +21,7 @@ fn cli_command() -> @argparse.Command {
       cli_option("allow-tags"),
       cli_option("separator"),
     ],
-    positionals=[
-      PositionArg(
-        "path",
-        num_args=ValueRange(lower=0, upper=1),
-        allow_hyphen_values=true,
-      ),
-    ],
+    positionals=[PositionArg("path", num_args=ValueRange(lower=0, upper=1))],
     disable_help_flag=true,
     disable_version_flag=true,
     disable_help_subcommand=true,

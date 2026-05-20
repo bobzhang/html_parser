@@ -1772,7 +1772,7 @@ fn migration_doc_needles() -> Array[(String, Array[String])] {
         "`.repos/justhtml`",
         "## CLI and Native I/O",
         "`cmd/main/moon.pkg`",
-        "\"native-stub\": [ \"cli_io.c\" ]",
+        "`moonbitlang/async`",
         "Mooncakes",
       ],
     ),
@@ -1992,38 +1992,41 @@ fn first_lines(text : String, count : Int) -> Array[String] {
 async fn check_native_cli_metadata(name : String?) -> Bool {
   let cli_pkg = read_text("cmd/main/moon.pkg")
   let cli_main = read_text("cmd/main/main.mbt")
-  let cli_stub = read_text("cmd/main/cli_io.c")
   let mut ok = true
-  match (cli_pkg, cli_main, cli_stub) {
-    (Some(pkg_text), Some(main_text), Some(stub_text)) => {
+  match (cli_pkg, cli_main) {
+    (Some(pkg_text), Some(main_text)) => {
       let package_needles = [
         "supported_targets = \"+native\"",
         "\"is-main\": true",
-        "\"native-stub\": [ \"cli_io.c\" ]",
+        "\"moonbitlang/async\"",
+        "\"moonbitlang/async/fs\"",
+        "\"moonbitlang/async/stdio\"",
       ]
       for needle in package_needles {
         ok = require_text(pkg_text, needle, "cmd/main/moon.pkg") && ok
       }
+      ok = require_absent(pkg_text, "\"native-stub\"", "cmd/main/moon.pkg") && ok
       match name {
         Some(package_name) => ok = require_text(pkg_text, "\"" + package_name + "\"", "cmd/main/moon.pkg") && ok
         None => ok = false
       }
-      for symbol in [
-        "html_parser_cli_read_stdin",
-        "html_parser_cli_read_file",
-        "html_parser_cli_write_stdout",
-        "html_parser_cli_write_stderr",
-        "html_parser_cli_write_file",
-        "html_parser_cli_exit",
+      for needle in [
+        "async fn main",
+        "@html_parser.cli_read_plan(args)",
+        "@stdio.stdin.read_all().binary()",
+        "@fs.read_file(path).binary()",
+        "@fs.write_file(path, content, create_mode=CreateOrTruncate)",
+        "@stdio.stdout.write(result.stdout)",
+        "@stdio.stderr.write(result.stderr)",
+        "extern \"C\" fn exit_process(code : Int) = \"exit\"",
       ] {
-        ok = require_text(main_text, symbol, "cmd/main/main.mbt") && ok
-        ok = require_text(stub_text, symbol, "cmd/main/cli_io.c") && ok
+        ok = require_text(main_text, needle, "cmd/main/main.mbt") && ok
       }
+      ok = require_absent(main_text, "html_parser_cli_", "cmd/main/main.mbt") && ok
     }
     _ => {
       if cli_pkg is None { eprintln("native CLI package does not exist: cmd/main/moon.pkg") }
       if cli_main is None { eprintln("native CLI entrypoint does not exist: cmd/main/main.mbt") }
-      if cli_stub is None { eprintln("native CLI C stub does not exist: cmd/main/cli_io.c") }
       ok = false
     }
   }

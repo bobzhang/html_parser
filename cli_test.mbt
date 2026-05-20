@@ -82,6 +82,7 @@ test "CLI argument errors are reported with usage" {
     ["-", "--no-strip", "--strip"],
     "--strip conflicts with --no-strip",
   )
+  assert_cli_arg_error(["--bogus"], "unexpected argument '--bogus' found")
   assert_cli_arg_error(["-", "--bogus"], "unexpected argument '--bogus' found")
   assert_cli_arg_error(
     ["first.html", "second.html"],
