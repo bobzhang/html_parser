@@ -1255,13 +1255,10 @@ fn parse_test_summary(output : String) -> (Int, Int, Int)? {
   let mut summaries = 0
   for raw_line in output.split("\n") {
     let line = raw_line.to_owned()
-    if !line.has_prefix(prefix) {
-      continue
+    let without_prefix = match line.strip_prefix(prefix) {
+      Some(rest) => rest
+      None => continue
     }
-    let without_prefix = line.unsafe_substring(
-      start=prefix.length(),
-      end=line.length(),
-    )
     match without_prefix.split_once(".") {
       Some((summary, _)) =>
         match summary.to_owned().split_once(", passed: ") {
@@ -1544,11 +1541,10 @@ fn test_declarations(text : String) -> Array[String] {
 
 ///|
 fn quoted_name(text : String) -> String? {
-  let start = match text.find("\"") {
-    Some(index) => index + 1
+  let rest = match text.split_once("\"") {
+    Some((_, rest)) => rest
     None => return None
   }
-  let rest = text.unsafe_substring(start=start, end=text.length())
   let out = @buffer.new()
   let mut escaped = false
   for ch in rest.iter() {
@@ -1719,11 +1715,12 @@ fn package_prefixes_from_tracked(tracked : ArrayView[String]) -> Array[String] {
 ///|
 fn package_has_source(tracked : ArrayView[String], prefix : String) -> Bool {
   for path in tracked {
-    if path.has_prefix(prefix) {
-      let rest = path.unsafe_substring(start=prefix.length(), end=path.length())
-      if !rest.contains("/") && (path.has_suffix(".mbt") || path.has_suffix(".mbt.md")) {
-        return true
-      }
+    let rest = match path.strip_prefix(prefix) {
+      Some(rest) => rest
+      None => continue
+    }
+    if !rest.contains("/") && (path.has_suffix(".mbt") || path.has_suffix(".mbt.md")) {
+      return true
     }
   }
   false
