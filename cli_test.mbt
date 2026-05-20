@@ -54,11 +54,26 @@ test "CLI argument errors are reported with usage" {
     ["-", "--format", "xml"],
     "--format must be one of: html, text, markdown",
   )
-  assert_cli_arg_error(["-", "--format"], "--format requires a value")
-  assert_cli_arg_error(["-", "--output"], "--output requires a value")
-  assert_cli_arg_error(["-", "--selector"], "--selector requires a value")
-  assert_cli_arg_error(["-", "--allow-tags"], "--allow-tags requires a value")
-  assert_cli_arg_error(["-", "--separator"], "--separator requires a value")
+  assert_cli_arg_error(
+    ["-", "--format"],
+    "a value is required for '--format' but none was supplied",
+  )
+  assert_cli_arg_error(
+    ["-", "--output"],
+    "a value is required for '--output' but none was supplied",
+  )
+  assert_cli_arg_error(
+    ["-", "--selector"],
+    "a value is required for '--selector' but none was supplied",
+  )
+  assert_cli_arg_error(
+    ["-", "--allow-tags"],
+    "a value is required for '--allow-tags' but none was supplied",
+  )
+  assert_cli_arg_error(
+    ["-", "--separator"],
+    "a value is required for '--separator' but none was supplied",
+  )
   assert_cli_arg_error(
     ["-", "--strip", "--no-strip"],
     "--no-strip conflicts with --strip",
@@ -67,10 +82,11 @@ test "CLI argument errors are reported with usage" {
     ["-", "--no-strip", "--strip"],
     "--strip conflicts with --no-strip",
   )
-  assert_cli_arg_error(["-", "--bogus"], "unknown option: --bogus")
+  assert_cli_arg_error(["--bogus"], "unexpected argument '--bogus' found")
+  assert_cli_arg_error(["-", "--bogus"], "unexpected argument '--bogus' found")
   assert_cli_arg_error(
     ["first.html", "second.html"],
-    "only one input path is supported",
+    "unexpected value 'second.html' for '<path>' found; no more were expected",
   )
 }
 
@@ -167,6 +183,11 @@ test "CLI text output selector first and whitespace options" {
     "<p>Hello <b>world</b></p>",
   )
   assert_eq(separator.stdout, "Hello|world\n")
+  let explicit_strip = cli_run(
+    ["-", "--format", "text", "--separator", "|", "--strip"],
+    "<p>  Hello  <b>world</b>  </p>",
+  )
+  assert_eq(explicit_strip.stdout, "Hello|world\n")
   let no_strip = cli_run(
     ["-", "--format", "text", "--separator", "|", "--no-strip"],
     "<p>  Hello  <b>world</b>  </p>",

@@ -124,8 +124,9 @@ test "readme CLI reader example" {
 
 ## Native CLI
 
-The native CLI wrapper lives in `cmd/main` and uses a small C stub for raw
-stdin/file IO. Build it from this repository with:
+The native CLI wrapper lives in `cmd/main` and uses `moonbitlang/async` for raw
+stdin/file IO, stdout/stderr, and output files without custom C stubs. Build it
+from this repository with:
 
 ```sh
 moon run --target native --release --build-only cmd/main

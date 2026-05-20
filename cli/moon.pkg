@@ -9,4 +9,5 @@ import {
   "bobzhang/html_parser/selector" @sel,
   "bobzhang/html_parser/serializer" @ser,
   "bobzhang/html_parser/transform" @tr,
+  "moonbitlang/core/argparse",
 }

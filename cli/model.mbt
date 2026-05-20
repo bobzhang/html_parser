@@ -45,7 +45,6 @@ priv struct CliOptions {
   mut separator : String
   mut separator_blocks_only : Bool
   mut strip : Bool
-  mut strip_seen : Bool
 }
 
 ///|
@@ -132,7 +131,6 @@ fn cli_default_options() -> CliOptions {
     separator: " ",
     separator_blocks_only: false,
     strip: true,
-    strip_seen: false,
   }
 }
 

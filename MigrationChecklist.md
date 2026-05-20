@@ -628,7 +628,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Generalized generated-interface validation to discover all tracked
       `pkg.generated.mbti` files instead of hard-coding package paths.
 - [x] Added native CLI package layout checks for `cmd/main`, its native target
-      settings, and the C stub symbols used by the entrypoint.
+      settings, and the async IO entrypoint used by the executable wrapper.
 - [x] Added GitHub workflow drift checks so hosted CI keeps invoking the shared
       local validation entrypoint instead of duplicating Moon commands.
 - [x] Added source-layout checks for tracked package directories, generated

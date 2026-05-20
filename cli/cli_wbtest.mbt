@@ -12,14 +12,12 @@ test "CLI HTML error formatter preserves sanitizer and selector messages" {
 }
 
 ///|
-test "CLI option helpers cover equals and no-path plans" {
-  guard cli_option_value_from_equals("--format=", "--format") is Some(value) else {
+test "CLI argparse command covers equals and no-path plans" {
+  let matches = cli_command().parse(argv=["--format=", "-"], env={})
+  guard cli_last_value(matches, "format") is Some(value) else {
     fail("expected empty equals-form option value")
   }
   assert_eq(value, "")
-  assert_true(
-    cli_option_value_from_equals("--format=text", "--selector") is None,
-  )
   guard cli_read_plan(["--format=text"]) is CliImmediate(result) else {
     fail("expected no-path read plan to be immediate")
   }

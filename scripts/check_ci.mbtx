@@ -565,7 +565,7 @@ async fn run_check_source_layout() -> Int {
 ///|
 async fn run_check_test_inventory() -> Int {
   let expected_count = 629
-  let expected_sha256 = "8f891f095b742b4c8a9d8cc049ca2e271e2f77891641759969764303c908162c"
+  let expected_sha256 = "2e724a7b05f2ccb1edb7940ae0e275bf0075ead8c016d6c480324fc84d5db036"
   let inventory : Array[String] = []
   for path in git_ls_files(["*.mbt", "*.mbt.md"]) {
     match read_text(path) {
@@ -1249,30 +1249,50 @@ async fn run_test_target(label : String, args : ArrayView[String]) -> Int {
 ///|
 fn parse_test_summary(output : String) -> (Int, Int, Int)? {
   let prefix = "Total tests: "
+  let mut total_sum = 0
+  let mut passed_sum = 0
+  let mut failed_sum = 0
+  let mut summaries = 0
   for raw_line in output.split("\n") {
     let line = raw_line.to_owned()
-    if !line.has_prefix(prefix) || !line.has_suffix(".") {
+    if !line.has_prefix(prefix) {
       continue
     }
-    let summary = line.unsafe_substring(start=prefix.length(), end=line.length() - 1)
-    match summary.split_once(", passed: ") {
-      Some((total_text, rest)) =>
-        match rest.to_owned().split_once(", failed: ") {
-          Some((passed_text, failed_text)) =>
-            match (
-              parse_non_negative_int(total_text.to_owned()),
-              parse_non_negative_int(passed_text.to_owned()),
-              parse_non_negative_int(failed_text.to_owned()),
-            ) {
-              (Some(total), Some(passed), Some(failed)) => return Some((total, passed, failed))
-              _ => ()
+    let without_prefix = line.unsafe_substring(
+      start=prefix.length(),
+      end=line.length(),
+    )
+    match without_prefix.split_once(".") {
+      Some((summary, _)) =>
+        match summary.to_owned().split_once(", passed: ") {
+          Some((total_text, rest)) =>
+            match rest.to_owned().split_once(", failed: ") {
+              Some((passed_text, failed_text)) =>
+                match (
+                  parse_non_negative_int(total_text.to_owned()),
+                  parse_non_negative_int(passed_text.to_owned()),
+                  parse_non_negative_int(failed_text.to_owned()),
+                ) {
+                  (Some(total), Some(passed), Some(failed)) => {
+                    total_sum += total
+                    passed_sum += passed
+                    failed_sum += failed
+                    summaries += 1
+                  }
+                  _ => ()
+                }
+              None => ()
             }
           None => ()
         }
       None => ()
     }
   }
-  None
+  if summaries == 0 {
+    None
+  } else {
+    Some((total_sum, passed_sum, failed_sum))
+  }
 }
 
 ///|
@@ -1752,7 +1772,7 @@ fn migration_doc_needles() -> Array[(String, Array[String])] {
         "`.repos/justhtml`",
         "## CLI and Native I/O",
         "`cmd/main/moon.pkg`",
-        "\"native-stub\": [ \"cli_io.c\" ]",
+        "`moonbitlang/async`",
         "Mooncakes",
       ],
     ),
@@ -1972,38 +1992,41 @@ fn first_lines(text : String, count : Int) -> Array[String] {
 async fn check_native_cli_metadata(name : String?) -> Bool {
   let cli_pkg = read_text("cmd/main/moon.pkg")
   let cli_main = read_text("cmd/main/main.mbt")
-  let cli_stub = read_text("cmd/main/cli_io.c")
   let mut ok = true
-  match (cli_pkg, cli_main, cli_stub) {
-    (Some(pkg_text), Some(main_text), Some(stub_text)) => {
+  match (cli_pkg, cli_main) {
+    (Some(pkg_text), Some(main_text)) => {
       let package_needles = [
         "supported_targets = \"+native\"",
         "\"is-main\": true",
-        "\"native-stub\": [ \"cli_io.c\" ]",
+        "\"moonbitlang/async\"",
+        "\"moonbitlang/async/fs\"",
+        "\"moonbitlang/async/stdio\"",
       ]
       for needle in package_needles {
         ok = require_text(pkg_text, needle, "cmd/main/moon.pkg") && ok
       }
+      ok = require_absent(pkg_text, "\"native-stub\"", "cmd/main/moon.pkg") && ok
       match name {
         Some(package_name) => ok = require_text(pkg_text, "\"" + package_name + "\"", "cmd/main/moon.pkg") && ok
         None => ok = false
       }
-      for symbol in [
-        "html_parser_cli_read_stdin",
-        "html_parser_cli_read_file",
-        "html_parser_cli_write_stdout",
-        "html_parser_cli_write_stderr",
-        "html_parser_cli_write_file",
-        "html_parser_cli_exit",
+      for needle in [
+        "async fn main",
+        "@html_parser.cli_read_plan(args)",
+        "@stdio.stdin.read_all().binary()",
+        "@fs.read_file(path).binary()",
+        "@fs.write_file(path, content, create_mode=CreateOrTruncate)",
+        "@stdio.stdout.write(result.stdout)",
+        "@stdio.stderr.write(result.stderr)",
+        "extern \"C\" fn exit_process(code : Int) = \"exit\"",
       ] {
-        ok = require_text(main_text, symbol, "cmd/main/main.mbt") && ok
-        ok = require_text(stub_text, symbol, "cmd/main/cli_io.c") && ok
+        ok = require_text(main_text, needle, "cmd/main/main.mbt") && ok
       }
+      ok = require_absent(main_text, "html_parser_cli_", "cmd/main/main.mbt") && ok
     }
     _ => {
       if cli_pkg is None { eprintln("native CLI package does not exist: cmd/main/moon.pkg") }
       if cli_main is None { eprintln("native CLI entrypoint does not exist: cmd/main/main.mbt") }
-      if cli_stub is None { eprintln("native CLI C stub does not exist: cmd/main/cli_io.c") }
       ok = false
     }
   }

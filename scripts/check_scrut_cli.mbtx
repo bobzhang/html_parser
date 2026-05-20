@@ -62,6 +62,16 @@ async fn run_scrut_cli_check() -> Int {
   if build_code != 0 {
     return build_code
   }
+  let htmlfmt_build_code = @process.run(
+    "moon",
+    [
+      "run", "--target", "native", "--release", "--build-only",
+      "examples/cmd/htmlfmt",
+    ],
+  )
+  if htmlfmt_build_code != 0 {
+    return htmlfmt_build_code
+  }
 
   let cwd = match @env.current_dir() {
     Some(value) => value
@@ -75,10 +85,16 @@ async fn run_scrut_cli_check() -> Int {
     eprintln("native CLI binary was not built: " + cli_path)
     return 1
   }
+  let htmlfmt_path = cwd +
+    "/_build/native/release/build/bobzhang/html_parser_examples/cmd/htmlfmt/htmlfmt.exe"
+  if !@fs.exists(htmlfmt_path) {
+    eprintln("htmlfmt example binary was not built: " + htmlfmt_path)
+    return 1
+  }
   @process.run(
     scrut_bin,
     ["test", "tests/scrut"],
-    extra_env={"JUSTHTML_CLI": cli_path},
+    extra_env={"JUSTHTML_CLI": cli_path, "HTMLFMT_CLI": htmlfmt_path},
   )
 }
 
