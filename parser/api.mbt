@@ -20,6 +20,7 @@ pub fn parse(
     root,
     scripting_enabled~,
     xml_coercion~,
+    collect_errors=collect_errors || strict,
     track_node_locations~,
   )
   parser.deferred_initial_doctype_error = parser.report_initial_doctype_error()
@@ -64,6 +65,7 @@ pub fn parse_fragment(
     root,
     scripting_enabled~,
     xml_coercion~,
+    collect_errors=collect_errors || strict,
     track_node_locations~,
   )
   match context {

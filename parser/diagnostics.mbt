@@ -1,5 +1,8 @@
 ///|
 fn Parser::error_at(self : Parser, code : String, pos : Int) -> Unit {
+  if !self.collect_errors {
+    return
+  }
   self.errors.push(self.make_error_at(code, pos))
 }
 
@@ -9,13 +12,52 @@ fn Parser::make_error_at(
   code : String,
   pos : Int,
 ) -> @core.ParseError {
-  let (line, column) = line_col_at(self.input, pos)
+  let (line, column) = self.line_col_at_cached(pos)
   @core.ParseError::new(
     code,
     line~,
     column~,
     category=@core.parser_error_category(code),
   )
+}
+
+///|
+fn Parser::line_col_at_cached(self : Parser, target : Int) -> (Int, Int) {
+  if target == self.input.length() && @syn.input_ends_with_newline(self.input) {
+    return line_col_at(self.input, target)
+  }
+  if target < self.diagnostic_offset {
+    return line_col_at(self.input, target)
+  }
+  let mut offset = self.diagnostic_offset
+  let mut line = self.diagnostic_line
+  let mut column = self.diagnostic_column
+  while offset < target && offset < self.input.length() {
+    let ch = self.input.get_char(offset).unwrap()
+    match ch {
+      '\r' => {
+        line += 1
+        column = 1
+        offset += 1
+        if offset < target && self.input.get_char(offset) is Some('\n') {
+          offset += 1
+        }
+      }
+      '\n' => {
+        line += 1
+        column = 1
+        offset += 1
+      }
+      _ => {
+        column += 1
+        offset += ch.utf16_len()
+      }
+    }
+  }
+  self.diagnostic_offset = offset
+  self.diagnostic_line = line
+  self.diagnostic_column = column
+  (line, column)
 }
 
 ///|
@@ -61,6 +103,9 @@ fn find_comment_close(input : StringView, start : Int) -> Int? {
 
 ///|
 fn Parser::report_initial_doctype_error(self : Parser) -> @core.ParseError? {
+  if !self.collect_errors {
+    return None
+  }
   let mut pos = 0
   let mut defer_doctype = false
   while pos < self.input.length() {
@@ -185,6 +230,9 @@ fn eof_error_pos(input : StringView) -> Int {
 
 ///|
 fn Parser::error_at_eof(self : Parser, code : String) -> Unit {
+  if !self.collect_errors {
+    return
+  }
   self.errors.push(self.make_error_at_eof(code))
 }
 

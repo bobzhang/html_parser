@@ -19,6 +19,9 @@ pub fn decode_entities_with_errors(
   input : StringView,
   in_attribute~ : Bool,
 ) -> EntityDecodeResult {
+  if !entities_may_need_decoding(input) {
+    return { data: input.to_owned(), errors: [] }
+  }
   let out = StringBuilder::new(size_hint=input.length())
   let errors : Array[EntityDecodeError] = []
   let mut pos = 0
@@ -43,6 +46,19 @@ pub fn decode_entities_with_errors(
     }
   }
   { data: out.to_string(), errors }
+}
+
+///|
+fn entities_may_need_decoding(input : StringView) -> Bool {
+  let mut pos = 0
+  while pos < input.length() {
+    let ch = input.get_char(pos).unwrap()
+    match ch {
+      '&' | '\r' => return true
+      _ => pos += ch.utf16_len()
+    }
+  }
+  false
 }
 
 ///|

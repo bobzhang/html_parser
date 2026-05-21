@@ -25,3 +25,19 @@ test "parser private defensive branches keep no-op behavior" {
   assert_eq(attr_parser.pos, 1)
   assert_eq(attrs.length(), 0)
 }
+
+///|
+test "parser can skip diagnostics when callers discard parse errors" {
+  let parser = Parser::new(
+    "",
+    @dom.fragment(),
+    scripting_enabled=true,
+    xml_coercion=false,
+    collect_errors=false,
+  )
+  parser.error_at("unexpected-end-tag", 0)
+  parser.error_at_eof("expected-closing-tag-but-got-eof")
+  parser.deferred_initial_doctype_error = parser.report_initial_doctype_error()
+  assert_eq(parser.errors.length(), 0)
+  assert_true(parser.deferred_initial_doctype_error is None)
+}

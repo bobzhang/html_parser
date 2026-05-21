@@ -3,9 +3,13 @@ priv struct Parser {
   input : StringView
   scripting_enabled : Bool
   xml_coercion : Bool
+  collect_errors : Bool
   track_node_locations : Bool
   mut pos : Int
   errors : Array[@core.ParseError]
+  mut diagnostic_offset : Int
+  mut diagnostic_line : Int
+  mut diagnostic_column : Int
   root : @dom.Node
   stack : Array[@dom.Node]
   mut form_element : @dom.Node?
@@ -56,6 +60,7 @@ fn Parser::new(
   root : @dom.Node,
   scripting_enabled~ : Bool,
   xml_coercion~ : Bool,
+  collect_errors? : Bool = true,
   track_node_locations? : Bool = false,
 ) -> Parser {
   let input = strip_leading_bom(input)
@@ -63,9 +68,13 @@ fn Parser::new(
     input,
     scripting_enabled,
     xml_coercion,
+    collect_errors,
     track_node_locations,
     pos: 0,
     errors: [],
+    diagnostic_offset: 0,
+    diagnostic_line: 1,
+    diagnostic_column: 1,
     root,
     stack: [root],
     form_element: None,

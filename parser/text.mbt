@@ -147,6 +147,9 @@ fn ascii_whitespace_chars_only(value : StringView) -> String {
 
 ///|
 fn normalize_tree_builder_text(value : StringView) -> String {
+  if !text_contains_char(value, '\u{000C}') {
+    return value.to_owned()
+  }
   let out = StringBuilder::new(size_hint=value.length())
   for ch in value {
     if ch == '\u{000C}' {
@@ -170,6 +173,9 @@ fn Parser::remove_null_characters(
   raw : StringView,
   start : Int,
 ) -> String {
+  if !text_contains_char(raw, '\u{0000}') {
+    return raw.to_owned()
+  }
   let out = StringBuilder::new(size_hint=raw.length())
   let mut pos = 0
   while pos < raw.length() {
@@ -194,6 +200,9 @@ fn Parser::replace_null_characters(
   raw : StringView,
   start : Int,
 ) -> String {
+  if !text_contains_char(raw, '\u{0000}') {
+    return raw.to_owned()
+  }
   let out = StringBuilder::new(size_hint=raw.length())
   let mut pos = 0
   while pos < raw.length() {
@@ -211,4 +220,17 @@ fn Parser::replace_null_characters(
     }
   }
   out.to_string()
+}
+
+///|
+fn text_contains_char(value : StringView, target : Char) -> Bool {
+  let mut pos = 0
+  while pos < value.length() {
+    let ch = value.get_char(pos).unwrap()
+    if ch == target {
+      return true
+    }
+    pos += ch.utf16_len()
+  }
+  false
 }
