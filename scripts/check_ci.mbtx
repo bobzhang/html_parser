@@ -361,14 +361,14 @@ async fn check_publish_archive(args : ArrayView[String]) -> Int {
 
 ///|
 async fn run_check_release_version() -> Int {
-  let metadata = match read_json_object("moon.mod.json") {
+  let metadata = match read_module_metadata() {
     Some(value) => value
     None => return 1
   }
-  let version = match json_string(metadata, "version") {
+  let version = match metadata_string(metadata, "version") {
     Some(value) => value
     None => {
-      eprintln("moon.mod.json field 'version' must be a non-empty string")
+      eprintln(metadata.path + " field 'version' must be a non-empty string")
       return 1
     }
   }
@@ -529,6 +529,10 @@ async fn run_check_source_layout() -> Int {
   let tracked = git_ls_files([])
   let mut ok = true
   ok = require_all_tracked(required_top_level_files(), tracked, "required top-level project file is not tracked: ") && ok
+  if !tracked.contains("moon.mod") && !tracked.contains("moon.mod.json") {
+    eprintln("required top-level project file is not tracked: moon.mod or moon.mod.json")
+    ok = false
+  }
   ok = require_all_tracked(required_root_modules(), tracked, "expected root package module is not tracked: ") && ok
   ok = require_all_tracked(required_fixture_files(), tracked, "expected vendored fixture is not tracked: ") && ok
   let package_dirs = package_dirs_from_tracked(tracked)
@@ -806,7 +810,7 @@ async fn run_check_fixture_manifest() -> Int {
 
 ///|
 async fn run_check_package_metadata() -> Int {
-  let metadata = match read_json_object("moon.mod.json") {
+  let metadata = match read_module_metadata() {
     Some(value) => value
     None => return 1
   }
@@ -906,7 +910,7 @@ async fn run_check_package_metadata() -> Int {
   }
   match description {
     Some(value) => if value.length() > 200 {
-      eprintln("moon.mod.json description should stay concise")
+      eprintln(metadata.path + " description should stay concise")
       ok = false
     }
     None => ok = false
@@ -1364,6 +1368,70 @@ async fn read_bytes(path : String) -> Bytes? {
 }
 
 ///|
+struct ModuleMetadata {
+  path : String
+  name : String?
+  version : String?
+  readme : String?
+  repository : String?
+  license_id : String?
+  description : String?
+  keywords : Array[String]?
+}
+
+///|
+async fn read_module_metadata() -> ModuleMetadata? {
+  if @fs.exists("moon.mod") {
+    match read_text("moon.mod") {
+      Some(text) => Some(moon_mod_metadata("moon.mod", text))
+      None => {
+        eprintln("could not read moon.mod")
+        None
+      }
+    }
+  } else if @fs.exists("moon.mod.json") {
+    read_json_module_metadata("moon.mod.json")
+  } else {
+    eprintln("moon.mod or moon.mod.json must exist")
+    None
+  }
+}
+
+///|
+fn moon_mod_metadata(path : String, text : String) -> ModuleMetadata {
+  ModuleMetadata::{
+    path,
+    name: moon_mod_string(text, "name"),
+    version: moon_mod_string(text, "version"),
+    readme: moon_mod_string(text, "readme"),
+    repository: moon_mod_string(text, "repository"),
+    license_id: moon_mod_string(text, "license"),
+    description: moon_mod_string(text, "description"),
+    keywords: moon_mod_string_array(text, "keywords"),
+  }
+}
+
+///|
+async fn read_json_module_metadata(path : String) -> ModuleMetadata? {
+  let object = match read_json_object(path) {
+    Some(value) => value
+    None => return None
+  }
+  Some(
+    ModuleMetadata::{
+      path,
+      name: json_string(object, "name"),
+      version: json_string(object, "version"),
+      readme: json_string(object, "readme"),
+      repository: json_string(object, "repository"),
+      license_id: json_string(object, "license"),
+      description: json_string(object, "description"),
+      keywords: json_string_array(object, "keywords"),
+    },
+  )
+}
+
+///|
 async fn read_json_object(path : String) -> Map[String, Json]? {
   let text = match read_text(path) {
     Some(value) => value
@@ -1390,19 +1458,106 @@ fn json_string(object : Map[String, Json], key : String) -> String? {
     None => None
     Some(value) => {
       let string : String = @json.from_json(value) catch { _ => return None }
-      if string.is_empty() { None } else { Some(string) }
+      non_empty_string(string)
     }
   }
 }
 
 ///|
-async fn expect_metadata_string(object : Map[String, Json], key : String) -> String? {
-  match json_string(object, key) {
+fn metadata_string(metadata : ModuleMetadata, key : String) -> String? {
+  match key {
+    "name" => metadata.name
+    "version" => metadata.version
+    "readme" => metadata.readme
+    "repository" => metadata.repository
+    "license" => metadata.license_id
+    "description" => metadata.description
+    _ => None
+  }
+}
+
+///|
+fn json_string_array(object : Map[String, Json], key : String) -> Array[String]? {
+  match object.get(key) {
+    None => None
+    Some(value) => {
+      let items : Array[Json] = @json.from_json(value) catch { _ => return None }
+      let strings : Array[String] = []
+      for item in items {
+        let string : String = @json.from_json(item) catch { _ => return None }
+        strings.push(string)
+      }
+      Some(strings)
+    }
+  }
+}
+
+///|
+async fn expect_metadata_string(metadata : ModuleMetadata, key : String) -> String? {
+  match metadata_string(metadata, key) {
     Some(value) => Some(value)
     None => {
-      eprintln("moon.mod.json field '" + key + "' must be a non-empty string")
+      eprintln(metadata.path + " field '" + key + "' must be a non-empty string")
       None
     }
+  }
+}
+
+///|
+fn moon_mod_string(text : String, key : String) -> String? {
+  for line_view in text.split("\n") {
+    let line = line_view.to_owned().trim().to_owned()
+    match line.split_once("=") {
+      Some((left, right)) if left.to_owned().trim().to_owned() == key =>
+        return match quoted_name(right.to_owned()) {
+          Some(value) => non_empty_string(value)
+          None => None
+        }
+      _ => ()
+    }
+  }
+  None
+}
+
+///|
+fn non_empty_string(value : String) -> String? {
+  if value.is_empty() { None } else { Some(value) }
+}
+
+///|
+fn moon_mod_string_array(text : String, key : String) -> Array[String]? {
+  let out = @buffer.new()
+  let mut found = false
+  let mut done = false
+  for line_view in text.split("\n") {
+    if done {
+      continue
+    }
+    let line = line_view.to_owned().trim().to_owned()
+    if found {
+      out.write_string(" ")
+      out.write_string(line)
+      if line.contains("]") {
+        done = true
+      }
+    } else {
+      match line.split_once("=") {
+        Some((left, right)) if left.to_owned().trim().to_owned() == key => {
+          found = true
+          let value = right.to_owned().trim().to_owned()
+          out.write_string(value)
+          if value.contains("]") {
+            done = true
+          }
+        }
+        _ => ()
+      }
+    }
+  }
+  if !found || !done {
+    None
+  } else {
+    quoted_names(out.to_string())
   }
 }
 
@@ -1567,6 +1722,37 @@ fn quoted_name(text : String) -> String? {
 }
 
 ///|
+fn quoted_names(text : String) -> Array[String]? {
+  let names : Array[String] = []
+  let mut current = ""
+  let mut in_quote = false
+  let mut escaped = false
+  for ch in text.iter() {
+    if in_quote {
+      if escaped {
+        current = current + ch.to_string()
+        escaped = false
+      } else if ch == '\\' {
+        escaped = true
+      } else if ch == '"' {
+        names.push(current)
+        current = ""
+        in_quote = false
+      } else {
+        current = current + ch.to_string()
+      }
+    } else if ch == '"' {
+      in_quote = true
+    }
+  }
+  if in_quote {
+    None
+  } else {
+    Some(names)
+  }
+}
+
+///|
 fn duplicate_items(items : Array[String]) -> Array[String] {
   let sorted = items.copy()
   sort_strings(sorted)
@@ -1632,7 +1818,6 @@ fn validation_commands() -> Array[String] {
 fn required_top_level_files() -> Array[String] {
   [
     "moon.work",
-    "moon.mod.json",
     "moon.pkg",
     "pkg.generated.mbti",
     "README.mbt.md",
@@ -1854,37 +2039,25 @@ fn fixture_manifest() -> Array[(String, Int, String)] {
 }
 
 ///|
-async fn check_keywords(metadata : Map[String, Json]) -> Bool {
-  match metadata.get("keywords") {
+async fn check_keywords(metadata : ModuleMetadata) -> Bool {
+  match metadata.keywords {
     None => {
-      eprintln("moon.mod.json field 'keywords' must be a non-empty list")
+      eprintln(metadata.path + " field 'keywords' must be a non-empty list")
       false
     }
-    Some(value) => {
-      let keywords : Array[Json] = @json.from_json(value) catch {
-        _ => {
-          eprintln("moon.mod.json field 'keywords' must be a non-empty list")
-          return false
-        }
-      }
+    Some(keywords) => {
       if keywords.is_empty() {
-        eprintln("moon.mod.json field 'keywords' must be a non-empty list")
+        eprintln(metadata.path + " field 'keywords' must be a non-empty list")
         return false
       }
       let mut ok = true
-      for keyword_json in keywords {
-        let keyword : String = @json.from_json(keyword_json) catch {
-          _ => {
-            ok = false
-            continue
-          }
-        }
+      for keyword in keywords {
         if keyword.is_empty() {
           ok = false
         }
       }
       if !ok {
-        eprintln("moon.mod.json field 'keywords' must contain only non-empty strings")
+        eprintln(metadata.path + " field 'keywords' must contain only non-empty strings")
       }
       ok
     }
@@ -2032,21 +2205,21 @@ async fn check_native_cli_metadata(name : String?) -> Bool {
 
 ///|
 async fn expected_archive_path() -> String? {
-  let metadata = match read_json_object("moon.mod.json") {
+  let metadata = match read_module_metadata() {
     Some(value) => value
     None => return None
   }
-  let name = match json_string(metadata, "name") {
+  let name = match metadata_string(metadata, "name") {
     Some(value) => value
     None => {
-      eprintln("moon.mod.json field 'name' must use owner/package form")
+      eprintln(metadata.path + " field 'name' must use owner/package form")
       return None
     }
   }
-  let version = match json_string(metadata, "version") {
+  let version = match metadata_string(metadata, "version") {
     Some(value) => value
     None => {
-      eprintln("moon.mod.json field 'version' must be a non-empty string")
+      eprintln(metadata.path + " field 'version' must be a non-empty string")
       return None
     }
   }
@@ -2055,7 +2228,7 @@ async fn expected_archive_path() -> String? {
       "_build/publish/" + owner.to_owned() + "-" + pkg.to_owned() + "-" + version + ".zip",
     )
     None => {
-      eprintln("moon.mod.json field 'name' must use owner/package form")
+      eprintln(metadata.path + " field 'name' must use owner/package form")
       None
     }
   }
@@ -2067,7 +2240,7 @@ async fn expected_published_files() -> Array[String] {
   for path in git_ls_files([]) {
     let name = basename(path)
     let parent = dirname(path)
-    if name == "moon.mod.json" || name == "moon.pkg" || name == "LICENSE" {
+    if name == "moon.mod" || name == "moon.mod.json" || name == "moon.pkg" || name == "LICENSE" {
       expected.push(path)
     } else if parent == "." && path.has_suffix(".md") {
       expected.push(path)
