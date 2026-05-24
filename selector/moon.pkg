@@ -1,5 +1,5 @@
 import {
-  "bobzhang/html_parser/core" @core,
-  "bobzhang/html_parser/dom" @dom,
+  "bobzhang/html_parser/core",
+  "bobzhang/html_parser/dom",
   "bobzhang/html_parser/internal/syntax" @syn,
 }

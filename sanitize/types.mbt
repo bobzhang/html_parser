@@ -32,7 +32,7 @@ pub struct UrlFilter {
 }
 
 ///|
-pub impl Debug for UrlFilter with to_repr(_) {
+pub impl Debug for UrlFilter with fn to_repr(_) {
   Repr::opaque_("UrlFilter", Repr::unit())
 }
 
