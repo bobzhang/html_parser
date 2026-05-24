@@ -48,7 +48,7 @@ priv struct TransformNodeCallback {
 }
 
 ///|
-impl Debug for TransformNodeCallback with to_repr(_) {
+impl Debug for TransformNodeCallback with fn to_repr(_) {
   Repr::opaque_("TransformNodeCallback", Repr::unit())
 }
 
@@ -58,7 +58,7 @@ priv struct TransformAttrsCallback {
 }
 
 ///|
-impl Debug for TransformAttrsCallback with to_repr(_) {
+impl Debug for TransformAttrsCallback with fn to_repr(_) {
   Repr::opaque_("TransformAttrsCallback", Repr::unit())
 }
 
@@ -68,7 +68,7 @@ priv struct TransformDecideCallback {
 }
 
 ///|
-impl Debug for TransformDecideCallback with to_repr(_) {
+impl Debug for TransformDecideCallback with fn to_repr(_) {
   Repr::opaque_("TransformDecideCallback", Repr::unit())
 }
 
@@ -78,7 +78,7 @@ priv struct TransformReportCallback {
 }
 
 ///|
-impl Debug for TransformReportCallback with to_repr(_) {
+impl Debug for TransformReportCallback with fn to_repr(_) {
   Repr::opaque_("TransformReportCallback", Repr::unit())
 }
 

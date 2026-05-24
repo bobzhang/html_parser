@@ -1,12 +1,12 @@
 import {
-  "bobzhang/html_parser/core" @core,
-  "bobzhang/html_parser/dom" @dom,
+  "bobzhang/html_parser/core",
+  "bobzhang/html_parser/dom",
   "bobzhang/html_parser/internal/syntax" @syn,
   "bobzhang/html_parser/selector" @sel,
   "bobzhang/html_parser/serializer" @ser,
-  "moonbitlang/core/encoding/utf8" @utf8,
+  "moonbitlang/core/encoding/utf8",
 }
 
 import {
-  "moonbitlang/core/test" @test,
+  "moonbitlang/core/test",
 } for "wbtest"
