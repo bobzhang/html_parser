@@ -111,19 +111,14 @@ fn validate_serialization_quote(quote : Char) -> Char raise @core.HtmlError {
 /// serialization. Use the checked serializer path for untrusted names.
 pub fn serialize_start_tag_unchecked(node : @dom.Node, quote : Char) -> String {
   let out = StringBuilder::new()
-  out.write_char('<')
-  out.write_string(node.name)
+  out <+ "<\{node.name}"
   for name, value in node.attrs {
-    out.write_char(' ')
-    out.write_string(name)
+    out <+ " \{name}"
     match value {
       Some(v) if attr_value_should_minimize(name, v) => ()
       Some(v) => {
         let attr_quote = choose_attr_quote(v, quote)
-        out.write_char('=')
-        out.write_char(attr_quote)
-        out.write_string(escape_attr_value(v, attr_quote))
-        out.write_char(attr_quote)
+        out <+ "=\{attr_quote}\{escape_attr_value(v, attr_quote)}\{attr_quote}"
       }
       None => ()
     }

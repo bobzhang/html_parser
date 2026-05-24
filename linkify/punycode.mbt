@@ -56,15 +56,13 @@ fn linkify_punycode_href(href : StringView) -> String {
   let out = StringBuilder::new(size_hint=href.length() + 16)
   out.write_string(prefix)
   if userinfo != "" {
-    out.write_string(userinfo)
-    out.write_char('@')
+    out <+ "\{userinfo}@"
   }
   out.write_string(host)
   if port != "" {
-    out.write_char(':')
-    out.write_string(port)
+    out <+ ":\{port}"
   }
-  out.write_stringview(tail)
+  out <+ "\{tail}"
   out.to_string()
 }
 
