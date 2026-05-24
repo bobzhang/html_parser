@@ -135,13 +135,7 @@ fn write_test_format_attributes(
 ///|
 fn doctype_test_format(node : @dom.Node) -> String {
   let out = StringBuilder::new()
-  out.write_string("| <!DOCTYPE")
-  if node.data == "" {
-    out.write_char(' ')
-  } else {
-    out.write_char(' ')
-    out.write_string(node.data)
-  }
+  out <+ "| <!DOCTYPE \{node.data}"
   if node.public_id is Some(_) || node.system_id is Some(_) {
     let public_id = match node.public_id {
       Some(value) => value
@@ -151,11 +145,7 @@ fn doctype_test_format(node : @dom.Node) -> String {
       Some(value) => value
       None => ""
     }
-    out.write_string(" \"")
-    out.write_string(public_id)
-    out.write_string("\" \"")
-    out.write_string(system_id)
-    out.write_char('"')
+    out <+ " \"\{public_id}\" \"\{system_id}\""
   }
   out.write_char('>')
   out.to_string()

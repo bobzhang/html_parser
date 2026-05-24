@@ -141,8 +141,8 @@ fn node_to_html_pretty_inline_runs(
     return None
   }
   let out = StringBuilder::new()
-  out.write_string(" ".repeat(indent))
-  out.write_string(serialize_start_tag(node, quote))
+  let indent_text = " ".repeat(indent)
+  out <+ "\{indent_text}\{serialize_start_tag(node, quote)}"
   let child_prefix = " ".repeat(indent + indent_size)
   let mut wrote_run = false
   for run in runs {
@@ -151,18 +151,12 @@ fn node_to_html_pretty_inline_runs(
       continue
     }
     wrote_run = true
-    out.write_char('\n')
-    out.write_string(child_prefix)
-    out.write_string(line)
+    out <+ "\n\{child_prefix}\{line}"
   }
   if !wrote_run {
     return None
   }
-  out.write_char('\n')
-  out.write_string(" ".repeat(indent))
-  out.write_string("</")
-  out.write_string(node.name)
-  out.write_char('>')
+  out <+ "\n\{indent_text}</\{node.name}>"
   Some(out.to_string())
 }
 
@@ -211,9 +205,7 @@ fn node_to_html_pretty_compact_children(
         )
     }
   }
-  out.write_string("</")
-  out.write_string(node.name)
-  out.write_char('>')
+  out <+ "</\{node.name}>"
   out.to_string()
 }
 
@@ -288,12 +280,10 @@ fn node_to_html_pretty(
         " ".repeat(indent) + node_to_html_compact(node, quote)
       } else if element_has_only_text_children(node) {
         let out = StringBuilder::new()
-        out.write_string(" ".repeat(indent))
-        out.write_string(serialize_start_tag(node, quote))
-        out.write_string(compact_pretty_text_children(node, quote))
-        out.write_string("</")
-        out.write_string(node.name)
-        out.write_char('>')
+        let indent_text = " ".repeat(indent)
+        let start_tag = serialize_start_tag(node, quote)
+        let children = compact_pretty_text_children(node, quote)
+        out <+ "\{indent_text}\{start_tag}\{children}</\{node.name}>"
         out.to_string()
       } else if node_to_html_pretty_inline_runs(
           node, indent, indent_size, quote,
@@ -308,8 +298,8 @@ fn node_to_html_pretty(
         node_to_html_pretty_compact_children(node, quote, indent_size)
       } else {
         let out = StringBuilder::new()
-        out.write_string(" ".repeat(indent))
-        out.write_string(serialize_start_tag(node, quote))
+        let indent_text = " ".repeat(indent)
+        out <+ "\{indent_text}\{serialize_start_tag(node, quote)}"
         let child_indent = indent + indent_size
         let mut wrote_child = false
         for child in node.children {
@@ -319,18 +309,13 @@ fn node_to_html_pretty(
             ) {
             Some(line) => {
               wrote_child = true
-              out.write_char('\n')
-              out.write_string(line)
+              out <+ "\n\{line}"
             }
             None => ()
           }
         }
         if wrote_child {
-          out.write_char('\n')
-          out.write_string(" ".repeat(indent))
-          out.write_string("</")
-          out.write_string(node.name)
-          out.write_char('>')
+          out <+ "\n\{indent_text}</\{node.name}>"
           out.to_string()
         } else {
           " ".repeat(indent) +

@@ -158,13 +158,6 @@ fn css_url_value_is_safe_to_quote(value : StringView) -> Bool {
 }
 
 ///|
-fn write_string_view(out : StringBuilder, value : StringView) -> Unit {
-  for ch in value {
-    out.write_char(ch)
-  }
-}
-
-///|
 fn sanitize_css_url_functions(
   policy : SanitizationPolicy,
   tag_name : String,
@@ -203,7 +196,7 @@ fn sanitize_url_function_value(
     match css_next_url_function(value, pos) {
       Some(url_start) => {
         let prefix = value[pos:url_start]
-        write_string_view(out, prefix)
+        out <+ "\{prefix}"
         let mut cursor = css_url_skip_whitespace(value, url_start + 4)
         guard value.get_char(cursor) is Some(first) else { return None }
         let url_raw = match first {
@@ -249,11 +242,8 @@ fn sanitize_url_function_value(
             attr_name,
             url_raw.to_owned(),
           ) {
-          Some(sanitized_url) if css_url_value_is_safe_to_quote(sanitized_url) => {
-            out.write_string("url('")
-            out.write_string(sanitized_url)
-            out.write_string("')")
-          }
+          Some(sanitized_url) if css_url_value_is_safe_to_quote(sanitized_url) =>
+            out <+ "url('\{sanitized_url}')"
           _ => return None
         }
         replaced_any = true
@@ -261,7 +251,7 @@ fn sanitize_url_function_value(
       }
       None => {
         let rest = value[pos:value.length()]
-        write_string_view(out, rest)
+        out <+ "\{rest}"
         break
       }
     }
