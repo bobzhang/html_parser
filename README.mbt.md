@@ -141,11 +141,14 @@ printf '<p>Hello <b>MoonBit</b></p>' \
   | _build/native/release/build/bobzhang/html_parser/cmd/main/main.exe - --format text
 ```
 
-Black-box CLI integration tests live in `tests/scrut` and run with:
+Black-box CLI integration tests live in `tests/cram` and run with:
 
 ```sh
-moon run --target native scripts/check_scrut_cli.mbtx
+moon run --target native scripts/check_cram_cli.mbtx
 ```
+
+These tests require `moon cram`, which is available in MoonBit nightly until it
+reaches the stable toolchain.
 
 ## Workspace Examples
 
@@ -175,5 +178,5 @@ test-name inventory, migration docs, local Git hook wiring, vendored fixture syn
 `.repos/justhtml` is present, vendored fixture manifest hashes, package
 metadata, formatting, generated interfaces, all supported targets,
 default/JS/native tests with a count floor, coverage, native CLI smoke
-behavior, Scrut CLI integration tests, Mooncakes package validation, and
+behavior, Moon Cram CLI integration tests, Mooncakes package validation, and
 dynamic Mooncakes archive inventory/content checks.

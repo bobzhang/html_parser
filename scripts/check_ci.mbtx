@@ -67,7 +67,7 @@ fn check_ci_command() -> @argparse.Command {
       check_no_arg_subcommand("check-tests"),
       check_no_arg_subcommand("check-coverage"),
       check_no_arg_subcommand("smoke-native-cli"),
-      check_no_arg_subcommand("check-scrut-cli"),
+      check_no_arg_subcommand("check-cram-cli"),
       @argparse.Command(
         "verify-mooncakes-package",
         flags=[
@@ -135,7 +135,7 @@ async fn dispatch(args : ArrayView[String]) -> Int {
     "check-tests" => check_tests(rest)
     "check-coverage" => check_coverage(rest)
     "smoke-native-cli" => smoke_native_cli(rest)
-    "check-scrut-cli" => check_scrut_cli(rest)
+    "check-cram-cli" => check_cram_cli(rest)
     "verify-mooncakes-package" => verify_mooncakes_package(rest)
     "check-publish-archive" => check_publish_archive(rest)
     _ => {
@@ -206,7 +206,7 @@ async fn check_ci(args : ArrayView[String]) -> Int {
   if code != 0 { return code }
   code = run_step("Build and smoke test native CLI", run_smoke_native_cli)
   if code != 0 { return code }
-  code = run_step("Run Scrut native CLI tests", run_check_scrut_cli)
+  code = run_step("Run Moon Cram native CLI tests", run_check_cram_cli)
   if code != 0 { return code }
   run_step(
     "Verify Mooncakes package",
@@ -326,9 +326,9 @@ async fn smoke_native_cli(args : ArrayView[String]) -> Int {
 }
 
 ///|
-async fn check_scrut_cli(args : ArrayView[String]) -> Int {
-  if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-scrut-cli") { return 2 }
-  run_check_scrut_cli()
+async fn check_cram_cli(args : ArrayView[String]) -> Int {
+  if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-cram-cli") { return 2 }
+  run_check_cram_cli()
 }
 
 ///|
@@ -411,7 +411,7 @@ async fn run_check_release_version() -> Int {
 
 ///|
 async fn run_check_validation_inventory() -> Int {
-  let expected_scripts = ["scripts/check_ci.mbtx", "scripts/check_scrut_cli.mbtx"]
+  let expected_scripts = ["scripts/check_ci.mbtx", "scripts/check_cram_cli.mbtx"]
   let actual_scripts = git_ls_files(["scripts/*"])
   let mut ok = true
   ok = require_all_tracked(expected_scripts, actual_scripts, "expected MoonBit script is not tracked: ") && ok
@@ -431,14 +431,14 @@ async fn run_check_validation_inventory() -> Int {
   for command in validation_commands() {
     ok = require_text(ci_text, command, "scripts/check_ci.mbtx") && ok
   }
-  let scrut_text = match read_text("scripts/check_scrut_cli.mbtx") {
+  let cram_text = match read_text("scripts/check_cram_cli.mbtx") {
     Some(value) => value
     None => return 1
   }
   ok = require_text(
-    scrut_text,
-    "usage: moon run --target native scripts/check_scrut_cli.mbtx",
-    "scripts/check_scrut_cli.mbtx",
+    cram_text,
+    "usage: moon run --target native scripts/check_cram_cli.mbtx",
+    "scripts/check_cram_cli.mbtx",
   ) && ok
   if ok { 0 } else { 1 }
 }
@@ -448,6 +448,7 @@ async fn run_check_github_workflows() -> Int {
   let expected_workflows = [
     ".github/workflows/ci.yml",
     ".github/workflows/copilot-setup-steps.yml",
+    ".github/workflows/nightly.yml",
   ]
   let actual_workflows = git_ls_files([".github/workflows/*.yml"])
   let mut ok = true
@@ -496,6 +497,40 @@ async fn run_check_github_workflows() -> Int {
     "run: moon publish",
   ] {
     ok = require_absent(text, needle, workflow) && ok
+  }
+  let nightly = ".github/workflows/nightly.yml"
+  match read_text(nightly) {
+    None => {
+      eprintln(".github/workflows/nightly.yml does not exist")
+      ok = false
+    }
+    Some(nightly_text) => {
+      for needle in [
+        "name: Nightly CI",
+        "pull_request:",
+        "workflow_dispatch:",
+        "branches:\n      - main",
+        "permissions:\n      contents: read",
+        "curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- nightly",
+        "echo \"$HOME/.moon/bin\" >> \"$GITHUB_PATH\"",
+        "run: moon version --all",
+        "run: moon update",
+        "run: moon run --target native scripts/check_ci.mbtx --skip-without-credentials",
+      ] {
+        ok = require_text(nightly_text, needle, nightly) && ok
+      }
+      let nightly_check_ci_refs = count_occurrences(
+        nightly_text,
+        "scripts/check_ci.mbtx",
+      )
+      if nightly_check_ci_refs != 1 {
+        eprintln(
+          ".github/workflows/nightly.yml must invoke scripts/check_ci.mbtx exactly once, found " +
+          nightly_check_ci_refs.to_string(),
+        )
+        ok = false
+      }
+    }
   }
   let copilot = ".github/workflows/copilot-setup-steps.yml"
   match read_text(copilot) {
@@ -1018,8 +1053,8 @@ async fn run_check_scripts() -> Int {
     return 1
   }
   if !check_bad_option(
-    "scripts/check_scrut_cli.mbtx",
-    "usage: moon run --target native scripts/check_scrut_cli.mbtx",
+    "scripts/check_cram_cli.mbtx",
+    "usage: moon run --target native scripts/check_cram_cli.mbtx",
   ) {
     return 1
   }
@@ -1161,8 +1196,8 @@ async fn run_smoke_native_cli() -> Int {
 }
 
 ///|
-async fn run_check_scrut_cli() -> Int {
-  @process.run("moon", ["run", "--target", "native", "scripts/check_scrut_cli.mbtx"])
+async fn run_check_cram_cli() -> Int {
+  @process.run("moon", ["run", "--target", "native", "scripts/check_cram_cli.mbtx"])
 }
 
 ///|
@@ -1808,7 +1843,7 @@ fn validation_commands() -> Array[String] {
     "check-tests",
     "check-coverage",
     "smoke-native-cli",
-    "check-scrut-cli",
+    "check-cram-cli",
     "verify-mooncakes-package",
     "check-publish-archive",
   ]
