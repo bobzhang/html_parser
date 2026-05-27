@@ -12,49 +12,35 @@ async fn main {
   let all_args = @env.args()
   let args = if all_args.is_empty() { all_args[:] } else { all_args[1:] }
   validate_args(args)
-  let code = run_scrut_cli_check()
+  let code = run_cram_cli_check()
   if code != 0 {
-    fail("check_scrut_cli failed")
+    fail("check_cram_cli failed")
   }
 }
 
 ///|
-fn check_scrut_cli_command() -> @argparse.Command {
+fn check_cram_cli_command() -> @argparse.Command {
   @argparse.Command(
-    "check_scrut_cli",
-    about="Build the native CLI and run Scrut tests.",
+    "check_cram_cli",
+    about="Build the native CLI and run Moon Cram tests.",
     disable_help_subcommand=true,
   )
 }
 
 ///|
 async fn validate_args(args : ArrayView[String]) -> Unit {
-  let command = check_scrut_cli_command()
+  let command = check_cram_cli_command()
   let _ = command.parse(argv=args, env={}) catch {
     error => {
       eprintln(error.to_string())
-      eprintln("usage: moon run --target native scripts/check_scrut_cli.mbtx")
+      eprintln("usage: moon run --target native scripts/check_cram_cli.mbtx")
       fail("invalid arguments")
     }
   }
 }
 
 ///|
-async fn run_scrut_cli_check() -> Int {
-  let scrut_bin = match @env.get_env_var("SCRUT_BIN") {
-    Some(value) => value
-    None => "scrut"
-  }
-  if scrut_bin.contains_char('/') || scrut_bin.contains_char('\\') {
-    if !@fs.exists(scrut_bin) {
-      eprintln("SCRUT_BIN does not exist: " + scrut_bin)
-      return 1
-    }
-  } else if !command_exists(scrut_bin) {
-    eprintln("scrut is required; set SCRUT_BIN or install scrut in PATH")
-    return 1
-  }
-
+async fn run_cram_cli_check() -> Int {
   let build_code = @process.run(
     "moon",
     ["run", "--target", "native", "--release", "--build-only", "cmd/main"],
@@ -92,18 +78,10 @@ async fn run_scrut_cli_check() -> Int {
     return 1
   }
   @process.run(
-    scrut_bin,
-    ["test", "tests/scrut"],
+    "moon",
+    ["cram", "test", "tests/cram"],
     extra_env={"JUSTHTML_CLI": cli_path, "HTMLFMT_CLI": htmlfmt_path},
   )
-}
-
-///|
-async fn command_exists(command : String) -> Bool {
-  let _ = @process.collect_output(command, ["--version"]) catch {
-    _ => return false
-  }
-  true
 }
 
 ///|
