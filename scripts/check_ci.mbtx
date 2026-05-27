@@ -435,11 +435,14 @@ async fn run_check_validation_inventory() -> Int {
     Some(value) => value
     None => return 1
   }
-  ok = require_text(
-    cram_text,
-    "usage: moon run --target native scripts/check_cram_cli.mbtx",
-    "scripts/check_cram_cli.mbtx",
-  ) && ok
+  for needle in [
+    "moon build --target native --release",
+    "\"cram\", \"test\", \"tests/cram\"",
+    "JUSTHTML_CLI",
+    "HTMLFMT_CLI",
+  ] {
+    ok = require_text(cram_text, needle, "scripts/check_cram_cli.mbtx") && ok
+  }
   if ok { 0 } else { 1 }
 }
 
@@ -1049,12 +1052,6 @@ async fn run_check_scripts() -> Int {
   if !check_bad_option(
     "scripts/check_ci.mbtx",
     "usage: moon run --target native scripts/check_ci.mbtx [--skip-without-credentials]",
-  ) {
-    return 1
-  }
-  if !check_bad_option(
-    "scripts/check_cram_cli.mbtx",
-    "usage: moon run --target native scripts/check_cram_cli.mbtx",
   ) {
     return 1
   }
