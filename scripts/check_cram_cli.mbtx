@@ -2,89 +2,36 @@ import {
   "moonbitlang/async@0.19.0",
   "moonbitlang/async@0.19.0/fs",
   "moonbitlang/async@0.19.0/process",
-  "moonbitlang/async@0.19.0/stdio",
-  "moonbitlang/core/argparse",
   "moonbitlang/core/env",
 }
 
 ///|
 async fn main {
-  let all_args = @env.args()
-  let args = if all_args.is_empty() { all_args[:] } else { all_args[1:] }
-  validate_args(args)
-  let code = run_cram_cli_check()
-  if code != 0 {
-    fail("check_cram_cli failed")
-  }
-}
-
-///|
-fn check_cram_cli_command() -> @argparse.Command {
-  @argparse.Command(
-    "check_cram_cli",
-    about="Build the native CLI and run Moon Cram tests.",
-    disable_help_subcommand=true,
-  )
-}
-
-///|
-async fn validate_args(args : ArrayView[String]) -> Unit {
-  let command = check_cram_cli_command()
-  let _ = command.parse(argv=args, env={}) catch {
-    error => {
-      eprintln(error.to_string())
-      eprintln("usage: moon run --target native scripts/check_cram_cli.mbtx")
-      fail("invalid arguments")
-    }
-  }
-}
-
-///|
-async fn run_cram_cli_check() -> Int {
-  let build_code = @process.run(
-    "moon",
-    ["run", "--target", "native", "--release", "--build-only", "cmd/main"],
-  )
+  let build_code = @process.run("moon", ["build", "--target", "native", "--release"])
   if build_code != 0 {
-    return build_code
-  }
-  let htmlfmt_build_code = @process.run(
-    "moon",
-    [
-      "run", "--target", "native", "--release", "--build-only",
-      "examples/cmd/htmlfmt",
-    ],
-  )
-  if htmlfmt_build_code != 0 {
-    return htmlfmt_build_code
+    fail("moon build --target native --release failed")
   }
 
-  let cwd = match @env.current_dir() {
-    Some(value) => value
-    None => {
-      eprintln("failed to resolve current working directory")
-      return 1
-    }
+  guard @env.current_dir() is Some(cwd) else {
+    fail("failed to resolve current working directory")
   }
-  let cli_path = cwd + "/_build/native/release/build/bobzhang/html_parser/cmd/main/main.exe"
+  let cli_path = "\{cwd}/_build/native/release/build/bobzhang/html_parser/cmd/main/main.exe"
   if !@fs.exists(cli_path) {
-    eprintln("native CLI binary was not built: " + cli_path)
-    return 1
+    fail("native CLI binary was not built: \{cli_path}")
   }
-  let htmlfmt_path = cwd +
-    "/_build/native/release/build/bobzhang/html_parser_examples/cmd/htmlfmt/htmlfmt.exe"
+  let htmlfmt_path = "\{cwd}/_build/native/release/build/bobzhang/html_parser_examples/cmd/htmlfmt/htmlfmt.exe"
   if !@fs.exists(htmlfmt_path) {
-    eprintln("htmlfmt example binary was not built: " + htmlfmt_path)
-    return 1
+    fail("htmlfmt example binary was not built: \{htmlfmt_path}")
   }
-  @process.run(
+
+  // Moon Cram does not build the project or add build outputs to PATH yet.
+  // Keep tests independent from checkout paths by passing the built CLIs here.
+  let cram_code = @process.run(
     "moon",
     ["cram", "test", "tests/cram"],
     extra_env={"JUSTHTML_CLI": cli_path, "HTMLFMT_CLI": htmlfmt_path},
   )
-}
-
-///|
-async fn eprintln(message : String) -> Unit {
-  @stdio.stderr.write(message + "\n")
+  if cram_code != 0 {
+    fail("moon cram test failed")
+  }
 }
