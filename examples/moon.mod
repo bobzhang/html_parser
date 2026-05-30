@@ -15,3 +15,5 @@ description = "Runnable examples and documentation for bobzhang/html_parser."
 import {
   "bobzhang/html_parser@0.1.7",
 }
+
+warnings = "+test_unqualified_package"
