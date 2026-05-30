@@ -124,31 +124,31 @@ test "readme CLI reader example" {
 
 ## Native CLI
 
-The native CLI wrapper lives in `cmd/main` and uses `moonbitlang/async` for raw
+The native CLI wrapper lives in `cmd/justhtml` and uses `moonbitlang/async` for raw
 stdin/file IO, stdout/stderr, and output files without custom C stubs. Build it
 from this repository with:
 
 ```sh
-moon run --target native --release --build-only cmd/main
+moon run --target native --release --build-only cmd/justhtml
 ```
 
 The executable is written to
-`_build/native/release/build/bobzhang/html_parser/cmd/main/main.exe`.
+`_build/native/release/build/bobzhang/html_parser/cmd/justhtml/justhtml.exe`.
 For example:
 
 ```sh
 printf '<p>Hello <b>MoonBit</b></p>' \
-  | _build/native/release/build/bobzhang/html_parser/cmd/main/main.exe - --format text
+  | _build/native/release/build/bobzhang/html_parser/cmd/justhtml/justhtml.exe - --format text
 ```
 
 Black-box CLI integration tests live in `tests/cram` and run with:
 
 ```sh
-moon run --target native scripts/check_cram_cli.mbtx
+moon cram test --release tests/cram
 ```
 
-These tests require `moon cram`, which is available in MoonBit nightly until it
-reaches the stable toolchain.
+This builds the native executables and runs the cram documents with their build
+directories on `PATH`.
 
 ## Workspace Examples
 

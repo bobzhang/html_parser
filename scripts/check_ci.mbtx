@@ -198,7 +198,7 @@ async fn check_ci(args : ArrayView[String]) -> Int {
     @process.run("moon", ["check", "--target", "all", "--warn-list", "+73"]))
   if code != 0 { return code }
   code = run_step("Type check native CLI", () =>
-    @process.run("moon", ["check", "--target", "native", "cmd/main", "--warn-list", "+73"]))
+    @process.run("moon", ["check", "--target", "native", "cmd/justhtml", "--warn-list", "+73"]))
   if code != 0 { return code }
   code = run_step("Run tests with count floor", run_check_tests)
   if code != 0 { return code }
@@ -411,7 +411,7 @@ async fn run_check_release_version() -> Int {
 
 ///|
 async fn run_check_validation_inventory() -> Int {
-  let expected_scripts = ["scripts/check_ci.mbtx", "scripts/check_cram_cli.mbtx"]
+  let expected_scripts = ["scripts/check_ci.mbtx"]
   let actual_scripts = git_ls_files(["scripts/*"])
   let mut ok = true
   ok = require_all_tracked(expected_scripts, actual_scripts, "expected MoonBit script is not tracked: ") && ok
@@ -431,18 +431,11 @@ async fn run_check_validation_inventory() -> Int {
   for command in validation_commands() {
     ok = require_text(ci_text, command, "scripts/check_ci.mbtx") && ok
   }
-  let cram_text = match read_text("scripts/check_cram_cli.mbtx") {
-    Some(value) => value
-    None => return 1
-  }
-  for needle in [
-    "moon build --target native --release",
-    "\"cram\", \"test\", \"tests/cram\"",
-    "JUSTHTML_CLI",
-    "HTMLFMT_CLI",
-  ] {
-    ok = require_text(cram_text, needle, "scripts/check_cram_cli.mbtx") && ok
-  }
+  ok = require_text(
+    ci_text,
+    "\"cram\", \"test\", \"--release\", \"tests/cram\"",
+    "scripts/check_ci.mbtx",
+  ) && ok
   if ok { 0 } else { 1 }
 }
 
@@ -1105,12 +1098,12 @@ async fn run_check_coverage() -> Int {
 async fn run_smoke_native_cli() -> Int {
   let build_code = @process.run(
     "moon",
-    ["run", "--target", "native", "--release", "--build-only", "cmd/main"],
+    ["run", "--target", "native", "--release", "--build-only", "cmd/justhtml"],
   )
   if build_code != 0 {
     return build_code
   }
-  let cli = "_build/native/release/build/bobzhang/html_parser/cmd/main/main.exe"
+  let cli = "_build/native/release/build/bobzhang/html_parser/cmd/justhtml/justhtml.exe"
   if !@fs.exists(cli) {
     eprintln("native CLI binary was not built: " + cli)
     return 1
@@ -1194,7 +1187,7 @@ async fn run_smoke_native_cli() -> Int {
 
 ///|
 async fn run_check_cram_cli() -> Int {
-  @process.run("moon", ["run", "--target", "native", "scripts/check_cram_cli.mbtx"])
+  @process.run("moon", ["cram", "test", "--release", "tests/cram"])
 }
 
 ///|
@@ -1985,7 +1978,7 @@ fn migration_doc_needles() -> Array[(String, Array[String])] {
         "Treat the current Python source as the oracle",
         "`.repos/justhtml`",
         "## CLI and Native I/O",
-        "`cmd/main/moon.pkg`",
+        "`cmd/justhtml/moon.pkg`",
         "`moonbitlang/async`",
         "Mooncakes",
       ],
@@ -2192,8 +2185,8 @@ fn first_lines(text : String, count : Int) -> Array[String] {
 
 ///|
 async fn check_native_cli_metadata(name : String?) -> Bool {
-  let cli_pkg = read_text("cmd/main/moon.pkg")
-  let cli_main = read_text("cmd/main/main.mbt")
+  let cli_pkg = read_text("cmd/justhtml/moon.pkg")
+  let cli_main = read_text("cmd/justhtml/main.mbt")
   let mut ok = true
   match (cli_pkg, cli_main) {
     (Some(pkg_text), Some(main_text)) => {
@@ -2205,11 +2198,11 @@ async fn check_native_cli_metadata(name : String?) -> Bool {
         "\"moonbitlang/async/stdio\"",
       ]
       for needle in package_needles {
-        ok = require_text(pkg_text, needle, "cmd/main/moon.pkg") && ok
+        ok = require_text(pkg_text, needle, "cmd/justhtml/moon.pkg") && ok
       }
-      ok = require_absent(pkg_text, "\"native-stub\"", "cmd/main/moon.pkg") && ok
+      ok = require_absent(pkg_text, "\"native-stub\"", "cmd/justhtml/moon.pkg") && ok
       match name {
-        Some(package_name) => ok = require_text(pkg_text, "\"" + package_name + "\"", "cmd/main/moon.pkg") && ok
+        Some(package_name) => ok = require_text(pkg_text, "\"" + package_name + "\"", "cmd/justhtml/moon.pkg") && ok
         None => ok = false
       }
       for needle in [
@@ -2222,13 +2215,13 @@ async fn check_native_cli_metadata(name : String?) -> Bool {
         "@stdio.stderr.write(result.stderr)",
         "extern \"C\" fn exit_process(code : Int) = \"exit\"",
       ] {
-        ok = require_text(main_text, needle, "cmd/main/main.mbt") && ok
+        ok = require_text(main_text, needle, "cmd/justhtml/main.mbt") && ok
       }
-      ok = require_absent(main_text, "html_parser_cli_", "cmd/main/main.mbt") && ok
+      ok = require_absent(main_text, "html_parser_cli_", "cmd/justhtml/main.mbt") && ok
     }
     _ => {
-      if cli_pkg is None { eprintln("native CLI package does not exist: cmd/main/moon.pkg") }
-      if cli_main is None { eprintln("native CLI entrypoint does not exist: cmd/main/main.mbt") }
+      if cli_pkg is None { eprintln("native CLI package does not exist: cmd/justhtml/moon.pkg") }
+      if cli_main is None { eprintln("native CLI entrypoint does not exist: cmd/justhtml/main.mbt") }
       ok = false
     }
   }
