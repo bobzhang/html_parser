@@ -1966,7 +1966,7 @@ JustHTML from Python to MoonBit.
 ## CLI and Native I/O
 
 - Keep command parsing and rendering as pure library code when possible. The
-  native `cmd/main` wrapper should only translate `@env.args`, stdin/file
+  native `cmd/justhtml` wrapper should only translate `@env.args`, stdin/file
   bytes, stdout/stderr, output-file writes, and process exit codes. This makes
   almost all Python `test_cli.py` behavior testable under normal `moon test`
   without process spawning.
@@ -1992,7 +1992,7 @@ JustHTML from Python to MoonBit.
   conflict pairs such as `--strip` and `--no-strip`, unknown options, and
   duplicate positional paths.
 - Keep CLI-only dependencies out of the library package. The native executable
-  declares `moonbitlang/async` in `cmd/main/moon.pkg`, using
+  declares `moonbitlang/async` in `cmd/justhtml/moon.pkg`, using
   `moonbitlang/async/fs` and `moonbitlang/async/stdio` for raw stdin/file
   bytes, stdout/stderr, and output files without custom C stubs. Keep that
   dependency published in the Mooncakes registry before relying on it in CI.
@@ -2002,8 +2002,8 @@ JustHTML from Python to MoonBit.
   byte-oriented CLI path. Decode only inside the parser/fragment helper, not in
   the process wrapper.
 - For CLI exit-code verification, build the release executable and run it
-  directly. `moon run --target native --release --build-only cmd/main` produces
-  `_build/native/release/build/cmd/main/main.exe`; direct execution preserves
+  directly. `moon run --target native --release --build-only cmd/justhtml` produces
+  `_build/native/release/build/cmd/justhtml/justhtml.exe`; direct execution preserves
   exit codes for no-match and argument/selector errors.
 - When switching between native-only tests and coverage work, prefer `moon
   clean` before `moon coverage analyze`. Stale native trace metadata under

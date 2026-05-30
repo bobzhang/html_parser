@@ -578,7 +578,7 @@ reference implementation in `.repos/justhtml`.
 - [x] Refactored the CLI post-parse pipeline for injectable sanitizer policy
       tests and covered the safe sanitize/cleanup error return paths.
 - [x] Cleared root CLI package coverage; the only remaining uncovered line is
-      the native `cmd/main` immediate-exit entrypoint branch.
+      the native `cmd/justhtml` immediate-exit entrypoint branch.
 - [x] Added a callback-based root CLI runner for host-owned input reads, made
       the native entrypoint a thin caller, and covered immediate/read plans in
       normal root-package tests.
@@ -627,7 +627,7 @@ reference implementation in `.repos/justhtml`.
       bad-argument paths.
 - [x] Generalized generated-interface validation to discover all tracked
       `pkg.generated.mbti` files instead of hard-coding package paths.
-- [x] Added native CLI package layout checks for `cmd/main`, its native target
+- [x] Added native CLI package layout checks for `cmd/justhtml`, its native target
       settings, and the async IO entrypoint used by the executable wrapper.
 - [x] Added GitHub workflow drift checks so hosted CI keeps invoking the shared
       local validation entrypoint instead of duplicating Moon commands.
