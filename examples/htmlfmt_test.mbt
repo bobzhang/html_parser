@@ -1,6 +1,8 @@
 ///|
 test "htmlfmt renders pretty html by default" {
-  let result = run_htmlfmt(["<article><p>Hello <b>MoonBit</b></p></article>"])
+  let result = @html_parser_examples.run_htmlfmt([
+    "<article><p>Hello <b>MoonBit</b></p></article>",
+  ])
   assert_eq(result.exit_code, 0)
   assert_eq(
     result.stdout,
@@ -10,7 +12,7 @@ test "htmlfmt renders pretty html by default" {
 
 ///|
 test "htmlfmt renders compact html when requested" {
-  let result = run_htmlfmt([
+  let result = @html_parser_examples.run_htmlfmt([
     "--compact", "<p class='intro'>Hello <b>MoonBit</b></p>",
   ])
   assert_eq(result.exit_code, 0)
@@ -19,7 +21,7 @@ test "htmlfmt renders compact html when requested" {
 
 ///|
 test "htmlfmt reports missing input parse failures" {
-  let result = run_htmlfmt([])
+  let result = @html_parser_examples.run_htmlfmt([])
   assert_eq(result.exit_code, 2)
   assert_true(result.stderr.contains("'html' requires at least 1 values"))
   assert_true(result.stderr.contains("Usage: htmlfmt"))
@@ -27,7 +29,7 @@ test "htmlfmt reports missing input parse failures" {
 
 ///|
 test "htmlfmt reports argparse failures" {
-  let result = run_htmlfmt(["<p>one</p>", "<p>two</p>"])
+  let result = @html_parser_examples.run_htmlfmt(["<p>one</p>", "<p>two</p>"])
   assert_eq(result.exit_code, 2)
   assert_true(result.stderr.contains("unexpected value '<p>two</p>'"))
   assert_true(result.stderr.contains("Usage: htmlfmt"))
