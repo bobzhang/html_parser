@@ -1,46 +1,17 @@
 ///|
-/// Serialize a node as HTML.
-pub fn to_html(
-  node : Node,
-  pretty? : Bool = true,
-  indent_size? : Int = 2,
-  context? : HtmlContext = Html,
-  quote? : Char = '"',
-) -> String raise HtmlError {
-  @ser.to_html(node, pretty~, indent_size~, context~, quote~)
-}
+pub using @ser {to_html}
 
 ///|
-/// Extract descendant text from a node.
-pub fn to_text(
-  node : Node,
-  separator? : String = " ",
-  strip? : Bool = true,
-  separator_blocks_only? : Bool = false,
-) -> String {
-  @ser.to_text(node, separator~, strip~, separator_blocks_only~)
-}
+pub using @ser {to_text}
 
 ///|
-/// Return all descendants of `root` that match a CSS selector.
-pub fn query(root : Node, selector : StringView) -> Array[Node] {
-  @sel.query(root, selector)
-}
+pub using @sel {query}
 
 ///|
-/// Return the first descendant of `root` that matches a CSS selector.
-pub fn query_one(root : Node, selector : StringView) -> Node? {
-  @sel.query_one(root, selector)
-}
+pub using @sel {query_one}
 
 ///|
-/// Return whether `node` itself matches a CSS selector.
-pub fn matches(node : Node, selector : StringView) -> Bool {
-  @sel.matches(node, selector)
-}
+pub using @sel {matches}
 
 ///|
-/// Render a deterministic tree dump intended for conformance tests.
-pub fn to_test_format(node : Node) -> String {
-  @ser.to_test_format(node)
-}
+pub using @ser {to_test_format}
