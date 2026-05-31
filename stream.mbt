@@ -1,16 +1,4 @@
 ///|
-pub using @stream {type StreamStartEvent}
-
-///|
-pub using @stream {type StreamDoctypeEvent}
-
-///|
-pub using @stream {type StreamEvent}
-
-///|
-pub using @stream {type StreamSink}
-
-///|
 /// Parse an HTML string into streaming events.
 pub fn stream(html : StringView) -> Array[StreamEvent] {
   @stream.stream(html)

@@ -117,7 +117,7 @@ fn linkify_text_child_at(
 /// `matches` must use UTF-16 offsets into `child.data`. The helper detaches the
 /// original child, inserts replacement nodes at `index`, preserves the parent's
 /// namespace for generated anchors, and returns the number of inserted nodes.
-pub fn linkify_text_child_at_matches(
+fn linkify_text_child_at_matches(
   parent : @dom.Node,
   index : Int,
   child : @dom.Node,

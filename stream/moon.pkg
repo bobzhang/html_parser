@@ -1,4 +1,4 @@
 import {
   "bobzhang/html_parser/internal/encoding" @enc,
-  "bobzhang/html_parser/tokenizer" @tok,
+  "bobzhang/html_parser/internal/tokenizer" @tok,
 }

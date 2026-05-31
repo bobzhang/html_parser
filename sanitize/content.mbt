@@ -141,7 +141,7 @@ fn sanitize_rawtext_element_children(
     return true
   }
   let combined_text = text_parts.join("")
-  let sanitized_text = @ser.neutralize_rawtext_end_tag_sequences(
+  let sanitized_text = @seri.neutralize_rawtext_end_tag_sequences(
     combined_text, tag_name,
   )
   if sanitized_text != combined_text {

@@ -1,6 +1,5 @@
 // Blackbox snapshot tests for the standalone serializer helpers:
-// `to_text`, `to_test_format`, `is_void_element`, and the
-// neutralize/percent-encode utilities.
+// `to_text`, `to_test_format`, and `is_void_element`.
 
 ///|
 test "to_text strips tags and joins text nodes" {

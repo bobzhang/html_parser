@@ -25,7 +25,7 @@ fn string_array_contains(values : Array[String], needle : String) -> Bool {
 ///
 /// Existing order is preserved, making this suitable for normalized allowlists
 /// and token merges where duplicate entries should be ignored.
-pub fn push_unique_string(values : Array[String], value : String) -> Unit {
+fn push_unique_string(values : Array[String], value : String) -> Unit {
   if value != "" && !string_array_contains(values, value) {
     values.push(value)
   }

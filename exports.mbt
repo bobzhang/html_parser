@@ -1,26 +1,20 @@
 ///|
-pub using @dom {type NodeKind}
-
-///|
 pub using @cl {type CliReadPlan}
 
 ///|
 pub using @cl {type CliResult}
 
 ///|
-pub using @ser {type HtmlContext}
+pub using @core {type HtmlError}
 
 ///|
 pub using @core {type ParseError}
 
 ///|
-pub using @core {type HtmlError}
+pub using @dom {type Node}
 
 ///|
-pub using @tr {type DecideAction}
-
-///|
-pub using @tr {type TransformSpec}
+pub using @dom {type NodeKind}
 
 ///|
 pub using @link {type LinkifyConfig}
@@ -29,7 +23,10 @@ pub using @link {type LinkifyConfig}
 pub using @link {type LinkMatch}
 
 ///|
-pub using @sel {type SelectorLimits}
+pub using @p {type FragmentContext}
+
+///|
+pub using @p {type ParsedHtml}
 
 ///|
 pub using @san {type DisallowedTagHandling}
@@ -62,10 +59,37 @@ pub using @san {type UrlProxy}
 pub using @san {type UrlRule}
 
 ///|
-pub using @dom {type Node}
+pub using @sel {type SelectorLimits}
 
 ///|
-pub using @p {type FragmentContext}
+pub using @ser {type HtmlContext}
 
 ///|
-pub using @p {type ParsedHtml}
+pub using @stream {type StreamDoctypeEvent}
+
+///|
+pub using @stream {type StreamEvent}
+
+///|
+pub using @stream {type StreamStartEvent}
+
+///|
+pub using @tok {type DoctypeInfo}
+
+///|
+pub using @tok {type HtmlToken}
+
+///|
+pub using @tok {type TagKind}
+
+///|
+pub using @tok {type TagToken}
+
+///|
+pub using @tok {type TokenizedHtml}
+
+///|
+pub using @tr {type DecideAction}
+
+///|
+pub using @tr {type TransformSpec}

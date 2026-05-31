@@ -7,41 +7,7 @@ import {
 }
 
 // Values
-pub fn consume_named_entity_with_errors(StringView, Int, in_attribute~ : Bool) -> EntityConsumeResult?
-
-pub fn decode_attribute_value_with_errors(StringView) -> EntityDecodeResult
-
 pub fn decode_entities(StringView, in_attribute~ : Bool) -> String
-
-pub fn decode_entities_with_errors(StringView, in_attribute~ : Bool) -> EntityDecodeResult
-
-pub fn doctype_eof_error_offset(StringView) -> Int
-
-pub fn find_matching_end_tag(StringView, Int, StringView) -> Int?
-
-pub fn html_numeric_entity_replacement(Int) -> Int
-
-pub fn is_tag_name_end(Char) -> Bool
-
-pub fn is_tag_name_start(Char) -> Bool
-
-pub fn legacy_entity_blocked_in_attribute(StringView, Int, in_attribute~ : Bool) -> Bool
-
-pub fn matching_end_tag_error_pos(StringView, Int) -> Int
-
-pub fn normalize_doctype_value(StringView, Int, Int, Array[DoctypeExternalError]) -> String
-
-pub fn parse_doctype_external(StringView, Bool) -> DoctypeExternalParse
-
-pub fn parse_lower_name_value_replacing_nulls(StringView, Int, Int) -> (String, Array[DoctypeExternalError])
-
-pub fn parse_quoted_doctype_value_at(StringView, Int, Array[DoctypeExternalError]) -> (String?, Int, Bool)
-
-pub fn scan_comment_data(StringView, Int) -> CommentScan
-
-pub fn scan_script_text(StringView, Int) -> ScriptTextScan
-
-pub fn special_text_decodes_entities(StringView) -> Bool
 
 pub fn tokenize(StringView, collect_errors? : Bool, xml_coercion? : Bool) -> TokenizedHtml
 
@@ -50,51 +16,11 @@ pub fn tokenize_each(StringView, (HtmlToken) -> Unit, xml_coercion? : Bool) -> U
 // Errors
 
 // Types and methods
-pub(all) struct CommentScan {
-  data : String
-  end : Int
-  eof : Bool
-  errors : Array[CommentScanError]
-}
-
-pub(all) struct CommentScanError {
-  code : String
-  offset : Int
-}
-
-pub(all) struct DoctypeExternalError {
-  code : String
-  offset : Int
-}
-
-pub(all) struct DoctypeExternalParse {
-  public_id : String?
-  system_id : String?
-  errors : Array[DoctypeExternalError]
-  force_quirks : Bool
-}
-
 pub(all) struct DoctypeInfo {
   name : String
   public_id : String?
   system_id : String?
   force_quirks : Bool
-} derive(Eq, @debug.Debug)
-
-pub(all) struct EntityConsumeResult {
-  value : String
-  next : Int
-  errors : Array[EntityDecodeError]
-} derive(Eq, @debug.Debug)
-
-pub(all) struct EntityDecodeError {
-  code : String
-  offset : Int
-} derive(Eq, @debug.Debug)
-
-pub(all) struct EntityDecodeResult {
-  data : String
-  errors : Array[EntityDecodeError]
 } derive(Eq, @debug.Debug)
 
 pub(all) enum HtmlToken {
@@ -104,17 +30,6 @@ pub(all) enum HtmlToken {
   DoctypeToken(DoctypeInfo)
   Eof
 } derive(Eq, @debug.Debug)
-
-pub(all) struct ScriptTextScan {
-  data : String
-  end_start : Int?
-  errors : Array[SpecialTextError]
-}
-
-pub(all) struct SpecialTextError {
-  code : String
-  offset : Int
-}
 
 pub(all) enum TagKind {
   StartTag

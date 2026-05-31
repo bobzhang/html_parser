@@ -1,19 +1,4 @@
 ///|
-pub using @tok {type TagKind}
-
-///|
-pub using @tok {type TagToken}
-
-///|
-pub using @tok {type DoctypeInfo}
-
-///|
-pub using @tok {type HtmlToken}
-
-///|
-pub using @tok {type TokenizedHtml}
-
-///|
 /// Tokenize an HTML string without building a DOM tree.
 ///
 /// Set `collect_errors=true` to collect tokenizer diagnostics in the returned

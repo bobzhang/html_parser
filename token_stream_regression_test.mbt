@@ -87,7 +87,7 @@ test "public tokenizer malformed-input errors stay stable" {
 }
 
 ///|
-test "public stream and sink corpus keeps incremental events stable" {
+test "public stream corpus keeps incremental events stable" {
   let events : Array[@html_parser.StreamEvent] = []
   @html_parser.stream_each(
     "<!doctype html><p>A<script>B < C</script><!--x--></p>",
@@ -106,20 +106,4 @@ test "public stream and sink corpus keeps incremental events stable" {
       StreamEnd("p"),
     ],
   )
-
-  let sink = @html_parser.StreamSink::new()
-  let tokenized = @html_parser.tokenize("<p class=x>y</p>")
-  guard tokenized.tokens[0] is Tag(tag) else {
-    fail("expected start tag token")
-  }
-  sink.process_token(Tag(tag))
-  tag.attrs["class"] = Some("changed")
-  assert_true(
-    sink.drain() == [StreamStart({ name: "p", attrs: { "class": Some("x") } })],
-  )
-  sink.process_token(tokenized.tokens[1])
-  sink.process_token(tokenized.tokens[2])
-  sink.process_token(tokenized.tokens[3])
-  assert_true(sink.drain() == [StreamText("y"), StreamEnd("p")])
-  assert_true(sink.drain().is_empty())
 }

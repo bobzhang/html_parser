@@ -38,7 +38,7 @@ fn markdown_percent_encode_link_destination(value : StringView) -> String {
     if markdown_link_destination_byte_is_safe(byte) {
       out.write_char(byte.to_char())
     } else {
-      @ser.write_percent_encoded_byte(out, byte)
+      @seri.write_percent_encoded_byte(out, byte)
     }
   }
   out.to_string()

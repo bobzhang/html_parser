@@ -108,29 +108,3 @@ test "readme stream_each counts text events" {
   assert_eq(text_events, 3)
 }
 ```
-
-## Building your own pipeline with `StreamSink`
-
-`StreamSink` exposes the token-to-event normalization for callers who
-already have an `@tokenizer` token stream and want to feed it through
-the streamer manually.
-
-```mbt check
-///|
-test "readme stream sink from tokens" {
-  let sink = @stream.StreamSink::new()
-  for token in @tok.tokenize("<p>hi</p>").tokens {
-    sink.process_token(token)
-  }
-  debug_inspect(
-    sink.drain(),
-    content=(
-      #|[
-      #|  StreamStart({ name: "p", attrs: {} }),
-      #|  StreamText("hi"),
-      #|  StreamEnd("p"),
-      #|]
-    ),
-  )
-}
-```

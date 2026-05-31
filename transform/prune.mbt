@@ -81,7 +81,7 @@ fn prune_empty_children(
               "')",
               Some(child),
             )
-            @san.remove_child_at(parent, index)
+            transform_remove_child_at(parent, index)
             removed = true
             break
           }

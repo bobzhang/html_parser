@@ -1,8 +1,6 @@
 import {
   "bobzhang/html_parser/core",
   "bobzhang/html_parser/dom",
-  "bobzhang/html_parser/internal/serializer" @seri,
   "bobzhang/html_parser/internal/syntax" @syn,
-  "bobzhang/html_parser/serializer" @ser,
   "moonbitlang/core/encoding/utf8",
 }

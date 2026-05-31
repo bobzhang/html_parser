@@ -15,8 +15,6 @@ pub fn linkify_default_dom_skip_tags() -> Array[String]
 
 pub fn linkify_dom(@dom.Node, config? : LinkifyConfig, skip_tags? : Array[String]) -> @dom.Node
 
-pub fn linkify_text_child_at_matches(@dom.Node, Int, @dom.Node, Array[LinkMatch]) -> Int
-
 // Errors
 
 // Types and methods

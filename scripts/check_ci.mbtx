@@ -599,8 +599,8 @@ async fn run_check_source_layout() -> Int {
 
 ///|
 async fn run_check_test_inventory() -> Int {
-  let expected_count = 844
-  let expected_sha256 = "84f00521530a177f98aa5ae19d9fcbdfec995384279b648d86926a65d9f10cad"
+  let expected_count = 843
+  let expected_sha256 = "26079413fa96ad06fce590001571cb96e7cef47798685850f08dd078e0aa909b"
   let inventory : Array[String] = []
   for path in git_ls_files(["*.mbt", "*.mbt.md"]) {
     match read_text(path) {
@@ -1867,7 +1867,7 @@ fn required_root_modules() -> Array[String] {
     "linkify.mbt",
     "stream.mbt",
     "cli.mbt",
-    "types.mbt",
+    "exports.mbt",
   ]
 }
 

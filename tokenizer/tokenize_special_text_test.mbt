@@ -67,18 +67,3 @@ test "tokenize title decodes entities in body" {
     ),
   )
 }
-
-///|
-test "special_text_decodes_entities reports per-element behavior" {
-  // The helper exposes which raw-text elements decode entities in their body.
-  let title = @tokenizer.special_text_decodes_entities("title")
-  let script = @tokenizer.special_text_decodes_entities("script")
-  let textarea = @tokenizer.special_text_decodes_entities("textarea")
-  let style = @tokenizer.special_text_decodes_entities("style")
-  debug_inspect(
-    (title, script, textarea, style),
-    content=(
-      #|(true, false, true, false)
-    ),
-  )
-}

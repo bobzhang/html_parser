@@ -67,17 +67,3 @@ test "decode_entities is reusable on plain text" {
     ),
   )
 }
-
-///|
-test "decode_entities_with_errors reports invalid numeric reference" {
-  let result = @tokenizer.decode_entities_with_errors(
-    "&#xZZZ;",
-    in_attribute=false,
-  )
-  debug_inspect(
-    result,
-    content=(
-      #|{ data: "&#xZZZ;", errors: [] }
-    ),
-  )
-}
