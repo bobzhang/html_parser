@@ -122,6 +122,27 @@ test "readme CLI reader example" {
 }
 ```
 
+## Per-package documentation
+
+Each package ships its own `README.mbt.md` with runnable examples
+(`mbt check` blocks executed by `moon test`). They cover the package's
+public API surface and double as snapshot tests via `debug_inspect`.
+
+| Package | Reads | When you want to |
+|---------|-------|------------------|
+| [`@tokenizer`](tokenizer/README.mbt.md) | bytes → tokens | walk the raw HTML5 token stream |
+| [`@parser`](parser/README.mbt.md) | tokens → DOM | build a real DOM tree with HTML5 recovery |
+| [`@stream`](stream/README.mbt.md) | bytes → events | drive a streaming consumer (serializer, linter) |
+| [`@dom`](dom/README.mbt.md) | — | construct or mutate DOM nodes directly |
+| [`@selector`](selector/README.mbt.md) | DOM + CSS | run CSS-style queries against a tree |
+| [`@serializer`](serializer/README.mbt.md) | DOM → bytes | serialize back to compact or pretty HTML, or extract text |
+| [`@sanitize`](sanitize/README.mbt.md) | DOM → DOM | strip unsafe content with allowlist policies |
+| [`@transform`](transform/README.mbt.md) | DOM → DOM | run a composable rewrite pipeline |
+| [`@linkify`](linkify/README.mbt.md) | text/DOM → DOM | auto-link URLs and emails |
+| [`@markdown`](markdown/README.mbt.md) | DOM → string | convert a tree to Markdown source |
+| [`@cli`](cli/README.mbt.md) | argv → result | embed the `justhtml` runner in another tool |
+| [`@core`](core/README.mbt.md) | — | match on `HtmlError` / inspect `ParseError` |
+
 ## Native CLI
 
 The native CLI wrapper lives in `cmd/justhtml` and uses `moonbitlang/async` for raw
