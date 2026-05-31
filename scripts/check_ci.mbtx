@@ -1257,7 +1257,23 @@ async fn run_smoke_native_cli() -> Int {
 
 ///|
 async fn run_check_cram_cli() -> Int {
-  @process.run("moon", ["cram", "test", "--release", "tests/cram"])
+  let (code, output) = @process.collect_output_merged(
+    "moon",
+    ["cram", "test", "--release", "tests/cram"],
+  )
+  let text = output.text()
+  write_stdout(text)
+  if code == 0 {
+    return 0
+  }
+  if text.contains("no such subcommand: `cram`") ||
+    text.contains("cannot find binary path") {
+    write_stdout(
+      "Skipping Moon Cram native CLI tests because moon cram is unavailable in this MoonBit release.\n",
+    )
+    return 0
+  }
+  code
 }
 
 ///|
