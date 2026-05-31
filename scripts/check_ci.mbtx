@@ -216,7 +216,7 @@ async fn check_ci(args : ArrayView[String]) -> Int {
 
 ///|
 async fn run_step(label : String, check : async () -> Int) -> Int {
-  write_stdout("\n==> " + label + "\n")
+  write_stdout("\n==> \{label}\n")
   check()
 }
 
@@ -368,7 +368,7 @@ async fn run_check_release_version() -> Int {
   let version = match metadata_string(metadata, "version") {
     Some(value) => value
     None => {
-      eprintln(metadata.path + " field 'version' must be a non-empty string")
+      eprintln("\{metadata.path} field 'version' must be a non-empty string")
       return 1
     }
   }
@@ -376,9 +376,9 @@ async fn run_check_release_version() -> Int {
   let cli_sources = @buffer.new()
   for path in cli_files {
     match read_text(path) {
-      Some(text) => cli_sources.write_string(text + "\n")
+      Some(text) => cli_sources.write_string("\{text}\n")
       None => {
-        eprintln("could not read " + path)
+        eprintln("could not read \{path}")
         return 1
       }
     }
@@ -390,7 +390,7 @@ async fn run_check_release_version() -> Int {
       return 1
     }
     Some(value) => if value != version {
-      eprintln("cli_version " + value + " != module version " + version)
+      eprintln("cli_version \{value} != module version \{version}")
       return 1
     }
   }
@@ -401,7 +401,7 @@ async fn run_check_release_version() -> Int {
       return 1
     }
   }
-  let expected_test = "assert_eq(version.stdout, \"justhtml " + version + "\\n\")"
+  let expected_test = "assert_eq(version.stdout, \"justhtml \{version}\\n\")"
   if !cli_test.contains(expected_test) {
     eprintln("CLI --version test does not assert the module version")
     return 1
@@ -417,10 +417,10 @@ async fn run_check_validation_inventory() -> Int {
   ok = require_all_tracked(expected_scripts, actual_scripts, "expected MoonBit script is not tracked: ") && ok
   for path in actual_scripts {
     if path.has_suffix(".sh") || path.has_suffix(".py") {
-      eprintln("tracked script must not use shell or Python extension: " + path)
+      eprintln("tracked script must not use shell or Python extension: \{path}")
       ok = false
     } else if !path.has_suffix(".mbtx") {
-      eprintln("tracked script has unsupported extension: " + path)
+      eprintln("tracked script has unsupported extension: \{path}")
       ok = false
     }
   }
@@ -451,7 +451,7 @@ async fn run_check_github_workflows() -> Int {
   ok = require_all_tracked(expected_workflows, actual_workflows, "expected GitHub workflow is not tracked: ") && ok
   for path in actual_workflows {
     if !expected_workflows.contains(path) {
-      eprintln("tracked GitHub workflow is missing from validation: " + path)
+      eprintln("tracked GitHub workflow is missing from validation: \{path}")
       ok = false
     }
   }
@@ -463,12 +463,18 @@ async fn run_check_github_workflows() -> Int {
       return 1
     }
   }
+  let main_branch_needle =
+    $|branches:
+    $|      - main
+  let read_permissions_needle =
+    $|permissions:
+    $|      contents: read
   for needle in [
     "name: CI",
     "pull_request:",
     "workflow_dispatch:",
-    "branches:\n      - main",
-    "permissions:\n      contents: read",
+    main_branch_needle,
+    read_permissions_needle,
     "curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash",
     "echo \"$HOME/.moon/bin\" >> \"$GITHUB_PATH\"",
     "run: moon version --all",
@@ -480,8 +486,7 @@ async fn run_check_github_workflows() -> Int {
   let check_ci_refs = count_occurrences(text, "scripts/check_ci.mbtx")
   if check_ci_refs != 1 {
     eprintln(
-      ".github/workflows/ci.yml must invoke scripts/check_ci.mbtx exactly once, found " +
-      check_ci_refs.to_string(),
+      ".github/workflows/ci.yml must invoke scripts/check_ci.mbtx exactly once, found \{check_ci_refs}",
     )
     ok = false
   }
@@ -505,8 +510,8 @@ async fn run_check_github_workflows() -> Int {
         "name: Nightly CI",
         "pull_request:",
         "workflow_dispatch:",
-        "branches:\n      - main",
-        "permissions:\n      contents: read",
+        main_branch_needle,
+        read_permissions_needle,
         "curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- nightly",
         "echo \"$HOME/.moon/bin\" >> \"$GITHUB_PATH\"",
         "run: moon version --all",
@@ -521,8 +526,7 @@ async fn run_check_github_workflows() -> Int {
       )
       if nightly_check_ci_refs != 1 {
         eprintln(
-          ".github/workflows/nightly.yml must invoke scripts/check_ci.mbtx exactly once, found " +
-          nightly_check_ci_refs.to_string(),
+          ".github/workflows/nightly.yml must invoke scripts/check_ci.mbtx exactly once, found \{nightly_check_ci_refs}",
         )
         ok = false
       }
@@ -572,25 +576,25 @@ async fn run_check_source_layout() -> Int {
     ok = false
   }
   for package_dir in package_dirs {
-    let prefix = if package_dir == "." { "" } else { package_dir + "/" }
-    let interface_path = prefix + "pkg.generated.mbti"
+    let prefix = if package_dir == "." { "" } else { "\{package_dir}/" }
+    let interface_path = "\{prefix}pkg.generated.mbti"
     if !tracked.contains(interface_path) {
-      eprintln("package " + package_dir + " must track " + interface_path)
+      eprintln("package \{package_dir} must track \{interface_path}")
       ok = false
     }
     if !package_has_source(tracked, prefix) {
-      eprintln("package " + package_dir + " must contain tracked MoonBit source")
+      eprintln("package \{package_dir} must contain tracked MoonBit source")
       ok = false
     }
   }
   let package_prefixes = package_prefixes_from_tracked(tracked)
   for path in tracked {
     if is_source_like(path) && !package_prefixes.contains(parent_prefix(path)) {
-      eprintln("tracked source file is outside a MoonBit package: " + path)
+      eprintln("tracked source file is outside a MoonBit package: \{path}")
       ok = false
     }
     if is_forbidden_tracked_path(path) {
-      eprintln("generated/reference checkout path must not be tracked: " + path)
+      eprintln("generated/reference checkout path must not be tracked: \{path}")
       ok = false
     }
   }
@@ -605,12 +609,12 @@ async fn run_check_test_inventory() -> Int {
   for path in git_ls_files(["*.mbt", "*.mbt.md"]) {
     match read_text(path) {
       None => {
-        eprintln("could not read " + path)
+        eprintln("could not read \{path}")
         return 1
       }
       Some(text) => {
         for name in test_declarations(text) {
-          inventory.push(path + ":" + name)
+          inventory.push("\{path}:\{name}")
         }
       }
     }
@@ -621,8 +625,7 @@ async fn run_check_test_inventory() -> Int {
   let mut ok = true
   if observed_count != expected_count {
     eprintln(
-      "MoonBit test inventory count changed: expected " + expected_count.to_string() +
-      ", observed " + observed_count.to_string(),
+      "MoonBit test inventory count changed: expected \{expected_count}, observed \{observed_count}",
     )
     ok = false
   }
@@ -630,14 +633,13 @@ async fn run_check_test_inventory() -> Int {
   if !duplicates.is_empty() {
     eprintln("MoonBit test inventory contains duplicate declarations:")
     for item in duplicates {
-      eprintln("  " + item)
+      eprintln("  \{item}")
     }
     ok = false
   }
   if observed_sha256 != expected_sha256 {
     eprintln(
-      "MoonBit test inventory hash changed: expected " + expected_sha256 +
-      ", observed " + observed_sha256,
+      "MoonBit test inventory hash changed: expected \{expected_sha256}, observed \{observed_sha256}",
     )
     eprintln("Review the test declaration changes before updating this guard.")
     ok = false
@@ -651,11 +653,11 @@ async fn run_check_moonbit_style() -> Int {
   for path in git_ls_files(["*.mbt"]) {
     match read_text(path) {
       None => {
-        eprintln("could not read " + path)
+        eprintln("could not read \{path}")
         ok = false
       }
       Some(text) => if !text.contains("///|") {
-        eprintln(path + " must use block-style separators marked by '///|'")
+        eprintln("\{path} must use block-style separators marked by '///|'")
         ok = false
       }
     }
@@ -676,7 +678,7 @@ async fn run_check_gitignore() -> Int {
   let mut ok = true
   for rule in [".DS_Store", "_build/", ".mooncakes/", ".moonagent/", ".repos/", "__pycache__/"] {
     if !ignored.contains(rule) {
-      eprintln(".gitignore must contain " + rule)
+      eprintln(".gitignore must contain \{rule}")
       ok = false
     }
   }
@@ -691,7 +693,7 @@ async fn run_check_githooks() -> Int {
   ok = require_all_tracked(expected, actual, "expected Git hook file is not tracked: ") && ok
   for path in actual {
     if !expected.contains(path) {
-      eprintln("tracked Git hook file is missing from validation: " + path)
+      eprintln("tracked Git hook file is missing from validation: \{path}")
       ok = false
     }
   }
@@ -741,7 +743,7 @@ async fn run_check_migration_docs() -> Int {
     let (path, needles) = doc
     match read_text(path) {
       None => {
-        eprintln("required migration document is missing: " + path)
+        eprintln("required migration document is missing: \{path}")
         ok = false
       }
       Some(text) => for needle in needles {
@@ -759,32 +761,32 @@ async fn run_check_fixture_sync(require_reference : Bool) -> Int {
     None => ".repos/justhtml"
   }
   if !@fs.exists(reference_root) {
-    let message = "Skipping fixture sync check because reference checkout is absent: " + reference_root
+    let message = "Skipping fixture sync check because reference checkout is absent: \{reference_root}"
     if require_reference {
       eprintln(message)
       return 1
     }
-    write_stdout(message + "\n")
+    write_stdout("\{message}\n")
     return 0
   }
   let mut ok = true
   for pair in fixture_pairs() {
     let (local_rel, reference_rel) = pair
-    let local_path = "tests/fixtures/justhtml/" + local_rel
-    let reference_path = reference_root + "/" + reference_rel
+    let local_path = "tests/fixtures/justhtml/\{local_rel}"
+    let reference_path = "\{reference_root}/\{reference_rel}"
     match read_bytes(local_path) {
       None => {
-        eprintln("missing vendored fixture: " + local_path)
+        eprintln("missing vendored fixture: \{local_path}")
         ok = false
         continue
       }
       Some(local_data) => match read_bytes(reference_path) {
         None => {
-          eprintln("missing reference fixture: " + reference_path)
+          eprintln("missing reference fixture: \{reference_path}")
           ok = false
         }
         Some(reference_data) => if local_data != reference_data {
-          eprintln("vendored fixture differs from reference: " + local_rel)
+          eprintln("vendored fixture differs from reference: \{local_rel}")
           ok = false
         }
       }
@@ -806,7 +808,7 @@ async fn run_check_fixture_manifest() -> Int {
   ok = require_all_tracked(expected, tracked, "fixture manifest entry is not tracked: ") && ok
   for path in tracked {
     if !expected.contains(path) {
-      eprintln("tracked fixture is missing from manifest: " + path)
+      eprintln("tracked fixture is missing from manifest: \{path}")
       ok = false
     }
   }
@@ -814,22 +816,20 @@ async fn run_check_fixture_manifest() -> Int {
     let (path, expected_size, expected_sha256) = entry
     match read_bytes(path) {
       None => {
-        eprintln("fixture manifest entry is missing from disk: " + path)
+        eprintln("fixture manifest entry is missing from disk: \{path}")
         ok = false
       }
       Some(data) => {
         let actual_sha256 = @crypto.bytes_to_hex_string(@crypto.sha256(data))
         if data.length() != expected_size {
           eprintln(
-            "fixture size changed for " + path + ": " + data.length().to_string() +
-            " != " + expected_size.to_string(),
+            "fixture size changed for \{path}: \{data.length()} != \{expected_size}",
           )
           ok = false
         }
         if actual_sha256 != expected_sha256 {
           eprintln(
-            "fixture sha256 changed for " + path + ": " + actual_sha256 +
-            " != " + expected_sha256,
+            "fixture sha256 changed for \{path}: \{actual_sha256} != \{expected_sha256}",
           )
           ok = false
         }
@@ -859,20 +859,20 @@ async fn run_check_package_metadata() -> Int {
   match (name, version, readme) {
     (Some(package_name), Some(package_version), Some(readme_path)) => {
       if !valid_package_name(package_name) {
-        eprintln("package name " + package_name + " must use owner/package form")
+        eprintln("package name \{package_name} must use owner/package form")
         ok = false
       }
       if !valid_semver(package_version) {
-        eprintln("version " + package_version + " must look like a semantic version")
+        eprintln("version \{package_version} must look like a semantic version")
         ok = false
       }
       if invalid_repo_relative_path(readme_path) {
-        eprintln("readme path " + readme_path + " must stay inside the repository")
+        eprintln("readme path \{readme_path} must stay inside the repository")
         ok = false
       } else {
         match read_text(readme_path) {
           None => {
-            eprintln("readme path " + readme_path + " does not exist")
+            eprintln("readme path \{readme_path} does not exist")
             ok = false
           }
           Some(text) => {
@@ -883,7 +883,7 @@ async fn run_check_package_metadata() -> Int {
                 ok = false
               }
               Some(github_readme) => if github_readme != readme_text {
-                eprintln("README.md must resolve to or match the configured Mooncakes readme " + readme_path)
+                eprintln("README.md must resolve to or match the configured Mooncakes readme \{readme_path}")
                 ok = false
               }
             }
@@ -891,19 +891,19 @@ async fn run_check_package_metadata() -> Int {
         }
       }
       if !readme_text.is_empty() {
-        let expected_heading = "# " + package_name
+        let expected_heading = "# \{package_name}"
         if !first_lines(readme_text, 5).contains(expected_heading) {
-          eprintln("README must start with heading " + expected_heading)
+          eprintln("README must start with heading \{expected_heading}")
           ok = false
         }
-        let expected_install = "moon add " + package_name
+        let expected_install = "moon add \{package_name}"
         if !readme_text.contains(expected_install) {
-          eprintln("README must document " + expected_install)
+          eprintln("README must document \{expected_install}")
           ok = false
         }
-        let expected_import = "\"" + package_name + "\""
+        let expected_import = "\"\{package_name}\""
         if !readme_text.contains(expected_import) {
-          eprintln("README must show import path " + expected_import)
+          eprintln("README must show import path \{expected_import}")
           ok = false
         }
       }
@@ -912,9 +912,9 @@ async fn run_check_package_metadata() -> Int {
   }
   match (name, repository) {
     (Some(package_name), Some(repo)) => {
-      let expected_repository = "https://github.com/" + package_name
+      let expected_repository = "https://github.com/\{package_name}"
       if repo != expected_repository {
-        eprintln("repository " + repo + " != expected " + expected_repository)
+        eprintln("repository \{repo} != expected \{expected_repository}")
         ok = false
       }
     }
@@ -923,7 +923,7 @@ async fn run_check_package_metadata() -> Int {
   match license_id {
     Some(value) => {
       if value != "Apache-2.0" {
-        eprintln("license " + value + " must be 'Apache-2.0'")
+        eprintln("license \{value} must be 'Apache-2.0'")
         ok = false
       }
       match read_text("LICENSE") {
@@ -941,7 +941,7 @@ async fn run_check_package_metadata() -> Int {
   }
   match description {
     Some(value) => if value.length() > 200 {
-      eprintln(metadata.path + " description should stay concise")
+      eprintln("\{metadata.path} description should stay concise")
       ok = false
     }
     None => ok = false
@@ -961,7 +961,7 @@ async fn run_check_publish_archive(archive_arg : String) -> Int {
     archive_arg
   }
   if !@fs.exists(archive) {
-    eprintln("Mooncakes archive does not exist: " + archive)
+    eprintln("Mooncakes archive does not exist: \{archive}")
     return 1
   }
   let entries = match read_zip_entries(archive) {
@@ -972,26 +972,26 @@ async fn run_check_publish_archive(archive_arg : String) -> Int {
   let required = expected_published_files()
   let mut ok = true
   for name in duplicate_items(names) {
-    eprintln("Mooncakes archive contains duplicate path: " + name)
+    eprintln("Mooncakes archive contains duplicate path: \{name}")
     ok = false
   }
   for path in required {
     if !names.contains(path) {
-      eprintln("Mooncakes archive is missing required file: " + path)
+      eprintln("Mooncakes archive is missing required file: \{path}")
       ok = false
     }
   }
   for name in names {
     if archive_path_unsafe(name) {
-      eprintln("Mooncakes archive contains unsafe path: " + name)
+      eprintln("Mooncakes archive contains unsafe path: \{name}")
       ok = false
     }
     if archive_path_forbidden(name) {
-      eprintln("Mooncakes archive contains non-package path: " + name)
+      eprintln("Mooncakes archive contains non-package path: \{name}")
       ok = false
     }
     if name.contains("/__pycache__/") || name.has_suffix(".pyc") {
-      eprintln("Mooncakes archive contains Python bytecode/cache path: " + name)
+      eprintln("Mooncakes archive contains Python bytecode/cache path: \{name}")
       ok = false
     }
   }
@@ -1038,7 +1038,7 @@ async fn run_check_scripts() -> Int {
         return code
       }
     } else {
-      eprintln("tracked script has unsupported extension: " + script)
+      eprintln("tracked script has unsupported extension: \{script}")
       return 1
     }
   }
@@ -1101,17 +1101,14 @@ async fn run_check_coverage() -> Int {
   let covered_lines = source_lines - uncovered
   if covered_lines * 100 < source_lines * minimum_coverage_percent {
     eprintln(
-      "coverage below " + minimum_coverage_percent.to_string() +
-      "%: " + covered_lines.to_string() + "/" + source_lines.to_string() +
-      " tracked source lines covered",
+      "coverage below \{minimum_coverage_percent}%: \{covered_lines}/\{source_lines} tracked source lines covered",
     )
     1
   } else {
-    write_stdout(
-      "Coverage threshold passed: " + covered_lines.to_string() +
-      "/" + source_lines.to_string() + " tracked source lines covered (minimum " +
-      minimum_coverage_percent.to_string() + "%).\n",
-    )
+    let message =
+      $|Coverage threshold passed: \{covered_lines}/\{source_lines} tracked source lines covered (minimum \{minimum_coverage_percent}%).
+      $|
+    write_stdout(message)
     0
   }
 }
@@ -1145,7 +1142,7 @@ async fn tracked_coverage_source_line_count() -> Int? {
       match read_text(path) {
         Some(text) => total += split_lines(text).length()
         None => {
-          eprintln("could not read tracked source file for coverage threshold: " + path)
+          eprintln("could not read tracked source file for coverage threshold: \{path}")
           return None
         }
       }
@@ -1178,11 +1175,11 @@ async fn run_smoke_native_cli() -> Int {
   }
   let cli = "_build/native/release/build/bobzhang/html_parser/cmd/justhtml/justhtml.exe"
   if !@fs.exists(cli) {
-    eprintln("native CLI binary was not built: " + cli)
+    eprintln("native CLI binary was not built: \{cli}")
     return 1
   }
   let tmpdir = @fs.tmpdir(prefix="html_parser_check_ci")
-  let smoke_input = tmpdir + "/smoke.html"
+  let smoke_input = "\{tmpdir}/smoke.html"
   @fs.write_file(
     smoke_input,
     "<article><p>Hi <b>there</b></p><p>Bye</p></article>",
@@ -1203,7 +1200,7 @@ async fn run_smoke_native_cli() -> Int {
     cleanup_tmpdir(tmpdir)
     return 1
   }
-  let empty_input = tmpdir + "/empty.html"
+  let empty_input = "\{tmpdir}/empty.html"
   @fs.write_file(empty_input, "<p>Hello</p>", create_mode=CreateOrTruncate)
   let (empty_code, empty_out, empty_err) = @process.collect_output(
     cli,
@@ -1227,7 +1224,7 @@ async fn run_smoke_native_cli() -> Int {
   let wikipedia = wiki_out.text()
   match first_nonblank_line(wikipedia) {
     Some(line) => if !line.has_prefix("<img") {
-      eprintln("Expected Wikipedia Markdown to start with body image, got: " + line)
+      eprintln("Expected Wikipedia Markdown to start with body image, got: \{line}")
       cleanup_tmpdir(tmpdir)
       return 1
     }
@@ -1249,7 +1246,7 @@ async fn run_smoke_native_cli() -> Int {
   ]
   for needle in markdown_needles {
     if !wikipedia.contains(needle) {
-      eprintln("Wikipedia Markdown output is missing: " + needle)
+      eprintln("Wikipedia Markdown output is missing: \{needle}")
       cleanup_tmpdir(tmpdir)
       return 1
     }
@@ -1297,12 +1294,12 @@ async fn check_bad_option(script : String, usage : String) -> Bool {
     ["run", "--target", "native", script, "--bad-option"],
   )
   if code == 0 {
-    eprintln(script + " accepted an invalid option")
+    eprintln("\{script} accepted an invalid option")
     return false
   }
   let message = stderr.text()
   if !message.contains(usage) {
-    eprintln(script + " invalid-option output did not contain expected usage")
+    eprintln("\{script} invalid-option output did not contain expected usage")
     eprintln(message)
     return false
   }
@@ -1311,7 +1308,7 @@ async fn check_bad_option(script : String, usage : String) -> Bool {
 
 ///|
 async fn run_test_target(label : String, args : ArrayView[String]) -> Int {
-  write_stdout("\n==> Run " + label + " tests\n")
+  write_stdout("\n==> Run \{label} tests\n")
   let moon_args = ["test"]
   for arg in args {
     moon_args.push(arg)
@@ -1325,21 +1322,19 @@ async fn run_test_target(label : String, args : ArrayView[String]) -> Int {
   let min_tests = 614
   match parse_test_summary(text) {
     None => {
-      eprintln("moon test output did not include a parseable summary for " + label)
+      eprintln("moon test output did not include a parseable summary for \{label}")
       1
     }
     Some((total, passed, failed)) => {
       if total < min_tests {
         eprintln(
-          label + " target ran " + total.to_string() + " tests, expected at least " +
-          min_tests.to_string(),
+          "\{label} target ran \{total} tests, expected at least \{min_tests}",
         )
         return 1
       }
       if failed != 0 || passed != total {
         eprintln(
-          label + " target reported total=" + total.to_string() + " passed=" +
-          passed.to_string() + " failed=" + failed.to_string(),
+          "\{label} target reported total=\{total} passed=\{passed} failed=\{failed}",
         )
         return 1
       }
@@ -1429,7 +1424,7 @@ async fn cleanup_tmpdir(path : String) -> Unit {
 async fn has_moon_credentials() -> Bool {
   for variable in ["HOME", "USERPROFILE"] {
     match @env.get_env_var(variable) {
-      Some(home) => if @fs.exists(home + "/.moon/credentials.json") {
+      Some(home) => if @fs.exists("\{home}/.moon/credentials.json") {
         return true
       }
       None => ()
@@ -1537,13 +1532,13 @@ async fn read_json_object(path : String) -> Map[String, Json]? {
   }
   let json = @json.parse(text) catch {
     error => {
-      eprintln(path + " is not valid JSON: " + error.to_string())
+      eprintln("\{path} is not valid JSON: \{error}")
       return None
     }
   }
   let object : Map[String, Json] = @json.from_json(json) catch {
     error => {
-      eprintln(path + " must contain a JSON object: " + error.to_string())
+      eprintln("\{path} must contain a JSON object: \{error}")
       return None
     }
   }
@@ -1595,7 +1590,7 @@ async fn expect_metadata_string(metadata : ModuleMetadata, key : String) -> Stri
   match metadata_string(metadata, key) {
     Some(value) => Some(value)
     None => {
-      eprintln(metadata.path + " field '" + key + "' must be a non-empty string")
+      eprintln("\{metadata.path} field '\{key}' must be a non-empty string")
       None
     }
   }
@@ -1693,7 +1688,7 @@ async fn require_text(text : String, needle : String, label : String) -> Bool {
   if text.contains(needle) {
     true
   } else {
-    eprintln(label + " must contain " + needle)
+    eprintln("\{label} must contain \{needle}")
     false
   }
 }
@@ -1701,7 +1696,7 @@ async fn require_text(text : String, needle : String, label : String) -> Bool {
 ///|
 async fn require_absent(text : String, needle : String, label : String) -> Bool {
   if text.contains(needle) {
-    eprintln(label + " must not contain " + needle)
+    eprintln("\{label} must not contain \{needle}")
     false
   } else {
     true
@@ -1713,7 +1708,7 @@ async fn require_text_collapsed(text : String, needle : String, label : String) 
   if text.contains(needle) || collapse_whitespace(text).contains(collapse_whitespace(needle)) {
     true
   } else {
-    eprintln(label + " must contain " + needle)
+    eprintln("\{label} must contain \{needle}")
     false
   }
 }
@@ -1987,7 +1982,7 @@ fn package_dirs_from_tracked(tracked : ArrayView[String]) -> Array[String] {
 fn package_prefixes_from_tracked(tracked : ArrayView[String]) -> Array[String] {
   let prefixes : Array[String] = []
   for dir in package_dirs_from_tracked(tracked) {
-    let prefix = if dir == "." { "" } else { dir + "/" }
+    let prefix = if dir == "." { "" } else { "\{dir}/" }
     if !prefixes.contains(prefix) {
       prefixes.push(prefix)
     }
@@ -2012,7 +2007,7 @@ fn package_has_source(tracked : ArrayView[String], prefix : String) -> Bool {
 ///|
 fn parent_prefix(path : String) -> String {
   match path.rev_split_once("/") {
-    Some((parent, _)) => parent.to_owned() + "/"
+    Some((parent, _)) => "\{parent.to_owned()}/"
     None => ""
   }
 }
@@ -2140,12 +2135,12 @@ fn fixture_manifest() -> Array[(String, Int, String)] {
 async fn check_keywords(metadata : ModuleMetadata) -> Bool {
   match metadata.keywords {
     None => {
-      eprintln(metadata.path + " field 'keywords' must be a non-empty list")
+      eprintln("\{metadata.path} field 'keywords' must be a non-empty list")
       false
     }
     Some(keywords) => {
       if keywords.is_empty() {
-        eprintln(metadata.path + " field 'keywords' must be a non-empty list")
+        eprintln("\{metadata.path} field 'keywords' must be a non-empty list")
         return false
       }
       let mut ok = true
@@ -2155,7 +2150,7 @@ async fn check_keywords(metadata : ModuleMetadata) -> Bool {
         }
       }
       if !ok {
-        eprintln(metadata.path + " field 'keywords' must contain only non-empty strings")
+        eprintln("\{metadata.path} field 'keywords' must contain only non-empty strings")
       }
       ok
     }
@@ -2275,7 +2270,7 @@ async fn check_native_cli_metadata(name : String?) -> Bool {
       }
       ok = require_absent(pkg_text, "\"native-stub\"", "cmd/justhtml/moon.pkg") && ok
       match name {
-        Some(package_name) => ok = require_text(pkg_text, "\"" + package_name + "\"", "cmd/justhtml/moon.pkg") && ok
+        Some(package_name) => ok = require_text(pkg_text, "\"\{package_name}\"", "cmd/justhtml/moon.pkg") && ok
         None => ok = false
       }
       for needle in [
@@ -2310,23 +2305,23 @@ async fn expected_archive_path() -> String? {
   let name = match metadata_string(metadata, "name") {
     Some(value) => value
     None => {
-      eprintln(metadata.path + " field 'name' must use owner/package form")
+      eprintln("\{metadata.path} field 'name' must use owner/package form")
       return None
     }
   }
   let version = match metadata_string(metadata, "version") {
     Some(value) => value
     None => {
-      eprintln(metadata.path + " field 'version' must be a non-empty string")
+      eprintln("\{metadata.path} field 'version' must be a non-empty string")
       return None
     }
   }
   match name.split_once("/") {
     Some((owner, pkg)) => Some(
-      "_build/publish/" + owner.to_owned() + "-" + pkg.to_owned() + "-" + version + ".zip",
+      "_build/publish/\{owner.to_owned()}-\{pkg.to_owned()}-\{version}.zip",
     )
     None => {
-      eprintln(metadata.path + " field 'name' must use owner/package form")
+      eprintln("\{metadata.path} field 'name' must use owner/package form")
       None
     }
   }
@@ -2396,7 +2391,7 @@ async fn read_zip_entries(archive : String) -> Array[ZipEntry]? {
   let data = match read_bytes(archive) {
     Some(value) => value
     None => {
-      eprintln("failed to read Mooncakes archive: " + archive)
+      eprintln("failed to read Mooncakes archive: \{archive}")
       return None
     }
   }
@@ -2511,7 +2506,7 @@ async fn usage_check_ci() -> Unit {
 
 ///|
 async fn eprintln(message : String) -> Unit {
-  write_stderr(message + "\n")
+  write_stderr("\{message}\n")
 }
 
 ///|

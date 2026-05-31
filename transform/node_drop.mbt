@@ -16,7 +16,7 @@ fn apply_drop_kind_transform(
             Doctype => "doctype"
             _ => "node"
           }
-          transform_report(transform, "Dropped " + label, Some(child))
+          transform_report(transform, "Dropped \{label}", Some(child))
           transform_remove_child_at(root, index)
         } else {
           apply_drop_kind_transform(child, kind, transform)
@@ -48,11 +48,10 @@ fn apply_drop_foreign_namespaces_transform(
         let child = root.children[index]
         if child.kind == Element && node_has_foreign_namespace(child) {
           transform_call_hook(child, transform)
+          let name = @syn.lower_ascii(child.name)
           transform_report(
             transform,
-            "Unsafe tag '" +
-            @syn.lower_ascii(child.name) +
-            "' (foreign namespace)",
+            "Unsafe tag '\{name}' (foreign namespace)",
             Some(child),
           )
           transform_remove_child_at(root, index)

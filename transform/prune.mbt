@@ -72,13 +72,10 @@ fn prune_empty_children(
               transform.strip_whitespace,
             ) {
             transform_call_hook(child, transform)
+            let name = @syn.lower_ascii(child.name)
             transform_report(
               transform,
-              "Pruned empty <" +
-              @syn.lower_ascii(child.name) +
-              "> (matched selector '" +
-              transform.selector +
-              "')",
+              "Pruned empty <\{name}> (matched selector '\{transform.selector}')",
               Some(child),
             )
             transform_remove_child_at(parent, index)

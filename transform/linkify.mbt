@@ -48,9 +48,7 @@ fn linkify_transform_children(
           transform_call_hook(child, transform)
           transform_report(
             transform,
-            "Linkified " +
-            matches.length().to_string() +
-            " link(s) in text node",
+            "Linkified \{matches.length()} link(s) in text node",
             Some(child),
           )
           let inserted = linkify_transform_text_child_at_matches(

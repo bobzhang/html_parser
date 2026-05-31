@@ -46,12 +46,7 @@ fn transform_report_node_action(
   let tag = @syn.lower_ascii(node.name)
   transform_report(
     transform,
-    action.to_owned() +
-    " <" +
-    tag +
-    "> (matched selector '" +
-    transform.selector +
-    "')",
+    "\{action.to_owned()} <\{tag}> (matched selector '\{transform.selector}')",
     Some(node),
   )
 }
