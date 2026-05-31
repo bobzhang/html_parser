@@ -234,7 +234,7 @@ pub fn TransformSpec::drop_url_attrs(
       DropUrlAttributes,
       enabled~,
       selector=selector.to_owned(),
-      sanitize_policy=@san.SanitizationPolicy::new([], url_policy~),
+      sanitize_policy=SanitizationPolicy([], url_policy~),
     ),
     hook,
     report,
@@ -255,7 +255,7 @@ pub fn TransformSpec::allow_style_attrs(
       AllowStyleAttributes,
       enabled~,
       selector=selector.to_owned(),
-      sanitize_policy=@san.SanitizationPolicy::new(
+      sanitize_policy=SanitizationPolicy(
         [],
         allowed_css_properties=normalize_transform_strings(
           allowed_css_properties,
@@ -395,7 +395,7 @@ pub fn TransformSpec::linkify(
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
-  let config = config.unwrap_or(@link.LinkifyConfig::new())
+  let config = config.unwrap_or(LinkifyConfig())
   let skip_tags = skip_tags.unwrap_or(@link.linkify_default_dom_skip_tags())
   with_transform_hooks(
     make_transform_spec(

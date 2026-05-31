@@ -2,7 +2,7 @@
 
 ///|
 test "parser private defensive branches keep no-op behavior" {
-  let template_parser = Parser::new(
+  let template_parser = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,
@@ -14,7 +14,7 @@ test "parser private defensive branches keep no-op behavior" {
   assert_true(template.source_end_tag is None)
   assert_eq(template_parser.stack.length(), 1)
 
-  let attr_parser = Parser::new(
+  let attr_parser = Parser(
     ">",
     @dom.fragment(),
     scripting_enabled=true,

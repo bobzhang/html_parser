@@ -90,7 +90,7 @@ in an implicit `<tbody>` exactly like the document parser does.
 test "readme parse_fragment table context" {
   let doc = @parser.parse_fragment(
     "<tr><td>x</td></tr>",
-    context=@parser.FragmentContext::new("table"),
+    context=@parser.FragmentContext("table"),
   )
   inspect(
     @ser.to_html(doc.root, pretty=true),

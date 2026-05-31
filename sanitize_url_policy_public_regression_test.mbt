@@ -12,7 +12,7 @@ test "sanitize_dom filters attributes and dangerous URLs" {
 
 ///|
 test "sanitize_dom drops meta refresh content attributes" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["meta", "p"],
     allowed_attributes={ "meta": ["http-equiv", "content"] },
     drop_content_tags=[],
@@ -29,7 +29,7 @@ test "sanitize_dom drops meta refresh content attributes" {
 
 ///|
 test "sanitize_dom drops base href even when allowlisted" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["base", "img"],
     allowed_attributes={ "base": ["href"], "img": ["src"] },
     drop_content_tags=[],
@@ -46,7 +46,7 @@ test "sanitize_dom drops base href even when allowlisted" {
 
 ///|
 test "sanitize_dom drops url-like attributes without exact url rules" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["a", "img", "blockquote", "object", "p", "form", "button", "video"],
     allowed_attributes={
       "a": ["href", "ping"],
@@ -58,7 +58,7 @@ test "sanitize_dom drops url-like attributes without exact url rules" {
       "object": ["data"],
       "p": ["background", "data-x"],
     },
-    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    url_policy=@html_parser.UrlPolicy(allow_rules=[]),
     drop_content_tags=[],
   )
   let fragment = @html_parser.parse_fragment(
@@ -73,20 +73,20 @@ test "sanitize_dom drops url-like attributes without exact url rules" {
 
 ///|
 test "sanitize_dom applies single url-like attribute rules" {
-  let remote_rule = @html_parser.UrlRule::new(
+  let remote_rule = @html_parser.UrlRule(
     allowed_schemes=["https"],
     allowed_hosts=["trusted.example"],
     allow_relative=false,
   )
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new("video", "poster", remote_rule),
-    @html_parser.UrlPolicyRule::new("form", "action", remote_rule),
-    @html_parser.UrlPolicyRule::new("button", "formaction", remote_rule),
-    @html_parser.UrlPolicyRule::new("blockquote", "cite", remote_rule),
-    @html_parser.UrlPolicyRule::new("object", "data", remote_rule),
-    @html_parser.UrlPolicyRule::new("p", "background", remote_rule),
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule("video", "poster", remote_rule),
+    @html_parser.UrlPolicyRule("form", "action", remote_rule),
+    @html_parser.UrlPolicyRule("button", "formaction", remote_rule),
+    @html_parser.UrlPolicyRule("blockquote", "cite", remote_rule),
+    @html_parser.UrlPolicyRule("object", "data", remote_rule),
+    @html_parser.UrlPolicyRule("p", "background", remote_rule),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["video", "form", "button", "blockquote", "object", "p"],
     allowed_attributes={
       "video": ["poster"],
@@ -111,24 +111,24 @@ test "sanitize_dom applies single url-like attribute rules" {
 
 ///|
 test "sanitize_dom applies custom url policy rules" {
-  let url_policy = @html_parser.UrlPolicy::new(
+  let url_policy = @html_parser.UrlPolicy(
     default_handling=UrlStrip,
     default_allow_relative=false,
     allow_rules=[
-      @html_parser.UrlPolicyRule::new(
+      @html_parser.UrlPolicyRule(
         "a",
         "href",
-        @html_parser.UrlRule::new(
+        @html_parser.UrlRule(
           allowed_schemes=["https"],
           allow_fragment=false,
           allow_relative=false,
           handling=UrlAllow,
         ),
       ),
-      @html_parser.UrlPolicyRule::new(
+      @html_parser.UrlPolicyRule(
         "img",
         "src",
-        @html_parser.UrlRule::new(
+        @html_parser.UrlRule(
           allowed_schemes=["https"],
           allow_relative=false,
           resolve_protocol_relative=None,
@@ -136,7 +136,7 @@ test "sanitize_dom applies custom url policy rules" {
       ),
     ],
   )
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["a", "img"],
     allowed_attributes={ "a": ["href"], "img": ["src"] },
     url_policy~,
@@ -153,14 +153,14 @@ test "sanitize_dom applies custom url policy rules" {
 
 ///|
 test "sanitize_dom drops empty url values" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule(
       "a",
       "href",
-      @html_parser.UrlRule::new(allowed_schemes=["https"], allow_relative=false),
+      @html_parser.UrlRule(allowed_schemes=["https"], allow_relative=false),
     ),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["a"],
     allowed_attributes={ "a": ["href"] },
     url_policy~,
@@ -177,18 +177,18 @@ test "sanitize_dom drops empty url values" {
 
 ///|
 test "sanitize_dom drops decoded control characters in url values" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule(
       "a",
       "href",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=["https"],
         allowed_hosts=["example.com"],
         allow_relative=false,
       ),
     ),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["a"],
     allowed_attributes={ "a": ["href"] },
     url_policy~,
@@ -205,18 +205,18 @@ test "sanitize_dom drops decoded control characters in url values" {
 
 ///|
 test "sanitize_dom applies url policy host allowlists" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule(
       "a",
       "href",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=["https"],
         allowed_hosts=["trusted.example", "::1"],
         allow_relative=false,
       ),
     ),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["a"],
     allowed_attributes={ "a": ["href"] },
     url_policy~,
@@ -233,16 +233,16 @@ test "sanitize_dom applies url policy host allowlists" {
 
 ///|
 test "sanitize_dom applies srcset url policy rules" {
-  let srcset_rule = @html_parser.UrlRule::new(
+  let srcset_rule = @html_parser.UrlRule(
     allowed_schemes=["https"],
     allowed_hosts=["trusted.example"],
     allow_relative=false,
   )
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new("img", "srcset", srcset_rule),
-    @html_parser.UrlPolicyRule::new("link", "imagesrcset", srcset_rule),
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule("img", "srcset", srcset_rule),
+    @html_parser.UrlPolicyRule("link", "imagesrcset", srcset_rule),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["img", "link"],
     allowed_attributes={
       "img": ["srcset"],
@@ -263,18 +263,18 @@ test "sanitize_dom applies srcset url policy rules" {
 
 ///|
 test "sanitize_dom applies space separated url list rules" {
-  let url_list_rule = @html_parser.UrlRule::new(
+  let url_list_rule = @html_parser.UrlRule(
     allowed_schemes=["https"],
     allowed_hosts=["trusted.example"],
     allow_relative=false,
   )
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new("a", "href", url_list_rule),
-    @html_parser.UrlPolicyRule::new("a", "ping", url_list_rule),
-    @html_parser.UrlPolicyRule::new("img", "src", url_list_rule),
-    @html_parser.UrlPolicyRule::new("img", "attributionsrc", url_list_rule),
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule("a", "href", url_list_rule),
+    @html_parser.UrlPolicyRule("a", "ping", url_list_rule),
+    @html_parser.UrlPolicyRule("img", "src", url_list_rule),
+    @html_parser.UrlPolicyRule("img", "attributionsrc", url_list_rule),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["a", "img"],
     allowed_attributes={
       "a": ["href", "ping"],
@@ -314,7 +314,7 @@ test "sanitize_dom handles standalone nodes and url edge cases" {
   let strict_attrs = @html_parser.fragment(children=[
     @html_parser.element("div", attrs={ "id": Some("x") }),
   ])
-  let strict_policy = @html_parser.SanitizationPolicy::new(["div"])
+  let strict_policy = @html_parser.SanitizationPolicy(["div"])
   assert_eq(
     @html_parser.sanitize_dom(strict_attrs, policy=strict_policy).to_html(
       pretty=false,

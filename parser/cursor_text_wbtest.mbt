@@ -2,7 +2,7 @@
 
 ///|
 test "parser cursor helpers use utf16 offsets and safe fallbacks" {
-  let parser = Parser::new(
+  let parser = Parser(
     "😀",
     @dom.fragment(),
     scripting_enabled=true,
@@ -20,7 +20,7 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
   assert_true(physical_equal(parser.current_node(), root))
   parser.append_text("", 0)
   assert_eq(root.children.length(), 0)
-  let source_parser = Parser::new(
+  let source_parser = Parser(
     "<p😀>",
     @dom.fragment(),
     scripting_enabled=true,
@@ -30,7 +30,7 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
   source_parser.append_sanitize_escape_source_text(0, 4)
   assert_eq(source_parser.root.children.length(), 1)
   assert_eq(source_parser.root.children[0].data, "<p😀")
-  let text_parser = Parser::new(
+  let text_parser = Parser(
     "a😀\u{0000}b",
     @dom.fragment(),
     scripting_enabled=true,

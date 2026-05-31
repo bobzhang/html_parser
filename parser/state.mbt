@@ -51,7 +51,7 @@ priv struct FormattingEntry {
 }
 
 ///|
-fn Parser::new(
+fn Parser::Parser(
   input : StringView,
   root : @dom.Node,
   scripting_enabled~ : Bool,

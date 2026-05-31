@@ -2,7 +2,7 @@
 
 ///|
 test "parser insertion helpers keep omitted origins optional" {
-  let parser = Parser::new(
+  let parser = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,

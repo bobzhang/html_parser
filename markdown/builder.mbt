@@ -6,7 +6,7 @@ priv struct MarkdownBuilder {
 }
 
 ///|
-fn MarkdownBuilder::new() -> MarkdownBuilder {
+fn MarkdownBuilder::MarkdownBuilder() -> MarkdownBuilder {
   { parts: [], newline_count: 0, pending_space: false }
 }
 
@@ -140,7 +140,7 @@ fn markdown_whitespace_char(ch : Char) -> Bool {
 
 ///|
 fn markdown_escape_text(value : StringView) -> String {
-  let out = StringBuilder::new(size_hint=value.length())
+  let out = StringBuilder::StringBuilder(size_hint=value.length())
   for ch in value {
     match ch {
       '&' => out.write_string("&amp;")

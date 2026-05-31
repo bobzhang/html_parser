@@ -1,6 +1,6 @@
 ///|
 test "sanitize_dom drop mode returns empty fragment for disallowed standalone root" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     [],
     allowed_attributes={},
     disallowed_tag_handling=Drop,
@@ -57,7 +57,7 @@ test "sanitize_dom custom policy keeps comments and can drop subtrees" {
     "<!DOCTYPE html><!--x--><p>ok</p><span>kept text</span>",
     sanitize=false,
   )
-  let keep_policy = @html_parser.SanitizationPolicy::new(
+  let keep_policy = @html_parser.SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": [] },
     drop_comments=false,
@@ -73,7 +73,7 @@ test "sanitize_dom custom policy keeps comments and can drop subtrees" {
     "<div>keep<sarcasm><b>drop</b></sarcasm><p>ok</p></div>",
     sanitize=false,
   )
-  let drop_policy = @html_parser.SanitizationPolicy::new(
+  let drop_policy = @html_parser.SanitizationPolicy(
     ["div", "p"],
     allowed_attributes={ "*": [], "div": [], "p": [] },
     disallowed_tag_handling=Drop,
@@ -89,7 +89,7 @@ test "sanitize_dom custom policy keeps comments and can drop subtrees" {
 ///|
 test "sanitize_dom handles standalone text comment and doctype roots" {
   assert_eq(@html_parser.sanitize_dom(@html_parser.text("x")).to_html(), "x")
-  let keep_policy = @html_parser.SanitizationPolicy::new(
+  let keep_policy = @html_parser.SanitizationPolicy(
     [],
     allowed_attributes={},
     drop_comments=false,
@@ -115,7 +115,7 @@ test "sanitize_dom handles standalone text comment and doctype roots" {
     @html_parser.sanitize_dom(@html_parser.doctype()).to_html(pretty=false),
     "",
   )
-  let raise_policy = @html_parser.SanitizationPolicy::new(
+  let raise_policy = @html_parser.SanitizationPolicy(
     [],
     allowed_attributes={},
     unsafe_handling=Raise,
@@ -140,7 +140,7 @@ test "sanitize_dom handles standalone text comment and doctype roots" {
 
 ///|
 test "sanitize_dom recurses through nested containers and empty templates" {
-  let text_policy = @html_parser.SanitizationPolicy::new([], allowed_attributes={
+  let text_policy = @html_parser.SanitizationPolicy([], allowed_attributes={
     "*": [],
   })
   let nested = @html_parser.fragment(children=[
@@ -150,7 +150,7 @@ test "sanitize_dom recurses through nested containers and empty templates" {
     @html_parser.sanitize_dom(nested, policy=text_policy).to_html(pretty=false),
     "t",
   )
-  let template_policy = @html_parser.SanitizationPolicy::new(["template"], allowed_attributes={
+  let template_policy = @html_parser.SanitizationPolicy(["template"], allowed_attributes={
     "*": [],
     "template": [],
   })
@@ -165,7 +165,7 @@ test "sanitize_dom recurses through nested containers and empty templates" {
 
 ///|
 test "sanitize_dom handles standalone root element edge cases" {
-  let unwrap_policy = @html_parser.SanitizationPolicy::new(["div"], allowed_attributes={
+  let unwrap_policy = @html_parser.SanitizationPolicy(["div"], allowed_attributes={
     "*": [],
     "div": [],
   })
@@ -183,10 +183,10 @@ test "sanitize_dom handles standalone root element edge cases" {
     ).to_html(pretty=false),
     "x",
   )
-  let drop_content_policy = @html_parser.SanitizationPolicy::new(
+  let drop_content_policy = @html_parser.SanitizationPolicy(
     ["div", "img"],
     allowed_attributes={ "*": [], "div": [], "img": ["src"] },
-    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    url_policy=@html_parser.UrlPolicy(allow_rules=[]),
     drop_content_tags=["SCRIPT"],
     disallowed_tag_handling=Unwrap,
   )
@@ -210,7 +210,7 @@ test "sanitize_dom escape handling emits disallowed tags as text" {
     "<b>Hello <sarcasm title='tone' onclick=x><i onclick=y>world</i><script>bad</script></sarcasm></b>",
     sanitize=false,
   )
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["b", "i"],
     allowed_attributes={ "*": [], "b": [], "i": [] },
     disallowed_tag_handling=Escape,
@@ -223,7 +223,7 @@ test "sanitize_dom escape handling emits disallowed tags as text" {
 
 ///|
 test "sanitize_dom escape handling can return fragments for standalone roots" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": [] },
     drop_content_tags=[],
@@ -251,7 +251,7 @@ test "sanitize_dom escape handling can return fragments for standalone roots" {
 
 ///|
 test "sanitize_dom escape handling preserves disallowed template children" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["b"],
     allowed_attributes={ "*": [], "b": [] },
     drop_content_tags=[],
@@ -271,10 +271,10 @@ test "sanitize_dom escape handling preserves disallowed template children" {
 test "sanitize_dom removes parser escape-only text outside escape mode" {
   let fragment = @html_parser.parse_fragment(
     "safe <!DOCTYPE and y>z",
-    context=@html_parser.FragmentContext::new("div"),
+    context=@html_parser.FragmentContext("div"),
     sanitize=false,
   )
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     [],
     allowed_attributes={ "*": [] },
     disallowed_tag_handling=Drop,

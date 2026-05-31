@@ -10,7 +10,7 @@ pub(all) struct FragmentContext {
 
 ///|
 /// Construct a fragment parsing context.
-pub fn FragmentContext::new(
+pub fn FragmentContext::FragmentContext(
   tag_name : StringView,
   ns? : String,
 ) -> FragmentContext {

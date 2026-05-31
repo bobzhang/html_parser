@@ -97,7 +97,7 @@ test "fragment context unwrap helper preserves sibling nodes" {
 
 ///|
 test "document and fragment helpers tolerate missing shells" {
-  let parser = Parser::new(
+  let parser = Parser(
     "",
     @dom.document(),
     scripting_enabled=true,
@@ -134,7 +134,7 @@ test "document and fragment helpers tolerate missing shells" {
     @dom.element("html", children=[@dom.element("body")]),
   ])
   assert_eq(html_fragment_child_is_before_body(nested_after_body), false)
-  let fragment_parser = Parser::new(
+  let fragment_parser = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,

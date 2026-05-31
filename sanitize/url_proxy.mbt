@@ -13,7 +13,7 @@ fn url_proxy_query_byte_is_safe(byte : Byte) -> Bool {
 ///|
 fn percent_encode_url_proxy_param(value : StringView) -> String {
   let bytes = @utf8.encode(value)
-  let out = StringBuilder::new(size_hint=bytes.length())
+  let out = StringBuilder::StringBuilder(size_hint=bytes.length())
   for index in 0..<bytes.length() {
     let byte = bytes[index]
     if url_proxy_query_byte_is_safe(byte) {

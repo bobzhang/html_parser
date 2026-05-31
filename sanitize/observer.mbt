@@ -15,7 +15,7 @@ pub struct SanitizeTransformObserver {
 /// Pass `None` for either callback to observe only reports or only affected
 /// nodes. Both callbacks are best-effort notifications; they do not change the
 /// sanitizer decision.
-pub fn SanitizeTransformObserver::new(
+pub fn SanitizeTransformObserver::SanitizeTransformObserver(
   hook : ((@dom.Node) -> Unit)?,
   report_callback : ((String, @dom.Node?) -> Unit)?,
 ) -> SanitizeTransformObserver {

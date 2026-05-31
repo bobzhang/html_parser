@@ -1,6 +1,6 @@
 ///|
 test "sanitize_dom strips html descendants inside foreign text integration points" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["svg", "title", "desc", "script", "img", "b", "math", "mtext"],
     allowed_attributes={ "img": ["src"] },
     drop_foreign_namespaces=false,
@@ -18,7 +18,7 @@ test "sanitize_dom strips html descendants inside foreign text integration point
 
 ///|
 test "sanitize_dom preserves math marker exceptions in text integration points" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["math", "mtext", "mglyph", "malignmark", "mi"],
     drop_foreign_namespaces=false,
     drop_content_tags=[],
@@ -49,36 +49,36 @@ test "sanitize_dom preserves math marker exceptions in text integration points" 
 
 ///|
 test "sanitize_dom drops active foreign mutation tags when allowlisted" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule(
       "image",
       "href",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=[],
         allow_fragment=true,
         allow_relative=false,
       ),
     ),
-    @html_parser.UrlPolicyRule::new(
+    @html_parser.UrlPolicyRule(
       "set",
       "href",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=[],
         allow_fragment=true,
         allow_relative=false,
       ),
     ),
-    @html_parser.UrlPolicyRule::new(
+    @html_parser.UrlPolicyRule(
       "animate",
       "href",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=[],
         allow_fragment=true,
         allow_relative=false,
       ),
     ),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     [
       "svg", "image", "set", "animate", "foreignobject", "script", "math", "annotation-xml",
     ],
@@ -104,7 +104,7 @@ test "sanitize_dom drops active foreign mutation tags when allowlisted" {
 
 ///|
 test "sanitize_dom drops foreign url function attributes without url policy" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["svg", "rect"],
     allowed_attributes={
       "rect": ["fill", "filter", "marker-start", "stroke", "width", "height"],
@@ -134,21 +134,21 @@ test "sanitize_dom drops foreign url function attributes without url policy" {
 
 ///|
 test "sanitize_dom filters foreign url function attributes with exact rules" {
-  let url_filter = @html_parser.UrlFilter::new(fn(tag, attr, value) {
+  let url_filter = @html_parser.UrlFilter(fn(tag, attr, value) {
     if tag == "rect" && attr == "fill" && value == "#grad" {
       Some("#rewritten")
     } else {
       None
     }
   })
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["svg", "rect"],
     allowed_attributes={ "rect": ["fill", "width", "height", "filter"] },
-    url_policy=@html_parser.UrlPolicy::new(url_filter~, allow_rules=[
-      @html_parser.UrlPolicyRule::new(
+    url_policy=@html_parser.UrlPolicy(url_filter~, allow_rules=[
+      @html_parser.UrlPolicyRule(
         "rect",
         "fill",
-        @html_parser.UrlRule::new(
+        @html_parser.UrlRule(
           allowed_schemes=[],
           allow_relative=false,
           allow_fragment=true,
@@ -171,20 +171,20 @@ test "sanitize_dom filters foreign url function attributes with exact rules" {
 
 ///|
 test "sanitize_dom raise mode reports active foreign mutation tags" {
-  let fragment_rule = @html_parser.UrlRule::new(
+  let fragment_rule = @html_parser.UrlRule(
     allowed_schemes=[],
     allow_relative=false,
     allow_fragment=true,
   )
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["svg", "image", "set"],
     allowed_attributes={
       "image": ["id", "href", "width", "height"],
       "set": ["href", "attributeName", "to", "begin"],
     },
-    url_policy=@html_parser.UrlPolicy::new(allow_rules=[
-      @html_parser.UrlPolicyRule::new("image", "href", fragment_rule),
-      @html_parser.UrlPolicyRule::new("set", "href", fragment_rule),
+    url_policy=@html_parser.UrlPolicy(allow_rules=[
+      @html_parser.UrlPolicyRule("image", "href", fragment_rule),
+      @html_parser.UrlPolicyRule("set", "href", fragment_rule),
     ]),
     drop_foreign_namespaces=false,
     drop_content_tags=[],
@@ -217,7 +217,7 @@ test "sanitize_dom raise mode reports active foreign mutation tags" {
 
 ///|
 test "sanitize_dom treats html namespace svg roots as foreign for active tags" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["svg", "rect", "set"],
     allowed_attributes={ "rect": ["width"], "set": ["begin"] },
     drop_foreign_namespaces=false,
@@ -235,7 +235,7 @@ test "sanitize_dom treats html namespace svg roots as foreign for active tags" {
 
 ///|
 test "sanitize_dom drops html namespace foreign roots when namespace dropping is enabled" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["svg", "rect", "math", "mtext", "p"],
     allowed_attributes={ "rect": ["width"], "p": ["id"] },
     drop_foreign_namespaces=true,
@@ -258,18 +258,18 @@ test "sanitize_dom drops html namespace foreign roots when namespace dropping is
 
 ///|
 test "sanitize_dom stabilizes foreign namespace mXSS after reparse" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule(
       "img",
       "src",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=[],
         allow_relative=true,
         resolve_protocol_relative=None,
       ),
     ),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["form", "math", "mtext", "mglyph", "style", "img"],
     allowed_attributes={ "img": ["src"] },
     url_policy~,
@@ -298,18 +298,18 @@ test "sanitize_dom stabilizes foreign namespace mXSS after reparse" {
 
 ///|
 test "sanitize_dom stabilizes cloned foreign namespace mXSS after reparse" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule(
       "img",
       "src",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=[],
         allow_relative=true,
         resolve_protocol_relative=None,
       ),
     ),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["form", "math", "mtext", "mglyph", "style", "img"],
     allowed_attributes={ "img": ["src"] },
     url_policy~,
@@ -340,18 +340,18 @@ test "sanitize_dom stabilizes cloned foreign namespace mXSS after reparse" {
 
 ///|
 test "sanitize_dom stabilizes foreign namespace mXSS for document roots" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule(
       "img",
       "src",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=[],
         allow_relative=true,
         resolve_protocol_relative=None,
       ),
     ),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["html", "head", "body", "form", "math", "mtext", "mglyph", "style", "img"],
     allowed_attributes={ "img": ["src"] },
     url_policy~,
@@ -372,18 +372,18 @@ test "sanitize_dom stabilizes foreign namespace mXSS for document roots" {
 
 ///|
 test "sanitize_dom drops active foreign integration points during stabilization" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule(
       "img",
       "src",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=[],
         allow_relative=true,
         resolve_protocol_relative=None,
       ),
     ),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["svg", "style", "img"],
     allowed_attributes={ "img": ["src"] },
     url_policy~,
@@ -408,18 +408,18 @@ test "sanitize_dom drops active foreign integration points during stabilization"
 
 ///|
 test "sanitize_dom can return fragment after foreign stabilization" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule(
       "img",
       "src",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=[],
         allow_relative=true,
         resolve_protocol_relative=None,
       ),
     ),
   ])
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["svg", "img"],
     allowed_attributes={ "img": ["src"] },
     url_policy~,

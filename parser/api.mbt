@@ -15,7 +15,7 @@ pub fn parse(
   track_node_locations? : Bool = false,
 ) -> ParsedHtml raise @core.HtmlError {
   let root = @dom.document()
-  let parser = Parser::new(
+  let parser = Parser(
     html,
     root,
     scripting_enabled~,
@@ -59,7 +59,7 @@ pub fn parse_fragment(
   track_node_locations? : Bool = false,
 ) -> ParsedHtml raise @core.HtmlError {
   let root = @dom.fragment()
-  let parser = Parser::new(
+  let parser = Parser(
     html,
     root,
     scripting_enabled~,

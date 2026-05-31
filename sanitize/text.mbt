@@ -15,7 +15,7 @@ fn is_invisible_unicode_char(ch : Char) -> Bool {
 
 ///|
 fn strip_invisible_unicode(value : String) -> String {
-  let out = StringBuilder::new(size_hint=value.length())
+  let out = StringBuilder::StringBuilder(size_hint=value.length())
   let mut changed = false
   for ch in value {
     if is_invisible_unicode_char(ch) {

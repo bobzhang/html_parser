@@ -9,7 +9,7 @@ pub fn tokenize(
   collect_errors? : Bool = false,
   xml_coercion? : Bool = false,
 ) -> TokenizedHtml {
-  let tokenizer = SourceTokenizer::new(html, collect_errors~, xml_coercion~)
+  let tokenizer = SourceTokenizer(html, collect_errors~, xml_coercion~)
   tokenizer.run()
   tokenizer.tokens.push(Eof)
   { tokens: tokenizer.tokens, errors: tokenizer.errors }
@@ -25,11 +25,7 @@ pub fn tokenize_each(
   emit : (HtmlToken) -> Unit,
   xml_coercion? : Bool = false,
 ) -> Unit {
-  let tokenizer = SourceTokenizer::new(
-    html,
-    collect_errors=false,
-    xml_coercion~,
-  )
+  let tokenizer = SourceTokenizer(html, collect_errors=false, xml_coercion~)
   while !tokenizer.is_eof() {
     tokenizer.tokens.clear()
     ignore(tokenizer.step())

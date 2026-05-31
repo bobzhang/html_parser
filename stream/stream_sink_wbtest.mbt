@@ -3,7 +3,7 @@
 
 ///|
 test "stream sink coalesces successive character pushes" {
-  let sink = StreamSink::new()
+  let sink = StreamSink()
   sink.process_characters("a")
   sink.process_characters("b")
   debug_inspect(
@@ -16,7 +16,7 @@ test "stream sink coalesces successive character pushes" {
 
 ///|
 test "stream sink drain empties the buffer" {
-  let sink = StreamSink::new()
+  let sink = StreamSink()
   sink.process_characters("x")
   let first = sink.drain()
   let second_is_empty = sink.drain().is_empty()
@@ -32,7 +32,7 @@ test "stream sink drain empties the buffer" {
 test "stream sink copies tag attrs so mutations do not leak" {
   // process_token snapshots attrs at the time of the call; later mutation
   // of the original token does not affect the produced StreamStart event.
-  let sink = StreamSink::new()
+  let sink = StreamSink()
   let tokenized = @tok.tokenize("<p class=x>y</p>")
   guard tokenized.tokens[0] is Tag(tag) else { fail("expected start tag") }
   sink.process_token(Tag(tag))
@@ -47,7 +47,7 @@ test "stream sink copies tag attrs so mutations do not leak" {
 
 ///|
 test "stream sink streams tokens straight into events" {
-  let sink = StreamSink::new()
+  let sink = StreamSink()
   let tokenized = @tok.tokenize("<p>hi</p>")
   for token in tokenized.tokens {
     sink.process_token(token)

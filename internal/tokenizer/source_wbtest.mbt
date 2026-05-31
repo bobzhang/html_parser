@@ -1,10 +1,6 @@
 ///|
 test "tokenizer eof helper reports empty input origin" {
-  let tokenizer = SourceTokenizer::new(
-    "",
-    collect_errors=true,
-    xml_coercion=false,
-  )
+  let tokenizer = SourceTokenizer("", collect_errors=true, xml_coercion=false)
   assert_true(tokenizer.advance_char() is None)
   assert_eq(tokenizer.pos, 0)
   assert_eq(tokenizer.step(), true)
@@ -23,11 +19,7 @@ test "tokenizer eof helper reports empty input origin" {
 
 ///|
 test "tokenizer attribute helper tolerates delimiter at eof" {
-  let tokenizer = SourceTokenizer::new(
-    ">",
-    collect_errors=true,
-    xml_coercion=false,
-  )
+  let tokenizer = SourceTokenizer(">", collect_errors=true, xml_coercion=false)
   let attrs : Map[String, String?] = {}
   tokenizer.parse_attribute(attrs)
   assert_eq(attrs.length(), 0)

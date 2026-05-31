@@ -43,7 +43,7 @@ pub fn normalize_doctype_value(
   end : Int,
   errors : Array[DoctypeExternalError],
 ) -> String {
-  let out = StringBuilder::new(size_hint=end - start)
+  let out = StringBuilder::StringBuilder(size_hint=end - start)
   let mut pos = start
   while pos < end {
     match input.get_char(pos) {
@@ -84,7 +84,7 @@ pub fn parse_lower_name_value_replacing_nulls(
   if start >= end {
     return ("", errors)
   }
-  let out = StringBuilder::new(size_hint=end - start)
+  let out = StringBuilder::StringBuilder(size_hint=end - start)
   let mut pos = start
   while pos < end {
     match input.get_char(pos) {

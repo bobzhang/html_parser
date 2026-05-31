@@ -1,7 +1,7 @@
 ///|
 /// Find URL and email-like spans in plain text using the default configuration.
 pub fn find_links(text : StringView) -> Array[LinkMatch] {
-  find_links_with_config(text, LinkifyConfig::new())
+  find_links_with_config(text, LinkifyConfig())
 }
 
 ///|

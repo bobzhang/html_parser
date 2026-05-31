@@ -22,7 +22,7 @@ pub(all) struct FragmentContext {
   tag_name : String
   ns : String?
 } derive(Eq, @debug.Debug)
-pub fn FragmentContext::new(StringView, ns? : String) -> Self
+pub fn FragmentContext::FragmentContext(StringView, ns? : String) -> Self
 
 pub struct ParsedHtml {
   root : @dom.Node

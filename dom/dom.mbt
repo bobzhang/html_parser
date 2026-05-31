@@ -394,7 +394,7 @@ pub fn Node::clone_node(
 ///|
 /// Return this node's descendant text with no separator and no trimming.
 pub fn Node::text(self : Node) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder::StringBuilder()
   append_node_text(self, out)
   out.to_string()
 }

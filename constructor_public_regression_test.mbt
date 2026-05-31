@@ -1,20 +1,20 @@
 ///|
 test "public parse error constructor defaults and equality stay stable" {
-  let basic = @html_parser.ParseError::new("custom-error")
+  let basic = @html_parser.ParseError("custom-error")
   assert_eq(basic.code, "custom-error")
   assert_true(basic.line is None)
   assert_true(basic.column is None)
   assert_eq(basic.category, "parse")
   assert_eq(basic.message, "custom-error")
 
-  let detailed = @html_parser.ParseError::new(
+  let detailed = @html_parser.ParseError(
     "custom-error",
     line=2,
     column=4,
     category="tokenizer",
     message="detail",
   )
-  let same = @html_parser.ParseError::new(
+  let same = @html_parser.ParseError(
     "custom-error",
     line=2,
     column=4,
@@ -31,13 +31,13 @@ test "public parse error constructor defaults and equality stay stable" {
 
 ///|
 test "public fragment context and selector limit constructors stay stable" {
-  let context = @html_parser.FragmentContext::new("TeMpLaTe", ns="mathml")
+  let context = @html_parser.FragmentContext("TeMpLaTe", ns="mathml")
   assert_eq(context.tag_name, "template")
   guard context.ns is Some("mathml") else {
     fail("expected namespace to be preserved")
   }
 
-  let defaults = @html_parser.SelectorLimits::new()
+  let defaults = @html_parser.SelectorLimits()
   assert_eq(defaults.max_match_depth, 100)
   assert_eq(defaults.max_length, 8192)
   assert_eq(defaults.max_list_items, 256)
@@ -47,7 +47,7 @@ test "public fragment context and selector limit constructors stay stable" {
   assert_eq(defaults.max_match_steps, 100000000)
   assert_eq(defaults.max_match_bytes, 100000000)
 
-  let custom = @html_parser.SelectorLimits::new(
+  let custom = @html_parser.SelectorLimits(
     max_match_depth=0,
     max_length=10,
     max_list_items=2,
@@ -71,7 +71,7 @@ test "public fragment context and selector limit constructors stay stable" {
 ///|
 test "public linkify config constructors normalize and copy options" {
   let extra_tlds = [" INTERNAL ", "", "EXAMPLE"]
-  let config = @html_parser.LinkifyConfig::new(fuzzy_ip=true, extra_tlds~)
+  let config = @html_parser.LinkifyConfig(fuzzy_ip=true, extra_tlds~)
   extra_tlds.clear()
   let matches = @html_parser.find_links_with_config(
     "site.internal a@b.example 192.168.0.1 site.invalid", config,

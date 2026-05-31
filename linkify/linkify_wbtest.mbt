@@ -14,7 +14,7 @@ test "linkify helper edge contracts fail closed" {
       "example.com",
       "bad://example.com",
       6,
-      LinkifyConfig::new(),
+      LinkifyConfig(),
     ),
     false,
   )

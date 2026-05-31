@@ -87,7 +87,7 @@ match work exceeds the budget you pass — useful when the selector
 comes from untrusted input.
 
 ```mbt nocheck
-match @selector.matches_with_limits(node, sel, @selector.SelectorLimits::new())
+match @selector.matches_with_limits(node, sel, @selector.SelectorLimits())
 catch {
   err => log("rejected: \{err}")
 }

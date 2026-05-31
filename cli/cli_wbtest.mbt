@@ -27,10 +27,7 @@ test "CLI argparse command covers equals and no-path plans" {
 
 ///|
 test "CLI sanitize and cleanup error paths report transform errors" {
-  let raising_policy = @san.SanitizationPolicy::new(
-    ["p"],
-    unsafe_handling=Raise,
-  )
+  let raising_policy = @san.SanitizationPolicy(["p"], unsafe_handling=Raise)
   guard cli_sanitize_or_error(
       @dom.fragment(children=[
         @dom.element("script", children=[@dom.text("bad")]),

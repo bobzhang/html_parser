@@ -1,6 +1,6 @@
 ///|
 fn escape_text(value : StringView) -> String {
-  let out = StringBuilder::new(size_hint=value.length())
+  let out = StringBuilder::StringBuilder(size_hint=value.length())
   for ch in value {
     match ch {
       '&' => out.write_string("&amp;")
@@ -14,7 +14,7 @@ fn escape_text(value : StringView) -> String {
 
 ///|
 fn escape_attr_value(value : StringView, quote : Char) -> String {
-  let out = StringBuilder::new(size_hint=value.length())
+  let out = StringBuilder::StringBuilder(size_hint=value.length())
   for ch in value {
     match ch {
       '&' => out.write_string("&amp;")
@@ -30,7 +30,7 @@ fn escape_attr_value(value : StringView, quote : Char) -> String {
 
 ///|
 fn escape_js_string(value : StringView, quote : Char) -> String {
-  let out = StringBuilder::new(size_hint=value.length())
+  let out = StringBuilder::StringBuilder(size_hint=value.length())
   for ch in value {
     match ch {
       '\\' => out.write_string("\\\\")
@@ -54,7 +54,7 @@ fn escape_js_string(value : StringView, quote : Char) -> String {
 ///|
 fn percent_encode_url(value : StringView) -> String {
   let bytes = @utf8.encode(value)
-  let out = StringBuilder::new(size_hint=bytes.length())
+  let out = StringBuilder::StringBuilder(size_hint=bytes.length())
   for index in 0..<bytes.length() {
     let byte = bytes[index]
     if is_url_safe_byte(byte) {

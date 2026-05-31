@@ -12,7 +12,7 @@ pub fn linkify_dom(
 ) -> @dom.Node {
   let config = match config {
     Some(value) => value
-    None => LinkifyConfig::new()
+    None => LinkifyConfig()
   }
   let skip_tags = match skip_tags {
     Some(value) => value

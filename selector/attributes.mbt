@@ -82,7 +82,7 @@ fn quoted_attribute_selector_value(value : StringView) -> String? {
 
 ///|
 fn unescape_quoted_attribute_selector_value(value : StringView) -> String {
-  let out = StringBuilder::new(size_hint=value.length())
+  let out = StringBuilder::StringBuilder(size_hint=value.length())
   let mut escaped = false
   for ch in value {
     if escaped {

@@ -30,7 +30,7 @@ test "public linkify mixed corpus keeps matches and UTF-16 offsets stable" {
 test "public linkify config corpus keeps fuzzy options stable" {
   let configured = @html_parser.find_links_with_config(
     "site.internal 192.168.0.1 bad.local",
-    @html_parser.LinkifyConfig::new(fuzzy_ip=true, extra_tlds=["internal"]),
+    @html_parser.LinkifyConfig(fuzzy_ip=true, extra_tlds=["internal"]),
   )
   assert_eq(configured.length(), 2)
   assert_eq(configured[0].start, 0)

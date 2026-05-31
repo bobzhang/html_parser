@@ -1,6 +1,6 @@
 ///|
 fn transform_repeat_for_test(value : String, count : Int) -> String {
-  let out = StringBuilder::new(size_hint=value.length() * count)
+  let out = StringBuilder::StringBuilder(size_hint=value.length() * count)
   for _ in 0..<count {
     out.write_string(value)
   }
@@ -445,10 +445,10 @@ test "stage auto grouping preserves ordering and trailing transforms" {
 test "sanitize policy selector limits apply to transform selectors" {
   let long_class = transform_repeat_for_test("a", 8192)
   let long_selector = "." + long_class
-  let relaxed_policy = @html_parser.SanitizationPolicy::new(
+  let relaxed_policy = @html_parser.SanitizationPolicy(
     ["div"],
     allowed_attributes={ "*": ["class", "id"] },
-    selector_limits=@html_parser.SelectorLimits::new(max_length=9000),
+    selector_limits=@html_parser.SelectorLimits(max_length=9000),
   )
   let relaxed = @html_parser.parse_fragment(
     "<div class=\"" + long_class + "\"></div>",
@@ -480,10 +480,10 @@ test "sanitize policy selector limits apply to transform selectors" {
     _ => fail("expected selector length limit error")
   }
 
-  let budget_policy = @html_parser.SanitizationPolicy::new(
+  let budget_policy = @html_parser.SanitizationPolicy(
     ["div"],
     allowed_attributes={ "*": ["data-x"] },
-    selector_limits=@html_parser.SelectorLimits::new(max_match_bytes=10),
+    selector_limits=@html_parser.SelectorLimits(max_match_bytes=10),
   )
   let short_circuit = @html_parser.parse_fragment(
     "<div data-x=\"xxxxxxxxxxxxxxxxxxxx\"></div>",
@@ -509,9 +509,9 @@ test "sanitize policy selector limits apply to transform selectors" {
     _ => fail("expected selector match byte budget error")
   }
 
-  let parse_depth_policy = @html_parser.SanitizationPolicy::new(
+  let parse_depth_policy = @html_parser.SanitizationPolicy(
     ["p"],
-    selector_limits=@html_parser.SelectorLimits::new(max_parse_depth=1),
+    selector_limits=@html_parser.SelectorLimits(max_parse_depth=1),
   )
   let parse_depth = @html_parser.parse_fragment("<p>x</p>")
   let parse_depth_result = try? @html_parser.apply_transforms(
@@ -527,9 +527,9 @@ test "sanitize policy selector limits apply to transform selectors" {
     _ => fail("expected selector parse depth error")
   }
 
-  let match_depth_policy = @html_parser.SanitizationPolicy::new(
+  let match_depth_policy = @html_parser.SanitizationPolicy(
     ["p"],
-    selector_limits=@html_parser.SelectorLimits::new(max_match_depth=0),
+    selector_limits=@html_parser.SelectorLimits(max_match_depth=0),
   )
   let match_depth = @html_parser.parse_fragment("<p>x</p>")
   let match_depth_result = try? @html_parser.apply_transforms(
@@ -545,9 +545,9 @@ test "sanitize policy selector limits apply to transform selectors" {
     _ => fail("expected selector match depth error")
   }
 
-  let step_policy = @html_parser.SanitizationPolicy::new(
+  let step_policy = @html_parser.SanitizationPolicy(
     ["p"],
-    selector_limits=@html_parser.SelectorLimits::new(max_match_steps=0),
+    selector_limits=@html_parser.SelectorLimits(max_match_steps=0),
   )
   let step_budget = @html_parser.parse_fragment("<p>x</p>")
   let step_result = try? @html_parser.apply_transforms(step_budget.root, [
@@ -560,9 +560,9 @@ test "sanitize policy selector limits apply to transform selectors" {
     _ => fail("expected selector step budget error")
   }
 
-  let list_policy = @html_parser.SanitizationPolicy::new(
+  let list_policy = @html_parser.SanitizationPolicy(
     ["p", "div", "span"],
-    selector_limits=@html_parser.SelectorLimits::new(max_list_items=2),
+    selector_limits=@html_parser.SelectorLimits(max_list_items=2),
   )
   let list_limited = @html_parser.parse_fragment("<p>x</p>")
   let list_result = try? @html_parser.apply_transforms(list_limited.root, [
@@ -575,11 +575,9 @@ test "sanitize policy selector limits apply to transform selectors" {
     _ => fail("expected selector list limit error")
   }
 
-  let complex_policy = @html_parser.SanitizationPolicy::new(
+  let complex_policy = @html_parser.SanitizationPolicy(
     ["article", "div", "p"],
-    selector_limits=@html_parser.SelectorLimits::new(
-      max_complex_selector_parts=2,
-    ),
+    selector_limits=@html_parser.SelectorLimits(max_complex_selector_parts=2),
   )
   let complex_limited = @html_parser.parse_fragment(
     "<article><div><p>x</p></div></article>",
@@ -597,12 +595,10 @@ test "sanitize policy selector limits apply to transform selectors" {
     _ => fail("expected complex selector part limit error")
   }
 
-  let compound_policy = @html_parser.SanitizationPolicy::new(
+  let compound_policy = @html_parser.SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": ["class", "id"] },
-    selector_limits=@html_parser.SelectorLimits::new(
-      max_compound_simple_selectors=2,
-    ),
+    selector_limits=@html_parser.SelectorLimits(max_compound_simple_selectors=2),
   )
   let compound_limited = @html_parser.parse_fragment(
     "<p class=\"a\" id=\"b\">x</p>",
@@ -620,9 +616,9 @@ test "sanitize policy selector limits apply to transform selectors" {
     _ => fail("expected compound selector limit error")
   }
 
-  let negative_byte_policy = @html_parser.SanitizationPolicy::new(
+  let negative_byte_policy = @html_parser.SanitizationPolicy(
     ["p"],
-    selector_limits=@html_parser.SelectorLimits::new(max_match_bytes=-1),
+    selector_limits=@html_parser.SelectorLimits(max_match_bytes=-1),
   )
   let negative_byte = @html_parser.parse_fragment("<p>x</p>")
   let negative_result = try? @html_parser.apply_transforms(negative_byte.root, [
@@ -635,9 +631,9 @@ test "sanitize policy selector limits apply to transform selectors" {
     _ => fail("expected negative byte budget error")
   }
 
-  let contains_byte_policy = @html_parser.SanitizationPolicy::new(
+  let contains_byte_policy = @html_parser.SanitizationPolicy(
     ["div"],
-    selector_limits=@html_parser.SelectorLimits::new(max_match_bytes=4),
+    selector_limits=@html_parser.SelectorLimits(max_match_bytes=4),
   )
   let contains_byte = @html_parser.parse_fragment("<div>needle</div>")
   let contains_result = try? @html_parser.apply_transforms(contains_byte.root, [
@@ -906,10 +902,10 @@ test "nested stage transforms are flattened without nested hooks" {
 test "nested stage sanitizer limits apply to trailing transforms" {
   let long_class = transform_repeat_for_test("s", 8192)
   let long_selector = "." + long_class
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["div"],
     allowed_attributes={ "*": ["class", "id"] },
-    selector_limits=@html_parser.SelectorLimits::new(max_length=9000),
+    selector_limits=@html_parser.SelectorLimits(max_length=9000),
   )
   let doc = @html_parser.parse_fragment(
     "<div class=\"" + long_class + "\"></div>",
@@ -1041,7 +1037,7 @@ test "attribute transforms cover no-op and boolean attribute branches" {
   )
   assert_eq(repeated_glob.to_html(pretty=false), "<div data-x=\"keep\"></div>")
 
-  let url_policy = @html_parser.UrlPolicy::new()
+  let url_policy = @html_parser.UrlPolicy()
   let no_attrs = @html_parser.fragment(children=[@html_parser.element("div")])
   ignore(
     @html_parser.apply_transforms(no_attrs, [
@@ -1201,7 +1197,7 @@ test "sanitize transform does not imply final markdown sanitize" {
 
 ///|
 test "sanitize transform accepts custom policy and can replace standalone root" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": ["id"] },
     drop_comments=false,
@@ -1225,7 +1221,7 @@ test "sanitize transform accepts custom policy and can replace standalone root" 
 
 ///|
 test "sanitize transform propagates unsafe raise policy errors" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["p"],
     allowed_attributes={ "p": [] },
     unsafe_handling=Raise,
@@ -1254,7 +1250,7 @@ test "sanitize transform hooks and reports unsafe mutations" {
       None => events.push("node:none")
     }
   }
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["p"],
     allowed_attributes={ "p": [] },
     strip_invisible_unicode=true,
@@ -1278,7 +1274,7 @@ test "sanitize transform hooks and reports unsafe mutations" {
 
 ///|
 test "sanitize transform supports hook-only and report-only observers" {
-  let policy = @html_parser.SanitizationPolicy::new(["p"], allowed_attributes={
+  let policy = @html_parser.SanitizationPolicy(["p"], allowed_attributes={
     "p": [],
   })
   let hook_events : Array[String] = []
@@ -1325,7 +1321,7 @@ test "sanitize transform comment and doctype drops are structural reports" {
       None => events.push("node:none")
     }
   }
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["p"],
     allowed_attributes={ "p": [] },
     unsafe_handling=Raise,
@@ -1361,7 +1357,7 @@ test "sanitize transform reports invisible Unicode attribute stripping" {
       None => events.push("node:none")
     }
   }
-  let policy = @html_parser.SanitizationPolicy::new(["p"], allowed_attributes={
+  let policy = @html_parser.SanitizationPolicy(["p"], allowed_attributes={
     "p": ["title"],
   })
   let doc = @html_parser.parse_fragment(
@@ -1499,7 +1495,7 @@ test "disabled transforms are skipped" {
   let doc = @html_parser.parse_fragment(
     "<p onclick='x'>example.com<script>x</script><!--c--></p>",
   )
-  let policy = @html_parser.SanitizationPolicy::new(["p"], allowed_attributes={
+  let policy = @html_parser.SanitizationPolicy(["p"], allowed_attributes={
     "p": [],
   })
   ignore(
@@ -1925,16 +1921,16 @@ test "text transforms recurse through nested fragment children" {
 
 ///|
 test "drop_url_attrs validates URL attrs and normalizes mixed-case names" {
-  let trusted_rule = @html_parser.UrlRule::new(
+  let trusted_rule = @html_parser.UrlRule(
     allowed_schemes=["https"],
     allowed_hosts=["trusted.example"],
     allow_relative=false,
   )
-  let url_policy = @html_parser.UrlPolicy::new(default_allow_relative=false, allow_rules=[
-    @html_parser.UrlPolicyRule::new("a", "href", trusted_rule),
-    @html_parser.UrlPolicyRule::new("a", "ping", trusted_rule),
-    @html_parser.UrlPolicyRule::new("img", "srcset", trusted_rule),
-    @html_parser.UrlPolicyRule::new("base", "href", trusted_rule),
+  let url_policy = @html_parser.UrlPolicy(default_allow_relative=false, allow_rules=[
+    @html_parser.UrlPolicyRule("a", "href", trusted_rule),
+    @html_parser.UrlPolicyRule("a", "ping", trusted_rule),
+    @html_parser.UrlPolicyRule("img", "srcset", trusted_rule),
+    @html_parser.UrlPolicyRule("base", "href", trusted_rule),
   ])
   let a = @html_parser.element("a", attrs={
     "Href": Some(" https://trusted.example/x "),
@@ -1990,14 +1986,14 @@ test "drop_url_attrs reports exact unsafe URL reasons before hook" {
       None => events.push("node:none")
     }
   }
-  let trusted_rule = @html_parser.UrlRule::new(
+  let trusted_rule = @html_parser.UrlRule(
     allowed_schemes=["https"],
     allowed_hosts=["trusted.example"],
     allow_relative=false,
   )
-  let url_policy = @html_parser.UrlPolicy::new(default_allow_relative=false, allow_rules=[
-    @html_parser.UrlPolicyRule::new("a", "href", trusted_rule),
-    @html_parser.UrlPolicyRule::new("base", "href", trusted_rule),
+  let url_policy = @html_parser.UrlPolicy(default_allow_relative=false, allow_rules=[
+    @html_parser.UrlPolicyRule("a", "href", trusted_rule),
+    @html_parser.UrlPolicyRule("base", "href", trusted_rule),
   ])
   let root = @html_parser.fragment(children=[
     @html_parser.element("a", attrs={ "href": Some("javascript:alert(1)") }),
@@ -2035,11 +2031,11 @@ test "drop_url_attrs reports exact unsafe URL reasons before hook" {
 
 ///|
 test "drop_url_attrs sanitizes foreign URL function attributes" {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule(
       "rect",
       "fill",
-      @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+      @html_parser.UrlRule(allowed_schemes=["https"], allowed_hosts=[
         "trusted.example",
       ]),
     ),

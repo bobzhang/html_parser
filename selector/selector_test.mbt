@@ -129,7 +129,7 @@ test "matches_with_limits returns parse error for an over-budget selector" {
   // Tiny budget guarantees the selector won't fit; we expect a
   // SelectorError raised under the budget.
   let doc = sample_doc()
-  let tiny = @selector.SelectorLimits::new(max_length=1)
+  let tiny = @selector.SelectorLimits(max_length=1)
   try @selector.matches_with_limits(doc, "p.intro", tiny) catch {
     err =>
       debug_inspect(

@@ -32,7 +32,7 @@ fn markdown_link_destination_wrap_trigger(ch : Char) -> Bool {
 ///|
 fn markdown_percent_encode_link_destination(value : StringView) -> String {
   let bytes = @utf8.encode(value)
-  let out = StringBuilder::new(size_hint=bytes.length())
+  let out = StringBuilder::StringBuilder(size_hint=bytes.length())
   for index in 0..<bytes.length() {
     let byte = bytes[index]
     if markdown_link_destination_byte_is_safe(byte) {
@@ -119,7 +119,7 @@ fn markdown_render_link_children_to_string(
   node : @dom.Node,
   html_passthrough : Bool,
 ) -> String raise @core.HtmlError {
-  let builder = MarkdownBuilder::new()
+  let builder = MarkdownBuilder()
   for child in node.children {
     markdown_walk_link_text(child, builder, html_passthrough)
   }
@@ -133,7 +133,7 @@ fn markdown_link_text_marker(
   marker : String,
   html_passthrough : Bool,
 ) -> Unit raise @core.HtmlError {
-  let inner = MarkdownBuilder::new()
+  let inner = MarkdownBuilder()
   for child in node.children {
     markdown_walk_link_text(child, inner, html_passthrough)
   }

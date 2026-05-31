@@ -110,7 +110,7 @@ test "foreign adjustment helper tables match spec names" {
   guard custom["xlink:title"] is Some("t") else {
     fail("expected foreign attr to be preserved")
   }
-  let parser = Parser::new(
+  let parser = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,

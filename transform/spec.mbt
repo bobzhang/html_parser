@@ -39,7 +39,7 @@ pub(all) enum DecideAction {
 
 ///|
 fn default_selector_limits() -> @sel.SelectorLimits {
-  @sel.SelectorLimits::new()
+  SelectorLimits()
 }
 
 ///|
