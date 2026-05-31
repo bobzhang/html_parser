@@ -6,7 +6,7 @@
 pub(all) struct EntityDecodeError {
   code : String
   offset : Int
-}
+} derive(Debug, Eq)
 
 ///|
 /// Result of decoding character references in a string.
@@ -16,7 +16,7 @@ pub(all) struct EntityDecodeError {
 pub(all) struct EntityDecodeResult {
   data : String
   errors : Array[EntityDecodeError]
-}
+} derive(Debug, Eq)
 
 ///|
 /// Result of consuming one character reference.
@@ -28,4 +28,4 @@ pub(all) struct EntityConsumeResult {
   value : String
   next : Int
   errors : Array[EntityDecodeError]
-}
+} derive(Debug, Eq)
