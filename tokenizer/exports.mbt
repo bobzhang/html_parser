@@ -31,10 +31,7 @@ pub fn tokenize_each(
 }
 
 ///|
-/// Decode HTML character references in a string.
-pub fn decode_entities(input : StringView, in_attribute~ : Bool) -> String {
-  @impl.decode_entities(input, in_attribute~)
-}
+pub using @impl {decode_entities}
 
 ///|
 fn internal_kind_to_public(kind : @impl.TagKind) -> TagKind {

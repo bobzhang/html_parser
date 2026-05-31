@@ -27,24 +27,10 @@ pub fn to_html(
 }
 
 ///|
-/// Extract descendant text from a node.
-pub fn to_text(
-  node : @dom.Node,
-  separator? : String = " ",
-  strip? : Bool = true,
-  separator_blocks_only? : Bool = false,
-) -> String {
-  @impl.to_text(node, separator~, strip~, separator_blocks_only~)
-}
+pub using @impl {to_text}
 
 ///|
-/// Render a deterministic tree dump intended for conformance tests.
-pub fn to_test_format(node : @dom.Node) -> String {
-  @impl.to_test_format(node)
-}
+pub using @impl {to_test_format}
 
 ///|
-/// Return whether `name` is an HTML void element.
-pub fn is_void_element(name : StringView) -> Bool {
-  @impl.is_void_element(name)
-}
+pub using @impl {is_void_element}
