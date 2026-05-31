@@ -69,7 +69,7 @@ fn Parser::clean_foreign_content_text(
   raw : StringView,
   start : Int,
 ) -> String {
-  let out = StringBuilder::new(size_hint=raw.length())
+  let out = StringBuilder::StringBuilder(size_hint=raw.length())
   let mut offset = 0
   for ch in raw {
     if ch == '\u{0000}' {

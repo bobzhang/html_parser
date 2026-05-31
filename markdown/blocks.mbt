@@ -60,7 +60,7 @@ fn markdown_walk_blockquote(
   if inner == "" {
     return
   }
-  let quoted = StringBuilder::new(size_hint=inner.length() + 2)
+  let quoted = StringBuilder::StringBuilder(size_hint=inner.length() + 2)
   let mut line_start = true
   for ch in inner {
     if line_start {

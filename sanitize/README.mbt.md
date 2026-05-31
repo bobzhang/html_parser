@@ -39,7 +39,7 @@ test "readme sanitize default policy" {
 
 ## Building a custom policy
 
-`SanitizationPolicy::new` takes the allowed tag list and a host of
+`SanitizationPolicy::SanitizationPolicy` takes the allowed tag list and a host of
 keyword arguments controlling tag/attribute handling, URL policy,
 CSS allowlist, comment/doctype handling, and unsafe-construct
 reporting.
@@ -47,7 +47,7 @@ reporting.
 ```mbt check
 ///|
 test "readme sanitize custom policy" {
-  let policy = @sanitize.SanitizationPolicy::new(
+  let policy = @sanitize.SanitizationPolicy(
     ["p", "a"],
     allowed_attributes={ "a": ["href"] },
     disallowed_tag_handling=Drop,
@@ -93,7 +93,7 @@ later inspection, or raise immediately.
 ```mbt check
 ///|
 test "readme sanitize unsafe handling collect" {
-  let policy = @sanitize.SanitizationPolicy::new(
+  let policy = @sanitize.SanitizationPolicy(
     ["p"],
     disallowed_tag_handling=Drop,
     unsafe_handling=Collect,
@@ -119,21 +119,19 @@ test "readme sanitize unsafe handling collect" {
 
 By default no URL attribute survives — to allow `href="/x"` or
 `src="https://example.com/img.png"`, register `UrlPolicyRule`s under
-`UrlPolicy::new(allow_rules=...)`.
+`UrlPolicy(allow_rules=...)`.
 
 ```mbt check
 ///|
 test "readme sanitize url policy" {
-  let url_policy = @sanitize.UrlPolicy::new(allow_rules=[
-    @sanitize.UrlPolicyRule::new(
+  let url_policy = @sanitize.UrlPolicy(allow_rules=[
+    @sanitize.UrlPolicyRule(
       "a",
       "href",
-      @sanitize.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
-        "example.com",
-      ]),
+      @sanitize.UrlRule(allowed_schemes=["https"], allowed_hosts=["example.com"]),
     ),
   ])
-  let policy = @sanitize.SanitizationPolicy::new(
+  let policy = @sanitize.SanitizationPolicy(
     ["a"],
     allowed_attributes={ "a": ["href"] },
     url_policy~,
@@ -164,7 +162,7 @@ test "readme sanitize url policy" {
 `Some(new_value)` to rewrite.
 
 ```mbt nocheck
-@sanitize.UrlFilter::new((tag, attr, value) =>
+@sanitize.UrlFilter((tag, attr, value) =>
   if value.starts_with("https://old.example/") {
     Some(value.replace("old.example", "new.example"))
   } else {

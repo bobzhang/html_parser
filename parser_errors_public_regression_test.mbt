@@ -247,7 +247,7 @@ test "parser reports treebuilder error positions after newlines" {
 
 ///|
 test "parse errors expose tokenizer treebuilder and default categories" {
-  let direct = @html_parser.ParseError::new("custom-error")
+  let direct = @html_parser.ParseError("custom-error")
   assert_eq(direct.category, "parse")
   assert_eq(direct.message, "custom-error")
   let tokenized = @html_parser.tokenize("<", collect_errors=true)
@@ -279,9 +279,9 @@ test "parse errors expose tokenizer treebuilder and default categories" {
 
 ///|
 test "parse error values preserve location message and equality" {
-  let first = @html_parser.ParseError::new("error-code", line=1, column=5)
-  let same = @html_parser.ParseError::new("error-code", line=1, column=5)
-  let other = @html_parser.ParseError::new("other-error", line=1, column=5)
+  let first = @html_parser.ParseError("error-code", line=1, column=5)
+  let same = @html_parser.ParseError("error-code", line=1, column=5)
+  let other = @html_parser.ParseError("other-error", line=1, column=5)
   assert_true(first == same)
   assert_true(first != other)
   guard first.line is Some(1) else {
@@ -292,7 +292,7 @@ test "parse error values preserve location message and equality" {
   }
   assert_eq(first.category, "parse")
   assert_eq(first.message, "error-code")
-  let detailed = @html_parser.ParseError::new(
+  let detailed = @html_parser.ParseError(
     "test-error",
     line=5,
     column=10,
@@ -308,7 +308,7 @@ test "parse error values preserve location message and equality" {
   guard detailed.column is Some(10) else {
     fail("expected detailed parse error column")
   }
-  let without_location = @html_parser.ParseError::new(
+  let without_location = @html_parser.ParseError(
     "test-error",
     message="This is a test error",
   )

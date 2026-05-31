@@ -16,7 +16,7 @@ fn markdown_render_children_to_string(
   html_passthrough : Bool,
   list_depth : Int,
 ) -> String raise @core.HtmlError {
-  let builder = MarkdownBuilder::new()
+  let builder = MarkdownBuilder()
   markdown_render_children(node, builder, html_passthrough, list_depth)
   builder.finish()
 }

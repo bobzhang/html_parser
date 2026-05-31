@@ -10,12 +10,7 @@ fn Parser::make_error_at(
   pos : Int,
 ) -> @core.ParseError {
   let (line, column) = line_col_at(self.input, pos)
-  @core.ParseError::new(
-    code,
-    line~,
-    column~,
-    category=@core.parser_error_category(code),
-  )
+  ParseError(code, line~, column~, category=@core.parser_error_category(code))
 }
 
 ///|
@@ -191,7 +186,7 @@ fn Parser::error_at_eof(self : Parser, code : String) -> Unit {
 ///|
 fn Parser::make_error_at_eof(self : Parser, code : String) -> @core.ParseError {
   if self.input.is_empty() {
-    @core.ParseError::new(
+    ParseError(
       code,
       line=1,
       column=0,

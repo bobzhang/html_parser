@@ -32,7 +32,7 @@ pub(all) enum StreamEvent {
 ///|
 /// Parse an HTML string into streaming events.
 pub fn stream(html : StringView) -> Array[StreamEvent] {
-  let sink = StreamSink::new()
+  let sink = StreamSink()
   @tok.tokenize_each(html, fn(token) { sink.process_token(token) })
   sink.drain()
 }
@@ -40,7 +40,7 @@ pub fn stream(html : StringView) -> Array[StreamEvent] {
 ///|
 /// Parse an HTML string and emit streaming events incrementally.
 pub fn stream_each(html : StringView, emit : (StreamEvent) -> Unit) -> Unit {
-  let sink = StreamSink::new()
+  let sink = StreamSink()
   @tok.tokenize_each(html, fn(token) {
     sink.process_token(token)
     sink.drain_each(emit)
@@ -86,7 +86,7 @@ struct StreamSink {
 
 ///|
 /// Create an empty stream sink.
-fn StreamSink::new() -> StreamSink {
+fn StreamSink::StreamSink() -> StreamSink {
   { events: [], text_parts: [] }
 }
 

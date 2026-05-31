@@ -55,7 +55,7 @@ fn Parser::handle_column_group_text(
 
 ///|
 fn leading_ascii_whitespace(value : StringView) -> String {
-  let out = StringBuilder::new(size_hint=value.length())
+  let out = StringBuilder::StringBuilder(size_hint=value.length())
   for ch in value {
     if ch.is_ascii_whitespace() {
       out.write_char(ch)

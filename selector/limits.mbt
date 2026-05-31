@@ -16,7 +16,7 @@ pub(all) struct SelectorLimits {
 
 ///|
 /// Construct selector limits, using conservative defaults for omitted values.
-pub fn SelectorLimits::new(
+pub fn SelectorLimits::SelectorLimits(
   max_match_depth? : Int = 100,
   max_length? : Int = 8192,
   max_list_items? : Int = 256,

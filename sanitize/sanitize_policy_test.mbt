@@ -1,9 +1,9 @@
-// Blackbox snapshot tests for `SanitizationPolicy::new` — building a
+// Blackbox snapshot tests for `SanitizationPolicy::SanitizationPolicy` — building a
 // custom policy from scratch.
 
 ///|
 test "minimal policy with allowed_tags only keeps the listed tags" {
-  let policy = @sanitize.SanitizationPolicy::new(["p", "b"])
+  let policy = @sanitize.SanitizationPolicy(["p", "b"])
   let frag = @dom.fragment(children=[
     @dom.element("p", children=[@dom.text("hi")]),
     @dom.element("i", children=[@dom.text("dropped tag")]),
@@ -22,10 +22,7 @@ test "minimal policy with allowed_tags only keeps the listed tags" {
 
 ///|
 test "disallowed_tag_handling Drop removes node and content" {
-  let policy = @sanitize.SanitizationPolicy::new(
-    ["p"],
-    disallowed_tag_handling=Drop,
-  )
+  let policy = @sanitize.SanitizationPolicy(["p"], disallowed_tag_handling=Drop)
   let frag = @dom.fragment(children=[
     @dom.element("p", children=[@dom.text("keep")]),
     @dom.element("i", children=[@dom.text("DROP THIS")]),
@@ -41,7 +38,7 @@ test "disallowed_tag_handling Drop removes node and content" {
 
 ///|
 test "disallowed_tag_handling Escape serializes the tag as text" {
-  let policy = @sanitize.SanitizationPolicy::new(
+  let policy = @sanitize.SanitizationPolicy(
     ["p"],
     disallowed_tag_handling=Escape,
   )
@@ -61,7 +58,7 @@ test "disallowed_tag_handling Escape serializes the tag as text" {
 ///|
 test "allowed_attributes gates per-tag attribute names" {
   // <a> may have href; <p> may have nothing.
-  let policy = @sanitize.SanitizationPolicy::new(["a", "p"], allowed_attributes={
+  let policy = @sanitize.SanitizationPolicy(["a", "p"], allowed_attributes={
     "a": ["href"],
   })
   let frag = @dom.fragment(children=[
@@ -106,7 +103,7 @@ test "with_extra_allowed_tags returns a derived policy" {
 
 ///|
 test "drop_comments=true removes comment nodes" {
-  let policy = @sanitize.SanitizationPolicy::new(["p"], drop_comments=true)
+  let policy = @sanitize.SanitizationPolicy(["p"], drop_comments=true)
   let frag = @dom.fragment(children=[
     @dom.element("p", children=[@dom.text("body")]),
     @dom.comment(" tracking "),

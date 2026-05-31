@@ -18,7 +18,7 @@ test "public pretty printer keeps block inline and raw layout stable" {
 test "parser escape-only sentinels stay hidden from serializers" {
   let fragment = @html_parser.parse_fragment(
     "safe <!DOCTYPE and y>z",
-    context=@html_parser.FragmentContext::new("div"),
+    context=@html_parser.FragmentContext("div"),
     sanitize=false,
   )
   assert_eq(fragment.to_html(pretty=false), "safe z")
@@ -32,7 +32,7 @@ test "parser escape-only sentinels stay hidden from serializers" {
 
   let inline = @html_parser.parse_fragment(
     "<p>safe <!DOCTYPE and y>z</p>",
-    context=@html_parser.FragmentContext::new("div"),
+    context=@html_parser.FragmentContext("div"),
     sanitize=false,
   )
   assert_eq(inline.to_html(pretty=false), "<p>safe z</p>")
@@ -41,14 +41,14 @@ test "parser escape-only sentinels stay hidden from serializers" {
 
   let inline_run = @html_parser.parse_fragment(
     "<div>safe <!DOCTYPE and y> <span>ok</span></div>",
-    context=@html_parser.FragmentContext::new("div"),
+    context=@html_parser.FragmentContext("div"),
     sanitize=false,
   )
   assert_eq(inline_run.to_html(pretty=true), "<div>safe  <span>ok</span></div>")
 
   let compact_inline = @html_parser.parse_fragment(
     "<div>safe <!DOCTYPE and y><span>ok</span></div>",
-    context=@html_parser.FragmentContext::new("div"),
+    context=@html_parser.FragmentContext("div"),
     sanitize=false,
   )
   assert_eq(
@@ -58,7 +58,7 @@ test "parser escape-only sentinels stay hidden from serializers" {
 
   let hidden_only = @html_parser.parse_fragment(
     "<div> <!DOCTYPE and y> </div>",
-    context=@html_parser.FragmentContext::new("div"),
+    context=@html_parser.FragmentContext("div"),
     sanitize=false,
   )
   assert_eq(hidden_only.to_html(pretty=true), "<div></div>")

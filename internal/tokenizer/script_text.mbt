@@ -7,7 +7,7 @@
 /// null characters with U+FFFD while collecting diagnostics. `end_start` points
 /// at the `<` of the matching end tag when one is found.
 pub fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
-  let out = StringBuilder::new(size_hint=input.length() - start)
+  let out = StringBuilder::StringBuilder(size_hint=input.length() - start)
   let errors : Array[SpecialTextError] = []
   let mut state = ScriptRawText
   let mut temp = ""

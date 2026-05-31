@@ -2,7 +2,7 @@
 
 ///|
 test "detached recovery helpers ignore stale parser state" {
-  let parser = Parser::new(
+  let parser = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,

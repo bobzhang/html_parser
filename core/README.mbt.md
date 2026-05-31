@@ -16,7 +16,7 @@ A single parse diagnostic. `code` is the spec-style identifier;
 ```mbt check
 ///|
 test "readme ParseError" {
-  let err = @core.ParseError::new(
+  let err = @core.ParseError(
     "unexpected-null-character",
     line=3,
     column=14,

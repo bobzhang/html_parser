@@ -13,7 +13,7 @@ priv struct LinkifyNoLinkFixtureCase {
 
 ///|
 test "linkify matches vendored linkify-it links fixture" {
-  let config = @html_parser.LinkifyConfig::new(fuzzy_ip=true)
+  let config = @html_parser.LinkifyConfig(fuzzy_ip=true)
   let failures : Array[String] = []
   for case in linkify_it_link_cases() {
     let matches = @html_parser.find_links_with_config(case.text, config)

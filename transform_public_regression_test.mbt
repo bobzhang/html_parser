@@ -26,11 +26,11 @@ test "public structural transform pipeline stays stable" {
 
 ///|
 test "public attribute policy transform pipeline stays stable" {
-  let url_policy = @html_parser.UrlPolicy::new(default_allow_relative=false, allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(default_allow_relative=false, allow_rules=[
+    @html_parser.UrlPolicyRule(
       "a",
       "href",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=["https"],
         allowed_hosts=["trusted.example"],
         allow_relative=false,

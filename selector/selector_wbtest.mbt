@@ -1,6 +1,6 @@
 ///|
 fn default_selector_limits() -> SelectorLimits {
-  SelectorLimits::new()
+  SelectorLimits()
 }
 
 ///|
@@ -56,10 +56,10 @@ test "limited selector matcher keeps pseudo parity" {
     matches_with_limits(
       second,
       "p:contains(needle)",
-      SelectorLimits::new(max_match_bytes=1000),
+      SelectorLimits(max_match_bytes=1000),
     ),
   )
-  let context = SelectorMatchContext::new(limits)
+  let context = SelectorMatchContext(limits)
   context.tick(steps=0)
   assert_eq(
     pseudo_selector_matches_with_context(second, "hover(2)", context, 0),
@@ -86,7 +86,7 @@ test "limited selector context fails closed on malformed branches" {
   let section = root.children[0]
   let first = section.children[0]
   let second = section.children[1]
-  let context = SelectorMatchContext::new(default_selector_limits())
+  let context = SelectorMatchContext(default_selector_limits())
   assert_eq(matches_simple_selector_with_context(second, "", context, 0), false)
   assert_eq(
     matches_simple_selector_with_context(second, "*foo", context, 0),
@@ -151,7 +151,7 @@ test "limited selector context fails closed on malformed branches" {
   let depth_result = try? matches_complex_selector_with_context(
     second,
     "p",
-    SelectorMatchContext::new(SelectorLimits::new(max_match_depth=0)),
+    SelectorMatchContext(SelectorLimits(max_match_depth=0)),
     1,
   )
   match depth_result {

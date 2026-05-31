@@ -2,10 +2,10 @@
 // `ParseError`, `HtmlError`, and the `parser_error_category` helper.
 
 ///|
-test "ParseError::new defaults derive category and message from code" {
+test "ParseError::ParseError defaults derive category and message from code" {
   // With only `code` supplied, `category` and `message` default to the
   // code itself; `line`/`column` default to None.
-  let err = @core.ParseError::new("unexpected-null-character")
+  let err = @core.ParseError("unexpected-null-character")
   debug_inspect(
     err,
     content=(
@@ -21,8 +21,8 @@ test "ParseError::new defaults derive category and message from code" {
 }
 
 ///|
-test "ParseError::new accepts explicit position and category" {
-  let err = @core.ParseError::new(
+test "ParseError::ParseError accepts explicit position and category" {
+  let err = @core.ParseError(
     "unexpected-null-character",
     line=3,
     column=14,
@@ -61,7 +61,7 @@ test "parser_error_category categorizes tokenizer codes as tokenizer" {
 test "HtmlError variants carry their own payload" {
   // HtmlError is the umbrella raised by parse / sanitize / serialize.
   // The snapshot shows the shape callers see when catching it.
-  let strict = @core.HtmlError::StrictMode(@core.ParseError::new("oops"))
+  let strict = @core.HtmlError::StrictMode(@core.ParseError("oops"))
   let unsafe_ = @core.HtmlError::UnsafeHtml("blocked: <script>")
   let bad_sel = @core.HtmlError::SelectorError("invalid pseudo")
   let bad_ser = @core.HtmlError::InvalidSerialization("orphan node")

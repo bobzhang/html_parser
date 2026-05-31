@@ -36,7 +36,7 @@ fn string_contains_forbidden_url_char(value : StringView) -> Bool {
 
 ///|
 fn normalize_url_for_checking(value : StringView) -> String {
-  let out = StringBuilder::new(size_hint=value.length())
+  let out = StringBuilder::StringBuilder(size_hint=value.length())
   for ch in value {
     if !is_url_ignored_scheme_char(ch) {
       out.write_char(ch)
@@ -47,7 +47,7 @@ fn normalize_url_for_checking(value : StringView) -> String {
 
 ///|
 fn extract_url_scheme(value : StringView) -> String? {
-  let out = StringBuilder::new()
+  let out = StringBuilder::StringBuilder()
   let mut pos = 0
   let mut saw_scheme_char = false
   while pos < value.length() {

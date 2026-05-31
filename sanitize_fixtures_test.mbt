@@ -14,7 +14,7 @@ fn sanitize_fixture_output(
 ) -> String raise {
   let parsed = @html_parser.parse_fragment(
     input_html,
-    context=@html_parser.FragmentContext::new("div"),
+    context=@html_parser.FragmentContext("div"),
     sanitize=false,
   )
   @html_parser.sanitize_dom(parsed.root, policy~).to_html(pretty=false)
@@ -40,19 +40,19 @@ fn sanitize_fixture_img_src_proxy_policy(
   proxy_url : String,
   allow_relative : Bool,
 ) -> @html_parser.SanitizationPolicy {
-  let url_policy = @html_parser.UrlPolicy::new(allow_rules=[
-    @html_parser.UrlPolicyRule::new(
+  let url_policy = @html_parser.UrlPolicy(allow_rules=[
+    @html_parser.UrlPolicyRule(
       "img",
       "src",
-      @html_parser.UrlRule::new(
+      @html_parser.UrlRule(
         allowed_schemes=["https"],
         handling=UrlProxy,
         allow_relative~,
-        proxy=@html_parser.UrlProxy::new(proxy_url),
+        proxy=@html_parser.UrlProxy(proxy_url),
       ),
     ),
   ])
-  @html_parser.SanitizationPolicy::new(
+  @html_parser.SanitizationPolicy(
     ["img"],
     allowed_attributes={ "*": [], "img": ["src"] },
     url_policy~,
@@ -64,12 +64,12 @@ fn sanitize_fixture_anchor_policy(
   rule : @html_parser.UrlRule,
   url_filter? : @html_parser.UrlFilter,
 ) -> @html_parser.SanitizationPolicy {
-  let allow_rules = [@html_parser.UrlPolicyRule::new("a", "href", rule)]
+  let allow_rules = [@html_parser.UrlPolicyRule("a", "href", rule)]
   let url_policy = match url_filter {
-    Some(filter) => @html_parser.UrlPolicy::new(url_filter=filter, allow_rules~)
-    None => @html_parser.UrlPolicy::new(allow_rules~)
+    Some(filter) => @html_parser.UrlPolicy(url_filter=filter, allow_rules~)
+    None => @html_parser.UrlPolicy(allow_rules~)
   }
-  @html_parser.SanitizationPolicy::new(
+  @html_parser.SanitizationPolicy(
     ["a"],
     allowed_attributes={ "*": [], "a": ["href"] },
     url_policy~,
@@ -78,7 +78,7 @@ fn sanitize_fixture_anchor_policy(
 
 ///|
 fn sanitize_fixture_drop_or_rewrite_filter() -> @html_parser.UrlFilter {
-  @html_parser.UrlFilter::new(fn(_tag, _attr, value) {
+  @html_parser.UrlFilter(fn(_tag, _attr, value) {
     match value {
       "https://drop.me" => None
       "https://rewrite.me" => Some("https://example.com")
@@ -91,29 +91,29 @@ fn sanitize_fixture_drop_or_rewrite_filter() -> @html_parser.UrlFilter {
 fn sanitize_fixture_template_policy(
   allowed_tags : Array[String],
 ) -> @html_parser.SanitizationPolicy {
-  @html_parser.SanitizationPolicy::new(
+  @html_parser.SanitizationPolicy(
     allowed_tags,
     allowed_attributes={ "*": [], "template": [], "p": [] },
-    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    url_policy=@html_parser.UrlPolicy(allow_rules=[]),
   )
 }
 
 ///|
 fn sanitize_fixture_rel_policy() -> @html_parser.SanitizationPolicy {
-  @html_parser.SanitizationPolicy::new(
+  @html_parser.SanitizationPolicy(
     ["a"],
     allowed_attributes={ "*": [], "a": ["rel"] },
-    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    url_policy=@html_parser.UrlPolicy(allow_rules=[]),
     force_link_rel=["noopener"],
   )
 }
 
 ///|
 fn sanitize_fixture_boolean_attribute_policy() -> @html_parser.SanitizationPolicy {
-  @html_parser.SanitizationPolicy::new(
+  @html_parser.SanitizationPolicy(
     ["div"],
     allowed_attributes={ "*": [], "div": ["disabled"] },
-    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    url_policy=@html_parser.UrlPolicy(allow_rules=[]),
   )
 }
 
@@ -121,10 +121,10 @@ fn sanitize_fixture_boolean_attribute_policy() -> @html_parser.SanitizationPolic
 fn sanitize_fixture_foreign_namespace_policy(
   drop_foreign_namespaces : Bool,
 ) -> @html_parser.SanitizationPolicy {
-  @html_parser.SanitizationPolicy::new(
+  @html_parser.SanitizationPolicy(
     ["svg"],
     allowed_attributes={ "*": [], "svg": [] },
-    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    url_policy=@html_parser.UrlPolicy(allow_rules=[]),
     drop_foreign_namespaces~,
   )
 }
@@ -144,14 +144,14 @@ fn sanitize_fixture_document_output(
 
 ///|
 fn sanitize_fixture_empty_url_policy() -> @html_parser.UrlPolicy {
-  @html_parser.UrlPolicy::new(allow_rules=[])
+  @html_parser.UrlPolicy(allow_rules=[])
 }
 
 ///|
 fn sanitize_fixture_div_style_policy(
   allowed_css_properties : Array[String],
 ) -> @html_parser.SanitizationPolicy {
-  @html_parser.SanitizationPolicy::new(
+  @html_parser.SanitizationPolicy(
     ["div"],
     allowed_attributes={ "*": [], "div": ["style"] },
     url_policy=sanitize_fixture_empty_url_policy(),
@@ -163,7 +163,7 @@ fn sanitize_fixture_div_style_policy(
 fn sanitize_fixture_escape_policy(
   allowed_tags : Array[String],
 ) -> @html_parser.SanitizationPolicy {
-  @html_parser.SanitizationPolicy::new(
+  @html_parser.SanitizationPolicy(
     allowed_tags,
     allowed_attributes={ "*": [], "b": [], "p": [] },
     url_policy=sanitize_fixture_empty_url_policy(),
@@ -179,7 +179,7 @@ fn sanitize_fixture_structural_style_cases() -> Array[SanitizeFixtureCase] {
       name: "disallowed_tag_keeps_children",
       input_html: "<span>x</span>",
       expected_html: "x",
-      policy: @html_parser.SanitizationPolicy::new(
+      policy: @html_parser.SanitizationPolicy(
         ["div"],
         allowed_attributes={ "*": [], "div": [] },
         url_policy=sanitize_fixture_empty_url_policy(),
@@ -190,7 +190,7 @@ fn sanitize_fixture_structural_style_cases() -> Array[SanitizeFixtureCase] {
       name: "disallowed_tag_drop_removes_subtree",
       input_html: "<b>Hello <sarcasm>world</sarcasm></b>",
       expected_html: "<b>Hello </b>",
-      policy: @html_parser.SanitizationPolicy::new(
+      policy: @html_parser.SanitizationPolicy(
         ["b"],
         allowed_attributes={ "*": [], "b": [] },
         url_policy=sanitize_fixture_empty_url_policy(),
@@ -202,7 +202,7 @@ fn sanitize_fixture_structural_style_cases() -> Array[SanitizeFixtureCase] {
       name: "attribute_filtering_drops_on_srcdoc_and_colon",
       input_html: "<div id=x onclick=alert(1) srcdoc='<p>p</p>' x:y=z title=t></div>",
       expected_html: "<div id=\"x\" title=\"t\"></div>",
-      policy: @html_parser.SanitizationPolicy::new(
+      policy: @html_parser.SanitizationPolicy(
         ["div"],
         allowed_attributes={ "*": ["id"], "div": ["title"] },
         url_policy=sanitize_fixture_empty_url_policy(),
@@ -213,7 +213,7 @@ fn sanitize_fixture_structural_style_cases() -> Array[SanitizeFixtureCase] {
       name: "attribute_not_in_allowlist_is_dropped",
       input_html: "<div class=x></div>",
       expected_html: "<div></div>",
-      policy: @html_parser.SanitizationPolicy::new(
+      policy: @html_parser.SanitizationPolicy(
         ["div"],
         allowed_attributes={ "*": [], "div": [] },
         url_policy=sanitize_fixture_empty_url_policy(),
@@ -252,14 +252,14 @@ fn sanitize_fixture_structural_style_cases() -> Array[SanitizeFixtureCase] {
       name: "img_valueless_src_is_dropped",
       input_html: "<img/src/onerror=prompt(8)>",
       expected_html: "<img>",
-      policy: @html_parser.SanitizationPolicy::new(
+      policy: @html_parser.SanitizationPolicy(
         ["img"],
         allowed_attributes={ "*": [], "img": ["src"] },
-        url_policy=@html_parser.UrlPolicy::new(allow_rules=[
-          @html_parser.UrlPolicyRule::new(
+        url_policy=@html_parser.UrlPolicy(allow_rules=[
+          @html_parser.UrlPolicyRule(
             "img",
             "src",
-            @html_parser.UrlRule::new(
+            @html_parser.UrlRule(
               allowed_schemes=[],
               allow_relative=true,
               allow_fragment=false,
@@ -273,14 +273,14 @@ fn sanitize_fixture_structural_style_cases() -> Array[SanitizeFixtureCase] {
       name: "url_rules_drop_javascript_and_force_rel",
       input_html: "<a href='javascript:alert(1)' rel='nofollow'>x</a><a href='https://example.com'>y</a>",
       expected_html: "<a rel=\"nofollow noopener noreferrer\">x</a><a href=\"https://example.com\" rel=\"noopener noreferrer\">y</a>",
-      policy: @html_parser.SanitizationPolicy::new(
+      policy: @html_parser.SanitizationPolicy(
         ["a"],
         allowed_attributes={ "*": [], "a": ["href"] },
-        url_policy=@html_parser.UrlPolicy::new(allow_rules=[
-          @html_parser.UrlPolicyRule::new(
+        url_policy=@html_parser.UrlPolicy(allow_rules=[
+          @html_parser.UrlPolicyRule(
             "a",
             "href",
-            @html_parser.UrlRule::new(
+            @html_parser.UrlRule(
               allowed_schemes=["https"],
               allow_relative=true,
               allow_fragment=true,
@@ -525,7 +525,7 @@ fn sanitize_fixture_url_template_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href='//example.com/path'></a>",
       expected_html: "<a></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(
+        @html_parser.UrlRule(
           allowed_schemes=["https"],
           resolve_protocol_relative=None,
         ),
@@ -537,7 +537,7 @@ fn sanitize_fixture_url_template_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href='//example.com/path'></a><a href='//evil.com/path'></a>",
       expected_html: "<a href=\"https://example.com/path\"></a><a></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+        @html_parser.UrlRule(allowed_schemes=["https"], allowed_hosts=[
           "example.com",
         ]),
       ),
@@ -548,7 +548,7 @@ fn sanitize_fixture_url_template_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href='https://drop.me'></a><a href='https://rewrite.me'></a>",
       expected_html: "<a></a><a href=\"https://example.com\"></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(allowed_schemes=["https"]),
+        @html_parser.UrlRule(allowed_schemes=["https"]),
         url_filter=sanitize_fixture_drop_or_rewrite_filter(),
       ),
     },
@@ -558,10 +558,7 @@ fn sanitize_fixture_url_template_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href='1http://x'></a><a href='ht$tp://x'></a>",
       expected_html: "<a></a><a></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(
-          allowed_schemes=["https"],
-          allow_relative=false,
-        ),
+        @html_parser.UrlRule(allowed_schemes=["https"], allow_relative=false),
       ),
     },
     {
@@ -570,10 +567,7 @@ fn sanitize_fixture_url_template_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href='/path:foo'></a>",
       expected_html: "<a></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(
-          allowed_schemes=["https"],
-          allow_relative=false,
-        ),
+        @html_parser.UrlRule(allowed_schemes=["https"], allow_relative=false),
       ),
     },
     {
@@ -582,7 +576,7 @@ fn sanitize_fixture_url_template_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href='java\t\nscript:alert(1)'></a>",
       expected_html: "<a></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(allowed_schemes=["https"]),
+        @html_parser.UrlRule(allowed_schemes=["https"]),
       ),
     },
     {
@@ -618,7 +612,7 @@ fn sanitize_fixture_attribute_namespace_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href='#frag'></a><a href='/rel'></a><a href='https://ok'></a>",
       expected_html: "<a></a><a></a><a href=\"https://ok\"></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(
+        @html_parser.UrlRule(
           allowed_schemes=["https"],
           allow_fragment=false,
           allow_relative=false,
@@ -631,10 +625,7 @@ fn sanitize_fixture_attribute_namespace_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href=' \t\n'></a>",
       expected_html: "<a></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(
-          allowed_schemes=["https"],
-          allow_relative=false,
-        ),
+        @html_parser.UrlRule(allowed_schemes=["https"], allow_relative=false),
       ),
     },
     {
@@ -643,7 +634,7 @@ fn sanitize_fixture_attribute_namespace_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href='//any.example/path'></a>",
       expected_html: "<a href=\"https://any.example/path\"></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(allowed_schemes=["https"]),
+        @html_parser.UrlRule(allowed_schemes=["https"]),
       ),
     },
     {
@@ -652,7 +643,7 @@ fn sanitize_fixture_attribute_namespace_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href='//example.com'></a>",
       expected_html: "<a></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(
+        @html_parser.UrlRule(
           allowed_schemes=["http"],
           resolve_protocol_relative=Some("https"),
         ),
@@ -664,7 +655,7 @@ fn sanitize_fixture_attribute_namespace_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href='https://example.com/x'></a>",
       expected_html: "<a href=\"https://example.com/x\"></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+        @html_parser.UrlRule(allowed_schemes=["https"], allowed_hosts=[
           "example.com",
         ]),
       ),
@@ -675,7 +666,7 @@ fn sanitize_fixture_attribute_namespace_cases() -> Array[SanitizeFixtureCase] {
       input_html: "<a href='https://evil.com'></a>",
       expected_html: "<a></a>",
       policy: sanitize_fixture_anchor_policy(
-        @html_parser.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
+        @html_parser.UrlRule(allowed_schemes=["https"], allowed_hosts=[
           "example.com",
         ]),
       ),
@@ -713,7 +704,7 @@ test "sanitizer matches vendored document fixture rows" {
     ),
     "<p>ok</p>",
   )
-  let keep_policy = @html_parser.SanitizationPolicy::new(
+  let keep_policy = @html_parser.SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": [] },
     url_policy=sanitize_fixture_empty_url_policy(),
@@ -738,7 +729,7 @@ test "sanitizer matches vendored structural and style fixture rows" {
 
 ///|
 test "sanitizer documents MoonBit behavior for vendored empty-style error row" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["div"],
     allowed_attributes={ "*": [], "div": ["style"] },
     url_policy=sanitize_fixture_empty_url_policy(),

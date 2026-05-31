@@ -3,7 +3,7 @@
 
 ///|
 test "UnsafeHandling Strip is the silent default" {
-  let policy = @sanitize.SanitizationPolicy::new(
+  let policy = @sanitize.SanitizationPolicy(
     ["p"],
     disallowed_tag_handling=Drop,
     unsafe_handling=Strip,
@@ -26,7 +26,7 @@ test "UnsafeHandling Strip is the silent default" {
 
 ///|
 test "UnsafeHandling Collect retains diagnostics on the policy" {
-  let policy = @sanitize.SanitizationPolicy::new(
+  let policy = @sanitize.SanitizationPolicy(
     ["p"],
     disallowed_tag_handling=Drop,
     unsafe_handling=Collect,
@@ -49,7 +49,7 @@ test "UnsafeHandling Collect retains diagnostics on the policy" {
 
 ///|
 test "UnsafeHandling Raise stops sanitization on the first unsafe construct" {
-  let policy = @sanitize.SanitizationPolicy::new(
+  let policy = @sanitize.SanitizationPolicy(
     ["p"],
     disallowed_tag_handling=Drop,
     unsafe_handling=Raise,
@@ -72,7 +72,7 @@ test "UnsafeHandling Raise stops sanitization on the first unsafe construct" {
 
 ///|
 test "reset_collected_security_errors clears the buffer" {
-  let policy = @sanitize.SanitizationPolicy::new(["p"], unsafe_handling=Collect)
+  let policy = @sanitize.SanitizationPolicy(["p"], unsafe_handling=Collect)
   let frag = @dom.fragment(children=[
     @dom.element("script", children=[@dom.text("evil")]),
   ])

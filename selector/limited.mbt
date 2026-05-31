@@ -180,7 +180,7 @@ pub fn matches_with_limits(
   matches_selector_list_with_context(
     node,
     selector,
-    SelectorMatchContext::new(limits),
+    SelectorMatchContext(limits),
     0,
   )
 }

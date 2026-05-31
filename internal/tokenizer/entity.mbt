@@ -19,7 +19,7 @@ pub fn decode_entities_with_errors(
   input : StringView,
   in_attribute~ : Bool,
 ) -> EntityDecodeResult {
-  let out = StringBuilder::new(size_hint=input.length())
+  let out = StringBuilder::StringBuilder(size_hint=input.length())
   let errors : Array[EntityDecodeError] = []
   let mut pos = 0
   while pos < input.length() {

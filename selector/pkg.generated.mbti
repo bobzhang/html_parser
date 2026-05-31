@@ -31,7 +31,7 @@ pub(all) struct SelectorLimits {
   max_match_steps : Int
   max_match_bytes : Int
 } derive(Eq, @debug.Debug)
-pub fn SelectorLimits::new(max_match_depth? : Int, max_length? : Int, max_list_items? : Int, max_compound_simple_selectors? : Int, max_complex_selector_parts? : Int, max_parse_depth? : Int, max_match_steps? : Int, max_match_bytes? : Int) -> Self
+pub fn SelectorLimits::SelectorLimits(max_match_depth? : Int, max_length? : Int, max_list_items? : Int, max_compound_simple_selectors? : Int, max_complex_selector_parts? : Int, max_parse_depth? : Int, max_match_steps? : Int, max_match_bytes? : Int) -> Self
 
 // Type aliases
 

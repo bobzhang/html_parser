@@ -6,7 +6,7 @@ fn node_to_html_compact(
   match node.kind {
     Text if node.sanitize_escape_only => ""
     Document | Fragment => {
-      let out = StringBuilder::new()
+      let out = StringBuilder::StringBuilder()
       for child in node.children {
         out.write_string(node_to_html_compact(child, quote))
       }
@@ -20,7 +20,7 @@ fn node_to_html_compact(
       }
     Comment => "<!--" + serialize_comment_data(node.data) + "-->"
     Doctype => {
-      let out = StringBuilder::new()
+      let out = StringBuilder::StringBuilder()
       out.write_string("<!DOCTYPE")
       if node.data != "" {
         validate_serializable_tag_name(node.data)
@@ -47,7 +47,7 @@ fn node_to_html_compact(
       out.to_string()
     }
     Element => {
-      let out = StringBuilder::new()
+      let out = StringBuilder::StringBuilder()
       out.write_string(serialize_start_tag(node, quote))
       if !is_void_element(node.name) {
         for child in node.children {

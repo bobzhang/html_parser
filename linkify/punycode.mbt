@@ -53,7 +53,7 @@ fn linkify_punycode_href(href : StringView) -> String {
   }
   let (host, port) = linkify_split_host_port(hostport_without_userinfo)
   let host = linkify_punycode_host(host)
-  let out = StringBuilder::new(size_hint=href.length() + 16)
+  let out = StringBuilder::StringBuilder(size_hint=href.length() + 16)
   out.write_string(prefix)
   if userinfo != "" {
     out <+ "\{userinfo}@"
@@ -176,7 +176,7 @@ fn linkify_push_idna_mapped_codepoint(out : Array[Int], code : Int) -> Unit {
 
 ///|
 fn linkify_punycode_encode(input : Array[Int]) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder::StringBuilder()
   let input_len = input.length()
   let mut basic_count = 0
   for code in input {

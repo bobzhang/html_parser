@@ -29,7 +29,7 @@ pub(all) struct LinkMatch {
 pub struct LinkifyConfig {
   // private fields
 } derive(@debug.Debug)
-pub fn LinkifyConfig::new(fuzzy_ip? : Bool, extra_tlds? : Array[String]) -> Self
+pub fn LinkifyConfig::LinkifyConfig(fuzzy_ip? : Bool, extra_tlds? : Array[String]) -> Self
 pub fn LinkifyConfig::with_extra_tlds(Array[String]) -> Self
 
 // Type aliases

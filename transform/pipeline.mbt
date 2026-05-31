@@ -227,9 +227,7 @@ fn apply_transform(
       node
     }
     LinkifyTextNodes => {
-      let config = transform.linkify_config.unwrap_or(
-        @link.LinkifyConfig::new(),
-      )
+      let config = transform.linkify_config.unwrap_or(LinkifyConfig())
       apply_linkify_transform(
         node,
         config,

@@ -56,7 +56,7 @@ fn sanitize_allowed_attributes(
 
 ///|
 /// Construct a URL filter from a callback.
-pub fn UrlFilter::new(
+pub fn UrlFilter::UrlFilter(
   callback : (String, String, String) -> String?,
 ) -> UrlFilter {
   { callback, }
@@ -64,7 +64,10 @@ pub fn UrlFilter::new(
 
 ///|
 /// Construct a URL proxy descriptor.
-pub fn UrlProxy::new(url : StringView, param? : String = "url") -> UrlProxy {
+pub fn UrlProxy::UrlProxy(
+  url : StringView,
+  param? : String = "url",
+) -> UrlProxy {
   { url: url.to_owned(), param }
 }
 
@@ -73,7 +76,7 @@ pub fn UrlProxy::new(url : StringView, param? : String = "url") -> UrlProxy {
 ///
 /// Schemes and hosts are normalized to lowercase. `resolve_protocol_relative`
 /// rewrites protocol-relative URLs such as `//example.com` before validation.
-pub fn UrlRule::new(
+pub fn UrlRule::UrlRule(
   allowed_schemes? : Array[String] = [],
   allowed_hosts? : Array[String] = [],
   allow_fragment? : Bool = true,
@@ -97,7 +100,7 @@ pub fn UrlRule::new(
 
 ///|
 /// Construct a URL policy rule for one tag and attribute.
-pub fn UrlPolicyRule::new(
+pub fn UrlPolicyRule::UrlPolicyRule(
   tag : StringView,
   attr : StringView,
   rule : UrlRule,
@@ -132,7 +135,7 @@ fn sanitize_url_policy_rules(
 ///
 /// `allow_rules` are exact tag/attribute bindings. `url_filter` runs before
 /// rule validation and can rewrite or drop the URL value.
-pub fn UrlPolicy::new(
+pub fn UrlPolicy::UrlPolicy(
   default_handling? : UrlHandling = UrlAllow,
   default_allow_relative? : Bool = true,
   allow_rules? : Array[UrlPolicyRule] = [],
@@ -150,19 +153,19 @@ pub fn UrlPolicy::new(
 
 ///|
 fn default_url_policy() -> UrlPolicy {
-  UrlPolicy::new(default_handling=UrlStrip, allow_rules=[
-    UrlPolicyRule::new(
+  UrlPolicy(default_handling=UrlStrip, allow_rules=[
+    UrlPolicyRule(
       "a",
       "href",
-      UrlRule::new(
+      UrlRule(
         allowed_schemes=["http", "https", "mailto", "tel"],
         handling=UrlAllow,
       ),
     ),
-    UrlPolicyRule::new(
+    UrlPolicyRule(
       "img",
       "src",
-      UrlRule::new(
+      UrlRule(
         allow_fragment=false,
         resolve_protocol_relative=None,
         handling=UrlAllow,
@@ -178,7 +181,7 @@ fn default_url_policy() -> UrlPolicy {
 /// doctypes, foreign namespaces, script/style content, and invisible Unicode
 /// controls are removed. Unsafe findings are stripped unless `unsafe_handling`
 /// is set to `Raise` or `Collect`.
-pub fn SanitizationPolicy::new(
+pub fn SanitizationPolicy::SanitizationPolicy(
   allowed_tags : Array[String],
   allowed_attributes? : Map[String, Array[String]] = {},
   url_policy? : UrlPolicy,
@@ -205,7 +208,7 @@ pub fn SanitizationPolicy::new(
     force_link_rel: sanitized_string_list(force_link_rel),
     allowed_css_properties: sanitized_string_set(allowed_css_properties),
     strip_invisible_unicode,
-    selector_limits: selector_limits.unwrap_or(@sel.SelectorLimits::new()),
+    selector_limits: selector_limits.unwrap_or(SelectorLimits()),
     unsafe_handling,
     security_errors: [],
   }
@@ -263,7 +266,7 @@ pub fn SanitizationPolicy::with_extra_allowed_tags(
   for tag in extra_tags {
     push_unique_string(tags, @syn.lower_ascii(tag[:].trim()))
   }
-  SanitizationPolicy::new(
+  SanitizationPolicy(
     tags,
     allowed_attributes=sanitize_allowed_attributes_to_arrays(
       self.allowed_attributes,
@@ -306,7 +309,7 @@ fn SanitizationPolicy::handle_unsafe(
     Raise => raise UnsafeHtml(message)
     Collect =>
       self.security_errors.push(
-        @core.ParseError::new("unsafe-html", category="security", message~),
+        ParseError("unsafe-html", category="security", message~),
       )
   }
 }
@@ -335,7 +338,7 @@ fn default_allowed_attributes() -> Map[String, Array[String]] {
 ///|
 /// Return the default fragment sanitizer policy.
 pub fn default_sanitization_policy() -> SanitizationPolicy {
-  SanitizationPolicy::new(
+  SanitizationPolicy(
     default_allowed_tags(),
     allowed_attributes=default_allowed_attributes(),
   )
@@ -352,7 +355,7 @@ pub fn default_document_sanitization_policy() -> SanitizationPolicy {
   tags.push("head")
   tags.push("body")
   tags.push("title")
-  SanitizationPolicy::new(
+  SanitizationPolicy(
     tags,
     allowed_attributes=default_allowed_attributes(),
     drop_doctype=false,

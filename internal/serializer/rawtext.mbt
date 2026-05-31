@@ -21,7 +21,7 @@ pub fn neutralize_rawtext_end_tag_sequences(
   tag_name : StringView,
 ) -> String {
   let needle = "</" + tag_name.to_owned()
-  let out = StringBuilder::new(size_hint=value.length())
+  let out = StringBuilder::StringBuilder(size_hint=value.length())
   let mut pos = 0
   while pos < value.length() {
     if rawtext_end_tag_sequence_at(value, pos, needle) {

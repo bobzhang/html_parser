@@ -3,7 +3,7 @@
 ///|
 test "url_policy with no allow_rules strips all url-attribute values" {
   // Default url_policy has no allow rules — every href is stripped.
-  let policy = @sanitize.SanitizationPolicy::new(["a"], allowed_attributes={
+  let policy = @sanitize.SanitizationPolicy(["a"], allowed_attributes={
     "a": ["href"],
   })
   let frag = @dom.fragment(children=[
@@ -22,16 +22,14 @@ test "url_policy with no allow_rules strips all url-attribute values" {
 
 ///|
 test "url_policy allow_rules whitelist by scheme and host" {
-  let url_policy = @sanitize.UrlPolicy::new(allow_rules=[
-    @sanitize.UrlPolicyRule::new(
+  let url_policy = @sanitize.UrlPolicy(allow_rules=[
+    @sanitize.UrlPolicyRule(
       "a",
       "href",
-      @sanitize.UrlRule::new(allowed_schemes=["https"], allowed_hosts=[
-        "example.com",
-      ]),
+      @sanitize.UrlRule(allowed_schemes=["https"], allowed_hosts=["example.com"]),
     ),
   ])
-  let policy = @sanitize.SanitizationPolicy::new(
+  let policy = @sanitize.SanitizationPolicy(
     ["a"],
     allowed_attributes={ "a": ["href"] },
     url_policy~,
@@ -58,23 +56,23 @@ test "url_policy allow_rules whitelist by scheme and host" {
 
 ///|
 test "UrlFilter callback can rewrite href values" {
-  let filter = @sanitize.UrlFilter::new((_tag, _attr, value) => {
+  let filter = @sanitize.UrlFilter((_tag, _attr, value) => {
     match value {
       "https://old.example/x" => Some("https://new.example/x")
       _ => Some(value)
     }
   })
-  let url_policy = @sanitize.UrlPolicy::new(
+  let url_policy = @sanitize.UrlPolicy(
     allow_rules=[
-      @sanitize.UrlPolicyRule::new(
+      @sanitize.UrlPolicyRule(
         "a",
         "href",
-        @sanitize.UrlRule::new(allowed_schemes=["https"]),
+        @sanitize.UrlRule(allowed_schemes=["https"]),
       ),
     ],
     url_filter=filter,
   )
-  let policy = @sanitize.SanitizationPolicy::new(
+  let policy = @sanitize.SanitizationPolicy(
     ["a"],
     allowed_attributes={ "a": ["href"] },
     url_policy~,

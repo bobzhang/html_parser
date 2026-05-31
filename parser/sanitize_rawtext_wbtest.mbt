@@ -2,7 +2,7 @@
 
 ///|
 test "sanitize_dom clears mixed-case style rawtext resource loads" {
-  let policy = @san.SanitizationPolicy::new(
+  let policy = @san.SanitizationPolicy(
     ["style"],
     allowed_attributes={ "style": [] },
     drop_content_tags=[],

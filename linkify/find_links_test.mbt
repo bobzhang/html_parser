@@ -151,7 +151,7 @@ test "find_links_with_config fuzzy_ip enables bare IPv4 addresses" {
   let plain = @linkify.find_links("192.168.0.1")
   let ips = @linkify.find_links_with_config(
     "192.168.0.1",
-    @linkify.LinkifyConfig::new(fuzzy_ip=true),
+    @linkify.LinkifyConfig(fuzzy_ip=true),
   )
   debug_inspect(
     (plain, ips),

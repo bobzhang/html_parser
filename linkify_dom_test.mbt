@@ -52,9 +52,7 @@ test "linkify_dom supports config and custom skip tags" {
   ignore(
     @html_parser.linkify_dom(
       doc.root,
-      config=@html_parser.LinkifyConfig::new(fuzzy_ip=true, extra_tlds=[
-        "internal",
-      ]),
+      config=@html_parser.LinkifyConfig(fuzzy_ip=true, extra_tlds=["internal"]),
       skip_tags=["span"],
     ),
   )

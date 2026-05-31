@@ -3,7 +3,7 @@
 ///|
 test "table foster helpers handle detached helper state" {
   let root = @dom.fragment()
-  let parser = Parser::new("", root, scripting_enabled=true, xml_coercion=false)
+  let parser = Parser("", root, scripting_enabled=true, xml_coercion=false)
   let table = @dom.element("table")
   let tbody = @dom.element("tbody")
   parser.stack.clear()
@@ -19,7 +19,7 @@ test "table foster helpers handle detached helper state" {
   parser.insert_node_before_open_table(@dom.text("y"), 1)
   assert_eq(@ser.to_html(root, pretty=false), "xy")
 
-  let blocked = Parser::new(
+  let blocked = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,
@@ -34,7 +34,7 @@ test "table foster helpers handle detached helper state" {
   assert_eq(blocked.handle_nested_table_start_tag("table", 0), false)
   assert_eq(blocked.table_start_foster_mode("p"), 0)
 
-  let open_section = Parser::new(
+  let open_section = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,
@@ -57,7 +57,7 @@ test "table foster helpers handle detached helper state" {
 
 ///|
 fn stale_template_column_group_parser() -> (Parser, @dom.Node) {
-  let parser = Parser::new(
+  let parser = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,
@@ -95,7 +95,7 @@ test "template column group mode drops stale inner table state" {
   assert_eq(end_parser.template_column_group_mode_active(), false)
   assert_eq(end_table.children.length(), 0)
 
-  let detached = Parser::new(
+  let detached = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,

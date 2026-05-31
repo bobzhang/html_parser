@@ -2,7 +2,7 @@
 
 ///|
 test "active formatting helpers respect marker boundaries" {
-  let parser = Parser::new(
+  let parser = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,
@@ -69,7 +69,7 @@ test "active formatting helpers respect marker boundaries" {
   }
   assert_eq(last.name, "strong")
 
-  let current_only = Parser::new(
+  let current_only = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,
@@ -81,7 +81,7 @@ test "active formatting helpers respect marker boundaries" {
   assert_eq(current_only.stack.length(), 1)
   assert_eq(current_only.errors.length(), 0)
 
-  let scoped = Parser::new(
+  let scoped = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,
@@ -106,7 +106,7 @@ test "active formatting helpers respect marker boundaries" {
 
 ///|
 test "adoption agency removes non-formatting inner stack nodes" {
-  let parser = Parser::new(
+  let parser = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,
@@ -151,7 +151,7 @@ test "adoption agency removes non-formatting inner stack nodes" {
 
 ///|
 test "adoption agency prunes late active inner nodes" {
-  let parser = Parser::new(
+  let parser = Parser(
     "",
     @dom.fragment(),
     scripting_enabled=true,

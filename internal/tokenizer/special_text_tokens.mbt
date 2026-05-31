@@ -29,7 +29,7 @@ fn SourceTokenizer::replace_special_text_nulls(
   raw : StringView,
   start : Int,
 ) -> String {
-  let out = StringBuilder::new(size_hint=raw.length())
+  let out = StringBuilder::StringBuilder(size_hint=raw.length())
   let mut pos = 0
   for ch in raw {
     if ch == '\u{0000}' {

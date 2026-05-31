@@ -23,7 +23,7 @@ pub struct LinkifyConfig {
 ///
 /// `fuzzy_ip` enables bare IPv4 address matches such as `192.168.0.1`.
 /// `extra_tlds` extends the default fuzzy domain and email TLD allowlist.
-pub fn LinkifyConfig::new(
+pub fn LinkifyConfig::LinkifyConfig(
   fuzzy_ip? : Bool = false,
   extra_tlds? : Array[String] = [],
 ) -> LinkifyConfig {
@@ -35,7 +35,7 @@ pub fn LinkifyConfig::new(
 pub fn LinkifyConfig::with_extra_tlds(
   extra_tlds : Array[String],
 ) -> LinkifyConfig {
-  LinkifyConfig::new(extra_tlds~)
+  LinkifyConfig(extra_tlds~)
 }
 
 ///|

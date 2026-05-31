@@ -19,7 +19,7 @@ fn sanitize_transform_observer(
       let report_callback = transform.report_callback.map(fn(report) {
         fn(message, node) { (report.callback)(message, node) }
       })
-      Some(@san.SanitizeTransformObserver::new(hook, report_callback))
+      Some(SanitizeTransformObserver(hook, report_callback))
     }
   }
 }

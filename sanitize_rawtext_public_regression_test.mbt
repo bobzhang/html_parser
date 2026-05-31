@@ -1,6 +1,6 @@
 ///|
 test "sanitize_dom collects rawtext and foreign integration findings" {
-  let rawtext_policy = @html_parser.SanitizationPolicy::new(
+  let rawtext_policy = @html_parser.SanitizationPolicy(
     ["style"],
     allowed_attributes={ "style": [] },
     drop_content_tags=[],
@@ -26,7 +26,7 @@ test "sanitize_dom collects rawtext and foreign integration findings" {
     "Unsafe raw text inside <style> contains a closing tag sequence",
   )
 
-  let foreign_policy = @html_parser.SanitizationPolicy::new(
+  let foreign_policy = @html_parser.SanitizationPolicy(
     ["svg", "title", "script"],
     allowed_attributes={ "svg": [], "title": [], "script": [] },
     drop_foreign_namespaces=false,
@@ -55,7 +55,7 @@ test "sanitize_dom collects rawtext and foreign integration findings" {
 
 ///|
 test "sanitize_dom preserves allowed template content" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["template", "p"],
     allowed_attributes={ "template": [], "p": [] },
     drop_foreign_namespaces=false,
@@ -72,7 +72,7 @@ test "sanitize_dom preserves allowed template content" {
 
 ///|
 test "sanitize_dom unwraps disallowed template content" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": [] },
     drop_foreign_namespaces=false,
@@ -90,7 +90,7 @@ test "sanitize_dom unwraps disallowed template content" {
 
 ///|
 test "sanitize_dom hardens allowed rawtext element contents" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["style", "script", "img", "span"],
     allowed_attributes={ "img": ["src", "alt"], "span": [] },
     drop_content_tags=[],
@@ -116,10 +116,10 @@ test "sanitize_dom hardens allowed rawtext element contents" {
 
 ///|
 test "sanitize_dom textarea markdown passthrough cannot break out" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["textarea", "img"],
     allowed_attributes={ "*": [], "img": ["src", "alt"] },
-    url_policy=@html_parser.UrlPolicy::new(allow_rules=[]),
+    url_policy=@html_parser.UrlPolicy(allow_rules=[]),
     drop_content_tags=[],
   )
   let fragment = @html_parser.parse_fragment(
@@ -135,7 +135,7 @@ test "sanitize_dom textarea markdown passthrough cannot break out" {
 
 ///|
 test "sanitize_dom preserves empty rawtext and disabled invisible stripping" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["div", "style", "script"],
     allowed_attributes={ "div": [], "style": [], "script": [] },
     drop_content_tags=[],
@@ -156,7 +156,7 @@ test "sanitize_dom preserves empty rawtext and disabled invisible stripping" {
 
 ///|
 test "sanitize_dom neutralizes rawtext end tag boundaries only" {
-  let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
+  let policy = @html_parser.SanitizationPolicy(["style"], drop_content_tags=[])
   let fragment = @html_parser.fragment(children=[
     @html_parser.element("style", children=[
       @html_parser.text("</stylex> ok </style"),
@@ -170,7 +170,7 @@ test "sanitize_dom neutralizes rawtext end tag boundaries only" {
 
 ///|
 test "sanitize_dom hardens rawtext inside template children" {
-  let policy = @html_parser.SanitizationPolicy::new(
+  let policy = @html_parser.SanitizationPolicy(
     ["template", "style", "img"],
     allowed_attributes={ "template": [], "img": ["src"] },
     drop_content_tags=[],
@@ -190,7 +190,7 @@ test "sanitize_dom hardens rawtext inside template children" {
 
 ///|
 test "sanitize_dom filters allowed style rawtext resource loads" {
-  let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
+  let policy = @html_parser.SanitizationPolicy(["style"], drop_content_tags=[])
   let fragment = @html_parser.parse_fragment(
     "<style>body{background:u\u{200B}rl(/x.png)}</style><style>body{color:red}</style>",
     sanitize=false,
@@ -203,7 +203,7 @@ test "sanitize_dom filters allowed style rawtext resource loads" {
 
 ///|
 test "sanitize_dom filters mixed-case style rawtext resource loads" {
-  let policy = @html_parser.SanitizationPolicy::new(["style"], drop_content_tags=[])
+  let policy = @html_parser.SanitizationPolicy(["style"], drop_content_tags=[])
   let style = @html_parser.element("StYlE", children=[
     @html_parser.text("@import 'https://evil.example/x.css';"),
   ])

@@ -7,7 +7,7 @@ fn cli_parse_document(
     let (decoded, _) = @enc.decode_html_bytes(input, None)
     @p.parse_fragment(
       decoded,
-      context=@p.FragmentContext::new("div"),
+      context=FragmentContext("div"),
       sanitize=false,
       strict=options.strict,
     )

@@ -1,6 +1,6 @@
 ///|
 test "sanitizer attribute helpers fail closed on dangerous allowlist entries" {
-  let policy = SanitizationPolicy::new(
+  let policy = SanitizationPolicy(
     ["a", "p"],
     allowed_attributes={
       "*": ["data-info", "xlink:href"],
@@ -27,17 +27,17 @@ test "sanitizer attribute helpers fail closed on dangerous allowlist entries" {
 
 ///|
 test "sanitizer scanners preserve astral URL and token boundaries" {
-  let trusted_rule = UrlRule::new(
+  let trusted_rule = UrlRule(
     allowed_schemes=["https"],
     allowed_hosts=["trusted.example"],
     allow_relative=false,
   )
-  let url_policy = UrlPolicy::new(default_allow_relative=false, allow_rules=[
-    UrlPolicyRule::new("img", "srcset", trusted_rule),
-    UrlPolicyRule::new("a", "ping", trusted_rule),
-    UrlPolicyRule::new("*", "style:background-image", trusted_rule),
+  let url_policy = UrlPolicy(default_allow_relative=false, allow_rules=[
+    UrlPolicyRule("img", "srcset", trusted_rule),
+    UrlPolicyRule("a", "ping", trusted_rule),
+    UrlPolicyRule("*", "style:background-image", trusted_rule),
   ])
-  let policy = SanitizationPolicy::new(
+  let policy = SanitizationPolicy(
     ["a", "img", "p"],
     allowed_css_properties=["background-image"],
     url_policy~,

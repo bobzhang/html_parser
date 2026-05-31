@@ -13,7 +13,7 @@ pub(all) struct ParseError {
 
 ///|
 /// Construct a parse diagnostic.
-pub fn ParseError::new(
+pub fn ParseError::ParseError(
   code : String,
   line? : Int,
   column? : Int,
