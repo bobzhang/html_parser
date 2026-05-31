@@ -1080,18 +1080,91 @@ async fn run_check_tests() -> Int {
 
 ///|
 async fn run_check_coverage() -> Int {
+  let minimum_coverage_percent = 90
   let (code, output) = @process.collect_output_merged("moon", ["coverage", "analyze"])
   let text = output.text()
   write_stdout(text)
   if code != 0 {
     return code
   }
-  if text.contains("All source files are fully covered") {
-    0
-  } else {
-    eprintln("moon coverage analyze output did not report full source coverage")
-    1
+  let uncovered = match parse_uncovered_line_count(text) {
+    Some(value) => value
+    None => {
+      eprintln("moon coverage analyze output did not include a parseable uncovered-line summary")
+      return 1
+    }
   }
+  let source_lines = match tracked_coverage_source_line_count() {
+    Some(value) => value
+    None => return 1
+  }
+  let covered_lines = source_lines - uncovered
+  if covered_lines * 100 < source_lines * minimum_coverage_percent {
+    eprintln(
+      "coverage below " + minimum_coverage_percent.to_string() +
+      "%: " + covered_lines.to_string() + "/" + source_lines.to_string() +
+      " tracked source lines covered",
+    )
+    1
+  } else {
+    write_stdout(
+      "Coverage threshold passed: " + covered_lines.to_string() +
+      "/" + source_lines.to_string() + " tracked source lines covered (minimum " +
+      minimum_coverage_percent.to_string() + "%).\n",
+    )
+    0
+  }
+}
+
+///|
+fn parse_uncovered_line_count(text : String) -> Int? {
+  if text.contains("All source files are fully covered") {
+    return Some(0)
+  }
+  let prefix = "Total: "
+  for raw_line in text.split("\n") {
+    let line = raw_line.to_owned()
+    let rest = match line.strip_prefix(prefix) {
+      Some(value) => value.to_owned()
+      None => continue
+    }
+    match rest.split_once(" uncovered line") {
+      Some((count_text, _)) =>
+        return parse_non_negative_int(count_text.to_owned())
+      None => ()
+    }
+  }
+  None
+}
+
+///|
+async fn tracked_coverage_source_line_count() -> Int? {
+  let mut total = 0
+  for path in git_ls_files(["*.mbt"]) {
+    if coverage_source_path_is_counted(path) {
+      match read_text(path) {
+        Some(text) => total += split_lines(text).length()
+        None => {
+          eprintln("could not read tracked source file for coverage threshold: " + path)
+          return None
+        }
+      }
+    }
+  }
+  if total == 0 {
+    eprintln("coverage threshold could not find tracked source lines")
+    None
+  } else {
+    Some(total)
+  }
+}
+
+///|
+fn coverage_source_path_is_counted(path : String) -> Bool {
+  path.has_suffix(".mbt") &&
+  !path.has_suffix("_test.mbt") &&
+  !path.has_suffix("_wbtest.mbt") &&
+  !path.has_prefix("scripts/")
 }
 
 ///|
