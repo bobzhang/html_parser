@@ -103,7 +103,7 @@ fn apply_explicit_stage(
   limits : @sel.SelectorLimits,
 ) -> @dom.Node raise @core.HtmlError {
   transform_call_hook(node, stage)
-  transform_report(stage, "Stage " + index.to_string(), Some(node))
+  transform_report(stage, "Stage \{index}", Some(node))
   apply_stage_items(node, stage.stage_transforms, limits)
 }
 

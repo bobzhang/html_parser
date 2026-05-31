@@ -60,15 +60,11 @@ fn decide_transform_action(
       let action = (callback.callback)(node)
       if action != Keep {
         transform_call_hook(node, transform)
+        let action_label = decide_action_label(action)
+        let node_label = decide_node_label(node)
         transform_report(
           transform,
-          "Decide -> " +
-          decide_action_label(action) +
-          " '" +
-          decide_node_label(node) +
-          "' (matched selector '" +
-          transform.selector +
-          "')",
+          "Decide -> \{action_label} '\{node_label}' (matched selector '\{transform.selector}')",
           Some(node),
         )
       }

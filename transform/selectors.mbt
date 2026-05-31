@@ -68,11 +68,7 @@ fn transform_children(
             transform_call_hook(child, transform)
             transform_report(
               transform,
-              "Merged tokens into attribute '" +
-              transform.merge_attr +
-              "' on <" +
-              transform.merge_tag +
-              ">",
+              "Merged tokens into attribute '\{transform.merge_attr}' on <\{transform.merge_tag}>",
               Some(child),
             )
           }

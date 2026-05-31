@@ -44,12 +44,12 @@ fn transform_report_unsafe_url_attr(
   reason? : String,
 ) -> Unit {
   let suffix = match reason {
-    Some(value) => " (" + value + ")"
+    Some(value) => " (\{value})"
     None => ""
   }
   transform_report(
     transform,
-    "Unsafe URL in attribute '" + attr_name + "'" + suffix,
+    "Unsafe URL in attribute '\{attr_name}'\{suffix}",
     Some(node),
   )
 }

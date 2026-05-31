@@ -149,13 +149,10 @@ fn report_dropped_attr_pattern(
   name : StringView,
   pattern : String,
 ) -> Unit {
+  let attr = name.to_owned()
   transform_report(
     transform,
-    "Unsafe attribute '" +
-    name.to_owned() +
-    "' (matched forbidden pattern '" +
-    pattern +
-    "')",
+    "Unsafe attribute '\{attr}' (matched forbidden pattern '\{pattern}')",
     Some(node),
   )
 }
@@ -269,7 +266,7 @@ fn apply_allowlist_attrs_transform(
         changed = true
         transform_report(
           transform,
-          "Unsafe attribute '" + normalized + "' (not allowed)",
+          "Unsafe attribute '\{normalized}' (not allowed)",
           Some(node),
         )
       }
