@@ -27,10 +27,4 @@ pub fn to_html(
 }
 
 ///|
-pub using @impl {to_text}
-
-///|
-pub using @impl {to_test_format}
-
-///|
-pub using @impl {is_void_element}
+pub using @impl {to_text, to_test_format, is_void_element}
