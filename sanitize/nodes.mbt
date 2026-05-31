@@ -3,7 +3,7 @@
 ///
 /// `index` must be a valid child index. The removed node's `parent` field is
 /// cleared only when it still points at `parent`.
-pub fn remove_child_at(parent : @dom.Node, index : Int) -> Unit {
+fn remove_child_at(parent : @dom.Node, index : Int) -> Unit {
   let child = parent.children[index]
   ignore(parent.children.remove(index))
   if child.parent is Some(current_parent) &&
@@ -18,7 +18,7 @@ pub fn remove_child_at(parent : @dom.Node, index : Int) -> Unit {
 /// The child at `index` is removed, detached from `parent`, and its children
 /// are inserted into `parent` at the same position with updated parent
 /// pointers. Returns the number of inserted children.
-pub fn unwrap_child_at(parent : @dom.Node, index : Int) -> Int {
+fn unwrap_child_at(parent : @dom.Node, index : Int) -> Int {
   let child = parent.children[index]
   ignore(parent.children.remove(index))
   if child.parent is Some(current_parent) &&
@@ -37,19 +37,6 @@ pub fn unwrap_child_at(parent : @dom.Node, index : Int) -> Int {
 }
 
 ///|
-/// Return the literal closing tag used when escaping a node as text.
-///
-/// Void elements do not get an end tag. Other elements return `</name>` using
-/// the node's current tag name.
-pub fn escaped_end_tag_for(node : @dom.Node) -> String? {
-  if @ser.is_void_element(node.name) {
-    None
-  } else {
-    Some("</" + node.name + ">")
-  }
-}
-
-///|
 fn sanitizer_escaped_end_tag_for(node : @dom.Node) -> String? {
   match node.source_end_tag {
     Some(raw) => Some(raw)
@@ -64,7 +51,9 @@ fn sanitizer_escaped_end_tag_for(node : @dom.Node) -> String? {
 
 ///|
 fn sanitizer_escaped_start_tag_for(node : @dom.Node) -> String {
-  node.source_start_tag.unwrap_or(@ser.serialize_start_tag_unchecked(node, '"'))
+  node.source_start_tag.unwrap_or(
+    @seri.serialize_start_tag_unchecked(node, '"'),
+  )
 }
 
 ///|

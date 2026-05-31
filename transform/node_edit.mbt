@@ -41,8 +41,8 @@ fn apply_edit_transform(node : @dom.Node, transform : TransformSpec) -> Unit {
 ///|
 fn escape_transform_child_at(parent : @dom.Node, index : Int) -> Int {
   let child = parent.children[index]
-  let start_tag = @ser.serialize_start_tag_unchecked(child, '"')
-  let end_tag = @san.escaped_end_tag_for(child)
+  let start_tag = @seri.serialize_start_tag_unchecked(child, '"')
+  let end_tag = transform_escaped_end_tag_for(child)
   ignore(parent.children.remove(index))
   if child.parent is Some(current_parent) &&
     physical_equal(parent, current_parent) {

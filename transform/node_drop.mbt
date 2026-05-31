@@ -17,7 +17,7 @@ fn apply_drop_kind_transform(
             _ => "node"
           }
           transform_report(transform, "Dropped " + label, Some(child))
-          @san.remove_child_at(root, index)
+          transform_remove_child_at(root, index)
         } else {
           apply_drop_kind_transform(child, kind, transform)
           index += 1
@@ -55,7 +55,7 @@ fn apply_drop_foreign_namespaces_transform(
             "' (foreign namespace)",
             Some(child),
           )
-          @san.remove_child_at(root, index)
+          transform_remove_child_at(root, index)
         } else {
           apply_drop_foreign_namespaces_transform(child, transform)
           index += 1

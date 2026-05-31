@@ -3,7 +3,7 @@ fn attr_name_is_dangerous(name : StringView) -> Bool {
   let normalized = @syn.lower_ascii(name)
   normalized.has_prefix("on") ||
   normalized == "srcdoc" ||
-  @ser.string_contains_char(normalized, ':')
+  @seri.string_contains_char(normalized, ':')
 }
 
 ///|
@@ -100,7 +100,7 @@ pub fn SanitizationPolicy::sanitize_inline_style_value(
 ///
 /// Tokens are trimmed, ASCII-lowercased, and appended to `tokens` only when
 /// non-empty and not already present. Existing token order is preserved.
-pub fn push_html_whitespace_tokens(
+fn push_html_whitespace_tokens(
   tokens : Array[String],
   value : StringView,
 ) -> Unit {
@@ -178,7 +178,7 @@ fn sanitize_meta_refresh_content(
 fn sanitize_forbidden_attr_pattern(attr_name : String) -> String? {
   if attr_name == "srcdoc" {
     Some("srcdoc")
-  } else if @ser.string_contains_char(attr_name, ':') {
+  } else if @seri.string_contains_char(attr_name, ':') {
     Some("*:*")
   } else if attr_name.has_prefix("on") {
     Some("on*")

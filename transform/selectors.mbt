@@ -24,11 +24,11 @@ fn transform_children(
       match transform.kind {
         DropElements => {
           transform_report_node_action(child, transform, "Dropped")
-          @san.remove_child_at(parent, index)
+          transform_remove_child_at(parent, index)
         }
         UnwrapElements => {
           transform_report_node_action(child, transform, "Unwrapped")
-          let inserted = @san.unwrap_child_at(parent, index)
+          let inserted = transform_unwrap_child_at(parent, index)
           if inserted > 0 {
             transform_inserted_children_after_unwrap(
               parent, index, inserted, transform, limits,

@@ -32,9 +32,9 @@ pub(all) enum StreamEvent {
 ///|
 /// Parse an HTML string into streaming events.
 pub fn stream(html : StringView) -> Array[StreamEvent] {
-  let events : Array[StreamEvent] = []
-  stream_each(html, fn(event) { events.push(event) })
-  events
+  let sink = StreamSink::new()
+  @tok.tokenize_each(html, fn(token) { sink.process_token(token) })
+  sink.drain()
 }
 
 ///|
@@ -79,14 +79,14 @@ pub fn stream_bytes_each(
 
 ///|
 /// Mutable sink that converts tokenizer tokens into coalesced stream events.
-pub struct StreamSink {
-  priv events : Array[StreamEvent]
-  priv text_parts : Array[String]
+struct StreamSink {
+  events : Array[StreamEvent]
+  text_parts : Array[String]
 } derive(Debug)
 
 ///|
 /// Create an empty stream sink.
-pub fn StreamSink::new() -> StreamSink {
+fn StreamSink::new() -> StreamSink {
   { events: [], text_parts: [] }
 }
 
@@ -100,7 +100,7 @@ fn StreamSink::flush_text(self : StreamSink) -> Unit {
 
 ///|
 /// Buffer character data until the next structural token or drain.
-pub fn StreamSink::process_characters(self : StreamSink, data : String) -> Unit {
+fn StreamSink::process_characters(self : StreamSink, data : String) -> Unit {
   self.text_parts.push(data)
 }
 
@@ -109,10 +109,7 @@ pub fn StreamSink::process_characters(self : StreamSink, data : String) -> Unit 
 ///
 /// Character tokens are buffered and adjacent text is emitted as a single
 /// `StreamText` event. Non-text tokens flush pending text first.
-pub fn StreamSink::process_token(
-  self : StreamSink,
-  token : @tok.HtmlToken,
-) -> Unit {
+fn StreamSink::process_token(self : StreamSink, token : @tok.HtmlToken) -> Unit {
   match token {
     Characters(data) => self.process_characters(data)
     Tag(tag) => {
@@ -148,7 +145,7 @@ pub fn StreamSink::process_token(
 ///
 /// Pending character data is flushed before the returned array is copied, and
 /// the sink is empty afterward.
-pub fn StreamSink::drain(self : StreamSink) -> Array[StreamEvent] {
+fn StreamSink::drain(self : StreamSink) -> Array[StreamEvent] {
   self.flush_text()
   let out = self.events.copy()
   self.events.clear()
@@ -159,7 +156,7 @@ pub fn StreamSink::drain(self : StreamSink) -> Array[StreamEvent] {
 /// Drain buffered events by invoking `emit` for each event.
 ///
 /// Pending character data is flushed first, and the sink is empty afterward.
-pub fn StreamSink::drain_each(
+fn StreamSink::drain_each(
   self : StreamSink,
   emit : (StreamEvent) -> Unit,
 ) -> Unit {

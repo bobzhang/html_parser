@@ -80,7 +80,7 @@ fn apply_drop_url_attrs_transform(
           "content",
           reason="meta refresh",
         )
-        @san.push_unique_string(to_drop, content_key)
+        transform_push_unique_string(to_drop, content_key)
       }
     }
     _ => ()
@@ -102,7 +102,7 @@ fn apply_drop_url_attrs_transform(
         "href",
         reason="base tag",
       )
-      @san.push_unique_string(to_drop, key)
+      transform_push_unique_string(to_drop, key)
       continue
     }
     match current_value {
@@ -114,7 +114,7 @@ fn apply_drop_url_attrs_transform(
             attr_name,
             reason="no rule",
           )
-          @san.push_unique_string(to_drop, key)
+          transform_push_unique_string(to_drop, key)
         } else {
           match
             policy.sanitize_attribute_value(
@@ -125,18 +125,18 @@ fn apply_drop_url_attrs_transform(
             ) {
             Some(cleaned) =>
               if cleaned != raw_value || attr_name != key {
-                @san.push_unique_string(to_drop, key)
+                transform_push_unique_string(to_drop, key)
                 to_set[attr_name] = Some(cleaned)
               }
             None => {
               transform_report_unsafe_url_attr(node, transform, attr_name)
-              @san.push_unique_string(to_drop, key)
+              transform_push_unique_string(to_drop, key)
             }
           }
         }
       None => {
         transform_report_unsafe_url_attr(node, transform, attr_name)
-        @san.push_unique_string(to_drop, key)
+        transform_push_unique_string(to_drop, key)
       }
     }
   }

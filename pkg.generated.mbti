@@ -127,8 +127,6 @@ pub using @stream {type StreamDoctypeEvent}
 
 pub using @stream {type StreamEvent}
 
-pub using @stream {type StreamSink}
-
 pub using @stream {type StreamStartEvent}
 
 pub using @tokenizer {type TagKind}

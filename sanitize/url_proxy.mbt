@@ -19,7 +19,7 @@ fn percent_encode_url_proxy_param(value : StringView) -> String {
     if url_proxy_query_byte_is_safe(byte) {
       out.write_char(byte.to_char())
     } else {
-      @ser.write_percent_encoded_byte(out, byte)
+      @seri.write_percent_encoded_byte(out, byte)
     }
   }
   out.to_string()

@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "bobzhang/html_parser/serializer"
+package "bobzhang/html_parser/internal/serializer"
 
 import {
   "bobzhang/html_parser/core",
@@ -10,11 +10,19 @@ import {
 // Values
 pub fn is_void_element(StringView) -> Bool
 
+pub fn neutralize_rawtext_end_tag_sequences(StringView, StringView) -> String
+
+pub fn serialize_start_tag_unchecked(@dom.Node, Char) -> String
+
+pub fn string_contains_char(StringView, Char) -> Bool
+
 pub fn to_html(@dom.Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String raise @core.HtmlError
 
 pub fn to_test_format(@dom.Node) -> String
 
 pub fn to_text(@dom.Node, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
+
+pub fn write_percent_encoded_byte(StringBuilder, Byte) -> Unit
 
 // Errors
 

@@ -296,7 +296,8 @@ fn apply_merge_attrs_transform(
     if @syn.lower_ascii(raw_name[:].trim()) == transform.merge_attr {
       matched_keys.push(raw_name)
       match value {
-        Some(raw_value) => @san.push_html_whitespace_tokens(existing, raw_value)
+        Some(raw_value) =>
+          transform_push_html_whitespace_tokens(existing, raw_value)
         None => ()
       }
     }

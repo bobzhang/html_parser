@@ -82,8 +82,8 @@ fn decide_transform_action(
 fn decide_escape_child_at(parent : @dom.Node, index : Int) -> Unit {
   match parent.children[index].kind {
     Element => ignore(escape_transform_child_at(parent, index))
-    Document | Fragment => ignore(@san.unwrap_child_at(parent, index))
-    Text | Comment | Doctype => @san.remove_child_at(parent, index)
+    Document | Fragment => ignore(transform_unwrap_child_at(parent, index))
+    Text | Comment | Doctype => transform_remove_child_at(parent, index)
   }
 }
 
@@ -111,8 +111,8 @@ fn decide_transform_children(
           ignore(empty_transform_node(child))
           index += 1
         }
-        Drop => @san.remove_child_at(parent, index)
-        Unwrap => ignore(@san.unwrap_child_at(parent, index))
+        Drop => transform_remove_child_at(parent, index)
+        Unwrap => ignore(transform_unwrap_child_at(parent, index))
         Escape => decide_escape_child_at(parent, index)
       }
     } else {

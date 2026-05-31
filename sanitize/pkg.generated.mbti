@@ -17,8 +17,6 @@ pub fn default_document_sanitization_policy() -> SanitizationPolicy
 
 pub fn default_sanitization_policy() -> SanitizationPolicy
 
-pub fn escaped_end_tag_for(@dom.Node) -> String?
-
 pub fn is_foreign_url_function_like_attr(String) -> Bool
 
 pub fn is_single_url_like_attr(String) -> Bool
@@ -29,17 +27,9 @@ pub fn is_srcset_like_attr(String) -> Bool
 
 pub fn node_is_effectively_foreign(@dom.Node) -> Bool
 
-pub fn push_html_whitespace_tokens(Array[String], StringView) -> Unit
-
-pub fn push_unique_string(Array[String], String) -> Unit
-
-pub fn remove_child_at(@dom.Node, Int) -> Unit
-
 pub fn sanitize_dom(@dom.Node, policy? : SanitizationPolicy) -> @dom.Node raise @core.HtmlError
 
 pub fn sanitize_dom_with_observer(@dom.Node, SanitizationPolicy?, SanitizeTransformObserver?) -> @dom.Node raise @core.HtmlError
-
-pub fn unwrap_child_at(@dom.Node, Int) -> Int
 
 // Errors
 
