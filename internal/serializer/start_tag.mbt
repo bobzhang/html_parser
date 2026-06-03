@@ -96,7 +96,7 @@ fn choose_attr_quote(value : StringView, preferred : Char) -> Char {
 }
 
 ///|
-fn validate_serialization_quote(quote : Char) -> Char raise @core.HtmlError {
+pub fn validate_serialization_quote(quote : Char) -> Char raise @core.HtmlError {
   match quote {
     '"' | '\'' => quote
     _ => raise InvalidSerialization("quote must be ' or \"")
