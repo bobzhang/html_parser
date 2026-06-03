@@ -10,7 +10,7 @@ test "parser private defensive branches keep no-op behavior" {
   )
   let template = @dom.element("template")
   template_parser.stack.push(template)
-  assert_true(template_parser.handle_template_end_tag("template", 0))
+  assert_true(template_parser.handle_template_end_tag("template", 0, None))
   assert_true(template.source_end_tag is None)
   assert_eq(template_parser.stack.length(), 1)
 

@@ -174,7 +174,7 @@ fn Parser::handle_document_frameset_start_tag(
   } else if self.has_open_element("frameset") || self.detached_frameset_mode {
     match name {
       "frameset" => {
-        self.insert_element_maybe_push(name, attrs, true, start~)
+        self.insert_element_maybe_push(name, attrs, true, Some(start))
         self.detached_frameset_mode = false
         true
       }
@@ -210,7 +210,7 @@ fn Parser::handle_document_frameset_start_tag(
       self.error_at("unexpected-start-tag-ignored", tag_close_pos)
       true
     } else {
-      self.insert_element_maybe_push(name, attrs, true, start~)
+      self.insert_element_maybe_push(name, attrs, true, Some(start))
       true
     }
   } else {

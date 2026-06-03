@@ -160,7 +160,7 @@ fn Parser::handle_template_end_tag(
   self : Parser,
   name : String,
   error_pos : Int,
-  source_end_tag? : String,
+  source_end_tag : String?,
 ) -> Bool {
   if name != "template" {
     return false

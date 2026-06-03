@@ -24,12 +24,12 @@ async fn run_native_cli(args : ArrayView[String]) -> @html_parser.CliResult {
 ///|
 #coverage.skip
 fn cli_read_failure(message : String) -> @html_parser.CliResult {
-  cli_immediate(2, stderr="failed to read input: \{message}\n")
+  cli_immediate(2, "failed to read input: \{message}\n")
 }
 
 ///|
 #coverage.skip
-fn cli_immediate(code : Int, stderr? : String = "") -> @html_parser.CliResult {
+fn cli_immediate(code : Int, stderr : String) -> @html_parser.CliResult {
   {
     exit_code: code,
     stdout: "",
