@@ -1,10 +1,10 @@
 ///|
-fn context_to_internal(context : HtmlContext) -> @impl.HtmlContext {
+fn context_to_internal_code(context : HtmlContext) -> Int {
   match context {
-    Html => Html
-    JsString => JsString
-    HtmlAttrValue => HtmlAttrValue
-    Url => Url
+    Html => 0
+    JsString => 1
+    HtmlAttrValue => 2
+    Url => 3
   }
 }
 
@@ -21,7 +21,7 @@ pub fn to_html(
     node,
     pretty~,
     indent_size~,
-    context=context_to_internal(context),
+    context=context_to_internal_code(context),
     quote~,
   )
 }
