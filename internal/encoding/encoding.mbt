@@ -1,19 +1,16 @@
 ///|
 fn has_utf16le_bom(input : BytesView) -> Bool {
-  input.length() >= 2 && input[0] == b'\xff' && input[1] == b'\xfe'
+  input is [0xff, 0xfe, ..]
 }
 
 ///|
 fn has_utf16be_bom(input : BytesView) -> Bool {
-  input.length() >= 2 && input[0] == b'\xfe' && input[1] == b'\xff'
+  input is [0xfe, 0xff, ..]
 }
 
 ///|
 fn has_utf8_bom(input : BytesView) -> Bool {
-  input.length() >= 3 &&
-  input[0] == b'\xef' &&
-  input[1] == b'\xbb' &&
-  input[2] == b'\xbf'
+  input is [0xef, 0xbb, 0xbf, ..]
 }
 
 ///|
@@ -373,18 +370,14 @@ fn decode_supported_html_encoding(
 
 ///|
 fn starts_html_comment_at(input : BytesView, pos : Int) -> Bool {
-  pos + 3 < input.length() &&
-  input[pos] == b'<' &&
-  input[pos + 1] == b'!' &&
-  input[pos + 2] == b'-' &&
-  input[pos + 3] == b'-'
+  pos + 3 < input.length() && input[pos:] is [.. b"<!--", ..]
 }
 
 ///|
 fn find_html_comment_end(input : BytesView, pos : Int, limit : Int) -> Int? {
   let mut pos = pos
   while pos + 2 < limit {
-    if input[pos] == b'-' && input[pos + 1] == b'-' && input[pos + 2] == b'>' {
+    if input[pos:] is [.. b"-->", ..] {
       return Some(pos + 3)
     }
     pos += 1
