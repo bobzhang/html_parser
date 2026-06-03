@@ -1,13 +1,16 @@
 ///|
 test "sanitize_dom rejects malformed URL schemes when relatives are disabled" {
-  let url_policy = @html_parser.UrlPolicy(default_allow_relative=false, allow_rules=[
-    @html_parser.UrlPolicyRule(
-      "a",
-      "href",
-      @html_parser.UrlRule(allowed_schemes=["https"], allow_relative=false),
-    ),
-  ])
-  let policy = @html_parser.SanitizationPolicy(
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(
+    default_allow_relative=false,
+    allow_rules=[
+      UrlPolicyRule(
+        "a",
+        "href",
+        UrlRule(allowed_schemes=["https"], allow_relative=false),
+      ),
+    ],
+  )
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a"],
     allowed_attributes={ "*": [], "a": ["href"] },
     url_policy~,
@@ -24,7 +27,7 @@ test "sanitize_dom rejects malformed URL schemes when relatives are disabled" {
 
 ///|
 test "sanitize_dom applies URL filter before validation" {
-  let url_filter = @html_parser.UrlFilter(fn(_tag, attr, value) {
+  let url_filter : @html_parser.UrlFilter = UrlFilter(fn(_tag, attr, value) {
     match attr {
       "href" =>
         if value == "drop" {
@@ -39,37 +42,29 @@ test "sanitize_dom applies URL filter before validation" {
       _ => Some(value)
     }
   })
-  let url_policy = @html_parser.UrlPolicy(url_filter~, allow_rules=[
-    @html_parser.UrlPolicyRule(
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(url_filter~, allow_rules=[
+    UrlPolicyRule(
       "a",
       "href",
-      @html_parser.UrlRule(allowed_schemes=["https"], allowed_hosts=[
-        "trusted.example",
-      ]),
+      UrlRule(allowed_schemes=["https"], allowed_hosts=["trusted.example"]),
     ),
-    @html_parser.UrlPolicyRule(
+    UrlPolicyRule(
       "a",
       "ping",
-      @html_parser.UrlRule(allowed_schemes=["https"], allowed_hosts=[
-        "trusted.example",
-      ]),
+      UrlRule(allowed_schemes=["https"], allowed_hosts=["trusted.example"]),
     ),
-    @html_parser.UrlPolicyRule(
+    UrlPolicyRule(
       "img",
       "srcset",
-      @html_parser.UrlRule(allowed_schemes=["https"], allowed_hosts=[
-        "trusted.example",
-      ]),
+      UrlRule(allowed_schemes=["https"], allowed_hosts=["trusted.example"]),
     ),
-    @html_parser.UrlPolicyRule(
+    UrlPolicyRule(
       "p",
       "style:background-image",
-      @html_parser.UrlRule(allowed_schemes=["https"], allowed_hosts=[
-        "trusted.example",
-      ]),
+      UrlRule(allowed_schemes=["https"], allowed_hosts=["trusted.example"]),
     ),
   ])
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a", "img", "p"],
     allowed_attributes={
       "*": [],
@@ -92,7 +87,9 @@ test "sanitize_dom applies URL filter before validation" {
 
 ///|
 test "url filter debug representation stays opaque" {
-  let url_filter = @html_parser.UrlFilter(fn(_tag, _attr, value) { Some(value) })
+  let url_filter : @html_parser.UrlFilter = UrlFilter(fn(_tag, _attr, value) {
+    Some(value)
+  })
   let repr = url_filter.to_repr().to_string()
   assert_true(repr.contains("UrlFilter"))
   assert_eq(repr.contains("callback"), false)
@@ -100,7 +97,7 @@ test "url filter debug representation stays opaque" {
 
 ///|
 test "sanitize_dom validates css url filter rewrites" {
-  let url_filter = @html_parser.UrlFilter(fn(_tag, attr, value) {
+  let url_filter : @html_parser.UrlFilter = UrlFilter(fn(_tag, attr, value) {
     match attr {
       "style:background-image" =>
         match value {
@@ -113,15 +110,15 @@ test "sanitize_dom validates css url filter rewrites" {
       _ => Some(value)
     }
   })
-  let css_rule = @html_parser.UrlRule(
+  let css_rule : @html_parser.UrlRule = UrlRule(
     allowed_schemes=[],
     allow_relative=true,
     resolve_protocol_relative=None,
   )
-  let url_policy = @html_parser.UrlPolicy(url_filter~, allow_rules=[
-    @html_parser.UrlPolicyRule("*", "style:background-image", css_rule),
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(url_filter~, allow_rules=[
+    UrlPolicyRule("*", "style:background-image", css_rule),
   ])
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "p": ["style"] },
     allowed_css_properties=["background-image", "color"],
@@ -139,7 +136,7 @@ test "sanitize_dom validates css url filter rewrites" {
 
 ///|
 test "sanitize_dom drops URL list attributes when URL filter drops or empties them" {
-  let url_filter = @html_parser.UrlFilter(fn(_tag, attr, value) {
+  let url_filter : @html_parser.UrlFilter = UrlFilter(fn(_tag, attr, value) {
     match attr {
       "srcset" =>
         if value == "drop-srcset" {
@@ -159,17 +156,17 @@ test "sanitize_dom drops URL list attributes when URL filter drops or empties th
       _ => Some(value)
     }
   })
-  let trusted_rule = @html_parser.UrlRule(allowed_schemes=["https"], allowed_hosts=[
+  let trusted_rule : @html_parser.UrlRule = UrlRule(allowed_schemes=["https"], allowed_hosts=[
     "trusted.example",
   ])
-  let url_policy = @html_parser.UrlPolicy(url_filter~, allow_rules=[
-    @html_parser.UrlPolicyRule("a", "href", trusted_rule),
-    @html_parser.UrlPolicyRule("a", "ping", trusted_rule),
-    @html_parser.UrlPolicyRule("img", "src", trusted_rule),
-    @html_parser.UrlPolicyRule("img", "srcset", trusted_rule),
-    @html_parser.UrlPolicyRule("img", "attributionsrc", trusted_rule),
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(url_filter~, allow_rules=[
+    UrlPolicyRule("a", "href", trusted_rule),
+    UrlPolicyRule("a", "ping", trusted_rule),
+    UrlPolicyRule("img", "src", trusted_rule),
+    UrlPolicyRule("img", "srcset", trusted_rule),
+    UrlPolicyRule("img", "attributionsrc", trusted_rule),
   ])
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a", "img"],
     allowed_attributes={
       "a": ["href", "ping"],
@@ -189,15 +186,16 @@ test "sanitize_dom drops URL list attributes when URL filter drops or empties th
 
 ///|
 test "sanitize_dom normalizes srcset candidates atomically" {
-  let trusted_rule = @html_parser.UrlRule(
+  let trusted_rule : @html_parser.UrlRule = UrlRule(
     allowed_schemes=["https"],
     allowed_hosts=["trusted.example"],
     allow_relative=false,
   )
-  let url_policy = @html_parser.UrlPolicy(default_allow_relative=false, allow_rules=[
-    @html_parser.UrlPolicyRule("img", "srcset", trusted_rule),
-  ])
-  let policy = @html_parser.SanitizationPolicy(
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(
+    default_allow_relative=false,
+    allow_rules=[UrlPolicyRule("img", "srcset", trusted_rule)],
+  )
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["img"],
     allowed_attributes={ "*": [], "img": ["srcset"] },
     url_policy~,
@@ -214,16 +212,19 @@ test "sanitize_dom normalizes srcset candidates atomically" {
 
 ///|
 test "sanitize_dom normalizes whitespace URL lists atomically" {
-  let trusted_rule = @html_parser.UrlRule(
+  let trusted_rule : @html_parser.UrlRule = UrlRule(
     allowed_schemes=["https"],
     allowed_hosts=["trusted.example"],
     allow_relative=false,
   )
-  let url_policy = @html_parser.UrlPolicy(default_allow_relative=false, allow_rules=[
-    @html_parser.UrlPolicyRule("a", "ping", trusted_rule),
-    @html_parser.UrlPolicyRule("img", "attributionsrc", trusted_rule),
-  ])
-  let policy = @html_parser.SanitizationPolicy(
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(
+    default_allow_relative=false,
+    allow_rules=[
+      UrlPolicyRule("a", "ping", trusted_rule),
+      UrlPolicyRule("img", "attributionsrc", trusted_rule),
+    ],
+  )
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a", "img"],
     allowed_attributes={ "*": [], "a": ["ping"], "img": ["attributionsrc"] },
     url_policy~,
@@ -240,16 +241,19 @@ test "sanitize_dom normalizes whitespace URL lists atomically" {
 
 ///|
 test "sanitize_dom enforces URL host allowlists on parsed authorities" {
-  let host_rule = @html_parser.UrlRule(
+  let host_rule : @html_parser.UrlRule = UrlRule(
     allowed_schemes=["https", "mailto"],
     allowed_hosts=["trusted.example", "::1"],
     allow_relative=false,
   )
-  let url_policy = @html_parser.UrlPolicy(default_allow_relative=false, allow_rules=[
-    @html_parser.UrlPolicyRule("a", "href", host_rule),
-    @html_parser.UrlPolicyRule("img", "src", host_rule),
-  ])
-  let policy = @html_parser.SanitizationPolicy(
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(
+    default_allow_relative=false,
+    allow_rules=[
+      UrlPolicyRule("a", "href", host_rule),
+      UrlPolicyRule("img", "src", host_rule),
+    ],
+  )
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a", "img"],
     allowed_attributes={ "*": [], "a": ["href"], "img": ["src"] },
     url_policy~,
@@ -267,7 +271,7 @@ test "sanitize_dom enforces URL host allowlists on parsed authorities" {
 ///|
 test "public URL filter callback and validation order stay stable" {
   let seen : Array[String] = []
-  let url_filter = @html_parser.UrlFilter(fn(tag, attr, value) {
+  let url_filter : @html_parser.UrlFilter = UrlFilter(fn(tag, attr, value) {
     seen.push(tag + "/" + attr + "=" + value)
     match value {
       "/ok" => Some("https://trusted.example/ok")
@@ -275,16 +279,14 @@ test "public URL filter callback and validation order stay stable" {
       _ => Some(value)
     }
   })
-  let url_policy = @html_parser.UrlPolicy(url_filter~, allow_rules=[
-    @html_parser.UrlPolicyRule(
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(url_filter~, allow_rules=[
+    UrlPolicyRule(
       "a",
       "href",
-      @html_parser.UrlRule(allowed_schemes=["https"], allowed_hosts=[
-        "trusted.example",
-      ]),
+      UrlRule(allowed_schemes=["https"], allowed_hosts=["trusted.example"]),
     ),
   ])
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a"],
     allowed_attributes={ "*": [], "a": ["href"] },
     url_policy~,

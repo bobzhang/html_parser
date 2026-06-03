@@ -20,7 +20,7 @@ test "parse_fragment table context inserts implicit tbody" {
   // — same rule the full document parser applies.
   let doc = @parser.parse_fragment(
     "<tr><td>a</td><td>b</td></tr>",
-    context=@parser.FragmentContext("table"),
+    context=FragmentContext("table"),
   )
   inspect(
     @ser.to_html(doc.root, pretty=true),
@@ -39,7 +39,7 @@ test "parse_fragment table context inserts implicit tbody" {
 test "parse_fragment select context restricts allowed children" {
   let doc = @parser.parse_fragment(
     "<option>a</option><option>b</option>",
-    context=@parser.FragmentContext("select"),
+    context=FragmentContext("select"),
   )
   inspect(
     @ser.to_html(doc.root, pretty=false),

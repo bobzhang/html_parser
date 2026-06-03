@@ -345,7 +345,7 @@ test "parser reports implied active formatting end in table view" {
 test "fragment table contexts foster active formatting text" {
   let row = @html_parser.parse_fragment(
     "<a><tr>x</tr></a>",
-    context=@html_parser.FragmentContext("table"),
+    context=FragmentContext("table"),
     collect_errors=true,
     track_node_locations=true,
   )
@@ -365,7 +365,7 @@ test "fragment table contexts foster active formatting text" {
   assert_node_origin(row_links[1], 0, 1, 1)
   let text_row = @html_parser.parse_fragment(
     "<a>x<tr></tr></a>",
-    context=@html_parser.FragmentContext("table"),
+    context=FragmentContext("table"),
     collect_errors=true,
   )
   assert_eq(text_row.to_html(pretty=false), "<a>x</a><tbody><tr></tr></tbody>")
@@ -376,7 +376,7 @@ test "fragment table contexts foster active formatting text" {
   assert_eq(text_row.errors[3].code, "adoption-agency-1.3")
   let text_only = @html_parser.parse_fragment(
     "<a>x</a>",
-    context=@html_parser.FragmentContext("table"),
+    context=FragmentContext("table"),
     collect_errors=true,
   )
   assert_eq(text_only.to_html(pretty=false), "<a>x</a>")
