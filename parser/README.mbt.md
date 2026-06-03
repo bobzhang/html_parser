@@ -87,10 +87,12 @@ in an implicit `<tbody>` exactly like the document parser does.
 
 ```mbt check
 ///|
+
+///|
 test "readme parse_fragment table context" {
   let doc = @parser.parse_fragment(
     "<tr><td>x</td></tr>",
-    context=@parser.FragmentContext("table"),
+    context=FragmentContext("table"),
   )
   inspect(
     @ser.to_html(doc.root, pretty=true),

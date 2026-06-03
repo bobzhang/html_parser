@@ -1,6 +1,6 @@
 ///|
 test "sanitize_dom can collect and raise unsafe findings" {
-  let safe_policy = @html_parser.SanitizationPolicy(
+  let safe_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "p": [] },
     unsafe_handling=Collect,
@@ -14,7 +14,7 @@ test "sanitize_dom can collect and raise unsafe findings" {
   )
   assert_eq(safe_policy.collected_security_errors().length(), 0)
 
-  let collect_policy = @html_parser.SanitizationPolicy(
+  let collect_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p", "a"],
     allowed_attributes={ "p": [], "a": ["href"] },
     unsafe_handling=Collect,
@@ -39,7 +39,7 @@ test "sanitize_dom can collect and raise unsafe findings" {
   collect_policy.reset_collected_security_errors()
   assert_eq(collect_policy.collected_security_errors().length(), 0)
 
-  let raise_policy = @html_parser.SanitizationPolicy(
+  let raise_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "p": [] },
     unsafe_handling=Raise,
@@ -61,7 +61,7 @@ test "sanitize_dom can collect and raise unsafe findings" {
 
 ///|
 test "sanitize_dom raise mode reports dangerous attributes and urls" {
-  let attr_policy = @html_parser.SanitizationPolicy(
+  let attr_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "p": ["onclick"] },
     unsafe_handling=Raise,
@@ -82,14 +82,10 @@ test "sanitize_dom raise mode reports dangerous attributes and urls" {
     _ => fail("expected dangerous attribute to raise UnsafeHtml")
   }
 
-  let url_policy = @html_parser.UrlPolicy(allow_rules=[
-    @html_parser.UrlPolicyRule(
-      "a",
-      "href",
-      @html_parser.UrlRule(allowed_schemes=["https"]),
-    ),
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(allow_rules=[
+    UrlPolicyRule("a", "href", UrlRule(allowed_schemes=["https"])),
   ])
-  let link_policy = @html_parser.SanitizationPolicy(
+  let link_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a"],
     allowed_attributes={ "a": ["href"] },
     unsafe_handling=Raise,
@@ -109,7 +105,7 @@ test "sanitize_dom raise mode reports dangerous attributes and urls" {
     _ => fail("expected unsafe URL to raise UnsafeHtml")
   }
 
-  let meta_policy = @html_parser.SanitizationPolicy(
+  let meta_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["meta"],
     allowed_attributes={ "meta": ["http-equiv", "content"] },
     drop_content_tags=[],
@@ -132,17 +128,17 @@ test "sanitize_dom raise mode reports dangerous attributes and urls" {
 
 ///|
 test "sanitize_dom raise mode reports URL list and base drops" {
-  let srcset_rule = @html_parser.UrlRule(
+  let srcset_rule : @html_parser.UrlRule = UrlRule(
     allowed_schemes=["https"],
     allowed_hosts=["trusted.example"],
     allow_relative=false,
   )
-  let srcset_policy = @html_parser.SanitizationPolicy(
+  let srcset_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["link"],
     allowed_attributes={ "link": ["rel", "as", "imagesrcset"] },
     unsafe_handling=Raise,
-    url_policy=@html_parser.UrlPolicy(allow_rules=[
-      @html_parser.UrlPolicyRule("link", "imagesrcset", srcset_rule),
+    url_policy=UrlPolicy(allow_rules=[
+      UrlPolicyRule("link", "imagesrcset", srcset_rule),
     ]),
     drop_content_tags=[],
   )
@@ -160,16 +156,12 @@ test "sanitize_dom raise mode reports URL list and base drops" {
     _ => fail("expected unsafe imagesrcset to raise UnsafeHtml")
   }
 
-  let base_policy = @html_parser.SanitizationPolicy(
+  let base_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["base"],
     allowed_attributes={ "base": ["href"] },
     unsafe_handling=Raise,
-    url_policy=@html_parser.UrlPolicy(allow_rules=[
-      @html_parser.UrlPolicyRule(
-        "base",
-        "href",
-        @html_parser.UrlRule(allowed_schemes=["https"]),
-      ),
+    url_policy=UrlPolicy(allow_rules=[
+      UrlPolicyRule("base", "href", UrlRule(allowed_schemes=["https"])),
     ]),
     drop_content_tags=[],
   )
@@ -187,18 +179,18 @@ test "sanitize_dom raise mode reports URL list and base drops" {
     _ => fail("expected base href to raise UnsafeHtml")
   }
 
-  let attr_rule = @html_parser.UrlRule(
+  let attr_rule : @html_parser.UrlRule = UrlRule(
     allowed_schemes=["https"],
     allowed_hosts=["trusted.example"],
     allow_relative=false,
   )
-  let attr_policy = @html_parser.SanitizationPolicy(
+  let attr_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["img"],
     allowed_attributes={ "img": ["src", "attributionsrc"] },
     unsafe_handling=Raise,
-    url_policy=@html_parser.UrlPolicy(allow_rules=[
-      @html_parser.UrlPolicyRule("img", "src", attr_rule),
-      @html_parser.UrlPolicyRule("img", "attributionsrc", attr_rule),
+    url_policy=UrlPolicy(allow_rules=[
+      UrlPolicyRule("img", "src", attr_rule),
+      UrlPolicyRule("img", "attributionsrc", attr_rule),
     ]),
   )
   let attr_fragment = @html_parser.parse_fragment(
@@ -218,7 +210,7 @@ test "sanitize_dom raise mode reports URL list and base drops" {
 
 ///|
 test "sanitize_dom raises for disallowed standalone root" {
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={},
     unsafe_handling=Raise,
@@ -240,7 +232,7 @@ test "sanitize_dom raises for disallowed standalone root" {
 
 ///|
 test "sanitize_dom raise mode reports dropped content and child tags" {
-  let root_script_policy = @html_parser.SanitizationPolicy(
+  let root_script_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={},
     unsafe_handling=Raise,
@@ -262,7 +254,7 @@ test "sanitize_dom raise mode reports dropped content and child tags" {
     _ => fail("expected dropped-content root to raise UnsafeHtml")
   }
 
-  let child_script_policy = @html_parser.SanitizationPolicy(
+  let child_script_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["div"],
     allowed_attributes={ "div": [] },
     unsafe_handling=Raise,
@@ -284,7 +276,7 @@ test "sanitize_dom raise mode reports dropped content and child tags" {
     _ => fail("expected dropped-content child to raise UnsafeHtml")
   }
 
-  let child_tag_policy = @html_parser.SanitizationPolicy(
+  let child_tag_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["div"],
     allowed_attributes={ "div": [] },
     unsafe_handling=Raise,
@@ -309,7 +301,7 @@ test "sanitize_dom raise mode reports dropped content and child tags" {
 
 ///|
 test "sanitize_dom raise mode reports foreign namespace drops" {
-  let root_policy = @html_parser.SanitizationPolicy(
+  let root_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["svg"],
     allowed_attributes={ "svg": [] },
     drop_foreign_namespaces=true,
@@ -332,7 +324,7 @@ test "sanitize_dom raise mode reports foreign namespace drops" {
     _ => fail("expected foreign namespace root to raise UnsafeHtml")
   }
 
-  let child_policy = @html_parser.SanitizationPolicy(
+  let child_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["div"],
     allowed_attributes={ "div": [] },
     drop_foreign_namespaces=true,
@@ -358,7 +350,7 @@ test "sanitize_dom raise mode reports foreign namespace drops" {
 
 ///|
 test "sanitize_dom raise mode reports html namespace foreign root drops" {
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["svg", "rect"],
     allowed_attributes={ "rect": ["width", "height"] },
     drop_foreign_namespaces=true,
@@ -388,7 +380,7 @@ test "public unsafe handling collect and raise modes stay stable" {
     "<p onclick=x>ok</p><script>x</script><a href=javascript:x>link</a>",
     sanitize=false,
   )
-  let collect_policy = @html_parser.SanitizationPolicy(
+  let collect_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": [] },
     unsafe_handling=Collect,
@@ -402,7 +394,7 @@ test "public unsafe handling collect and raise modes stay stable" {
     assert_eq(error.category, "security")
   }
 
-  let raise_policy = @html_parser.SanitizationPolicy(
+  let raise_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": [] },
     unsafe_handling=Raise,
@@ -424,7 +416,7 @@ test "public unsafe handling collect and raise modes stay stable" {
 
 ///|
 test "public unsafe handling collect reset and copy stay stable" {
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": [] },
     unsafe_handling=Collect,

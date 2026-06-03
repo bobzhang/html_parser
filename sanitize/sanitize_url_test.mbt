@@ -23,10 +23,10 @@ test "url_policy with no allow_rules strips all url-attribute values" {
 ///|
 test "url_policy allow_rules whitelist by scheme and host" {
   let url_policy = @sanitize.UrlPolicy(allow_rules=[
-    @sanitize.UrlPolicyRule(
+    UrlPolicyRule(
       "a",
       "href",
-      @sanitize.UrlRule(allowed_schemes=["https"], allowed_hosts=["example.com"]),
+      UrlRule(allowed_schemes=["https"], allowed_hosts=["example.com"]),
     ),
   ])
   let policy = @sanitize.SanitizationPolicy(
@@ -63,13 +63,7 @@ test "UrlFilter callback can rewrite href values" {
     }
   })
   let url_policy = @sanitize.UrlPolicy(
-    allow_rules=[
-      @sanitize.UrlPolicyRule(
-        "a",
-        "href",
-        @sanitize.UrlRule(allowed_schemes=["https"]),
-      ),
-    ],
+    allow_rules=[UrlPolicyRule("a", "href", UrlRule(allowed_schemes=["https"]))],
     url_filter=filter,
   )
   let policy = @sanitize.SanitizationPolicy(

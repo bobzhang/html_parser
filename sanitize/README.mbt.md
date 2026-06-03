@@ -123,12 +123,14 @@ By default no URL attribute survives — to allow `href="/x"` or
 
 ```mbt check
 ///|
+
+///|
 test "readme sanitize url policy" {
   let url_policy = @sanitize.UrlPolicy(allow_rules=[
-    @sanitize.UrlPolicyRule(
+    UrlPolicyRule(
       "a",
       "href",
-      @sanitize.UrlRule(allowed_schemes=["https"], allowed_hosts=["example.com"]),
+      UrlRule(allowed_schemes=["https"], allowed_hosts=["example.com"]),
     ),
   ])
   let policy = @sanitize.SanitizationPolicy(

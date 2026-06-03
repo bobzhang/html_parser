@@ -18,4 +18,4 @@ description = "MoonBit HTML parser and sanitizer ported from JustHTML."
 
 preferred_target = "native"
 
-warnings = "+test_unqualified_package"
+warnings = "+test_unqualified_package+unnecessary_annotation"
