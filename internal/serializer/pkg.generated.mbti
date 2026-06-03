@@ -7,19 +7,27 @@ import {
 }
 
 // Values
+pub fn escape_attr_value(StringView, Char) -> String
+
+pub fn escape_js_string(StringView, Char) -> String
+
 pub fn is_void_element(StringView) -> Bool
 
 pub fn neutralize_rawtext_end_tag_sequences(StringView, StringView) -> String
+
+pub fn percent_encode_url(StringView) -> String
+
+pub fn render_node_html(@dom.Node, Bool, Int, Char) -> String raise @core.HtmlError
 
 pub fn serialize_start_tag_unchecked(@dom.Node, Char) -> String
 
 pub fn string_contains_char(StringView, Char) -> Bool
 
-pub fn to_html(@dom.Node, pretty? : Bool, indent_size? : Int, context? : Int, quote? : Char) -> String raise @core.HtmlError
-
 pub fn to_test_format(@dom.Node) -> String
 
 pub fn to_text(@dom.Node, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
+
+pub fn validate_serialization_quote(Char) -> Char raise @core.HtmlError
 
 pub fn write_percent_encoded_byte(StringBuilder, Byte) -> Unit
 

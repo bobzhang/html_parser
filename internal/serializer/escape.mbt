@@ -13,7 +13,7 @@ fn escape_text(value : StringView) -> String {
 }
 
 ///|
-fn escape_attr_value(value : StringView, quote : Char) -> String {
+pub fn escape_attr_value(value : StringView, quote : Char) -> String {
   let out = StringBuilder::StringBuilder(size_hint=value.length())
   for ch in value {
     match ch {
@@ -29,7 +29,7 @@ fn escape_attr_value(value : StringView, quote : Char) -> String {
 }
 
 ///|
-fn escape_js_string(value : StringView, quote : Char) -> String {
+pub fn escape_js_string(value : StringView, quote : Char) -> String {
   let out = StringBuilder::StringBuilder(size_hint=value.length())
   for ch in value {
     match ch {
@@ -52,7 +52,7 @@ fn escape_js_string(value : StringView, quote : Char) -> String {
 }
 
 ///|
-fn percent_encode_url(value : StringView) -> String {
+pub fn percent_encode_url(value : StringView) -> String {
   let bytes = @utf8.encode(value)
   let out = StringBuilder::StringBuilder(size_hint=bytes.length())
   for index in 0..<bytes.length() {
