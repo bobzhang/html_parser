@@ -4,7 +4,6 @@ package "bobzhang/html_parser/internal/serializer"
 import {
   "bobzhang/html_parser/core",
   "bobzhang/html_parser/dom",
-  "moonbitlang/core/debug",
 }
 
 // Values
@@ -16,7 +15,7 @@ pub fn serialize_start_tag_unchecked(@dom.Node, Char) -> String
 
 pub fn string_contains_char(StringView, Char) -> Bool
 
-pub fn to_html(@dom.Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String raise @core.HtmlError
+pub fn to_html(@dom.Node, pretty? : Bool, indent_size? : Int, context? : Int, quote? : Char) -> String raise @core.HtmlError
 
 pub fn to_test_format(@dom.Node) -> String
 
@@ -27,12 +26,6 @@ pub fn write_percent_encoded_byte(StringBuilder, Byte) -> Unit
 // Errors
 
 // Types and methods
-pub(all) enum HtmlContext {
-  Html
-  JsString
-  HtmlAttrValue
-  Url
-} derive(Eq, @debug.Debug)
 
 // Type aliases
 
