@@ -12,7 +12,7 @@ fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
   }
   let view = self.input[start:self.pos]
   if !view.is_empty() {
-    let decoded = decode_entities_with_errors(view, in_attribute=false)
+    let decoded = @impl.decode_entities_with_errors(view, in_attribute=false)
     for error in decoded.errors {
       self.error_at(error.code, start + error.offset)
     }
@@ -43,7 +43,7 @@ fn SourceTokenizer::parse_invalid_tag_open_as_text(
   }
   let view = self.input[start:self.pos]
   if !view.is_empty() {
-    let decoded = decode_entities_with_errors(view, in_attribute=false)
+    let decoded = @impl.decode_entities_with_errors(view, in_attribute=false)
     for error in decoded.errors {
       self.error_at(error.code, start + error.offset)
     }

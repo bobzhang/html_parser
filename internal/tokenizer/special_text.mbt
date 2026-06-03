@@ -28,7 +28,7 @@ pub fn special_text_decodes_entities(name : StringView) -> Bool {
 }
 
 ///|
-fn is_special_text_element(name : StringView) -> Bool {
+pub fn is_special_text_element(name : StringView) -> Bool {
   match name {
     "iframe"
     | "noembed"

@@ -7,8 +7,8 @@ fn SourceTokenizer::decoded_special_text(
   error_pos : Int,
 ) -> String {
   let raw = self.replace_special_text_nulls(raw, start)
-  let data = if special_text_decodes_entities(name) {
-    let decoded = decode_entities_with_errors(raw, in_attribute=false)
+  let data = if @impl.special_text_decodes_entities(name) {
+    let decoded = @impl.decode_entities_with_errors(raw, in_attribute=false)
     for error in decoded.errors {
       self.error_at(error.code, error_pos)
     }
@@ -68,7 +68,7 @@ fn SourceTokenizer::consume_special_text_tokens(
     return
   }
   if name == "script" {
-    let scan = scan_script_text(self.input, self.pos)
+    let scan = @impl.scan_script_text(self.input, self.pos)
     for error in scan.errors {
       self.error_at(error.code, error.offset)
     }
@@ -89,9 +89,9 @@ fn SourceTokenizer::consume_special_text_tokens(
     }
     return
   }
-  match find_matching_end_tag(self.input, self.pos, name) {
+  match @impl.find_matching_end_tag(self.input, self.pos, name) {
     Some(end_start) => {
-      let error_pos = matching_end_tag_error_pos(self.input, end_start)
+      let error_pos = @impl.matching_end_tag_error_pos(self.input, end_start)
       match self.input.get_view(start=content_start, end=end_start) {
         Some(view) if !view.is_empty() =>
           self.tokens.push(

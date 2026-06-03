@@ -1,7 +1,7 @@
 ///|
 fn SourceTokenizer::parse_comment(self : SourceTokenizer) -> Unit {
   self.pos += 4
-  let scan = scan_comment_data(self.input, self.pos)
+  let scan = @impl.scan_comment_data(self.input, self.pos)
   for error in scan.errors {
     self.error_at(error.code, error.offset)
   }

@@ -17,7 +17,7 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
       _ => ignore(self.advance_char())
     }
   }
-  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+  let (name, name_errors) = @impl.parse_lower_name_value_replacing_nulls(
     self.input,
     name_start,
     self.pos,
@@ -26,7 +26,7 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
   while !self.is_eof() && !self.starts_with(">") {
     ignore(self.advance_char())
   }
-  let external = parse_doctype_external(
+  let external = @impl.parse_doctype_external(
     self.input[ids_start:self.pos],
     self.starts_with(">"),
   )
