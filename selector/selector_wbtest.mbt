@@ -60,7 +60,7 @@ test "limited selector matcher keeps pseudo parity" {
     ),
   )
   let context = SelectorMatchContext(limits)
-  context.tick(steps=0)
+  context.tick(0)
   assert_eq(
     pseudo_selector_matches_with_context(second, "hover(2)", context, 0),
     false,

@@ -55,7 +55,7 @@ fn SelectorMatchContext::SelectorMatchContext(
 ///|
 fn SelectorMatchContext::tick(
   self : SelectorMatchContext,
-  steps? : Int = 1,
+  steps : Int,
 ) -> Unit raise @core.HtmlError {
   if steps <= 0 {
     return
