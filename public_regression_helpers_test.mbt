@@ -1,4 +1,15 @@
 ///|
+fn[T] html_result(
+  body : () -> T raise @html_parser.HtmlError,
+) -> Result[T, @html_parser.HtmlError] {
+  try body() catch {
+    error => Err(error)
+  } noraise {
+    value => Ok(value)
+  }
+}
+
+///|
 fn assert_node_origin(
   node : @html_parser.Node,
   offset : Int,

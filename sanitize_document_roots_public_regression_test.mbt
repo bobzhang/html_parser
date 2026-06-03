@@ -120,18 +120,16 @@ test "sanitize_dom handles standalone text comment and doctype roots" {
     allowed_attributes={},
     unsafe_handling=Raise,
   )
-  let comment_result = try? @html_parser.sanitize_dom(
-    @html_parser.comment("x"),
-    policy=raise_policy,
-  )
+  let comment_result = html_result(fn() raise @html_parser.HtmlError {
+    @html_parser.sanitize_dom(@html_parser.comment("x"), policy=raise_policy)
+  })
   match comment_result {
     Ok(clean) => assert_eq(clean.to_html(pretty=false), "")
     Err(_) => fail("dropped comments should not use unsafe raise handling")
   }
-  let doctype_result = try? @html_parser.sanitize_dom(
-    @html_parser.doctype(),
-    policy=raise_policy,
-  )
+  let doctype_result = html_result(fn() raise @html_parser.HtmlError {
+    @html_parser.sanitize_dom(@html_parser.doctype(), policy=raise_policy)
+  })
   match doctype_result {
     Ok(clean) => assert_eq(clean.to_html(pretty=false), "")
     Err(_) => fail("dropped doctypes should not use unsafe raise handling")
