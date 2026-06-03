@@ -17,7 +17,7 @@ test "source helpers preserve UTF-16 offsets and normalize CRLF" {
     "a\u{FFFD}\n😀",
   )
 
-  let out = StringBuilder::StringBuilder()
+  let out = StringBuilder()
   assert_eq(write_normalized_char("x😀>", 2, out), 2)
   assert_eq(out.to_string(), "")
 

@@ -14,7 +14,7 @@ fn is_valid_css_property_name(name : StringView) -> Bool {
 
 ///|
 fn css_safety_normalize(value : StringView) -> String? {
-  let out = StringBuilder::StringBuilder(size_hint=value.length())
+  let out = StringBuilder(size_hint=value.length())
   let mut pos = 0
   while pos < value.length() {
     let ch = value.get_char(pos).unwrap()
@@ -189,7 +189,7 @@ fn sanitize_url_function_value(
     string_view_contains(value, "/*") {
     return None
   }
-  let out = StringBuilder::StringBuilder(size_hint=value.length())
+  let out = StringBuilder(size_hint=value.length())
   let mut pos = 0
   let mut replaced_any = false
   while true {

@@ -5,7 +5,7 @@
 /// names, sanitizer policy keys, and protocol-like values where the grammar
 /// defines ASCII case-insensitivity, not for locale-sensitive text.
 pub fn lower_ascii(input : StringView) -> String {
-  let out = StringBuilder::StringBuilder(size_hint=input.length())
+  let out = StringBuilder(size_hint=input.length())
   for ch in input {
     if ch.is_ascii_uppercase() {
       out.write_char(ch.to_ascii_lowercase())
@@ -187,7 +187,7 @@ pub fn strip_leading_bom(input : StringView) -> StringView {
 /// CRLF and bare CR are emitted as a single `\n`. All other characters are
 /// copied unchanged.
 pub fn normalize_newlines(input : StringView) -> String {
-  let out = StringBuilder::StringBuilder(size_hint=input.length())
+  let out = StringBuilder(size_hint=input.length())
   let mut pos = 0
   while pos < input.length() {
     let ch = input.get_char(pos).unwrap()
@@ -214,7 +214,7 @@ pub fn normalize_newlines(input : StringView) -> String {
 /// Null characters are replaced with U+FFFD, and CRLF or bare CR newlines are
 /// normalized to LF. Other characters are copied unchanged.
 pub fn normalize_bogus_comment_data(input : StringView) -> String {
-  let out = StringBuilder::StringBuilder(size_hint=input.length())
+  let out = StringBuilder(size_hint=input.length())
   let mut pos = 0
   while pos < input.length() {
     let ch = input.get_char(pos).unwrap()
@@ -296,7 +296,7 @@ pub fn is_xml_noncharacter(ch : Char) -> Bool {
 /// U+FFFD. It does not escape markup; callers still serialize text through the
 /// normal escaping path.
 pub fn coerce_text_for_xml(input : StringView) -> String {
-  let out = StringBuilder::StringBuilder(size_hint=input.length())
+  let out = StringBuilder(size_hint=input.length())
   for ch in input {
     if ch == '\u{000C}' {
       out.write_char(' ')

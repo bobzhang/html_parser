@@ -110,7 +110,7 @@ pub fn validate_serialization_quote(quote : Char) -> Char raise @core.HtmlError 
 /// callers must ensure `node.name` and all attribute names are already safe for
 /// serialization. Use the checked serializer path for untrusted names.
 pub fn serialize_start_tag_unchecked(node : @dom.Node, quote : Char) -> String {
-  let out = StringBuilder::StringBuilder()
+  let out = StringBuilder()
   out <+ "<\{node.name}"
   for name, value in node.attrs {
     out <+ " \{name}"

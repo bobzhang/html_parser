@@ -1,6 +1,6 @@
 ///|
 fn collapse_transform_html_space(value : StringView) -> String {
-  let out = StringBuilder::StringBuilder(size_hint=value.length())
+  let out = StringBuilder(size_hint=value.length())
   let mut in_ws = false
   for ch in value {
     if is_html_whitespace_char(ch) {

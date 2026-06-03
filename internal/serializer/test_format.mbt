@@ -45,7 +45,7 @@ fn is_foreign_attribute_for_test_format(name : StringView) -> Bool {
 
 ///|
 fn replace_colons_for_test_format(name : StringView) -> String {
-  let out = StringBuilder::StringBuilder(size_hint=name.length())
+  let out = StringBuilder(size_hint=name.length())
   for ch in name {
     if ch == ':' {
       out.write_char(' ')
@@ -134,7 +134,7 @@ fn write_test_format_attributes(
 
 ///|
 fn doctype_test_format(node : @dom.Node) -> String {
-  let out = StringBuilder::StringBuilder()
+  let out = StringBuilder()
   out <+ "| <!DOCTYPE \{node.data}"
   if node.public_id is Some(_) || node.system_id is Some(_) {
     let public_id = match node.public_id {

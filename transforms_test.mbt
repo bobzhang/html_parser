@@ -1,6 +1,6 @@
 ///|
 fn transform_repeat_for_test(value : String, count : Int) -> String {
-  let out = StringBuilder::StringBuilder(size_hint=value.length() * count)
+  let out = StringBuilder(size_hint=value.length() * count)
   for _ in 0..<count {
     out.write_string(value)
   }

@@ -15,7 +15,7 @@ fn selector_public_id_or_name(node : @html_parser.Node) -> String {
 
 ///|
 fn selector_public_ids(nodes : Array[@html_parser.Node]) -> String {
-  let out = StringBuilder::StringBuilder()
+  let out = StringBuilder()
   let mut first = true
   for node in nodes {
     if !first {
