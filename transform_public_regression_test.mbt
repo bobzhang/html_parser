@@ -26,17 +26,20 @@ test "public structural transform pipeline stays stable" {
 
 ///|
 test "public attribute policy transform pipeline stays stable" {
-  let url_policy = @html_parser.UrlPolicy(default_allow_relative=false, allow_rules=[
-    @html_parser.UrlPolicyRule(
-      "a",
-      "href",
-      @html_parser.UrlRule(
-        allowed_schemes=["https"],
-        allowed_hosts=["trusted.example"],
-        allow_relative=false,
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(
+    default_allow_relative=false,
+    allow_rules=[
+      UrlPolicyRule(
+        "a",
+        "href",
+        UrlRule(
+          allowed_schemes=["https"],
+          allowed_hosts=["trusted.example"],
+          allow_relative=false,
+        ),
       ),
-    ),
-  ])
+    ],
+  )
   let doc = @html_parser.parse_fragment(
     "<p id=keep onclick=x data-x=1 style='color: red; position: fixed'>Hi</p><a href='javascript:alert(1)' rel='NoOpener'>bad</a><a href='https://trusted.example/path' rel='nofollow'>ok</a>",
     sanitize=false,

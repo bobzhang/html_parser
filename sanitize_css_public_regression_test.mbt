@@ -4,10 +4,10 @@ test "sanitize_dom filters inline style declarations by property allowlist" {
     "<p style='color: red'>x</p>",
     sanitize=false,
   )
-  let no_css_policy = @html_parser.SanitizationPolicy(["p"], allowed_attributes={
-    "*": [],
-    "p": ["style"],
-  })
+  let no_css_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
+    ["p"],
+    allowed_attributes={ "*": [], "p": ["style"] },
+  )
   assert_eq(
     @html_parser.sanitize_dom(no_css.root, policy=no_css_policy).to_html(
       pretty=false,
@@ -18,7 +18,7 @@ test "sanitize_dom filters inline style declarations by property allowlist" {
     "<p style='; color; color: ; co_lor: red; margin: 0; COLOR: red; font-weight: 700; background-image: url(/x.png); width: expression(alert(1))'>ok</p><p style>empty</p><p STYLE='color: blue; text-align: center; background-image: u/**/rl(/x.png)'>case</p><p style='color: /*unterminated'>comment</p><p style=': red; color: orange'>empty-prop</p>",
     sanitize=false,
   )
-  let style_policy = @html_parser.SanitizationPolicy(
+  let style_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": ["style"] },
     allowed_css_properties=[
@@ -35,7 +35,7 @@ test "sanitize_dom filters inline style declarations by property allowlist" {
 
 ///|
 test "css_preset_text allows conservative inline text styling" {
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["div"],
     allowed_attributes={ "*": [], "div": ["style"] },
     allowed_css_properties=@html_parser.css_preset_text(),
@@ -51,7 +51,7 @@ test "css_preset_text allows conservative inline text styling" {
 
   let mutated = @html_parser.css_preset_text()
   mutated.clear()
-  let fresh = @html_parser.SanitizationPolicy(
+  let fresh : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["span"],
     allowed_attributes={ "span": ["style"] },
     allowed_css_properties=@html_parser.css_preset_text(),
@@ -68,15 +68,15 @@ test "css_preset_text allows conservative inline text styling" {
 
 ///|
 test "sanitize_dom applies css url function policy rules" {
-  let css_url_rule = @html_parser.UrlRule(
+  let css_url_rule : @html_parser.UrlRule = UrlRule(
     allowed_schemes=[],
     allow_relative=true,
     resolve_protocol_relative=None,
   )
-  let url_policy = @html_parser.UrlPolicy(allow_rules=[
-    @html_parser.UrlPolicyRule("*", "style:background-image", css_url_rule),
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(allow_rules=[
+    UrlPolicyRule("*", "style:background-image", css_url_rule),
   ])
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": ["style"] },
     allowed_css_properties=["background-image", "color"],
@@ -94,15 +94,15 @@ test "sanitize_dom applies css url function policy rules" {
 
 ///|
 test "sanitize_dom rejects comments in css url function values" {
-  let css_url_rule = @html_parser.UrlRule(
+  let css_url_rule : @html_parser.UrlRule = UrlRule(
     allowed_schemes=[],
     allow_relative=true,
     resolve_protocol_relative=None,
   )
-  let url_policy = @html_parser.UrlPolicy(allow_rules=[
-    @html_parser.UrlPolicyRule("*", "style:background-image", css_url_rule),
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(allow_rules=[
+    UrlPolicyRule("*", "style:background-image", css_url_rule),
   ])
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": ["style"] },
     allowed_css_properties=["background-image", "color"],
@@ -120,15 +120,15 @@ test "sanitize_dom rejects comments in css url function values" {
 
 ///|
 test "sanitize_dom rejects malformed css url function values" {
-  let css_url_rule = @html_parser.UrlRule(
+  let css_url_rule : @html_parser.UrlRule = UrlRule(
     allowed_schemes=[],
     allow_relative=true,
     resolve_protocol_relative=None,
   )
-  let url_policy = @html_parser.UrlPolicy(allow_rules=[
-    @html_parser.UrlPolicyRule("*", "style:background-image", css_url_rule),
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(allow_rules=[
+    UrlPolicyRule("*", "style:background-image", css_url_rule),
   ])
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": ["style"] },
     allowed_css_properties=["background-image", "color"],
@@ -146,15 +146,15 @@ test "sanitize_dom rejects malformed css url function values" {
 
 ///|
 test "sanitize_dom drops unquoted css url with missing close paren" {
-  let css_url_rule = @html_parser.UrlRule(
+  let css_url_rule : @html_parser.UrlRule = UrlRule(
     allowed_schemes=[],
     allow_relative=true,
     resolve_protocol_relative=None,
   )
-  let url_policy = @html_parser.UrlPolicy(allow_rules=[
-    @html_parser.UrlPolicyRule("*", "style:background-image", css_url_rule),
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(allow_rules=[
+    UrlPolicyRule("*", "style:background-image", css_url_rule),
   ])
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "*": [], "p": ["style"] },
     allowed_css_properties=["background-image", "color"],
@@ -175,7 +175,7 @@ test "public css text preset returns independent conservative lists" {
   let mutated = @html_parser.css_preset_text()
   assert_true(mutated.length() > 0)
   mutated.clear()
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["span"],
     allowed_attributes={ "*": [], "span": ["style"] },
     allowed_css_properties=@html_parser.css_preset_text(),

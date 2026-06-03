@@ -14,7 +14,7 @@ test "sanitize_dom strips invisible unicode from text and attributes" {
     "<p title=\"ab\">ab<a>x</a></p>",
   )
 
-  let collect_policy = @html_parser.SanitizationPolicy(
+  let collect_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "p": ["title"] },
     unsafe_handling=Collect,
@@ -36,7 +36,7 @@ test "sanitize_dom strips invisible unicode from text and attributes" {
     "Stripped invisible Unicode from attribute(s): title",
   )
 
-  let raise_policy = @html_parser.SanitizationPolicy(
+  let raise_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "p": ["title"] },
     unsafe_handling=Raise,
@@ -63,7 +63,7 @@ test "sanitize_dom can preserve invisible unicode by policy" {
     "<p title=\"a" + invisible + "b\">a" + invisible + "b</p>",
     sanitize=false,
   )
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
     allowed_attributes={ "p": ["title"] },
     strip_invisible_unicode=false,
@@ -88,7 +88,7 @@ test "sanitize_dom force_link_rel permits and merges anchor rel tokens" {
     "<a href='https://example.com'>one</a><a href='/x' rel='External\tNOOPENER\nfriend'>two</a><a rel>three</a><a href='javascript:evil' rel='friend'>bad</a>",
     sanitize=false,
   )
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a"],
     allowed_attributes={ "*": [], "a": ["href"] },
     force_link_rel=["NoOpener", "noreferrer", "noopener"],
@@ -101,10 +101,10 @@ test "sanitize_dom force_link_rel permits and merges anchor rel tokens" {
 
 ///|
 test "sanitize_dom normalizes mixed-case valueless attributes" {
-  let policy = @html_parser.SanitizationPolicy(["button"], allowed_attributes={
-    "*": [],
-    "button": ["disabled", "title"],
-  })
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
+    ["button"],
+    allowed_attributes={ "*": [], "button": ["disabled", "title"] },
+  )
   let button = @html_parser.element("button", attrs={
     "DISABLED": None,
     "TITLE": Some("ok"),
@@ -118,7 +118,7 @@ test "sanitize_dom normalizes mixed-case valueless attributes" {
 
 ///|
 test "sanitize_dom preserves allowed valueless non-url attributes" {
-  let policy = @html_parser.SanitizationPolicy(["div"], allowed_attributes={
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(["div"], allowed_attributes={
     "*": [],
     "div": ["disabled"],
   })
@@ -147,14 +147,11 @@ test "sanitize_dom lowercases manual DOM attribute names" {
 
 ///|
 test "sanitize_dom reports valueless url and style attributes" {
-  let url_policy = @html_parser.UrlPolicy(default_handling=UrlAllow, allow_rules=[
-    @html_parser.UrlPolicyRule(
-      "a",
-      "href",
-      @html_parser.UrlRule(allowed_schemes=["https"]),
-    ),
-  ])
-  let policy = @html_parser.SanitizationPolicy(
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(
+    default_handling=UrlAllow,
+    allow_rules=[UrlPolicyRule("a", "href", UrlRule(allowed_schemes=["https"]))],
+  )
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a", "span", "div"],
     allowed_attributes={
       "*": [],

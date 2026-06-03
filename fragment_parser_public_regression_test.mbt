@@ -48,7 +48,7 @@ test "fragment parser preserves ignored head children" {
 test "public parser fragment contexts stay stable" {
   let table = @html_parser.parse_fragment(
     "<tr><td>A</td></tr>",
-    context=@html_parser.FragmentContext("table"),
+    context=FragmentContext("table"),
     collect_errors=true,
   )
   assert_eq(table.to_html(pretty=false), "<tbody><tr><td>A</td></tr></tbody>")
@@ -56,7 +56,7 @@ test "public parser fragment contexts stay stable" {
 
   let textarea = @html_parser.parse_fragment(
     "<b>x</b>&lt;",
-    context=@html_parser.FragmentContext("textarea"),
+    context=FragmentContext("textarea"),
   )
   assert_eq(textarea.to_html(pretty=false), "&lt;b&gt;x&lt;/b&gt;&amp;lt;")
   assert_eq(textarea.to_text(separator="", strip=false), "<b>x</b>&lt;")
@@ -64,7 +64,7 @@ test "public parser fragment contexts stay stable" {
 
   let svg = @html_parser.parse_fragment(
     "<lineargradient><stop/></lineargradient>",
-    context=@html_parser.FragmentContext("svg", ns="svg"),
+    context=FragmentContext("svg", ns="svg"),
     collect_errors=true,
   )
   assert_eq(
@@ -83,34 +83,34 @@ test "public parser fragment contexts stay stable" {
 test "fragment context seeds literal text modes" {
   let empty_script = @html_parser.parse_fragment(
     "",
-    context=@html_parser.FragmentContext("script"),
+    context=FragmentContext("script"),
     collect_errors=true,
   )
   assert_eq(empty_script.to_html(pretty=false), "")
   assert_eq(empty_script.errors.length(), 0)
   let textarea = @html_parser.parse_fragment(
     "<b>x</b>&lt;",
-    context=@html_parser.FragmentContext("textarea"),
+    context=FragmentContext("textarea"),
   )
   assert_eq(textarea.to_html(pretty=false), "&lt;b&gt;x&lt;/b&gt;&amp;lt;")
   assert_eq(textarea.to_text(separator="", strip=false), "<b>x</b>&lt;")
   assert_eq(textarea.query("b").length(), 0)
   let textarea_newlines = @html_parser.parse_fragment(
     "a\rb\r\nc",
-    context=@html_parser.FragmentContext("textarea"),
+    context=FragmentContext("textarea"),
   )
   assert_eq(textarea_newlines.to_html(pretty=false), "a\nb\nc")
   assert_eq(textarea_newlines.to_text(separator="", strip=false), "a\nb\nc")
   let after_end = @html_parser.parse_fragment(
     "a\r</textarea><b>x</b>",
-    context=@html_parser.FragmentContext("textarea"),
+    context=FragmentContext("textarea"),
     collect_errors=true,
   )
   assert_eq(after_end.to_html(pretty=false), "a\n<b>x</b>")
   assert_eq(after_end.errors[0].code, "unexpected-end-tag")
   let script = @html_parser.parse_fragment(
     "a</script><b>x</b>",
-    context=@html_parser.FragmentContext("script"),
+    context=FragmentContext("script"),
   )
   assert_eq(
     script.to_html(pretty=false),
@@ -119,12 +119,12 @@ test "fragment context seeds literal text modes" {
   assert_eq(script.query("b").length(), 0)
   let script_newlines = @html_parser.parse_fragment(
     "a\rb\r\nc",
-    context=@html_parser.FragmentContext("script"),
+    context=FragmentContext("script"),
   )
   assert_eq(script_newlines.to_html(pretty=false), "a\nb\nc")
   let style_null = @html_parser.parse_fragment(
     "a\u{0000}b",
-    context=@html_parser.FragmentContext("style"),
+    context=FragmentContext("style"),
     collect_errors=true,
   )
   assert_eq(style_null.to_html(pretty=false), "a\u{FFFD}b")
@@ -132,7 +132,7 @@ test "fragment context seeds literal text modes" {
   assert_eq(style_null.errors[0].code, "unexpected-null-character")
   let div = @html_parser.parse_fragment(
     "<b>x</b>",
-    context=@html_parser.FragmentContext("div"),
+    context=FragmentContext("div"),
   )
   assert_eq(div.to_html(pretty=false), "<b>x</b>")
 }
@@ -141,14 +141,14 @@ test "fragment context seeds literal text modes" {
 test "fragment context seeds html insertion mode" {
   let empty = @html_parser.parse_fragment(
     "",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(empty.to_html(pretty=false), "<head></head><body></body>")
   assert_eq(empty.errors.length(), 0)
   let title = @html_parser.parse_fragment(
     "<title>T</title><div>x</div>",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -158,7 +158,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(title.errors.length(), 0)
   let explicit = @html_parser.parse_fragment(
     "<head id=h><title>T</title></head><body id=b>x</body>",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -168,7 +168,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(explicit.errors.length(), 0)
   let explicit_html = @html_parser.parse_fragment(
     "<html lang=en><title>T</title><p>x</p>",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -178,7 +178,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(explicit_html.errors.length(), 0)
   let comment_before_body = @html_parser.parse_fragment(
     "<!--c-->\n<body id=b>x",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -188,7 +188,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(comment_before_body.errors.length(), 0)
   let text_before_body = @html_parser.parse_fragment(
     "x<body id=b>y",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -199,7 +199,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(text_before_body.errors[0].code, "unexpected-start-tag")
   let nested_html_before_body = @html_parser.parse_fragment(
     "<html><title>T</title></html><body id=b>x",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -214,7 +214,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(nested_html_before_body.errors[1].code, "unexpected-start-tag")
   let nested_html_shell = @html_parser.parse_fragment(
     "<html><title>T</title></html><html><p>x",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -225,7 +225,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(nested_html_shell.errors[0].code, "unexpected-start-tag")
   let table = @html_parser.parse_fragment(
     "<table><tr><td>x</td></tr></table>",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -235,7 +235,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(table.errors.length(), 0)
   let late_head = @html_parser.parse_fragment(
     "<body>x</body><head><meta name=y></head>",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -247,7 +247,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(late_head.errors[1].code, "unexpected-end-tag")
   let inferred_head_comment = @html_parser.parse_fragment(
     "<!--before--><title>T</title><!--in--><p>x</p>",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -257,7 +257,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(inferred_head_comment.errors.length(), 0)
   let explicit_head_comment = @html_parser.parse_fragment(
     "<head><title>T</title></head><!--after--><p>x</p>",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -267,7 +267,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(explicit_head_comment.errors.length(), 0)
   let late_body = @html_parser.parse_fragment(
     "<p>x</p><body id=b>y",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -284,7 +284,7 @@ test "fragment context seeds html insertion mode" {
     let (input, offset, line, col) = marker
     let doc = @html_parser.parse_fragment(
       input,
-      context=@html_parser.FragmentContext("html"),
+      context=FragmentContext("html"),
       track_node_locations=true,
     )
     guard doc.query_one("body") is Some(body) else {
@@ -294,7 +294,7 @@ test "fragment context seeds html insertion mode" {
   }
   let late_html = @html_parser.parse_fragment(
     "<p>x</p><html lang=en>y</html>",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -305,7 +305,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(late_html.errors[0].code, "unexpected-start-tag")
   let late_head_after_title = @html_parser.parse_fragment(
     "<title>T</title><head><meta name=y></head>x",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -317,7 +317,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(late_head_after_title.errors[1].code, "unexpected-end-tag")
   let frameset = @html_parser.parse_fragment(
     "<frameset><frame src=x></frameset>after",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -328,7 +328,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(frameset.errors[0].code, "unexpected-token-after-frameset")
   let sibling_frameset = @html_parser.parse_fragment(
     "<frameset></frameset><frameset><frame></frameset>",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -342,7 +342,7 @@ test "fragment context seeds html insertion mode" {
   }
   let sibling_frame = @html_parser.parse_fragment(
     "<frameset></frameset><frame>x",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -356,7 +356,7 @@ test "fragment context seeds html insertion mode" {
   }
   let detached_end = @html_parser.parse_fragment(
     "<frameset></frameset><div></frameset>",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -372,7 +372,7 @@ test "fragment context seeds html insertion mode" {
   }
   let detached_html = @html_parser.parse_fragment(
     "<frameset></frameset><div><html id=x><frameset></frameset>",
-    context=@html_parser.FragmentContext("html"),
+    context=FragmentContext("html"),
     collect_errors=true,
   )
   assert_eq(
@@ -387,7 +387,7 @@ test "fragment context seeds html insertion mode" {
   assert_eq(detached_html.errors[4].code, "unexpected-end-tag")
   let explicit_html_ns = @html_parser.parse_fragment(
     "<title>T</title>",
-    context=@html_parser.FragmentContext("html", ns="html"),
+    context=FragmentContext("html", ns="html"),
     collect_errors=true,
   )
   assert_eq(
@@ -401,14 +401,14 @@ test "fragment context seeds html insertion mode" {
 test "fragment context seeds table insertion mode" {
   let row = @html_parser.parse_fragment(
     "<tr><td>x</td></tr>",
-    context=@html_parser.FragmentContext("table"),
+    context=FragmentContext("table"),
     collect_errors=true,
   )
   assert_eq(row.to_html(pretty=false), "<tbody><tr><td>x</td></tr></tbody>")
   assert_eq(row.errors.length(), 0)
   let direct_cell = @html_parser.parse_fragment(
     "<td>x</td>",
-    context=@html_parser.FragmentContext("table"),
+    context=FragmentContext("table"),
     collect_errors=true,
   )
   assert_eq(
@@ -419,7 +419,7 @@ test "fragment context seeds table insertion mode" {
   assert_eq(direct_cell.errors[0].code, "unexpected-cell-in-table-body")
   let explicit_html_ns_cell = @html_parser.parse_fragment(
     "<td>x</td>",
-    context=@html_parser.FragmentContext("table", ns="html"),
+    context=FragmentContext("table", ns="html"),
     collect_errors=true,
   )
   assert_eq(
@@ -433,7 +433,7 @@ test "fragment context seeds table insertion mode" {
   )
   let after_caption_text = @html_parser.parse_fragment(
     "<caption>c</caption>x",
-    context=@html_parser.FragmentContext("table"),
+    context=FragmentContext("table"),
     collect_errors=true,
   )
   assert_eq(after_caption_text.to_html(pretty=false), "<caption>c</caption>x")
@@ -441,7 +441,7 @@ test "fragment context seeds table insertion mode" {
   assert_eq(after_caption_text.errors[0].code, "foster-parenting-character")
   let fostered_start = @html_parser.parse_fragment(
     "<div>x</div>",
-    context=@html_parser.FragmentContext("table"),
+    context=FragmentContext("table"),
     collect_errors=true,
   )
   assert_eq(fostered_start.to_html(pretty=false), "<div>x</div>")
@@ -454,7 +454,7 @@ test "fragment context seeds table insertion mode" {
   )
   let ignored_table_end = @html_parser.parse_fragment(
     "<tr><td>x</table>y",
-    context=@html_parser.FragmentContext("table"),
+    context=FragmentContext("table"),
     collect_errors=true,
   )
   assert_eq(
@@ -465,7 +465,7 @@ test "fragment context seeds table insertion mode" {
   assert_eq(ignored_table_end.errors[0].code, "unexpected-end-tag")
   let br_end = @html_parser.parse_fragment(
     "</br>x",
-    context=@html_parser.FragmentContext("table"),
+    context=FragmentContext("table"),
     collect_errors=true,
   )
   assert_eq(br_end.to_html(pretty=false), "<br>x")
@@ -484,7 +484,7 @@ test "fragment context seeds table insertion mode" {
   }
   let nested_table = @html_parser.parse_fragment(
     "<table>x</table>",
-    context=@html_parser.FragmentContext("table"),
+    context=FragmentContext("table"),
     collect_errors=true,
   )
   assert_eq(nested_table.to_html(pretty=false), "x")
@@ -499,14 +499,14 @@ test "fragment context seeds table insertion mode" {
 test "fragment context seeds table section insertion mode" {
   let row = @html_parser.parse_fragment(
     "<tr><td>x</td></tr>",
-    context=@html_parser.FragmentContext("tbody"),
+    context=FragmentContext("tbody"),
     collect_errors=true,
   )
   assert_eq(row.to_html(pretty=false), "<tr><td>x</td></tr>")
   assert_eq(row.errors.length(), 0)
   let direct_cell = @html_parser.parse_fragment(
     "<td>x</td>",
-    context=@html_parser.FragmentContext("tbody"),
+    context=FragmentContext("tbody"),
     collect_errors=true,
   )
   assert_eq(direct_cell.to_html(pretty=false), "<tr><td>x</td></tr>")
@@ -514,7 +514,7 @@ test "fragment context seeds table section insertion mode" {
   assert_eq(direct_cell.errors[0].code, "unexpected-cell-in-table-body")
   let fostered_start = @html_parser.parse_fragment(
     "<div>x</div>",
-    context=@html_parser.FragmentContext("tbody"),
+    context=FragmentContext("tbody"),
     collect_errors=true,
   )
   assert_eq(fostered_start.to_html(pretty=false), "<div>x</div>")
@@ -527,7 +527,7 @@ test "fragment context seeds table section insertion mode" {
   )
   let ignored_caption = @html_parser.parse_fragment(
     "<caption>x</caption>",
-    context=@html_parser.FragmentContext("tbody"),
+    context=FragmentContext("tbody"),
     collect_errors=true,
   )
   assert_eq(ignored_caption.to_html(pretty=false), "x")
@@ -537,7 +537,7 @@ test "fragment context seeds table section insertion mode" {
   assert_eq(ignored_caption.errors[2].code, "unexpected-end-tag")
   let ignored_table = @html_parser.parse_fragment(
     "<table>x</table>",
-    context=@html_parser.FragmentContext("tfoot"),
+    context=FragmentContext("tfoot"),
     collect_errors=true,
   )
   assert_eq(ignored_table.to_html(pretty=false), "x")
@@ -547,7 +547,7 @@ test "fragment context seeds table section insertion mode" {
   assert_eq(ignored_table.errors[2].code, "unexpected-end-tag")
   let ignored_section_end = @html_parser.parse_fragment(
     "</tbody>x",
-    context=@html_parser.FragmentContext("tbody"),
+    context=FragmentContext("tbody"),
     collect_errors=true,
   )
   assert_eq(ignored_section_end.to_html(pretty=false), "x")
@@ -560,14 +560,14 @@ test "fragment context seeds table section insertion mode" {
 test "fragment context seeds table row insertion mode" {
   let cells = @html_parser.parse_fragment(
     "<td>x</td><td>y</td>",
-    context=@html_parser.FragmentContext("tr"),
+    context=FragmentContext("tr"),
     collect_errors=true,
   )
   assert_eq(cells.to_html(pretty=false), "<td>x</td><td>y</td>")
   assert_eq(cells.errors.length(), 0)
   let ignored_row = @html_parser.parse_fragment(
     "<tr><td>x</td></tr>",
-    context=@html_parser.FragmentContext("tr"),
+    context=FragmentContext("tr"),
     collect_errors=true,
   )
   assert_eq(ignored_row.to_html(pretty=false), "<td>x</td>")
@@ -576,7 +576,7 @@ test "fragment context seeds table row insertion mode" {
   assert_eq(ignored_row.errors[1].code, "unexpected-end-tag")
   let fostered_start = @html_parser.parse_fragment(
     "<div>x</div>",
-    context=@html_parser.FragmentContext("tr"),
+    context=FragmentContext("tr"),
     collect_errors=true,
   )
   assert_eq(fostered_start.to_html(pretty=false), "<div>x</div>")
@@ -584,7 +584,7 @@ test "fragment context seeds table row insertion mode" {
   assert_eq(fostered_start.errors[0].code, "foster-parenting-character")
   let ignored_caption = @html_parser.parse_fragment(
     "<caption>x</caption>",
-    context=@html_parser.FragmentContext("tr"),
+    context=FragmentContext("tr"),
     collect_errors=true,
   )
   assert_eq(ignored_caption.to_html(pretty=false), "x")
@@ -601,14 +601,14 @@ test "fragment context seeds table row insertion mode" {
 test "fragment context seeds table cell insertion mode" {
   let body_content = @html_parser.parse_fragment(
     "x<div>y</div>",
-    context=@html_parser.FragmentContext("td"),
+    context=FragmentContext("td"),
     collect_errors=true,
   )
   assert_eq(body_content.to_html(pretty=false), "x<div>y</div>")
   assert_eq(body_content.errors.length(), 0)
   let ignored_cell = @html_parser.parse_fragment(
     "<td>x</td>",
-    context=@html_parser.FragmentContext("td"),
+    context=FragmentContext("td"),
     collect_errors=true,
   )
   assert_eq(ignored_cell.to_html(pretty=false), "x")
@@ -620,7 +620,7 @@ test "fragment context seeds table cell insertion mode" {
   assert_eq(ignored_cell.errors[1].code, "unexpected-end-tag")
   let ignored_row = @html_parser.parse_fragment(
     "<tr><td>x</td></tr>",
-    context=@html_parser.FragmentContext("th"),
+    context=FragmentContext("th"),
     collect_errors=true,
   )
   assert_eq(ignored_row.to_html(pretty=false), "x")
@@ -631,7 +631,7 @@ test "fragment context seeds table cell insertion mode" {
   assert_eq(ignored_row.errors[3].code, "unexpected-end-tag")
   let nested_table = @html_parser.parse_fragment(
     "<table>x</table>",
-    context=@html_parser.FragmentContext("td"),
+    context=FragmentContext("td"),
     collect_errors=true,
   )
   assert_eq(nested_table.to_html(pretty=false), "x<table></table>")
@@ -643,14 +643,14 @@ test "fragment context seeds table cell insertion mode" {
 test "fragment context seeds caption insertion mode" {
   let body_content = @html_parser.parse_fragment(
     "x<div>y</div>",
-    context=@html_parser.FragmentContext("caption"),
+    context=FragmentContext("caption"),
     collect_errors=true,
   )
   assert_eq(body_content.to_html(pretty=false), "x<div>y</div>")
   assert_eq(body_content.errors.length(), 0)
   let ignored_row = @html_parser.parse_fragment(
     "<tr><td>x</td></tr>",
-    context=@html_parser.FragmentContext("caption"),
+    context=FragmentContext("caption"),
     collect_errors=true,
   )
   assert_eq(ignored_row.to_html(pretty=false), "x")
@@ -663,7 +663,7 @@ test "fragment context seeds caption insertion mode" {
   assert_eq(ignored_row.errors[5].code, "unexpected-end-tag")
   let ignored_caption = @html_parser.parse_fragment(
     "<caption>x</caption>",
-    context=@html_parser.FragmentContext("caption"),
+    context=FragmentContext("caption"),
     collect_errors=true,
   )
   assert_eq(ignored_caption.to_html(pretty=false), "x")
@@ -676,7 +676,7 @@ test "fragment context seeds caption insertion mode" {
   assert_eq(ignored_caption.errors[2].code, "unexpected-end-tag")
   let table = @html_parser.parse_fragment(
     "<table>x</table><td>y</td>",
-    context=@html_parser.FragmentContext("caption"),
+    context=FragmentContext("caption"),
     collect_errors=true,
   )
   assert_eq(table.to_html(pretty=false), "x<table></table>y")
@@ -692,14 +692,14 @@ test "fragment context seeds caption insertion mode" {
 test "fragment context seeds column group insertion mode" {
   let cols = @html_parser.parse_fragment(
     "<col><col>",
-    context=@html_parser.FragmentContext("colgroup"),
+    context=FragmentContext("colgroup"),
     collect_errors=true,
   )
   assert_eq(cols.to_html(pretty=false), "<col><col>")
   assert_eq(cols.errors.length(), 0)
   let text = @html_parser.parse_fragment(
     " x ",
-    context=@html_parser.FragmentContext("colgroup"),
+    context=FragmentContext("colgroup"),
     collect_errors=true,
   )
   assert_eq(text.to_html(pretty=false), " ")
@@ -707,7 +707,7 @@ test "fragment context seeds column group insertion mode" {
   assert_eq(text.errors[0].code, "unexpected-characters-in-column-group")
   let col_text_col = @html_parser.parse_fragment(
     "<col>x<col>",
-    context=@html_parser.FragmentContext("colgroup"),
+    context=FragmentContext("colgroup"),
     collect_errors=true,
   )
   assert_eq(col_text_col.to_html(pretty=false), "<col><col>")
@@ -718,7 +718,7 @@ test "fragment context seeds column group insertion mode" {
   )
   let ignored_start = @html_parser.parse_fragment(
     "<div>x</div>",
-    context=@html_parser.FragmentContext("colgroup"),
+    context=FragmentContext("colgroup"),
     collect_errors=true,
   )
   assert_eq(ignored_start.to_html(pretty=false), "")
@@ -738,7 +738,7 @@ test "fragment context seeds column group insertion mode" {
   assert_eq(ignored_start.errors[3].code, "unexpected-end-tag")
   let paragraph_end = @html_parser.parse_fragment(
     "</p>",
-    context=@html_parser.FragmentContext("colgroup"),
+    context=FragmentContext("colgroup"),
     collect_errors=true,
   )
   assert_eq(paragraph_end.to_html(pretty=false), "<p></p>")
@@ -750,7 +750,7 @@ test "fragment context seeds column group insertion mode" {
   assert_eq(paragraph_end.errors[1].code, "unexpected-end-tag")
   let nested_colgroup = @html_parser.parse_fragment(
     "<colgroup><col></colgroup>",
-    context=@html_parser.FragmentContext("colgroup"),
+    context=FragmentContext("colgroup"),
     collect_errors=true,
   )
   assert_eq(nested_colgroup.to_html(pretty=false), "<col>")
@@ -766,7 +766,7 @@ test "fragment context seeds column group insertion mode" {
 test "parser tracks origins for fragment colgroup starts" {
   let cols = @html_parser.parse_fragment(
     "<col><col>",
-    context=@html_parser.FragmentContext("colgroup"),
+    context=FragmentContext("colgroup"),
     track_node_locations=true,
   )
   let children = cols.root.children()
@@ -779,7 +779,7 @@ test "parser tracks origins for fragment colgroup starts" {
 test "fragment context seeds foreign namespaces" {
   let svg = @html_parser.parse_fragment(
     "<lineargradient><stop/></lineargradient>",
-    context=@html_parser.FragmentContext("svg", ns="svg"),
+    context=FragmentContext("svg", ns="svg"),
     collect_errors=true,
   )
   assert_eq(
@@ -794,7 +794,7 @@ test "fragment context seeds foreign namespaces" {
   assert_true(stop.namespace_uri() is Some("svg"))
   let cdata = @html_parser.parse_fragment(
     "text<![CDATA[x<y]]>",
-    context=@html_parser.FragmentContext("svg", ns="svg"),
+    context=FragmentContext("svg", ns="svg"),
     collect_errors=true,
   )
   assert_eq(cdata.to_html(pretty=false), "textx&lt;y")
@@ -802,7 +802,7 @@ test "fragment context seeds foreign namespaces" {
   assert_eq(cdata.errors[0].code, "expected-closing-tag-but-got-eof")
   let math = @html_parser.parse_fragment(
     "<mi>x</mi><mo>=</mo><mn>5</mn>",
-    context=@html_parser.FragmentContext("math", ns="mathml"),
+    context=FragmentContext("math", ns="mathml"),
     collect_errors=true,
   )
   assert_eq(math.to_html(pretty=false), "<mi>x</mi><mo>=</mo><mn>5</mn>")
@@ -812,7 +812,7 @@ test "fragment context seeds foreign namespaces" {
   assert_true(mi.namespace_uri() is Some("math"))
   let breakout = @html_parser.parse_fragment(
     "</svg><p>x</p>",
-    context=@html_parser.FragmentContext("svg", ns="svg"),
+    context=FragmentContext("svg", ns="svg"),
     collect_errors=true,
   )
   assert_eq(breakout.to_html(pretty=false), "<p>x</p>")

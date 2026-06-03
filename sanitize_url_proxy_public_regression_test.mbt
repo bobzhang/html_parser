@@ -1,30 +1,22 @@
 ///|
 test "sanitize_dom proxies validated URL values" {
-  let url_policy = @html_parser.UrlPolicy(
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(
     default_handling=UrlProxy,
-    proxy=@html_parser.UrlProxy("/proxy"),
+    proxy=UrlProxy("/proxy"),
     allow_rules=[
-      @html_parser.UrlPolicyRule(
-        "a",
-        "href",
-        @html_parser.UrlRule(allowed_schemes=["https"]),
-      ),
-      @html_parser.UrlPolicyRule(
-        "img",
-        "srcset",
-        @html_parser.UrlRule(allowed_schemes=["https"]),
-      ),
-      @html_parser.UrlPolicyRule(
+      UrlPolicyRule("a", "href", UrlRule(allowed_schemes=["https"])),
+      UrlPolicyRule("img", "srcset", UrlRule(allowed_schemes=["https"])),
+      UrlPolicyRule(
         "p",
         "style:background-image",
-        @html_parser.UrlRule(
+        UrlRule(
           allowed_schemes=["https"],
-          proxy=@html_parser.UrlProxy("/asset-proxy", param="src"),
+          proxy=UrlProxy("/asset-proxy", param="src"),
         ),
       ),
     ],
   )
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a", "img", "p"],
     allowed_attributes={
       "*": [],
@@ -47,14 +39,11 @@ test "sanitize_dom proxies validated URL values" {
 
 ///|
 test "sanitize_dom proxy mode fails closed without usable proxy config" {
-  let missing_proxy_policy = @html_parser.UrlPolicy(default_handling=UrlProxy, allow_rules=[
-    @html_parser.UrlPolicyRule(
-      "a",
-      "href",
-      @html_parser.UrlRule(allowed_schemes=["https"]),
-    ),
-  ])
-  let missing_policy = @html_parser.SanitizationPolicy(
+  let missing_proxy_policy : @html_parser.UrlPolicy = UrlPolicy(
+    default_handling=UrlProxy,
+    allow_rules=[UrlPolicyRule("a", "href", UrlRule(allowed_schemes=["https"]))],
+  )
+  let missing_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a"],
     allowed_attributes={ "a": ["href"] },
     url_policy=missing_proxy_policy,
@@ -69,18 +58,12 @@ test "sanitize_dom proxy mode fails closed without usable proxy config" {
     ),
     "<a>missing</a>",
   )
-  let empty_proxy_policy = @html_parser.UrlPolicy(
+  let empty_proxy_policy : @html_parser.UrlPolicy = UrlPolicy(
     default_handling=UrlProxy,
-    proxy=@html_parser.UrlProxy(""),
-    allow_rules=[
-      @html_parser.UrlPolicyRule(
-        "a",
-        "href",
-        @html_parser.UrlRule(allowed_schemes=["https"]),
-      ),
-    ],
+    proxy=UrlProxy(""),
+    allow_rules=[UrlPolicyRule("a", "href", UrlRule(allowed_schemes=["https"]))],
   )
-  let empty_policy = @html_parser.SanitizationPolicy(
+  let empty_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a"],
     allowed_attributes={ "a": ["href"] },
     url_policy=empty_proxy_policy,
@@ -99,28 +82,20 @@ test "sanitize_dom proxy mode fails closed without usable proxy config" {
 
 ///|
 test "sanitize_dom proxy rejects invalid scheme-like URL prefixes" {
-  let url_policy = @html_parser.UrlPolicy(
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(
     default_handling=UrlProxy,
-    proxy=@html_parser.UrlProxy("/proxy"),
+    proxy=UrlProxy("/proxy"),
     allow_rules=[
-      @html_parser.UrlPolicyRule(
-        "a",
-        "href",
-        @html_parser.UrlRule(allowed_schemes=["https"]),
-      ),
-      @html_parser.UrlPolicyRule(
-        "img",
-        "srcset",
-        @html_parser.UrlRule(allowed_schemes=["https"]),
-      ),
-      @html_parser.UrlPolicyRule(
+      UrlPolicyRule("a", "href", UrlRule(allowed_schemes=["https"])),
+      UrlPolicyRule("img", "srcset", UrlRule(allowed_schemes=["https"])),
+      UrlPolicyRule(
         "p",
         "style:background-image",
-        @html_parser.UrlRule(allowed_schemes=["https"]),
+        UrlRule(allowed_schemes=["https"]),
       ),
     ],
   )
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a", "img", "p"],
     allowed_attributes={
       "*": [],
@@ -143,27 +118,23 @@ test "sanitize_dom proxy rejects invalid scheme-like URL prefixes" {
 
 ///|
 test "public URL proxy policy rewrites and strips URLs stably" {
-  let url_policy = @html_parser.UrlPolicy(
+  let url_policy : @html_parser.UrlPolicy = UrlPolicy(
     default_handling=UrlProxy,
-    proxy=@html_parser.UrlProxy("/proxy"),
+    proxy=UrlProxy("/proxy"),
     allow_rules=[
-      @html_parser.UrlPolicyRule(
-        "a",
-        "href",
-        @html_parser.UrlRule(allowed_schemes=["https"]),
-      ),
-      @html_parser.UrlPolicyRule(
+      UrlPolicyRule("a", "href", UrlRule(allowed_schemes=["https"])),
+      UrlPolicyRule(
         "img",
         "src",
-        @html_parser.UrlRule(
+        UrlRule(
           allowed_schemes=["https"],
           handling=UrlProxy,
-          proxy=@html_parser.UrlProxy("/asset-proxy", param="src"),
+          proxy=UrlProxy("/asset-proxy", param="src"),
         ),
       ),
     ],
   )
-  let policy = @html_parser.SanitizationPolicy(
+  let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["a", "img"],
     allowed_attributes={ "*": [], "a": ["href"], "img": ["src"] },
     url_policy~,

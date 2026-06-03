@@ -8,21 +8,21 @@ test "transform private helpers keep defensive no-op behavior" {
   apply_prune_empty_transform(
     text_root,
     TransformSpec::prune_empty("*"),
-    @sel.SelectorLimits(),
+    SelectorLimits(),
   )
   assert_eq(text_root.data, "x")
   ignore(
     apply_transform(
       @dom.fragment(children=[@dom.element("p")]),
       TransformSpec::prune_empty("p"),
-      @sel.SelectorLimits(),
+      SelectorLimits(),
     ),
   )
   ignore(
     apply_transform(
       @dom.fragment(children=[@dom.element("p")]),
       TransformSpec::stage([TransformSpec::drop("p")]),
-      @sel.SelectorLimits(),
+      SelectorLimits(),
     ),
   )
   assert_true(
@@ -55,7 +55,7 @@ test "transform private helpers keep defensive no-op behavior" {
   transform_children(
     unmatched_kind,
     make_transform_spec(SanitizeTree, selector="p"),
-    @sel.SelectorLimits(),
+    SelectorLimits(),
   )
   assert_eq(unmatched_kind.children.length(), 1)
 }
