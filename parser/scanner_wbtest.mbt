@@ -115,7 +115,7 @@ test "scanner helpers fail closed on surrogate-split offsets" {
   assert_eq(comment_scan.errors.length(), 1)
   assert_eq(comment_scan.errors[0].code, "eof-in-comment")
 
-  let normalized = StringBuilder::StringBuilder()
+  let normalized = StringBuilder()
   assert_eq(
     @syn.write_normalized_char(value, mid_surrogate, normalized),
     mid_surrogate,

@@ -6,7 +6,7 @@
 /// `end` is the offset after the consumed comment closer, or `input.length()`
 /// when the scan reaches EOF. Parse errors use offsets in the original input.
 pub fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
-  let out = StringBuilder::StringBuilder(size_hint=input.length() - start)
+  let out = StringBuilder(size_hint=input.length() - start)
   let errors : Array[CommentScanError] = []
   if start >= input.length() {
     push_comment_scan_error(errors, "eof-in-comment", @syn.eof_error_pos(input))

@@ -8,7 +8,7 @@ fn is_html_whitespace_char(ch : Char) -> Bool {
 
 ///|
 fn collapse_html_whitespace(value : StringView) -> String {
-  let out = StringBuilder::StringBuilder(size_hint=value.length())
+  let out = StringBuilder(size_hint=value.length())
   let mut pending_space = false
   let mut wrote = false
   for ch in value {

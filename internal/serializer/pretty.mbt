@@ -16,13 +16,13 @@ fn compact_pretty_text_children(
   node : @dom.Node,
   quote : Char,
 ) -> String raise @core.HtmlError {
-  let out = StringBuilder::StringBuilder()
+  let out = StringBuilder()
   if pretty_text_preserves_whitespace(node.name) {
     for child in node.children {
       out.write_string(node_to_html_compact(child, quote))
     }
   } else {
-    let raw = StringBuilder::StringBuilder()
+    let raw = StringBuilder()
     for child in node.children {
       if !child.sanitize_escape_only {
         raw.write_string(child.data)
@@ -89,7 +89,7 @@ fn pretty_inline_run_to_html(
   run : Array[@dom.Node],
   quote : Char,
 ) -> String raise @core.HtmlError {
-  let out = StringBuilder::StringBuilder()
+  let out = StringBuilder()
   for child in run {
     match child.kind {
       Text => {
@@ -140,7 +140,7 @@ fn node_to_html_pretty_inline_runs(
   if !saw_separator || runs.is_empty() {
     return None
   }
-  let out = StringBuilder::StringBuilder()
+  let out = StringBuilder()
   let indent_text = " ".repeat(indent)
   out <+ "\{indent_text}\{serialize_start_tag(node, quote)}"
   let child_prefix = " ".repeat(indent + indent_size)
@@ -178,7 +178,7 @@ fn node_to_html_pretty_compact_children(
   quote : Char,
   indent_size : Int,
 ) -> String raise @core.HtmlError {
-  let out = StringBuilder::StringBuilder()
+  let out = StringBuilder()
   out.write_string(serialize_start_tag(node, quote))
   let child_count = node.children.length()
   for index in 0..<child_count {
@@ -279,7 +279,7 @@ fn node_to_html_pretty(
       } else if pretty_text_preserves_whitespace(node.name) {
         " ".repeat(indent) + node_to_html_compact(node, quote)
       } else if element_has_only_text_children(node) {
-        let out = StringBuilder::StringBuilder()
+        let out = StringBuilder()
         let indent_text = " ".repeat(indent)
         let start_tag = serialize_start_tag(node, quote)
         let children = compact_pretty_text_children(node, quote)
@@ -297,7 +297,7 @@ fn node_to_html_pretty(
         " ".repeat(indent) +
         node_to_html_pretty_compact_children(node, quote, indent_size)
       } else {
-        let out = StringBuilder::StringBuilder()
+        let out = StringBuilder()
         let indent_text = " ".repeat(indent)
         out <+ "\{indent_text}\{serialize_start_tag(node, quote)}"
         let child_indent = indent + indent_size

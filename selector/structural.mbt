@@ -136,7 +136,7 @@ fn element_type_index(node : @dom.Node) -> Int? {
 
 ///|
 fn normalize_nth_expression(expr : StringView) -> String {
-  let out = StringBuilder::StringBuilder(size_hint=expr.length())
+  let out = StringBuilder(size_hint=expr.length())
   for ch in expr {
     if !ch.is_ascii_whitespace() {
       if ch.is_ascii_uppercase() {

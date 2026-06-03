@@ -32,7 +32,7 @@ fn markdown_link_destination_wrap_trigger(ch : Char) -> Bool {
 ///|
 fn markdown_percent_encode_link_destination(value : StringView) -> String {
   let bytes = @utf8.encode(value)
-  let out = StringBuilder::StringBuilder(size_hint=bytes.length())
+  let out = StringBuilder(size_hint=bytes.length())
   for index in 0..<bytes.length() {
     let byte = bytes[index]
     if markdown_link_destination_byte_is_safe(byte) {

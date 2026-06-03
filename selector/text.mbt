@@ -1,6 +1,6 @@
 ///|
 fn unescape_quoted_pseudo_arg(value : StringView, quote : Char) -> String {
-  let out = StringBuilder::StringBuilder(size_hint=value.length())
+  let out = StringBuilder(size_hint=value.length())
   let mut escaped = false
   for ch in value {
     if escaped {
