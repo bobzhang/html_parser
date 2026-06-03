@@ -28,6 +28,11 @@ pub fn special_text_decodes_entities(name : StringView) -> Bool {
 }
 
 ///|
+/// Return whether `name` uses HTML's special-text tokenization path.
+///
+/// Special-text elements do not tokenize child markup normally: RCDATA elements
+/// decode entities until their matching end tag, raw-text elements scan text
+/// literally, and `plaintext` consumes the rest of the input as text.
 pub fn is_special_text_element(name : StringView) -> Bool {
   match name {
     "iframe"

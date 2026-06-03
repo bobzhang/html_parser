@@ -1,4 +1,9 @@
 ///|
+/// Render a DOM node to HTML using either compact or pretty formatting.
+///
+/// `pretty=true` emits indentation with `indent_size` spaces per level;
+/// `pretty=false` emits the shortest equivalent markup. Attribute values use
+/// `quote`, which must already be a valid HTML quote character.
 pub fn render_node_html(
   node : @dom.Node,
   pretty : Bool,

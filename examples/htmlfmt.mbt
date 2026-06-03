@@ -1,4 +1,9 @@
 ///|
+/// Result returned by the example `htmlfmt` command runner.
+///
+/// `exit_code` follows command-line conventions: `0` for formatted output and
+/// `2` for argument parsing errors. `stdout` carries formatted HTML on success;
+/// `stderr` carries parser help or diagnostics when argument parsing fails.
 pub(all) struct HtmlFmtResult {
   exit_code : Int
   stdout : String
@@ -6,6 +11,12 @@ pub(all) struct HtmlFmtResult {
 } derive(Debug, Eq)
 
 ///|
+/// Run the example `htmlfmt` command with an argument vector.
+///
+/// The command accepts one HTML fragment positional argument and an optional
+/// `--compact` flag. Successful runs return formatted HTML in `stdout`; parse
+/// errors from the command-line parser are converted into a nonzero
+/// `HtmlFmtResult` instead of escaping as exceptions.
 pub fn run_htmlfmt(args : ArrayView[String]) -> HtmlFmtResult raise {
   let command = htmlfmt_command()
   let matches = command.parse(argv=args, env={}) catch {
