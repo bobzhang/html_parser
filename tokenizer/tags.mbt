@@ -7,7 +7,7 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
       ignore(self.advance_char())
       return
     }
-    Some(ch) if !is_tag_name_start(ch) => {
+    Some(ch) if !@impl.is_tag_name_start(ch) => {
       self.error_at("invalid-first-character-of-tag-name", self.pos)
       self.parse_bogus_comment()
       return
@@ -28,7 +28,7 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
       _ => ignore(self.advance_char())
     }
   }
-  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+  let (name, name_errors) = @impl.parse_lower_name_value_replacing_nulls(
     self.input,
     name_start,
     self.pos,
@@ -56,15 +56,15 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
   let start = self.pos
   self.pos += 1
   match self.current() {
-    Some(ch) if is_tag_name_start(ch) => {
+    Some(ch) if @impl.is_tag_name_start(ch) => {
       let name_start = self.pos
       while !self.is_eof() {
         match self.current() {
-          Some(ch) if !is_tag_name_end(ch) => ignore(self.advance_char())
+          Some(ch) if !@impl.is_tag_name_end(ch) => ignore(self.advance_char())
           _ => break
         }
       }
-      let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+      let (name, name_errors) = @impl.parse_lower_name_value_replacing_nulls(
         self.input,
         name_start,
         self.pos,
@@ -85,7 +85,7 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
           self_closing: tail.self_closing,
         }),
       )
-      if !tail.self_closing && is_special_text_element(name) {
+      if !tail.self_closing && @impl.is_special_text_element(name) {
         self.consume_special_text_tokens(name)
       }
     }

@@ -1,4 +1,5 @@
 import {
   "bobzhang/html_parser/core",
+  "bobzhang/html_parser/internal/syntax" @syn,
   "bobzhang/html_parser/internal/tokenizer" @impl,
 }

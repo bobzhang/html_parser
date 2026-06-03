@@ -2,7 +2,6 @@
 package "bobzhang/html_parser/internal/tokenizer"
 
 import {
-  "bobzhang/html_parser/core",
   "moonbitlang/core/debug",
 }
 
@@ -20,6 +19,8 @@ pub fn doctype_eof_error_offset(StringView) -> Int
 pub fn find_matching_end_tag(StringView, Int, StringView) -> Int?
 
 pub fn html_numeric_entity_replacement(Int) -> Int
+
+pub fn is_special_text_element(StringView) -> Bool
 
 pub fn is_tag_name_end(Char) -> Bool
 
@@ -42,10 +43,6 @@ pub fn scan_comment_data(StringView, Int) -> CommentScan
 pub fn scan_script_text(StringView, Int) -> ScriptTextScan
 
 pub fn special_text_decodes_entities(StringView) -> Bool
-
-pub fn tokenize(StringView, collect_errors? : Bool, xml_coercion? : Bool) -> TokenizedHtml
-
-pub fn tokenize_each(StringView, (HtmlToken) -> Unit, xml_coercion? : Bool) -> Unit
 
 // Errors
 
@@ -74,13 +71,6 @@ pub(all) struct DoctypeExternalParse {
   force_quirks : Bool
 }
 
-pub(all) struct DoctypeInfo {
-  name : String
-  public_id : String?
-  system_id : String?
-  force_quirks : Bool
-} derive(Eq, @debug.Debug)
-
 pub(all) struct EntityConsumeResult {
   value : String
   next : Int
@@ -97,14 +87,6 @@ pub(all) struct EntityDecodeResult {
   errors : Array[EntityDecodeError]
 } derive(Eq, @debug.Debug)
 
-pub(all) enum HtmlToken {
-  Tag(TagToken)
-  Characters(String)
-  CommentToken(String)
-  DoctypeToken(DoctypeInfo)
-  Eof
-} derive(Eq, @debug.Debug)
-
 pub(all) struct ScriptTextScan {
   data : String
   end_start : Int?
@@ -115,23 +97,6 @@ pub(all) struct SpecialTextError {
   code : String
   offset : Int
 }
-
-pub(all) enum TagKind {
-  StartTag
-  EndTag
-} derive(Eq, @debug.Debug)
-
-pub(all) struct TagToken {
-  kind : TagKind
-  name : String
-  attrs : Map[String, String?]
-  self_closing : Bool
-} derive(Eq, @debug.Debug)
-
-pub(all) struct TokenizedHtml {
-  tokens : Array[HtmlToken]
-  errors : Array[@core.ParseError]
-} derive(@debug.Debug)
 
 // Type aliases
 

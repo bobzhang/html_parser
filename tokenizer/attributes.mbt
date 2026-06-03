@@ -19,7 +19,7 @@ fn SourceTokenizer::parse_attribute(
       _ => ignore(self.advance_char())
     }
   }
-  let (name, name_errors) = parse_lower_name_value_replacing_nulls(
+  let (name, name_errors) = @impl.parse_lower_name_value_replacing_nulls(
     self.input,
     name_start,
     self.pos,
@@ -78,7 +78,7 @@ fn SourceTokenizer::parse_attribute_value(self : SourceTokenizer) -> String {
         }
       }
       let view = self.input[start:self.pos]
-      let decoded = decode_attribute_value_with_errors(view)
+      let decoded = @impl.decode_attribute_value_with_errors(view)
       for error in decoded.errors {
         self.error_at(error.code, self.pos)
       }
@@ -109,7 +109,7 @@ fn SourceTokenizer::parse_quoted_attribute_value(
       _ => ()
     }
   }
-  let decoded = decode_attribute_value_with_errors(raw)
+  let decoded = @impl.decode_attribute_value_with_errors(raw)
   for error in decoded.errors {
     self.error_at(error.code, self.pos)
   }

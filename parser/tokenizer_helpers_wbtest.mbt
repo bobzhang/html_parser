@@ -34,7 +34,10 @@ test "entity helpers preserve unresolved names and attribute boundaries" {
     @tok.legacy_entity_blocked_in_attribute("&copy.", 5, in_attribute=true),
     false,
   )
-  let unresolved = @tok.tokenize("&unknown; &unknown", collect_errors=true)
+  let unresolved = @tokenizer.tokenize(
+    "&unknown; &unknown",
+    collect_errors=true,
+  )
   guard unresolved.tokens[0] is Characters("&unknown; &unknown") else {
     fail("expected unresolved named references to stay literal")
   }
