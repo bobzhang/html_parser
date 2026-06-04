@@ -96,6 +96,11 @@ fn choose_attr_quote(value : StringView, preferred : Char) -> Char {
 }
 
 ///|
+/// Validate the requested quote character for escaped serializer contexts.
+///
+/// Returns `quote` when it is either single or double quote. Other characters
+/// raise `InvalidSerialization`, which prevents JS string and HTML attribute
+/// contexts from being serialized with an unsafe delimiter.
 pub fn validate_serialization_quote(quote : Char) -> Char raise @core.HtmlError {
   match quote {
     '"' | '\'' => quote
