@@ -9,7 +9,7 @@ fn previous_matching_sibling_with_context(
     Some(parent) => {
       let mut previous_match : @dom.Node? = None
       for child in parent.children {
-        context.tick()
+        context.tick(1)
         if physical_equal(child, node) {
           return previous_match
         }
@@ -33,7 +33,7 @@ fn previous_element_sibling_with_context(
     Some(parent) => {
       let mut previous : @dom.Node? = None
       for child in parent.children {
-        context.tick()
+        context.tick(1)
         if physical_equal(child, node) {
           return previous
         }
@@ -54,7 +54,7 @@ fn matches_complex_selector_with_context(
   context : SelectorMatchContext,
   depth : Int,
 ) -> Bool raise @core.HtmlError {
-  context.tick()
+  context.tick(1)
   if depth > context.limits.max_match_depth {
     raise SelectorError("Selector nesting is too deep")
   }
@@ -73,7 +73,7 @@ fn matches_complex_selector_with_context(
   let mut needed = last_index - 1
   let mut current = node
   while needed >= 0 {
-    context.tick()
+    context.tick(1)
     let wanted = parts[needed]
     match combinators[needed] {
       DescendantCombinator => {
@@ -81,7 +81,7 @@ fn matches_complex_selector_with_context(
         let mut cursor = current.parent
         let mut found = false
         while !found {
-          context.tick()
+          context.tick(1)
           match cursor {
             Some(ancestor) => {
               if node_identity_seen(visited, ancestor) {
@@ -146,7 +146,7 @@ fn matches_selector_list_with_context(
   context : SelectorMatchContext,
   depth : Int,
 ) -> Bool raise @core.HtmlError {
-  context.tick()
+  context.tick(1)
   if depth > context.limits.max_match_depth {
     raise SelectorError("Selector nesting is too deep")
   }
