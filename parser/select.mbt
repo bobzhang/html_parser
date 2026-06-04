@@ -212,22 +212,22 @@ fn Parser::handle_select_special_start_tag(
     self.error_at("unexpected-start-tag-in-select", tag_close_pos)
     ignore(self.pop_current_element_if_name("option"))
     ignore(self.pop_current_element_if_name("optgroup"))
-    self.insert_element_without_push("hr", attrs, start~)
+    self.insert_element_without_push("hr", attrs, Some(start))
     return true
   }
   if name == "br" || name == "img" {
     self.error_at("unexpected-start-tag-in-select", tag_close_pos)
-    self.insert_element_without_push(name, attrs, start~)
+    self.insert_element_without_push(name, attrs, Some(start))
     return true
   }
   if name == "menuitem" {
     self.error_at("unexpected-start-tag-in-select", tag_close_pos)
-    self.insert_element_maybe_push(name, attrs, !self_closing, start~)
+    self.insert_element_maybe_push(name, attrs, !self_closing, Some(start))
     return true
   }
   if select_common_element_start_reports_in_select(name) {
     self.error_at("unexpected-start-tag-in-select", tag_close_pos)
-    self.insert_element_maybe_push(name, attrs, !self_closing, start~)
+    self.insert_element_maybe_push(name, attrs, !self_closing, Some(start))
     return true
   }
   if select_ignored_start_reports_in_select(name) {

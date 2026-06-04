@@ -168,7 +168,7 @@ fn Parser::insert_element_without_push(
   self : Parser,
   name : StringView,
   attrs : Map[String, String?],
-  start? : Int,
+  start : Int?,
 ) -> Unit {
   let node = match start {
     Some(offset) => self.node_with_origin(@dom.element(name, attrs~), offset)
@@ -183,7 +183,7 @@ fn Parser::insert_element_maybe_push(
   name : StringView,
   attrs : Map[String, String?],
   push : Bool,
-  start? : Int,
+  start : Int?,
 ) -> Unit {
   let node = match start {
     Some(offset) => self.node_with_origin(@dom.element(name, attrs~), offset)

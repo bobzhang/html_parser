@@ -7,7 +7,7 @@ pub fn TransformSpec::drop(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(DropElements, enabled~, selector=selector.to_owned()),
+    make_transform_spec(DropElements, enabled, selector=selector.to_owned()),
     hook,
     report,
   )
@@ -22,7 +22,7 @@ pub fn TransformSpec::unwrap(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(UnwrapElements, enabled~, selector=selector.to_owned()),
+    make_transform_spec(UnwrapElements, enabled, selector=selector.to_owned()),
     hook,
     report,
   )
@@ -37,7 +37,7 @@ pub fn TransformSpec::escape(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(EscapeElements, enabled~, selector=selector.to_owned()),
+    make_transform_spec(EscapeElements, enabled, selector=selector.to_owned()),
     hook,
     report,
   )
@@ -52,7 +52,7 @@ pub fn TransformSpec::empty(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(EmptyElements, enabled~, selector=selector.to_owned()),
+    make_transform_spec(EmptyElements, enabled, selector=selector.to_owned()),
     hook,
     report,
   )
@@ -68,7 +68,7 @@ pub fn TransformSpec::edit(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(EditElement, enabled~, selector=selector.to_owned(), node_callback={
+    make_transform_spec(EditElement, enabled, selector=selector.to_owned(), node_callback={
       callback,
     }),
     hook,
@@ -86,7 +86,7 @@ pub fn TransformSpec::decide(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(DecideNode, enabled~, selector=selector.to_owned(), decide_callback={
+    make_transform_spec(DecideNode, enabled, selector=selector.to_owned(), decide_callback={
       callback,
     }),
     hook,
@@ -103,7 +103,7 @@ pub fn TransformSpec::edit_document(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(EditDocumentRoot, enabled~, node_callback={ callback, }),
+    make_transform_spec(EditDocumentRoot, enabled, node_callback={ callback, }),
     hook,
     report,
   )
@@ -121,7 +121,7 @@ pub fn TransformSpec::set_attrs(
   with_transform_hooks(
     make_transform_spec(
       SetAttributes,
-      enabled~,
+      enabled,
       selector=selector.to_owned(),
       attr_patch=attrs,
     ),
@@ -142,7 +142,7 @@ pub fn TransformSpec::drop_attrs(
   with_transform_hooks(
     make_transform_spec(
       DropAttributes,
-      enabled~,
+      enabled,
       selector=selector.to_owned(),
       attr_patterns=normalize_transform_strings(patterns),
     ),
@@ -163,7 +163,7 @@ pub fn TransformSpec::allowlist_attrs(
   with_transform_hooks(
     make_transform_spec(
       AllowlistAttributes,
-      enabled~,
+      enabled,
       selector=selector.to_owned(),
       allowed_attrs=normalize_allowed_attrs_map(allowed_attributes),
     ),
@@ -183,12 +183,9 @@ pub fn TransformSpec::edit_attrs(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(
-      EditAttributes,
-      enabled~,
-      selector=selector.to_owned(),
-      attrs_callback={ callback, },
-    ),
+    make_transform_spec(EditAttributes, enabled, selector=selector.to_owned(), attrs_callback={
+      callback,
+    }),
     hook,
     report,
   )
@@ -209,7 +206,7 @@ pub fn TransformSpec::merge_attrs(
   with_transform_hooks(
     make_transform_spec(
       MergeAttributeTokens,
-      enabled~,
+      enabled,
       selector=tag,
       merge_tag=tag,
       merge_attr=attr,
@@ -232,7 +229,7 @@ pub fn TransformSpec::drop_url_attrs(
   with_transform_hooks(
     make_transform_spec(
       DropUrlAttributes,
-      enabled~,
+      enabled,
       selector=selector.to_owned(),
       sanitize_policy=SanitizationPolicy([], url_policy~),
     ),
@@ -253,7 +250,7 @@ pub fn TransformSpec::allow_style_attrs(
   with_transform_hooks(
     make_transform_spec(
       AllowStyleAttributes,
-      enabled~,
+      enabled,
       selector=selector.to_owned(),
       sanitize_policy=SanitizationPolicy(
         [],
@@ -277,8 +274,8 @@ pub fn TransformSpec::sanitize(
 ) -> TransformSpec {
   let spec = match policy {
     Some(policy) =>
-      make_transform_spec(SanitizeTree, enabled~, sanitize_policy=policy)
-    None => make_transform_spec(SanitizeTree, enabled~)
+      make_transform_spec(SanitizeTree, enabled, sanitize_policy=policy)
+    None => make_transform_spec(SanitizeTree, enabled)
   }
   with_transform_hooks(spec, hook, report)
 }
@@ -293,7 +290,7 @@ pub fn TransformSpec::stage(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(StageGroup, enabled~, stage_transforms=transforms),
+    make_transform_spec(StageGroup, enabled, stage_transforms=transforms),
     hook,
     report,
   )
@@ -307,7 +304,7 @@ pub fn TransformSpec::drop_comments(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(DropCommentNodes, enabled~),
+    make_transform_spec(DropCommentNodes, enabled),
     hook,
     report,
   )
@@ -321,7 +318,7 @@ pub fn TransformSpec::drop_doctype(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(DropDoctypeNodes, enabled~),
+    make_transform_spec(DropDoctypeNodes, enabled),
     hook,
     report,
   )
@@ -335,7 +332,7 @@ pub fn TransformSpec::drop_foreign_namespaces(
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
   with_transform_hooks(
-    make_transform_spec(DropForeignNamespaceNodes, enabled~),
+    make_transform_spec(DropForeignNamespaceNodes, enabled),
     hook,
     report,
   )
@@ -357,7 +354,7 @@ pub fn TransformSpec::collapse_whitespace(
   with_transform_hooks(
     make_transform_spec(
       CollapseTextWhitespace,
-      enabled~,
+      enabled,
       skip_tags=skip_tags.unwrap_or(default_collapse_whitespace_skip_tags()),
     ),
     hook,
@@ -377,7 +374,7 @@ pub fn TransformSpec::prune_empty(
   with_transform_hooks(
     make_transform_spec(
       PruneEmptyElements,
-      enabled~,
+      enabled,
       selector=selector.to_owned(),
       strip_whitespace~,
     ),
@@ -400,7 +397,7 @@ pub fn TransformSpec::linkify(
   with_transform_hooks(
     make_transform_spec(
       LinkifyTextNodes,
-      enabled~,
+      enabled,
       linkify_config=config,
       linkify_skip_tags=skip_tags,
     ),

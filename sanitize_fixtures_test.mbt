@@ -134,14 +134,10 @@ fn sanitize_fixture_foreign_namespace_policy(
 ///|
 fn sanitize_fixture_document_output(
   input_html : String,
-  policy? : @html_parser.SanitizationPolicy,
+  policy : @html_parser.SanitizationPolicy,
 ) -> String raise {
   let parsed = @html_parser.parse(input_html, sanitize=false)
-  match policy {
-    Some(policy) =>
-      @html_parser.sanitize_dom(parsed.root, policy~).to_html(pretty=false)
-    None => @html_parser.sanitize_dom(parsed.root).to_html(pretty=false)
-  }
+  @html_parser.sanitize_dom(parsed.root, policy~).to_html(pretty=false)
 }
 
 ///|
@@ -689,7 +685,7 @@ test "sanitizer matches vendored document fixture rows" {
   assert_eq(
     sanitize_fixture_document_output(
       "<!DOCTYPE html><!--x--><p>ok</p><script>alert(1)</script>",
-      policy=@html_parser.default_sanitization_policy(),
+      @html_parser.default_sanitization_policy(),
     ),
     "<p>ok</p>",
   )
@@ -702,8 +698,7 @@ test "sanitizer matches vendored document fixture rows" {
   )
   assert_eq(
     sanitize_fixture_document_output(
-      "<!DOCTYPE html><!--x--><p>ok</p>",
-      policy=keep_policy,
+      "<!DOCTYPE html><!--x--><p>ok</p>", keep_policy,
     ),
     "<!DOCTYPE html><!--x--><p>ok</p>",
   )

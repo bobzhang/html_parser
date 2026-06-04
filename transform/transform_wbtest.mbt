@@ -26,25 +26,31 @@ test "transform private helpers keep defensive no-op behavior" {
     ),
   )
   assert_true(
-    decide_transform_action(@dom.element("p"), make_transform_spec(DecideNode))
+    decide_transform_action(
+      @dom.element("p"),
+      make_transform_spec(DecideNode, true),
+    )
     is Keep,
   )
   apply_edit_document_transform(
     @dom.fragment(),
-    make_transform_spec(EditDocumentRoot),
+    make_transform_spec(EditDocumentRoot, true),
   )
-  apply_edit_transform(@dom.element("p"), make_transform_spec(EditElement))
+  apply_edit_transform(
+    @dom.element("p"),
+    make_transform_spec(EditElement, true),
+  )
   assert_eq(
     apply_edit_attrs_transform(
       @dom.element("p"),
-      make_transform_spec(EditAttributes),
+      make_transform_spec(EditAttributes, true),
     ),
     false,
   )
   assert_eq(
     apply_set_attrs_transform(
       @dom.element("p"),
-      make_transform_spec(SetAttributes),
+      make_transform_spec(SetAttributes, true),
     ),
     false,
   )
@@ -54,7 +60,7 @@ test "transform private helpers keep defensive no-op behavior" {
   let unmatched_kind = @dom.fragment(children=[@dom.element("p")])
   transform_children(
     unmatched_kind,
-    make_transform_spec(SanitizeTree, selector="p"),
+    make_transform_spec(SanitizeTree, true, selector="p"),
     SelectorLimits(),
   )
   assert_eq(unmatched_kind.children.length(), 1)

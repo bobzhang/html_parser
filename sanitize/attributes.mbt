@@ -34,7 +34,7 @@ fn sanitize_attribute_value(
   tag_name : String,
   attr_name : String,
   value : String,
-  effectively_foreign? : Bool = false,
+  effectively_foreign : Bool,
 ) -> String? {
   if effectively_foreign &&
     is_foreign_url_function_like_attr(attr_name) &&
@@ -72,11 +72,7 @@ pub fn SanitizationPolicy::sanitize_attribute_value(
   effectively_foreign? : Bool = false,
 ) -> String? {
   sanitize_attribute_value(
-    self,
-    tag_name,
-    attr_name,
-    value,
-    effectively_foreign~,
+    self, tag_name, attr_name, value, effectively_foreign,
   )
 }
 
@@ -302,11 +298,7 @@ fn sanitize_element_attributes(
           let value = raw_value
           match
             sanitize_attribute_value(
-              policy,
-              tag_name,
-              attr_name,
-              value,
-              effectively_foreign~,
+              policy, tag_name, attr_name, value, effectively_foreign,
             ) {
             Some(cleaned) =>
               if cleaned != raw_value || attr_name != key {
