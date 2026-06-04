@@ -148,15 +148,17 @@ test "limited selector context fails closed on malformed branches" {
     is None,
     true,
   )
-  let depth_result = try? matches_complex_selector_with_context(
-    second,
-    "p",
-    SelectorMatchContext(SelectorLimits(max_match_depth=0)),
-    1,
-  )
-  match depth_result {
-    Err(SelectorError(message)) =>
-      assert_eq(message, "Selector nesting is too deep")
+  try
+    matches_complex_selector_with_context(
+      second,
+      "p",
+      SelectorMatchContext(SelectorLimits(max_match_depth=0)),
+      1,
+    )
+  catch {
+    SelectorError(message) => assert_eq(message, "Selector nesting is too deep")
+    _ => fail("expected selector match depth error")
+  } noraise {
     _ => fail("expected selector match depth error")
   }
 }
