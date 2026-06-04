@@ -13,6 +13,11 @@ fn escape_text(value : StringView) -> String {
 }
 
 ///|
+/// Escape text for a quoted HTML attribute value.
+///
+/// This always escapes `&`, `<`, and `>`. It also escapes only the delimiter
+/// selected by `quote`, so callers can choose the shorter safe quote style when
+/// serializing attributes.
 pub fn escape_attr_value(value : StringView, quote : Char) -> String {
   let out = StringBuilder(size_hint=value.length())
   for ch in value {
@@ -29,6 +34,11 @@ pub fn escape_attr_value(value : StringView, quote : Char) -> String {
 }
 
 ///|
+/// Escape text for a JavaScript string literal using `quote` as the delimiter.
+///
+/// The result is not wrapped in quotes. It escapes backslashes, line breaks,
+/// the selected quote character, `<`/`>`, and Unicode line separators so HTML
+/// embedded in script contexts cannot terminate the string or the script tag.
 pub fn escape_js_string(value : StringView, quote : Char) -> String {
   let out = StringBuilder(size_hint=value.length())
   for ch in value {
@@ -52,6 +62,11 @@ pub fn escape_js_string(value : StringView, quote : Char) -> String {
 }
 
 ///|
+/// Percent-encode a URL-ish string using UTF-8 bytes.
+///
+/// ASCII letters, digits, and common URL delimiters such as `/`, `?`, `#`, and
+/// `&` are left readable; every other byte is emitted as an uppercase `%HH`
+/// triplet.
 pub fn percent_encode_url(value : StringView) -> String {
   let bytes = @utf8.encode(value)
   let out = StringBuilder(size_hint=bytes.length())
