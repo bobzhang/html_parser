@@ -14,9 +14,9 @@ test "public parser error modes and document scaffolding stay stable" {
 
   let loose = @html_parser.parse("<p>x</p>")
   assert_eq(loose.errors.length(), 0)
-  let strict_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = try? @html_parser.parse(
-    "<p>x</p>",
-    strict=true,
+  let strict_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = html_result(fn() raise @html_parser.HtmlError {
+      @html_parser.parse("<p>x</p>", strict=true)
+    },
   )
   match strict_result {
     Err(StrictMode(error)) =>
@@ -105,17 +105,17 @@ test "parser treats image start tags as img elements" {
 
 ///|
 test "strict mode raises on first parse error" {
-  let fragment_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = try? @html_parser.parse_fragment(
-    "<p>open</span>",
-    strict=true,
+  let fragment_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = html_result(fn() raise @html_parser.HtmlError {
+      @html_parser.parse_fragment("<p>open</span>", strict=true)
+    },
   )
   match fragment_result {
     Err(StrictMode(error)) => assert_eq(error.code, "unexpected-end-tag")
     _ => fail("expected strict fragment parse to raise StrictMode")
   }
-  let document_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = try? @html_parser.parse(
-    "<p>x",
-    strict=true,
+  let document_result : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = html_result(fn() raise @html_parser.HtmlError {
+      @html_parser.parse("<p>x", strict=true)
+    },
   )
   match document_result {
     Err(StrictMode(error)) => {
@@ -165,9 +165,12 @@ test "parser error collection is opt in and keeps line columns" {
     }
   }
   assert_true(saw_multiline_null)
-  let strict_valid : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = try? @html_parser.parse(
-    "<!DOCTYPE html><html><head><title>Test</title></head><body></body></html>",
-    strict=true,
+  let strict_valid : Result[@html_parser.ParsedHtml, @html_parser.HtmlError] = html_result(fn() raise @html_parser.HtmlError {
+      @html_parser.parse(
+        "<!DOCTYPE html><html><head><title>Test</title></head><body></body></html>",
+        strict=true,
+      )
+    },
   )
   match strict_valid {
     Ok(doc) => assert_eq(doc.errors.length(), 0)

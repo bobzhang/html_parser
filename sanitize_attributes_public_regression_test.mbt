@@ -45,10 +45,9 @@ test "sanitize_dom strips invisible unicode from text and attributes" {
     "<p title='a\u{200B}b'>x</p>",
     sanitize=false,
   )
-  let result = try? @html_parser.sanitize_dom(
-    raise_fragment.root,
-    policy=raise_policy,
-  )
+  let result = html_result(fn() raise @html_parser.HtmlError {
+    @html_parser.sanitize_dom(raise_fragment.root, policy=raise_policy)
+  })
   match result {
     Err(UnsafeHtml(message)) =>
       assert_eq(message, "Stripped invisible Unicode from attribute(s): title")
