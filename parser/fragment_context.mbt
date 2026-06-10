@@ -61,7 +61,7 @@ fn Parser::parse_html_fragment_context(self : Parser) -> Unit {
   self.root.append_child(html)
   self.stack.push(html)
   self.parse_all()
-  scaffold_existing_html_element(html, self.foster_parented_texts, [])
+  scaffold_existing_html_element(html, self.foster_parented_texts, [], [])
   unwrap_fragment_context_element(self.root, html)
   self.fragment_context_html_root = None
   self.fragment_context_html_after_body = false

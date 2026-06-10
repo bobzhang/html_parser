@@ -65,6 +65,7 @@ fn Parser::handle_document_after_body_html_end_tag(
     return false
   }
   self.error_at("unexpected-token-after-body", start)
+  self.document_after_html = true
   true
 }
 
@@ -95,10 +96,16 @@ fn Parser::handle_document_body_or_html_end_tag(
     }
     self.error_at("unexpected-end-tag", pos)
     self.document_after_body = true
+    if name == "html" {
+      self.document_after_html = true
+    }
     return true
   }
   self.pop_until(name, pos)
   self.document_after_body = true
+  if name == "html" {
+    self.document_after_html = true
+  }
   true
 }
 
@@ -131,6 +138,9 @@ fn Parser::handle_before_html_end_tag(
       // the document start ends in the after-body modes; later tokens
       // reprocess using the in-body rules.
       self.document_after_body = true
+      if name == "html" {
+        self.document_after_html = true
+      }
       true
     }
     "head" => true
@@ -162,4 +172,28 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
     (current.kind == Element && current.name == "html") {
     self.forced_body_nodes.push(node)
   }
+}
+
+///|
+/// Routes a comment parsed after the body (or after </html>) to its
+/// spec-mandated insertion point: after-body comments become the last
+/// child of the html element, after-after-body comments attach to the
+/// document itself. Returns false when normal insertion applies.
+fn Parser::append_after_body_comment(self : Parser, node : @dom.Node) -> Bool {
+  if self.is_fragment_parser() ||
+    !self.document_after_body ||
+    self.has_open_element("template") {
+    return false
+  }
+  if self.document_after_html {
+    self.root.append_child(node)
+    self.after_html_comments.push(node)
+    return true
+  }
+  match document_html_element(self.root) {
+    Some(html) => html.append_child(node)
+    None => self.root.append_child(node)
+  }
+  self.after_body_comments.push(node)
+  true
 }

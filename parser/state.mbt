@@ -39,6 +39,9 @@ priv struct Parser {
   mut pending_table_view_implied_end_tag : Bool
   foster_parented_texts : Array[@dom.Node]
   forced_body_nodes : Array[@dom.Node]
+  mut document_after_html : Bool
+  after_body_comments : Array[@dom.Node]
+  after_html_comments : Array[@dom.Node]
   mut pending_text_node : @dom.Node?
   mut pending_text_builder : StringBuilder
   mut pending_text_is_whitespace : Bool
@@ -104,6 +107,9 @@ fn Parser::Parser(
     pending_table_view_implied_end_tag: false,
     foster_parented_texts: [],
     forced_body_nodes: [],
+    document_after_html: false,
+    after_body_comments: [],
+    after_html_comments: [],
     pending_text_node: None,
     pending_text_builder: StringBuilder(),
     pending_text_is_whitespace: true,

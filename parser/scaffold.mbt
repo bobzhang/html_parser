@@ -35,12 +35,14 @@ fn scaffold_document(
   root : @dom.Node,
   foster_parented_texts : Array[@dom.Node],
   forced_body_nodes : Array[@dom.Node],
+  after_body_comments : Array[@dom.Node],
+  after_html_comments : Array[@dom.Node],
 ) -> Unit {
   match document_html_element(root) {
     Some(html) => {
       absorb_root_html_siblings(root, html, forced_body_nodes)
       scaffold_existing_html_element(
-        html, foster_parented_texts, forced_body_nodes,
+        html, foster_parented_texts, forced_body_nodes, after_body_comments,
       )
       return
     }
@@ -80,6 +82,14 @@ fn scaffold_document(
       body_started = true
     } else if frameset is Some(_) && body is None {
       after_frameset_children.push(child)
+    } else if child.kind == Comment &&
+      (
+        nodes_contain(after_body_comments, child) ||
+        nodes_contain(after_html_comments, child)
+      ) {
+      // Routed at parse time: re-attached after the body (or after the
+      // html element) during assembly below.
+      ()
     } else if child.kind == Comment && !body_started && head is Some(_) {
       between_head_body_children.push(child)
     } else if child.kind == Comment && !body_started && head_children.is_empty() {
@@ -151,7 +161,9 @@ fn scaffold_document(
       html.append_child(body_node)
     }
   }
+  append_children_to(html, after_body_comments)
   root.append_child(html)
+  append_children_to(root, after_html_comments)
 }
 
 ///|
