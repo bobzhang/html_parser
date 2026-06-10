@@ -47,15 +47,6 @@ quirks01.dat:1
 quirks01.dat:2
 quirks01.dat:3
 template.dat:6
-template.dat:8
-template.dat:9
-template.dat:11
-template.dat:12
-template.dat:13
-template.dat:14
-template.dat:15
-template.dat:16
-template.dat:17
 template.dat:26
 template.dat:27
 template.dat:28

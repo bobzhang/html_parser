@@ -8,7 +8,7 @@ fn is_table_start_foster_target(name : StringView) -> Bool {
 
 ///|
 fn Parser::table_start_foster_mode(self : Parser, name : StringView) -> Int {
-  if name == "style" || name == "script" {
+  if name == "style" || name == "script" || name == "template" {
     return 0
   }
   if is_table_internal_start_name(name) {
