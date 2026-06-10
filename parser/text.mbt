@@ -169,7 +169,10 @@ fn Parser::merge_crosses_body_boundary(
   if !is_whitespace_text_node(last) || self.node_is_after_body(last) {
     return false
   }
-  text_has_non_ascii_whitespace(data)
+  // After the body has closed, even whitespace belongs to the body (the
+  // in-body rules reprocess it), so it must not merge into an unmarked
+  // pre-body run either.
+  text_has_non_ascii_whitespace(data) || self.document_after_body
 }
 
 ///|
