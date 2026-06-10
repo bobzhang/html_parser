@@ -104,9 +104,69 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     decoded
   }
   self.reconstruct_active_formatting_elements()
+  let parent = self.current_node()
+  if self.merge_into_trailing_text(parent, data) {
+    return
+  }
   let text_node = self.text_at(data, text_start)
-  self.current_node().append_child(text_node)
+  parent.append_child(text_node)
   self.mark_after_body_node(text_node)
+}
+
+///|
+/// Appends character data to an existing trailing text node, mirroring the
+/// spec's "insert the characters into that text node" step. Keeps the
+/// original node's source origin and never touches sanitizer escape text.
+fn Parser::merge_into_trailing_text(
+  self : Parser,
+  parent : @dom.Node,
+  data : String,
+) -> Bool {
+  match parent.children.last() {
+    Some(last) if last.kind == Text && !last.sanitize_escape_only => {
+      let merged = @dom.text(last.data + data)
+      merged.parsed_from_source = last.parsed_from_source
+      merged.origin_offset = last.origin_offset
+      merged.origin_line = last.origin_line
+      merged.origin_col = last.origin_col
+      ignore(parent.children.pop())
+      parent.append_child(merged)
+      if self.remove_after_body_node(last) {
+        self.after_body_nodes.push(merged)
+      }
+      if self.remove_foster_parented_text(last) {
+        self.foster_parented_texts.push(merged)
+      }
+      true
+    }
+    _ => false
+  }
+}
+
+///|
+fn Parser::remove_after_body_node(self : Parser, node : @dom.Node) -> Bool {
+  let mut index = 0
+  while index < self.after_body_nodes.length() {
+    if physical_equal(self.after_body_nodes[index], node) {
+      ignore(self.after_body_nodes.remove(index))
+      return true
+    }
+    index += 1
+  }
+  false
+}
+
+///|
+fn Parser::remove_foster_parented_text(self : Parser, node : @dom.Node) -> Bool {
+  let mut index = 0
+  while index < self.foster_parented_texts.length() {
+    if physical_equal(self.foster_parented_texts[index], node) {
+      ignore(self.foster_parented_texts.remove(index))
+      return true
+    }
+    index += 1
+  }
+  false
 }
 
 ///|
