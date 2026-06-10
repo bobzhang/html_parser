@@ -176,10 +176,7 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
     // again. Whitespace is processed without leaving after-body, and
     // frameset documents never reprocess in body (after-after-frameset
     // accepts noframes/whitespace/comments and ignores everything else).
-    let frameset_document = self.after_frameset ||
-      self.detached_frameset_mode ||
-      self.has_open_element("frameset")
-    if !frameset_document &&
+    if !self.in_frameset_document() &&
       (
         node.kind == Element ||
         (node.kind == Text && text_has_non_ascii_whitespace(node.data))
@@ -212,4 +209,28 @@ fn Parser::append_after_body_comment(self : Parser, node : @dom.Node) -> Bool {
   }
   self.after_body_comments.push(node)
   true
+}
+
+///|
+fn Parser::in_frameset_document(self : Parser) -> Bool {
+  self.after_frameset ||
+  self.detached_frameset_mode ||
+  self.has_open_element("frameset")
+}
+
+///|
+/// An end tag other than </body>/</html> seen in the after-body modes is
+/// the "anything else" case: switch back to in-body before reprocessing,
+/// so later comments use normal insertion again. Frameset documents never
+/// reprocess in body.
+fn Parser::leave_after_body_for_end_tag(self : Parser, name : String) -> Unit {
+  if !self.document_after_body ||
+    self.is_fragment_parser() ||
+    self.in_frameset_document() ||
+    name == "body" ||
+    name == "html" {
+    return
+  }
+  self.document_after_body = false
+  self.document_after_html = false
 }
