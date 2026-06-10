@@ -31,6 +31,21 @@ fn Parser::handle_parsed_start_tag(
     return
   }
   if !self.is_fragment_parser() &&
+    name == "body" &&
+    document_children_contain_body_content(self.root) {
+    // A late <body> start tag is a parse error: it is ignored, its
+    // attributes merge into the existing body without overwriting, and
+    // frameset-ok becomes not ok.
+    self.error_at("unexpected-start-tag", start)
+    self.frameset_ok = false
+    for attr_name, attr_value in attrs {
+      if !self.pending_document_body_attrs.contains(attr_name) {
+        self.pending_document_body_attrs[attr_name] = attr_value
+      }
+    }
+    return
+  }
+  if !self.is_fragment_parser() &&
     !self.in_frameset_document() &&
     name != "html" &&
     name != "head" &&

@@ -290,3 +290,26 @@ fn document_children_contain_body_content(root : @dom.Node) -> Bool {
   }
   false
 }
+
+///|
+/// Merges attributes from ignored late <body> start tags into the
+/// scaffolded body element, without overwriting existing attributes.
+fn Parser::apply_pending_document_body_attrs(self : Parser) -> Unit {
+  if self.pending_document_body_attrs.is_empty() {
+    return
+  }
+  match document_html_element(self.root) {
+    Some(html) =>
+      for child in html.children {
+        if child.kind == Element && child.name == "body" {
+          for attr_name, attr_value in self.pending_document_body_attrs {
+            if !child.attrs.contains(attr_name) {
+              child.attrs[attr_name] = attr_value
+            }
+          }
+          return
+        }
+      }
+    None => ()
+  }
+}

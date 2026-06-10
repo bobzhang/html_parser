@@ -36,6 +36,7 @@ priv struct Parser {
   mut duplicate_head_element : @dom.Node?
   mut repeated_document_html_shell : Bool
   pending_document_html_attrs : Map[String, String?]
+  pending_document_body_attrs : Map[String, String?]
   mut pending_table_view_implied_end_tag : Bool
   foster_parented_texts : Array[@dom.Node]
   forced_body_nodes : Array[@dom.Node]
@@ -106,6 +107,7 @@ fn Parser::Parser(
     duplicate_head_element: None,
     repeated_document_html_shell: false,
     pending_document_html_attrs: {},
+    pending_document_body_attrs: {},
     pending_table_view_implied_end_tag: false,
     foster_parented_texts: [],
     forced_body_nodes: [],

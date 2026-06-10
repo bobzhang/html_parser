@@ -24,7 +24,6 @@ tests15.dat:11
 tests16.dat:88
 tests16.dat:185
 tests18.dat:4
-tests19.dat:80
 tests19.dat:82
 tests19.dat:89
 tests19.dat:90
