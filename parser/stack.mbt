@@ -9,6 +9,13 @@ fn Parser::pop_until(
     self.error_at("unexpected-end-tag", pos)
     return
   }
+  if !is_special_element_name(name) && self.special_blocks_end_tag(name) {
+    // Names with dedicated end-tag rules (div, ul, ...) close through
+    // their scope; only the any-other-end-tag walk stops at a special
+    // element.
+    self.error_at("unexpected-end-tag", pos)
+    return
+  }
   while self.stack.length() > 1 {
     match self.stack.last() {
       Some(node) if node.kind == Element &&
@@ -85,6 +92,100 @@ fn Parser::end_tag_target_visible(self : Parser, name : String) -> Bool {
     }
   }
   false
+}
+
+///|
+/// The spec's "special" element category (HTML namespace), used by the
+/// any-other-end-tag rule: walking the open-elements stack, a special
+/// element encountered before the target means the end tag is ignored.
+fn is_special_element_name(name : StringView) -> Bool {
+  match name {
+    "address"
+    | "applet"
+    | "area"
+    | "article"
+    | "aside"
+    | "base"
+    | "basefont"
+    | "bgsound"
+    | "blockquote"
+    | "body"
+    | "br"
+    | "button"
+    | "caption"
+    | "center"
+    | "col"
+    | "colgroup"
+    | "dd"
+    | "details"
+    | "dialog"
+    | "dir"
+    | "div"
+    | "dl"
+    | "dt"
+    | "embed"
+    | "fieldset"
+    | "figcaption"
+    | "figure"
+    | "footer"
+    | "form"
+    | "frame"
+    | "frameset"
+    | "h1"
+    | "h2"
+    | "h3"
+    | "h4"
+    | "h5"
+    | "h6"
+    | "head"
+    | "header"
+    | "hgroup"
+    | "hr"
+    | "html"
+    | "iframe"
+    | "img"
+    | "input"
+    | "keygen"
+    | "li"
+    | "link"
+    | "listing"
+    | "main"
+    | "marquee"
+    | "menu"
+    | "menuitem"
+    | "meta"
+    | "nav"
+    | "noembed"
+    | "noframes"
+    | "noscript"
+    | "object"
+    | "ol"
+    | "p"
+    | "param"
+    | "plaintext"
+    | "pre"
+    | "script"
+    | "search"
+    | "section"
+    | "select"
+    | "source"
+    | "style"
+    | "summary"
+    | "table"
+    | "tbody"
+    | "td"
+    | "template"
+    | "textarea"
+    | "tfoot"
+    | "th"
+    | "thead"
+    | "title"
+    | "tr"
+    | "track"
+    | "ul"
+    | "wbr" => true
+    _ => false
+  }
 }
 
 ///|
@@ -223,6 +324,29 @@ fn Parser::end_tag_target_visible_for_pop(self : Parser, name : String) -> Bool 
       node.name == "template" &&
       (node.ns is None || node.ns is Some("html")) {
       return false
+    }
+  }
+  false
+}
+
+///|
+/// Implements the stack walk of the spec's any-other-end-tag rule: when a
+/// special element sits above the matching element, the end tag is a parse
+/// error and the token is ignored.
+fn Parser::special_blocks_end_tag(self : Parser, name : String) -> Bool {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind != Element {
+      continue
+    }
+    if names_match_end_tag(node, name) {
+      return false
+    }
+    if (node.ns is None || node.ns is Some("html")) &&
+      is_special_element_name(node.name) {
+      return true
     }
   }
   false
