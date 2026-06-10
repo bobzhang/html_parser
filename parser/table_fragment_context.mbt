@@ -1,4 +1,32 @@
 ///|
+/// True when the top of the stack is the given synthetic fragment-context
+/// node, allowing only foreign (SVG/MathML) elements above it. At a foreign
+/// integration point the HTML insertion mode is still the fragment
+/// context's table mode, so table-structure start tags that would be
+/// ignored at the context boundary must also be ignored there. Any open
+/// HTML element above the boundary (a real cell, table, or block) routes
+/// the token to the regular table machinery instead.
+fn Parser::stack_at_fragment_boundary(
+  self : Parser,
+  boundary : @dom.Node,
+) -> Bool {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if physical_equal(node, boundary) {
+      return true
+    }
+    if node.kind == Element &&
+      (node.ns is Some("svg") || node.ns is Some("math")) {
+      continue
+    }
+    return false
+  }
+  false
+}
+
+///|
 fn Parser::handle_fragment_context_table_start_tag(
   self : Parser,
   name : String,
@@ -39,14 +67,13 @@ fn Parser::handle_fragment_context_table_section_start_tag(
     return false
   }
   match self.fragment_context_table_section {
-    Some(section) => {
-      let current = self.current_node()
-      if physical_equal(current, section) {
+    Some(section) =>
+      if self.stack_at_fragment_boundary(section) {
         self.error_at("unexpected-start-tag", start)
-        return true
+        true
+      } else {
+        false
       }
-      false
-    }
     None => false
   }
 }
@@ -76,14 +103,13 @@ fn Parser::handle_fragment_context_table_row_start_tag(
     return false
   }
   match self.fragment_context_table_row {
-    Some(row) => {
-      let current = self.current_node()
-      if physical_equal(current, row) {
+    Some(row) =>
+      if self.stack_at_fragment_boundary(row) {
         self.error_at("unexpected-start-tag-implies-end-tag", start)
-        return true
+        true
+      } else {
+        false
       }
-      false
-    }
     None => false
   }
 }
@@ -114,14 +140,13 @@ fn Parser::handle_fragment_context_table_cell_start_tag(
     return false
   }
   match self.fragment_context_table_cell {
-    Some(cell) => {
-      let current = self.current_node()
-      if physical_equal(current, cell) {
+    Some(cell) =>
+      if self.stack_at_fragment_boundary(cell) {
         self.error_at("unexpected-start-tag-in-cell-fragment", start)
-        return true
+        true
+      } else {
+        false
       }
-      false
-    }
     None => false
   }
 }
