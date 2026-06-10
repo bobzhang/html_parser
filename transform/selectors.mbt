@@ -16,6 +16,10 @@ fn transform_children(
   transform : TransformSpec,
   limits : @sel.SelectorLimits,
 ) -> Unit raise @core.HtmlError {
+  match parent.template_contents {
+    Some(contents) => transform_children(contents, transform, limits)
+    None => ()
+  }
   let mut index = 0
   while index < parent.children.length() {
     let child = parent.children[index]

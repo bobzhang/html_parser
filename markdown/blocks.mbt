@@ -1,4 +1,14 @@
 ///|
+/// Children to render: an HTML template's children live in its contents
+/// fragment.
+fn markdown_children(node : @dom.Node) -> Array[@dom.Node] {
+  match node.template_contents {
+    Some(contents) => contents.children
+    None => node.children
+  }
+}
+
+///|
 fn markdown_walk_pre(node : @dom.Node, builder : MarkdownBuilder) -> Unit {
   let code = markdown_collect_text(node)
   let body = markdown_code_block_body(code)
@@ -27,7 +37,7 @@ fn markdown_walk_list(
   }
   let mut index = 1
   let mut rendered = 0
-  for child in node.children {
+  for child in markdown_children(node) {
     if child.kind == Element && child.name.to_lower() == "li" {
       if rendered > 0 {
         builder.newline(1)

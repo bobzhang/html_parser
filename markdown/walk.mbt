@@ -5,7 +5,7 @@ fn markdown_render_children(
   html_passthrough : Bool,
   list_depth : Int,
 ) -> Unit raise @core.HtmlError {
-  for child in node.children {
+  for child in markdown_children(node) {
     markdown_walk(child, builder, html_passthrough, list_depth)
   }
 }

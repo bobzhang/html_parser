@@ -43,6 +43,11 @@ fn collapse_whitespace_children(
   skip : Bool,
   transform : TransformSpec,
 ) -> Unit {
+  match parent.template_contents {
+    Some(contents) =>
+      collapse_whitespace_children(contents, skip_tags, skip, transform)
+    None => ()
+  }
   let mut index = 0
   while index < parent.children.length() {
     let child = parent.children[index]

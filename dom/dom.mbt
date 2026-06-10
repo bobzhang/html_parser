@@ -28,6 +28,7 @@ fn make_node(
     origin_col: None,
     parent: None,
     children: [],
+    template_contents: None,
   }
   for child in children {
     node.append_child(child)
@@ -132,6 +133,13 @@ pub fn doctype(
 /// The child is detached from any existing parent first. Non-container nodes
 /// and cycle-producing appends are ignored.
 pub fn Node::append_child(self : Node, child : Node) -> Unit {
+  match self.template_insertion_target() {
+    Some(contents) => {
+      contents.append_child(child)
+      return
+    }
+    None => ()
+  }
   if !node_accepts_children(self) || node_is_self_or_ancestor(child, self) {
     return
   }
@@ -141,7 +149,37 @@ pub fn Node::append_child(self : Node, child : Node) -> Unit {
 }
 
 ///|
+/// HTML template elements keep their children in a separate contents
+/// fragment, mirroring the spec's template contents document fragment.
+/// Returns the fragment (creating it on first use) when this node is an
+/// HTML-namespace template element.
+fn Node::template_insertion_target(self : Node) -> Node? {
+  if self.kind == Element &&
+    self.name == "template" &&
+    (self.ns is None || self.ns is Some("html")) {
+    match self.template_contents {
+      Some(contents) => Some(contents)
+      None => {
+        let contents = fragment()
+        contents.parent = Some(self)
+        self.template_contents = Some(contents)
+        Some(contents)
+      }
+    }
+  } else {
+    None
+  }
+}
+
+///|
 fn Node::insert_child_before(self : Node, child : Node, before : Node) -> Unit {
+  match self.template_insertion_target() {
+    Some(contents) => {
+      contents.insert_child_before(child, before)
+      return
+    }
+    None => ()
+  }
   if !node_accepts_children(self) || node_is_self_or_ancestor(child, self) {
     return
   }
@@ -197,7 +235,15 @@ fn node_is_self_or_ancestor(node : Node, descendant : Node) -> Bool {
 fn detach_from_parent(node : Node) -> Unit {
   match node.parent {
     Some(parent) => {
-      parent.remove_child(node)
+      if parent.template_contents is Some(contents) &&
+        physical_equal(contents, node) {
+        // Detaching a template's contents fragment (for example when a
+        // caller appends the fragment elsewhere) must release the
+        // template's reference, or both trees would share the children.
+        parent.template_contents = None
+      } else {
+        parent.remove_child(node)
+      }
       node.parent = None
     }
     None => ()
@@ -305,6 +351,14 @@ pub fn Node::data(self : Node) -> String {
 }
 
 ///|
+/// An HTML template element's contents document fragment, when the
+/// template has one. Template children live in this fragment rather than
+/// in the regular child list, mirroring the HTML template contents model.
+pub fn Node::template_content(self : Node) -> Node? {
+  self.template_contents
+}
+
+///|
 /// Return a copy of this node's child list.
 ///
 /// The returned array is detached from the node, but the child nodes themselves
@@ -381,6 +435,15 @@ pub fn Node::clone_node(
     let stack : Array[(Node, Node)] = [(self, cloned)]
     while !stack.is_empty() {
       let (source, target) = stack.pop().unwrap()
+      match source.template_contents {
+        Some(contents) =>
+          for child in contents.children {
+            let child_clone = child.clone_node(deep=false)
+            target.append_child(child_clone)
+            stack.push((child, child_clone))
+          }
+        None => ()
+      }
       for child in source.children {
         let child_clone = child.clone_node(deep=false)
         target.append_child(child_clone)
@@ -404,9 +467,34 @@ fn append_node_text(node : Node, out : StringBuilder) -> Unit {
   match node.kind {
     Text if !node.sanitize_escape_only => out.write_string(node.data)
     Text => ()
-    _ =>
+    _ => {
+      match node.template_contents {
+        Some(contents) => append_node_text(contents, out)
+        None => ()
+      }
       for child in node.children {
         append_node_text(child, out)
       }
+    }
+  }
+}
+
+///|
+/// Move an HTML template's contents back into its regular child list, for
+/// operations that hoist or escape an element's children (sanitizer unwrap
+/// and escape handling, transform unwrap). Bypasses `append_child`, which
+/// would redirect into the contents fragment again.
+pub fn Node::flatten_template_contents(self : Node) -> Unit {
+  match self.template_contents {
+    Some(contents) => {
+      for grandchild in contents.children {
+        grandchild.parent = Some(self)
+        self.children.push(grandchild)
+      }
+      contents.children.clear()
+      contents.parent = None
+      self.template_contents = None
+    }
+    None => ()
   }
 }

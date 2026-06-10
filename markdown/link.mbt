@@ -120,7 +120,7 @@ fn markdown_render_link_children_to_string(
   html_passthrough : Bool,
 ) -> String raise @core.HtmlError {
   let builder = MarkdownBuilder()
-  for child in node.children {
+  for child in markdown_children(node) {
     markdown_walk_link_text(child, builder, html_passthrough)
   }
   builder.finish()
@@ -134,7 +134,7 @@ fn markdown_link_text_marker(
   html_passthrough : Bool,
 ) -> Unit raise @core.HtmlError {
   let inner = MarkdownBuilder()
-  for child in node.children {
+  for child in markdown_children(node) {
     markdown_walk_link_text(child, inner, html_passthrough)
   }
   let content = inner.finish()
@@ -151,7 +151,7 @@ fn markdown_walk_link_list(
   builder : MarkdownBuilder,
   html_passthrough : Bool,
 ) -> Unit raise @core.HtmlError {
-  for child in node.children {
+  for child in markdown_children(node) {
     if child.kind == Element && child.name.to_lower() == "li" {
       builder.raw(" ")
       for grandchild in child.children {
@@ -174,7 +174,7 @@ fn markdown_walk_link_text(
       }
     Comment | Doctype => ()
     Document | Fragment =>
-      for child in node.children {
+      for child in markdown_children(node) {
         markdown_walk_link_text(child, builder, html_passthrough)
       }
     Element => {
@@ -182,18 +182,18 @@ fn markdown_walk_link_text(
       if markdown_should_skip_head_or_title(node, tag) || tag == "hr" {
         ()
       } else if markdown_heading_level(tag) > 0 {
-        for child in node.children {
+        for child in markdown_children(node) {
           markdown_walk_link_text(child, builder, html_passthrough)
         }
       } else {
         match tag {
           "br" => builder.text(" ")
           "html" | "body" | "span" | "blockquote" =>
-            for child in node.children {
+            for child in markdown_children(node) {
               markdown_walk_link_text(child, builder, html_passthrough)
             }
           "p" => {
-            for child in node.children {
+            for child in markdown_children(node) {
               markdown_walk_link_text(child, builder, html_passthrough)
             }
             builder.text(" ")
@@ -214,12 +214,12 @@ fn markdown_walk_link_text(
           "img" => builder.raw(@ser.to_html(node, pretty=false))
           _ =>
             if markdown_block_container_name(tag) {
-              for child in node.children {
+              for child in markdown_children(node) {
                 markdown_walk_link_text(child, builder, html_passthrough)
               }
               builder.text(" ")
             } else {
-              for child in node.children {
+              for child in markdown_children(node) {
                 markdown_walk_link_text(child, builder, html_passthrough)
               }
             }

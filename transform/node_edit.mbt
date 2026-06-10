@@ -1,6 +1,19 @@
 ///|
 fn empty_transform_node(node : @dom.Node) -> Bool {
-  let had_children = !node.children.is_empty()
+  let had_contents = match node.template_contents {
+    Some(contents) => {
+      let non_empty = !contents.children.is_empty()
+      for child in contents.children {
+        child.parent = None
+      }
+      contents.children.clear()
+      contents.parent = None
+      node.template_contents = None
+      non_empty
+    }
+    None => false
+  }
+  let had_children = had_contents || !node.children.is_empty()
   while !node.children.is_empty() {
     let child = node.children[0]
     ignore(node.children.remove(0))
@@ -40,6 +53,7 @@ fn apply_edit_transform(node : @dom.Node, transform : TransformSpec) -> Unit {
 
 ///|
 fn escape_transform_child_at(parent : @dom.Node, index : Int) -> Int {
+  parent.children[index].flatten_template_contents()
   let child = parent.children[index]
   let start_tag = @seri.serialize_start_tag_unchecked(child, '"')
   let end_tag = transform_escaped_end_tag_for(child)

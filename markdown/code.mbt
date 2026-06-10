@@ -39,7 +39,7 @@ fn markdown_collect_text_into(node : @dom.Node, parts : Array[String]) -> Unit {
     Text => if !node.sanitize_escape_only { parts.push(node.data) }
     Comment | Doctype => ()
     _ =>
-      for child in node.children {
+      for child in markdown_children(node) {
         markdown_collect_text_into(child, parts)
       }
   }

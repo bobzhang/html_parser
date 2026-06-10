@@ -1,4 +1,14 @@
 ///|
+/// Children to serialize: an HTML template's children live in its contents
+/// fragment; every other node serializes its regular children.
+fn serialized_children(node : @dom.Node) -> Array[@dom.Node] {
+  match node.template_contents {
+    Some(contents) => contents.children
+    None => node.children
+  }
+}
+
+///|
 fn node_to_html_compact(
   node : @dom.Node,
   quote : Char,
@@ -7,7 +17,7 @@ fn node_to_html_compact(
     Text if node.sanitize_escape_only => ""
     Document | Fragment => {
       let out = StringBuilder()
-      for child in node.children {
+      for child in serialized_children(node) {
         out.write_string(node_to_html_compact(child, quote))
       }
       out.to_string()
@@ -50,7 +60,7 @@ fn node_to_html_compact(
       let out = StringBuilder()
       out.write_string(serialize_start_tag(node, quote))
       if !is_void_element(node.name) {
-        for child in node.children {
+        for child in serialized_children(node) {
           out.write_string(node_to_html_compact(child, quote))
         }
         out <+ "</\{node.name}>"

@@ -88,10 +88,12 @@ fn sanitize_container_children(
           match policy.disallowed_tag_handling {
             Drop => remove_child_at(parent, index)
             Escape => {
+              child.flatten_template_contents()
               let inserted = escape_child_at(parent, index, policy, observer)
               index += inserted
             }
             Unwrap => {
+              child.flatten_template_contents()
               sanitize_container_children(child, policy, observer)
               let inserted = unwrap_child_at(parent, index)
               index += inserted
@@ -103,6 +105,11 @@ fn sanitize_container_children(
             ()
           } else if !sanitize_rawtext_element_children(child, policy, observer) {
             sanitize_container_children(child, policy, observer)
+            match child.template_contents {
+              Some(contents) =>
+                sanitize_container_children(contents, policy, observer)
+              None => ()
+            }
           }
           index += 1
         }

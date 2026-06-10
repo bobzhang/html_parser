@@ -9,6 +9,21 @@ fn prune_empty_node_is_effectively_empty(
   if node.ns == Some("html") && @ser.is_void_element(node.name) {
     return false
   }
+  match node.template_contents {
+    Some(contents) =>
+      if !prune_children_are_effectively_empty(contents, strip_whitespace) {
+        return false
+      }
+    None => ()
+  }
+  prune_children_are_effectively_empty(node, strip_whitespace)
+}
+
+///|
+fn prune_children_are_effectively_empty(
+  node : @dom.Node,
+  strip_whitespace : Bool,
+) -> Bool {
   for child in node.children {
     match child.kind {
       Text =>
@@ -54,6 +69,10 @@ fn prune_empty_children(
   transforms : Array[TransformSpec],
   limits : @sel.SelectorLimits,
 ) -> Unit raise @core.HtmlError {
+  match parent.template_contents {
+    Some(contents) => prune_empty_children(contents, transforms, limits)
+    None => ()
+  }
   let mut index = 0
   while index < parent.children.length() {
     let child = parent.children[index]

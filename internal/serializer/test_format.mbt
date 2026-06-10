@@ -173,6 +173,20 @@ fn write_test_format(
     Comment => out.push(test_format_line(indent, "<!-- " + node.data + " -->"))
     Doctype => out.push(doctype_test_format(node))
   }
+  if node.kind == Element &&
+    node.name == "template" &&
+    (node.ns is None || node.ns is Some("html")) {
+    // An HTML template's children live in its contents document fragment,
+    // rendered as a "content" pseudo-node per the html5lib test format.
+    out.push(test_format_line(indent + 2, "content"))
+    match node.template_contents {
+      Some(contents) =>
+        for child in contents.children {
+          write_test_format(child, out, indent + 4)
+        }
+      None => ()
+    }
+  }
   for child in node.children {
     write_test_format(child, out, indent + 2)
   }

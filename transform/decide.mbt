@@ -89,6 +89,10 @@ fn decide_transform_children(
   transform : TransformSpec,
   limits : @sel.SelectorLimits,
 ) -> Unit raise @core.HtmlError {
+  match parent.template_contents {
+    Some(contents) => decide_transform_children(contents, transform, limits)
+    None => ()
+  }
   let all_nodes = decide_transform_all_nodes(transform)
   let mut index = 0
   while index < parent.children.length() {

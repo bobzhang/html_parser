@@ -63,6 +63,9 @@ fn matches_complex_selector(node : @dom.Node, selector : StringView) -> Bool {
               if node_identity_seen(visited, ancestor) {
                 return false
               }
+              if is_template_contents_fragment(ancestor) {
+                return false
+              }
               visited.push(ancestor)
               if matches_simple_selector(ancestor, wanted) {
                 current = ancestor
@@ -78,6 +81,9 @@ fn matches_complex_selector(node : @dom.Node, selector : StringView) -> Bool {
       ChildCombinator =>
         match current.parent {
           Some(ancestor) => {
+            if is_template_contents_fragment(ancestor) {
+              return false
+            }
             if !matches_simple_selector(ancestor, wanted) {
               return false
             }

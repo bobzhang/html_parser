@@ -11,6 +11,7 @@ fn transform_remove_child_at(parent : @dom.Node, index : Int) -> Unit {
 ///|
 fn transform_unwrap_child_at(parent : @dom.Node, index : Int) -> Int {
   let child = parent.children[index]
+  child.flatten_template_contents()
   ignore(parent.children.remove(index))
   if child.parent is Some(current_parent) &&
     physical_equal(parent, current_parent) {

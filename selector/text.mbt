@@ -106,6 +106,14 @@ fn selector_text_content(node : @dom.Node) -> String {
         )
       } else {
         let parts : Array[String] = []
+        match current.template_contents {
+          Some(contents) =>
+            match node_text_cache_get(cache_nodes, cache_texts, contents) {
+              Some(text) if text != "" => parts.push(text)
+              _ => ()
+            }
+          None => ()
+        }
         for child in current.children {
           match node_text_cache_get(cache_nodes, cache_texts, child) {
             Some(text) if text != "" => parts.push(text)
@@ -123,6 +131,10 @@ fn selector_text_content(node : @dom.Node) -> String {
       while index > 0 {
         index -= 1
         stack.push((current.children[index], false))
+      }
+      match current.template_contents {
+        Some(contents) => stack.push((contents, false))
+        None => ()
       }
     }
   }
