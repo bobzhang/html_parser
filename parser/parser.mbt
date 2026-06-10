@@ -24,4 +24,5 @@ fn Parser::parse_all(self : Parser) -> Unit {
       self.append_text(view, start)
     }
   }
+  self.flush_pending_text()
 }

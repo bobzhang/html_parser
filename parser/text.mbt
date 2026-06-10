@@ -104,9 +104,173 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     decoded
   }
   self.reconstruct_active_formatting_elements()
+  let parent = self.current_node()
+  if self.merge_into_trailing_text(parent, data) {
+    return
+  }
   let text_node = self.text_at(data, text_start)
-  self.current_node().append_child(text_node)
+  parent.append_child(text_node)
   self.mark_after_body_node(text_node)
+}
+
+///|
+/// Appends character data to an existing trailing text node, mirroring the
+/// spec's "insert the characters into that text node" step. Keeps the
+/// original node's source origin and never touches sanitizer escape text.
+fn Parser::merge_into_trailing_text(
+  self : Parser,
+  parent : @dom.Node,
+  data : String,
+) -> Bool {
+  match parent.children.last() {
+    Some(last) if last.kind == Text &&
+      !last.sanitize_escape_only &&
+      !self.merge_crosses_body_boundary(parent, last, data) => {
+      match self.pending_text_node {
+        Some(pending) if physical_equal(pending, last) => ()
+        _ => {
+          // Start (or restart) a batch on this node. The tree keeps the
+          // node with its current data; the builder accumulates the full
+          // text and flush_pending_text materializes it once, keeping
+          // merges amortized O(n) instead of O(n^2).
+          self.flush_pending_text()
+          self.pending_text_node = Some(last)
+          self.pending_text_builder = StringBuilder()
+          self.pending_text_builder.write_string(last.data)
+          self.pending_text_is_whitespace = is_whitespace_text_node(last)
+        }
+      }
+      self.pending_text_builder.write_string(data)
+      if self.pending_text_is_whitespace && text_has_non_ascii_whitespace(data) {
+        self.pending_text_is_whitespace = false
+      }
+      true
+    }
+    _ => false
+  }
+}
+
+///|
+/// Materializes a batched trailing text node: replaces the stale node with
+/// one carrying the accumulated data, preserving its position, origin, and
+/// scaffolder markers. Runs at the end of parsing and whenever a batch
+/// moves to a different node.
+fn Parser::flush_pending_text(self : Parser) -> Unit {
+  let node = match self.pending_text_node {
+    Some(node) => node
+    None => return
+  }
+  self.pending_text_node = None
+  let full = self.pending_text_builder.to_string()
+  if full.length() == node.data.length() {
+    return
+  }
+  let merged = @dom.text(full)
+  merged.parsed_from_source = node.parsed_from_source
+  merged.origin_offset = node.origin_offset
+  merged.origin_line = node.origin_line
+  merged.origin_col = node.origin_col
+  match node.parent {
+    Some(parent) => {
+      let mut index = parent.children.length()
+      while index > 0 {
+        index -= 1
+        if physical_equal(parent.children[index], node) {
+          parent.children[index] = merged
+          merged.parent = Some(parent)
+          node.parent = None
+          break
+        }
+      }
+    }
+    None => ()
+  }
+  if self.remove_after_body_node(node) {
+    self.after_body_nodes.push(merged)
+  }
+  if self.remove_foster_parented_text(node) {
+    self.foster_parented_texts.push(merged)
+  }
+}
+
+///|
+/// True when appending would merge body text into a top-level
+/// whitespace-only run that the scaffolder must keep between the head and
+/// the body (for example `<head></head> </i>X` keeps the space at the
+/// html level and files only `X` into the body). Whitespace merges into
+/// whitespace, non-whitespace text was already body content (X</body>X
+/// yields "XX"), and runs already marked as body content always accept
+/// more data.
+fn Parser::merge_crosses_body_boundary(
+  self : Parser,
+  parent : @dom.Node,
+  last : @dom.Node,
+  data : String,
+) -> Bool {
+  // The html fragment context scaffolds head/body like a document, so the
+  // boundary applies there too; other fragment contexts have no head/body
+  // split.
+  if self.is_fragment_parser() && !self.fragment_context_html {
+    return false
+  }
+  if !(parent.kind == Document ||
+    (parent.kind == Element && parent.name == "html")) {
+    return false
+  }
+  if !self.trailing_text_is_whitespace(last) || self.node_is_after_body(last) {
+    return false
+  }
+  // After the body has closed, even whitespace belongs to the body (the
+  // in-body rules reprocess it), so it must not merge into an unmarked
+  // pre-body run either.
+  text_has_non_ascii_whitespace(data) || self.document_after_body
+}
+
+///|
+/// Whitespace check that accounts for batched data not yet materialized
+/// into the tree node.
+fn Parser::trailing_text_is_whitespace(self : Parser, node : @dom.Node) -> Bool {
+  match self.pending_text_node {
+    Some(pending) if physical_equal(pending, node) =>
+      self.pending_text_is_whitespace
+    _ => is_whitespace_text_node(node)
+  }
+}
+
+///|
+fn Parser::node_is_after_body(self : Parser, node : @dom.Node) -> Bool {
+  for candidate in self.after_body_nodes {
+    if physical_equal(candidate, node) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn Parser::remove_after_body_node(self : Parser, node : @dom.Node) -> Bool {
+  let mut index = 0
+  while index < self.after_body_nodes.length() {
+    if physical_equal(self.after_body_nodes[index], node) {
+      ignore(self.after_body_nodes.remove(index))
+      return true
+    }
+    index += 1
+  }
+  false
+}
+
+///|
+fn Parser::remove_foster_parented_text(self : Parser, node : @dom.Node) -> Bool {
+  let mut index = 0
+  while index < self.foster_parented_texts.length() {
+    if physical_equal(self.foster_parented_texts[index], node) {
+      ignore(self.foster_parented_texts.remove(index))
+      return true
+    }
+    index += 1
+  }
+  false
 }
 
 ///|
