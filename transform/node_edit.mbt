@@ -1,6 +1,14 @@
 ///|
 fn empty_transform_node(node : @dom.Node) -> Bool {
-  let had_children = !node.children.is_empty()
+  let had_contents = match node.template_contents {
+    Some(contents) => {
+      let non_empty = !contents.children.is_empty()
+      node.template_contents = None
+      non_empty
+    }
+    None => false
+  }
+  let had_children = had_contents || !node.children.is_empty()
   while !node.children.is_empty() {
     let child = node.children[0]
     ignore(node.children.remove(0))
