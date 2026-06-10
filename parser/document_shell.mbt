@@ -224,6 +224,7 @@ fn Parser::in_frameset_document(self : Parser) -> Bool {
 /// later comments use normal insertion again. Frameset documents never
 /// reprocess in body.
 fn Parser::leave_after_body_for_token(self : Parser, name : String) -> Unit {
+  self.end_tag_was_after_body = false
   if !self.document_after_body ||
     self.is_fragment_parser() ||
     self.in_frameset_document() ||
@@ -231,6 +232,9 @@ fn Parser::leave_after_body_for_token(self : Parser, name : String) -> Unit {
     name == "html" {
     return
   }
+  // Handlers later in the dispatch (the stray </p> recovery) still need
+  // to know the token arrived in the after-body modes.
+  self.end_tag_was_after_body = true
   self.document_after_body = false
   self.document_after_html = false
 }
@@ -241,6 +245,11 @@ fn Parser::leave_after_body_for_token(self : Parser, name : String) -> Unit {
 /// in-body act-as-<p> recovery does not apply.
 fn Parser::stray_p_end_tag_is_ignored(self : Parser) -> Bool {
   if self.is_fragment_parser() {
+    return false
+  }
+  if self.document_after_body || self.end_tag_was_after_body {
+    // After-body "anything else" tokens reprocess in body, where the
+    // act-as-<p> recovery applies.
     return false
   }
   if self.current_is_document_head() {
