@@ -69,6 +69,7 @@ fn check_ci_command() -> @argparse.Command {
       check_no_arg_subcommand("smoke-native-cli"),
       check_no_arg_subcommand("check-html5lib-conformance"),
       check_no_arg_subcommand("check-cram-cli"),
+      check_no_arg_subcommand("smoke-benchmarks"),
       @argparse.Command(
         "verify-mooncakes-package",
         flags=[
@@ -138,6 +139,7 @@ async fn dispatch(args : ArrayView[String]) -> Int {
     "smoke-native-cli" => smoke_native_cli(rest)
     "check-html5lib-conformance" => check_html5lib_conformance(rest)
     "check-cram-cli" => check_cram_cli(rest)
+    "smoke-benchmarks" => smoke_benchmarks(rest)
     "verify-mooncakes-package" => verify_mooncakes_package(rest)
     "check-publish-archive" => check_publish_archive(rest)
     _ => {
@@ -211,6 +213,8 @@ async fn check_ci(args : ArrayView[String]) -> Int {
   code = run_step("Run html5lib-tests conformance suite", run_check_html5lib_conformance)
   if code != 0 { return code }
   code = run_step("Run Moon Cram native CLI tests", run_check_cram_cli)
+  if code != 0 { return code }
+  code = run_step("Build and smoke test benchmark runner", run_smoke_benchmarks)
   if code != 0 { return code }
   run_step(
     "Verify Mooncakes package",
@@ -1287,6 +1291,29 @@ async fn run_smoke_native_cli() -> Int {
 }
 
 ///|
+async fn smoke_benchmarks(args : ArrayView[String]) -> Int {
+  if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx smoke-benchmarks") { return 2 }
+  run_smoke_benchmarks()
+}
+
+///|
+async fn run_smoke_benchmarks() -> Int {
+  let build_code = @process.run(
+    "moon",
+    ["run", "--target", "native", "--release", "--build-only", "cmd/benchmark"],
+  )
+  if build_code != 0 {
+    return build_code
+  }
+  let runner = "_build/native/release/build/bobzhang/html_parser/cmd/benchmark/benchmark.exe"
+  if !@fs.exists(runner) {
+    eprintln("benchmark runner was not built: \{runner}")
+    return 1
+  }
+  @process.run(runner, ["--quick"])
+}
+
+///|
 async fn run_check_cram_cli() -> Int {
   let (code, output) = @process.collect_output_merged(
     "moon",
@@ -1950,6 +1977,7 @@ fn validation_commands() -> Array[String] {
     "smoke-native-cli",
     "check-html5lib-conformance",
     "check-cram-cli",
+    "smoke-benchmarks",
     "verify-mooncakes-package",
     "check-publish-archive",
   ]
