@@ -46,16 +46,6 @@ tests26.dat:2
 quirks01.dat:1
 quirks01.dat:2
 quirks01.dat:3
-template.dat:26
-template.dat:27
-template.dat:28
-template.dat:29
-template.dat:30
-template.dat:31
-template.dat:32
-template.dat:33
-template.dat:34
-template.dat:35
 template.dat:38
 template.dat:41
 template.dat:44
@@ -77,7 +67,6 @@ template.dat:68
 template.dat:77
 template.dat:90
 template.dat:99
-template.dat:106
 tricky01.dat:4
 tricky01.dat:5
 tricky01.dat:8
