@@ -110,8 +110,51 @@ fn Parser::close_open_definition_item_name(
 }
 
 ///|
+fn is_button_scope_terminator(name : StringView) -> Bool {
+  name == "button" || is_default_scope_terminator(name)
+}
+
+///|
+/// Reports whether an element is in *button scope* (the default scope
+/// terminators plus `button`). Terminator names only apply to HTML-namespace
+/// nodes; foreign integration points always terminate the scope, matching
+/// the reference tree builder's `_has_element_in_scope`.
+fn Parser::has_open_element_in_button_scope(
+  self : Parser,
+  name : String,
+) -> Bool {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element {
+      if node.name == name {
+        return true
+      }
+      match node.ns {
+        None | Some("html") =>
+          if is_button_scope_terminator(node.name) {
+            return false
+          }
+        _ =>
+          if node_is_html_integration_point(node) ||
+            node_is_mathml_text_integration_point(node) {
+            return false
+          }
+      }
+    }
+  }
+  false
+}
+
+///|
+/// Closes an open `p` element only when one is in button scope, per the
+/// spec's "close a p element" algorithm. A `p` outside button scope (for
+/// example behind an open `<button>`) must stay open.
 fn Parser::close_open_p_element(self : Parser) -> Unit {
-  ignore(self.close_open_element("p"))
+  if self.has_open_element_in_button_scope("p") {
+    ignore(self.close_open_element("p"))
+  }
 }
 
 ///|
