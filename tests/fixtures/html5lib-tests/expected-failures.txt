@@ -13,7 +13,6 @@ tests1.dat:59
 tests1.dat:78
 tests1.dat:79
 tests1.dat:91
-tests1.dat:92
 tests1.dat:101
 tests1.dat:103
 tests2.dat:33
