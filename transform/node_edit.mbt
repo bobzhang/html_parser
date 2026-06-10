@@ -40,6 +40,7 @@ fn apply_edit_transform(node : @dom.Node, transform : TransformSpec) -> Unit {
 
 ///|
 fn escape_transform_child_at(parent : @dom.Node, index : Int) -> Int {
+  parent.children[index].flatten_template_contents()
   let child = parent.children[index]
   let start_tag = @seri.serialize_start_tag_unchecked(child, '"')
   let end_tag = transform_escaped_end_tag_for(child)

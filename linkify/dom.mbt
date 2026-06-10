@@ -36,6 +36,10 @@ pub fn linkify_dom(
       let skip = node.kind == Element &&
         skip_set.contains(@syn.lower_ascii(node.name))
       linkify_dom_children(node, config, skip_set, skip)
+      match node.template_contents {
+        Some(contents) => linkify_dom_children(contents, config, skip_set, skip)
+        None => ()
+      }
       node
     }
     Comment | Doctype => node
