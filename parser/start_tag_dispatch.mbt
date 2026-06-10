@@ -183,7 +183,9 @@ fn Parser::handle_parsed_start_tag(
     current_node_is_ruby_annotation(self.current_node()) {
     self.generate_implied_end_tags(None)
   }
-  if start_tag_closes_p(name) {
+  if start_tag_closes_p(name) && !(name == "table" && self.in_quirks_mode()) {
+    // In quirks mode a table start tag does not close an open p; the
+    // table nests inside the paragraph.
     self.close_open_p_element()
   }
   if name == "button" && self.has_open_element_in_default_scope("button") {

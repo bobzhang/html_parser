@@ -12,7 +12,6 @@ tests2.dat:50
 tests2.dat:53
 tests2.dat:54
 tests3.dat:11
-tests3.dat:23
 tests6.dat:0
 tests7.dat:30
 tests7.dat:31
@@ -36,9 +35,6 @@ tests19.dat:101
 tests20.dat:38
 tests20.dat:41
 tests26.dat:2
-quirks01.dat:1
-quirks01.dat:2
-quirks01.dat:3
 template.dat:44
 template.dat:45
 template.dat:47

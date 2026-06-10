@@ -13,6 +13,7 @@ pub fn parse(
   scripting_enabled? : Bool = true,
   xml_coercion? : Bool = false,
   track_node_locations? : Bool = false,
+  iframe_srcdoc? : Bool = false,
 ) -> ParsedHtml raise @core.HtmlError {
   let root = @dom.document()
   let parser = Parser(
@@ -21,6 +22,7 @@ pub fn parse(
     scripting_enabled~,
     xml_coercion~,
     track_node_locations~,
+    iframe_srcdoc~,
   )
   parser.deferred_initial_doctype_error = parser.report_initial_doctype_error()
   parser.parse_all()
@@ -64,6 +66,7 @@ pub fn parse_fragment(
   scripting_enabled? : Bool = true,
   xml_coercion? : Bool = false,
   track_node_locations? : Bool = false,
+  iframe_srcdoc? : Bool = false,
 ) -> ParsedHtml raise @core.HtmlError {
   let root = @dom.fragment()
   let parser = Parser(
@@ -72,6 +75,7 @@ pub fn parse_fragment(
     scripting_enabled~,
     xml_coercion~,
     track_node_locations~,
+    iframe_srcdoc~,
   )
   match context {
     Some(fragment_context) =>
@@ -108,6 +112,7 @@ pub fn parse_bytes(
   scripting_enabled? : Bool = true,
   xml_coercion? : Bool = false,
   track_node_locations? : Bool = false,
+  iframe_srcdoc? : Bool = false,
 ) -> ParsedHtml raise @core.HtmlError {
   let (decoded, detected_encoding) = @enc.decode_html_bytes(input, encoding)
   let parsed = parse(
@@ -118,6 +123,7 @@ pub fn parse_bytes(
     scripting_enabled~,
     xml_coercion~,
     track_node_locations~,
+    iframe_srcdoc~,
   )
   {
     root: parsed.root,
