@@ -36,6 +36,13 @@ fn linkify_transform_children(
   skip_linkify : Bool,
   transform : TransformSpec,
 ) -> Unit {
+  match parent.template_contents {
+    Some(contents) =>
+      linkify_transform_children(
+        contents, config, skip_tags, skip_linkify, transform,
+      )
+    None => ()
+  }
   let mut index = 0
   while index < parent.children.length() {
     let child = parent.children[index]

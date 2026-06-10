@@ -4,6 +4,10 @@ fn apply_drop_kind_transform(
   kind : @dom.NodeKind,
   transform : TransformSpec,
 ) -> Unit {
+  match root.template_contents {
+    Some(contents) => apply_drop_kind_transform(contents, kind, transform)
+    None => ()
+  }
   match root.kind {
     Document | Fragment | Element => {
       let mut index = 0
@@ -41,6 +45,11 @@ fn apply_drop_foreign_namespaces_transform(
   root : @dom.Node,
   transform : TransformSpec,
 ) -> Unit {
+  match root.template_contents {
+    Some(contents) =>
+      apply_drop_foreign_namespaces_transform(contents, transform)
+    None => ()
+  }
   match root.kind {
     Document | Fragment | Element => {
       let mut index = 0

@@ -54,6 +54,10 @@ fn prune_empty_children(
   transforms : Array[TransformSpec],
   limits : @sel.SelectorLimits,
 ) -> Unit raise @core.HtmlError {
+  match parent.template_contents {
+    Some(contents) => prune_empty_children(contents, transforms, limits)
+    None => ()
+  }
   let mut index = 0
   while index < parent.children.length() {
     let child = parent.children[index]
