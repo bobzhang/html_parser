@@ -134,7 +134,9 @@ fn Parser::close_current_column_group_for_start(
   name : String,
   start : Int,
 ) -> Unit {
-  if name == "col" {
+  if name == "col" || name == "template" {
+    // The in-column-group mode handles template with the in-head rules:
+    // it nests inside the colgroup instead of closing it.
     return
   }
   match self.stack.last() {
