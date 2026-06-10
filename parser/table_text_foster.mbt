@@ -87,6 +87,7 @@ fn Parser::foster_parent_table_text(
     Some(parent) => parent.insert_before(fostered, Some(table))
     None => self.root.append_child(fostered)
   }
+  self.foster_parented_texts.push(fostered)
   true
 }
 
