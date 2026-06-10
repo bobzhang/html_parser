@@ -9,10 +9,12 @@ fn Parser::pop_until(
     self.error_at("unexpected-end-tag", pos)
     return
   }
-  if !is_special_element_name(name) && self.special_blocks_end_tag(name) {
+  if !is_special_element_name(name) &&
+    !active_formatting_element_name(name) &&
+    self.special_blocks_end_tag(name) {
     // Names with dedicated end-tag rules (div, ul, ...) close through
-    // their scope; only the any-other-end-tag walk stops at a special
-    // element.
+    // their scope, and formatting end tags use the adoption agency
+    // rules; only the any-other-end-tag walk stops at a special element.
     self.error_at("unexpected-end-tag", pos)
     return
   }
