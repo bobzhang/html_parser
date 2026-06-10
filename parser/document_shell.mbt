@@ -88,7 +88,11 @@ fn Parser::handle_document_body_or_html_end_tag(
     }
     // A stray </body> or </html> still switches the document into the
     // after-body modes: later tokens reprocess using the in-body rules,
-    // so subsequent top-level content belongs to the body.
+    // so subsequent top-level content belongs to the body. The spec's
+    // reprocessing chain pops an open head on the way there.
+    if self.current_is_document_head() {
+      ignore(self.stack.pop())
+    }
     self.error_at("unexpected-end-tag", pos)
     self.document_after_body = true
     return true
