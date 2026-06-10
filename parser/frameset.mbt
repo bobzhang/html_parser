@@ -143,6 +143,13 @@ fn Parser::handle_document_frameset_start_tag(
   tag_close_pos : Int,
 ) -> Bool {
   if self.is_fragment_parser() && !self.fragment_context_html {
+    if name == "frameset" {
+      // Fragments parse with frameset-ok off: an in-body frameset start
+      // tag is a parse error and is ignored. (frame keeps the reference's
+      // empty-element insertion behavior in fragments.)
+      self.error_at("unexpected-start-tag", start)
+      return true
+    }
     return false
   }
   if (name == "frameset" || name == "frame") &&

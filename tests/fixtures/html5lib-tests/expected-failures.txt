@@ -73,13 +73,9 @@ noscript01.dat:1
 domjs-unsafe.dat:1
 domjs-unsafe.dat:35
 domjs-unsafe.dat:38
-foreign-fragment.dat:51
 menuitem-element.dat:7
 plain-text-unsafe.dat:18
 plain-text-unsafe.dat:19
-tests_innerHTML_1.dat:4
-tests_innerHTML_1.dat:5
-tests_innerHTML_1.dat:6
 tests_innerHTML_1.dat:73
 tests_innerHTML_1.dat:75
 tests_innerHTML_1.dat:78
