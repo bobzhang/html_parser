@@ -154,9 +154,14 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if name == "p" {
     if !self.close_open_element("p") {
       self.error_at("unexpected-end-tag", tag_close_pos)
-      self.insert_body_mode_node(
-        self.node_with_origin(@dom.element("p"), start),
-      )
+      // The act-as-<p>-then-close recovery is an in-body rule; before the
+      // body starts (before-head/in-head/after-head) the stray </p> is
+      // simply ignored.
+      if !self.stray_p_end_tag_is_ignored() {
+        self.insert_body_mode_node(
+          self.node_with_origin(@dom.element("p"), start),
+        )
+      }
     }
     return
   }

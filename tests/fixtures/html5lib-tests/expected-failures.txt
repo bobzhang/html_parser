@@ -6,7 +6,6 @@ tests1.dat:30
 tests1.dat:32
 tests1.dat:78
 tests1.dat:79
-tests1.dat:91
 tests1.dat:101
 tests1.dat:103
 tests2.dat:50
@@ -25,8 +24,6 @@ tests15.dat:11
 tests16.dat:88
 tests16.dat:185
 tests18.dat:4
-tests19.dat:1
-tests19.dat:2
 tests19.dat:80
 tests19.dat:82
 tests19.dat:89
