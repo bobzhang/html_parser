@@ -207,7 +207,10 @@ fn Parser::merge_crosses_body_boundary(
   last : @dom.Node,
   data : String,
 ) -> Bool {
-  if self.is_fragment_parser() {
+  // The html fragment context scaffolds head/body like a document, so the
+  // boundary applies there too; other fragment contexts have no head/body
+  // split.
+  if self.is_fragment_parser() && !self.fragment_context_html {
     return false
   }
   if !(parent.kind == Document ||
