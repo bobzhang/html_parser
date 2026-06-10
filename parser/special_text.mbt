@@ -162,6 +162,21 @@ fn Parser::consume_matching_special_end_tag(self : Parser) -> Bool {
 }
 
 ///|
+/// Appends raw-text content as a text node, skipping empty content: the
+/// spec never creates empty text nodes for raw-text elements (for example
+/// `<textarea></textarea>` or `<xmp></xmp>`).
+fn Parser::append_special_text(
+  self : Parser,
+  parent : @dom.Node,
+  data : String,
+  content_start : Int,
+) -> Unit {
+  if !data.is_empty() {
+    parent.append_child(self.text_at(data, content_start))
+  }
+}
+
+///|
 fn Parser::consume_special_element_content(
   self : Parser,
   parent : @dom.Node,
@@ -170,16 +185,15 @@ fn Parser::consume_special_element_content(
   let content_start = self.pos
   if name == "plaintext" {
     let view = self.input[content_start:self.input.length()]
-    parent.append_child(
-      self.text_at(
-        self.decoded_special_text(
-          name,
-          view,
-          content_start,
-          eof_error_pos(self.input),
-        ),
+    self.append_special_text(
+      parent,
+      self.decoded_special_text(
+        name,
+        view,
         content_start,
+        eof_error_pos(self.input),
       ),
+      content_start,
     )
     self.error_at_special_text_eof(name)
     self.pos = self.input.length()
@@ -217,11 +231,10 @@ fn Parser::consume_special_element_content(
     Some(end_start) => {
       let error_pos = @tok.matching_end_tag_error_pos(self.input, end_start)
       let view = self.input[content_start:end_start]
-      parent.append_child(
-        self.text_at(
-          self.decoded_special_text(name, view, content_start, error_pos),
-          content_start,
-        ),
+      self.append_special_text(
+        parent,
+        self.decoded_special_text(name, view, content_start, error_pos),
+        content_start,
       )
       self.pos = end_start
       if !self.consume_matching_special_end_tag() {
@@ -231,11 +244,10 @@ fn Parser::consume_special_element_content(
     None => {
       let error_pos = eof_error_pos(self.input)
       let view = self.input[content_start:self.input.length()]
-      parent.append_child(
-        self.text_at(
-          self.decoded_special_text(name, view, content_start, error_pos),
-          content_start,
-        ),
+      self.append_special_text(
+        parent,
+        self.decoded_special_text(name, view, content_start, error_pos),
+        content_start,
       )
       self.error_at_special_text_eof(name)
       self.pos = self.input.length()
