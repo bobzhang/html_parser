@@ -401,14 +401,19 @@ fn decoded_escape_char(chars : Array[Char], start : Int, length : Int) -> Char? 
 ///|
 #coverage.skip
 fn case_error_count_matches(case : DatCase) -> Bool {
-  let parsed = parse_case_input(case) catch { _ => return false }
+  let scripting_enabled = !(case.script_directive is Some("script-off"))
+  let parsed = parse_case_input(case, scripting_enabled) catch {
+    _ => return false
+  }
   parsed.errors.length() == case.expected_error_count
 }
 
 ///|
 #coverage.skip
-fn parse_case_input(case : DatCase) -> @html_parser.ParsedHtml raise {
-  let scripting_enabled = !(case.script_directive is Some("script-off"))
+fn parse_case_input(
+  case : DatCase,
+  scripting_enabled : Bool,
+) -> @html_parser.ParsedHtml raise {
   match case.fragment_tag {
     Some(tag) =>
       @html_parser.parse_fragment(
@@ -438,17 +443,29 @@ fn run_case(case : DatCase) -> CaseOutcome {
     contains_script_tag(case.data) {
     return CaseSkipped
   }
-  let parsed = parse_case_input(case) catch {
-    error => return CaseFailed("parse raised: \{error}")
+  // Cases without a script directive must pass in both scripting modes
+  // (tree-construction/README.md: "Otherwise, the test should be run in
+  // both modes").
+  let modes = match case.script_directive {
+    Some("script-on") => [true]
+    Some("script-off") => [false]
+    _ => [true, false]
   }
-  let actual = @html_parser.to_test_format(parsed.root)
-  if normalize_tree(actual) == normalize_tree(case.document) {
-    CasePassed
-  } else {
-    CaseFailed(
-      "#data\n\{case.data}\n#expected\n\{case.document}\n#actual\n\{actual}",
-    )
+  for scripting_enabled in modes {
+    let parsed = parse_case_input(case, scripting_enabled) catch {
+      error =>
+        return CaseFailed(
+          "parse raised (scripting=\{scripting_enabled}): \{error}",
+        )
+    }
+    let actual = @html_parser.to_test_format(parsed.root)
+    if normalize_tree(actual) != normalize_tree(case.document) {
+      return CaseFailed(
+        "#data\n\{case.data}\n#scripting\n\{scripting_enabled}\n#expected\n\{case.document}\n#actual\n\{actual}",
+      )
+    }
   }
+  CasePassed
 }
 
 ///|
