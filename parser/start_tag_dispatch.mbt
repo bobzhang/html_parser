@@ -30,6 +30,12 @@ fn Parser::handle_parsed_start_tag(
   if self.handle_late_document_head_start_tag(name, start) {
     return
   }
+  if name == "body" && self.has_open_element("template") {
+    // The in-template rules ignore body start tags entirely; their
+    // attributes never reach the document body.
+    self.error_at("unexpected-start-tag", start)
+    return
+  }
   if !self.is_fragment_parser() &&
     name == "body" &&
     document_children_contain_body_content(self.root) {
