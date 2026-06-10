@@ -87,6 +87,11 @@ fn matches_complex_selector_with_context(
               if node_identity_seen(visited, ancestor) {
                 return false
               }
+              // A template contents fragment is a tree boundary: nodes
+              // inside it have no ancestors outside the template.
+              if is_template_contents_fragment(ancestor) {
+                return false
+              }
               visited.push(ancestor)
               if matches_simple_selector_with_context(
                   ancestor, wanted, context, depth,
@@ -104,6 +109,9 @@ fn matches_complex_selector_with_context(
       ChildCombinator =>
         match current.parent {
           Some(ancestor) => {
+            if is_template_contents_fragment(ancestor) {
+              return false
+            }
             if !matches_simple_selector_with_context(
                 ancestor, wanted, context, depth,
               ) {
@@ -183,4 +191,15 @@ pub fn matches_with_limits(
     SelectorMatchContext(limits),
     0,
   )
+}
+
+///|
+/// A template's contents document fragment: selector ancestry never
+/// crosses it, matching the reference (template span does not match a
+/// span inside the template's contents).
+fn is_template_contents_fragment(node : @dom.Node) -> Bool {
+  node.kind == Fragment &&
+  node.parent is Some(host) &&
+  host.kind == Element &&
+  host.name == "template"
 }

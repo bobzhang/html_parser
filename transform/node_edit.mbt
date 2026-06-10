@@ -3,6 +3,11 @@ fn empty_transform_node(node : @dom.Node) -> Bool {
   let had_contents = match node.template_contents {
     Some(contents) => {
       let non_empty = !contents.children.is_empty()
+      for child in contents.children {
+        child.parent = None
+      }
+      contents.children.clear()
+      contents.parent = None
       node.template_contents = None
       non_empty
     }
