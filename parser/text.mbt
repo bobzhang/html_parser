@@ -162,7 +162,10 @@ fn Parser::merge_crosses_after_body_boundary(
     (parent.kind == Element && parent.name == "html")) {
     return false
   }
-  !self.node_is_after_body(last)
+  // Only a whitespace-only run from before the switch stays between the
+  // head and the body; non-whitespace text was already body content, and
+  // the spec merges new body data into it (X</body>X yields "XX").
+  !self.node_is_after_body(last) && is_whitespace_text_node(last)
 }
 
 ///|
