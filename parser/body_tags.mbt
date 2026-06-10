@@ -101,6 +101,7 @@ fn start_tag_closes_p(name : StringView) -> Bool {
     | "hgroup"
     | "hr"
     | "li"
+    | "listing"
     | "main"
     | "menu"
     | "nav"
@@ -110,6 +111,7 @@ fn start_tag_closes_p(name : StringView) -> Bool {
     | "pre"
     | "search"
     | "section"
+    | "summary"
     | "table"
     | "ul"
     | "xmp" => true
