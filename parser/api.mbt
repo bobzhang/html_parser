@@ -34,6 +34,7 @@ pub fn parse(
     parser.after_html_comments,
   )
   parser.apply_pending_document_html_attrs()
+  parser.apply_pending_document_body_attrs()
   append_post_body_html_children(root, parser.post_body_html_children)
   normalize_tables(root)
   populate_selectedcontent(root)

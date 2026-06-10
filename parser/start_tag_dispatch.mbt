@@ -30,6 +30,34 @@ fn Parser::handle_parsed_start_tag(
   if self.handle_late_document_head_start_tag(name, start) {
     return
   }
+  if name == "body" &&
+    (self.has_open_element("template") || self.in_select_insertion_mode()) {
+    // The in-template and in-select rules ignore body start tags
+    // entirely; their attributes never reach the document body.
+    self.error_at("unexpected-start-tag", start)
+    return
+  }
+  if !self.is_fragment_parser() &&
+    name == "body" &&
+    document_children_contain_body_content(self.root) {
+    // A late <body> start tag is a parse error: it is ignored, its
+    // attributes merge into the existing body without overwriting,
+    // frameset-ok becomes not ok, and (when reprocessed from the
+    // after-body modes) parsing returns to in-body.
+    self.error_at("unexpected-start-tag", start)
+    self.frameset_ok = false
+    if self.document_after_body {
+      self.document_entered_body = true
+      self.document_after_body = false
+      self.document_after_html = false
+    }
+    for attr_name, attr_value in attrs {
+      if !self.pending_document_body_attrs.contains(attr_name) {
+        self.pending_document_body_attrs[attr_name] = attr_value
+      }
+    }
+    return
+  }
   if !self.is_fragment_parser() &&
     !self.in_frameset_document() &&
     name != "html" &&
