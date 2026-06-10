@@ -34,11 +34,14 @@ fn Parser::document_doctype_is_initial(self : Parser) -> Bool {
 fn scaffold_document(
   root : @dom.Node,
   foster_parented_texts : Array[@dom.Node],
+  after_body_nodes : Array[@dom.Node],
 ) -> Unit {
   match document_html_element(root) {
     Some(html) => {
-      absorb_root_html_siblings(root, html)
-      scaffold_existing_html_element(html, foster_parented_texts)
+      absorb_root_html_siblings(root, html, after_body_nodes)
+      scaffold_existing_html_element(
+        html, foster_parented_texts, after_body_nodes,
+      )
       return
     }
     None => ()
@@ -89,18 +92,22 @@ fn scaffold_document(
       body_started = true
     } else if child.kind == Element &&
       is_document_head_element_name(child.name) &&
-      !body_started {
+      !body_started &&
+      !nodes_contain(after_body_nodes, child) {
       head_children.push(child)
     } else if child.kind == Comment && !body_started {
       head_children.push(child)
-    } else if is_whitespace_text_node(child) && !body_started {
+    } else if is_whitespace_text_node(child) &&
+      !body_started &&
+      !nodes_contain(after_body_nodes, child) {
       if head is Some(_) {
         between_head_body_children.push(child)
       } else if !head_children.is_empty() {
         head_children.push(child)
       }
     } else if child.kind == Text && !body_started {
-      if nodes_contain(foster_parented_texts, child) {
+      if nodes_contain(foster_parented_texts, child) ||
+        nodes_contain(after_body_nodes, child) {
         // Foster-parented table text was produced after body content
         // started (a table is open); keep it verbatim, including leading
         // whitespace.

@@ -26,7 +26,7 @@ pub fn parse(
   parser.parse_all()
   parser.flush_deferred_initial_doctype_error()
   parser.report_eof_tree_errors()
-  scaffold_document(root, parser.foster_parented_texts)
+  scaffold_document(root, parser.foster_parented_texts, parser.after_body_nodes)
   parser.apply_pending_document_html_attrs()
   append_post_body_html_children(root, parser.post_body_html_children)
   normalize_tables(root)

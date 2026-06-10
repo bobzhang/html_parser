@@ -13,7 +13,6 @@ tests1.dat:59
 tests1.dat:78
 tests1.dat:79
 tests1.dat:91
-tests1.dat:92
 tests1.dat:101
 tests1.dat:103
 tests2.dat:33
@@ -47,9 +46,6 @@ tests8.dat:6
 tests10.dat:30
 tests10.dat:31
 tests10.dat:36
-tests15.dat:2
-tests15.dat:3
-tests15.dat:5
 tests15.dat:11
 tests16.dat:88
 tests16.dat:185
@@ -199,7 +195,6 @@ webkit01.dat:23
 webkit01.dat:24
 webkit01.dat:25
 webkit01.dat:26
-webkit01.dat:27
 webkit01.dat:30
 webkit01.dat:36
 webkit01.dat:37

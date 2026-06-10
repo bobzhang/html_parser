@@ -104,7 +104,9 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     decoded
   }
   self.reconstruct_active_formatting_elements()
-  self.current_node().append_child(self.text_at(data, text_start))
+  let text_node = self.text_at(data, text_start)
+  self.current_node().append_child(text_node)
+  self.mark_after_body_node(text_node)
 }
 
 ///|

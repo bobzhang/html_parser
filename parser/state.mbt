@@ -38,6 +38,7 @@ priv struct Parser {
   pending_document_html_attrs : Map[String, String?]
   mut pending_table_view_implied_end_tag : Bool
   foster_parented_texts : Array[@dom.Node]
+  after_body_nodes : Array[@dom.Node]
   post_body_html_children : Array[@dom.Node]
   active_formatting : Array[FormattingEntry]
 }
@@ -99,6 +100,7 @@ fn Parser::Parser(
     pending_document_html_attrs: {},
     pending_table_view_implied_end_tag: false,
     foster_parented_texts: [],
+    after_body_nodes: [],
     post_body_html_children: [],
     active_formatting: [],
   }

@@ -56,7 +56,7 @@ test "document scaffold merges repeated html helper trees" {
     ],
   )
   let root = @dom.document(children=[primary, sibling])
-  scaffold_document(root, [])
+  scaffold_document(root, [], [])
   assert_eq(root.children.length(), 1)
   let html = root.children[0]
   assert_true(physical_equal(html, primary))
