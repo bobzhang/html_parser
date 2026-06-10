@@ -466,33 +466,35 @@ test "public serializer rejects unsafe programmatic output" {
   let bad_element = @html_parser.element("bad tag", children=[
     @html_parser.text("x"),
   ])
-  let element_result : Result[String, @html_parser.HtmlError] = try? bad_element.to_html(
-    pretty=false,
-  )
-  match element_result {
-    Err(InvalidSerialization(message)) =>
+  try bad_element.to_html(pretty=false) catch {
+    InvalidSerialization(message) =>
       assert_true(message.contains("Unsafe element name"))
+    _ => fail("expected unsafe element name to raise InvalidSerialization")
+  } noraise {
     _ => fail("expected unsafe element name to raise InvalidSerialization")
   }
 
   let bad_attr = @html_parser.element("div", attrs={
     "onload bad": Some("run()"),
   })
-  let attr_result : Result[String, @html_parser.HtmlError] = try? bad_attr.to_html(
-    pretty=false,
-  )
-  match attr_result {
-    Err(InvalidSerialization(message)) =>
+  try bad_attr.to_html(pretty=false) catch {
+    InvalidSerialization(message) =>
       assert_true(message.contains("Unsafe attribute name"))
+    _ => fail("expected unsafe attribute name to raise InvalidSerialization")
+  } noraise {
     _ => fail("expected unsafe attribute name to raise InvalidSerialization")
   }
 
-  let quote_result : Result[String, @html_parser.HtmlError] = try? @html_parser.text(
-    "x",
-  ).to_html(pretty=false, context=HtmlAttrValue, quote='`')
-  match quote_result {
-    Err(InvalidSerialization(message)) =>
-      assert_eq(message, "quote must be ' or \"")
+  try
+    @html_parser.text("x").to_html(
+      pretty=false,
+      context=HtmlAttrValue,
+      quote='`',
+    )
+  catch {
+    InvalidSerialization(message) => assert_eq(message, "quote must be ' or \"")
+    _ => fail("expected invalid quote to raise InvalidSerialization")
+  } noraise {
     _ => fail("expected invalid quote to raise InvalidSerialization")
   }
 }
@@ -517,12 +519,11 @@ test "public serializer doctype edge output stays stable" {
   )
 
   let bad_doctype = @html_parser.doctype(name="html><img")
-  let result : Result[String, @html_parser.HtmlError] = try? bad_doctype.to_html(
-    pretty=false,
-  )
-  match result {
-    Err(InvalidSerialization(message)) =>
+  try bad_doctype.to_html(pretty=false) catch {
+    InvalidSerialization(message) =>
       assert_true(message.contains("Unsafe element name"))
+    _ => fail("expected unsafe doctype name to raise InvalidSerialization")
+  } noraise {
     _ => fail("expected unsafe doctype name to raise InvalidSerialization")
   }
 }
@@ -599,12 +600,12 @@ test "public serializer quote validation is context sensitive" {
     @html_parser.text("x").to_html(pretty=false, context=Html, quote='x'),
     "x",
   )
-  let js_quote : Result[String, @html_parser.HtmlError] = try? @html_parser.text(
-    "x",
-  ).to_html(pretty=false, context=JsString, quote='x')
-  match js_quote {
-    Err(InvalidSerialization(message)) =>
-      assert_eq(message, "quote must be ' or \"")
+  try
+    @html_parser.text("x").to_html(pretty=false, context=JsString, quote='x')
+  catch {
+    InvalidSerialization(message) => assert_eq(message, "quote must be ' or \"")
+    _ => fail("expected invalid JavaScript quote to raise InvalidSerialization")
+  } noraise {
     _ => fail("expected invalid JavaScript quote to raise InvalidSerialization")
   }
 }
@@ -614,78 +615,81 @@ test "serializer rejects unsafe programmatic names and invalid context quotes" {
   let bad_attr = @html_parser.element("div", attrs={
     "title> <img src=x": Some("y"),
   })
-  let attr_result : Result[String, @html_parser.HtmlError] = try? bad_attr.to_html(
-    pretty=false,
-  )
-  match attr_result {
-    Err(InvalidSerialization(message)) =>
+  try bad_attr.to_html(pretty=false) catch {
+    InvalidSerialization(message) =>
       assert_true(message.contains("Unsafe attribute name"))
+    _ => fail("expected unsafe attribute name to raise InvalidSerialization")
+  } noraise {
     _ => fail("expected unsafe attribute name to raise InvalidSerialization")
   }
   let bad_attr_start = @html_parser.element("div", attrs={ "1title": Some("y") })
-  let attr_start_result : Result[String, @html_parser.HtmlError] = try? bad_attr_start.to_html(
-    pretty=false,
-  )
-  match attr_start_result {
-    Err(InvalidSerialization(message)) =>
+  try bad_attr_start.to_html(pretty=false) catch {
+    InvalidSerialization(message) =>
       assert_true(message.contains("Unsafe attribute name"))
+    _ =>
+      fail(
+        "expected leading digit attribute name to raise InvalidSerialization",
+      )
+  } noraise {
     _ =>
       fail(
         "expected leading digit attribute name to raise InvalidSerialization",
       )
   }
   let bad_element = @html_parser.element("div><img")
-  let element_result : Result[String, @html_parser.HtmlError] = try? bad_element.to_html(
-    pretty=false,
-  )
-  match element_result {
-    Err(InvalidSerialization(message)) =>
+  try bad_element.to_html(pretty=false) catch {
+    InvalidSerialization(message) =>
       assert_true(message.contains("Unsafe element name"))
+    _ => fail("expected unsafe element name to raise InvalidSerialization")
+  } noraise {
     _ => fail("expected unsafe element name to raise InvalidSerialization")
   }
   let bad_element_start = @html_parser.element("1div")
-  let element_start_result : Result[String, @html_parser.HtmlError] = try? bad_element_start.to_html(
-    pretty=false,
-  )
-  match element_start_result {
-    Err(InvalidSerialization(message)) =>
+  try bad_element_start.to_html(pretty=false) catch {
+    InvalidSerialization(message) =>
       assert_true(message.contains("Unsafe element name"))
+    _ =>
+      fail("expected leading digit element name to raise InvalidSerialization")
+  } noraise {
     _ =>
       fail("expected leading digit element name to raise InvalidSerialization")
   }
   let bad_doctype = @html_parser.doctype(name="html><img")
-  let doctype_result : Result[String, @html_parser.HtmlError] = try? bad_doctype.to_html(
-    pretty=false,
-  )
-  match doctype_result {
-    Err(InvalidSerialization(message)) =>
+  try bad_doctype.to_html(pretty=false) catch {
+    InvalidSerialization(message) =>
       assert_true(message.contains("Unsafe element name"))
+    _ => fail("expected unsafe doctype name to raise InvalidSerialization")
+  } noraise {
     _ => fail("expected unsafe doctype name to raise InvalidSerialization")
   }
   let bad_doctype_start = @html_parser.doctype(name="1html")
-  let doctype_start_result : Result[String, @html_parser.HtmlError] = try? bad_doctype_start.to_html(
-    pretty=false,
-  )
-  match doctype_start_result {
-    Err(InvalidSerialization(message)) =>
+  try bad_doctype_start.to_html(pretty=false) catch {
+    InvalidSerialization(message) =>
       assert_true(message.contains("Unsafe element name"))
     _ =>
       fail("expected leading digit doctype name to raise InvalidSerialization")
+  } noraise {
+    _ =>
+      fail("expected leading digit doctype name to raise InvalidSerialization")
   }
-  let attr_quote : Result[String, @html_parser.HtmlError] = try? @html_parser.text(
-    "x",
-  ).to_html(pretty=false, context=HtmlAttrValue, quote='x')
-  match attr_quote {
-    Err(InvalidSerialization(message)) =>
-      assert_eq(message, "quote must be ' or \"")
+  try
+    @html_parser.text("x").to_html(
+      pretty=false,
+      context=HtmlAttrValue,
+      quote='x',
+    )
+  catch {
+    InvalidSerialization(message) => assert_eq(message, "quote must be ' or \"")
+    _ => fail("expected invalid attribute quote to raise InvalidSerialization")
+  } noraise {
     _ => fail("expected invalid attribute quote to raise InvalidSerialization")
   }
-  let js_quote : Result[String, @html_parser.HtmlError] = try? @html_parser.text(
-    "x",
-  ).to_html(pretty=false, context=JsString, quote='x')
-  match js_quote {
-    Err(InvalidSerialization(message)) =>
-      assert_eq(message, "quote must be ' or \"")
+  try
+    @html_parser.text("x").to_html(pretty=false, context=JsString, quote='x')
+  catch {
+    InvalidSerialization(message) => assert_eq(message, "quote must be ' or \"")
+    _ => fail("expected invalid JavaScript quote to raise InvalidSerialization")
+  } noraise {
     _ => fail("expected invalid JavaScript quote to raise InvalidSerialization")
   }
   assert_eq(
