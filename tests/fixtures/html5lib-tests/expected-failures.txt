@@ -1,11 +1,9 @@
 # Failing html5lib-tests tree-construction cases (file:case-index).
 # Regenerate with: moon run --target native cmd/html5lib_conformance -- --update-expected
 tests1.dat:20
-tests1.dat:24
 tests1.dat:25
 tests1.dat:30
 tests1.dat:32
-tests1.dat:59
 tests1.dat:78
 tests1.dat:79
 tests1.dat:91
@@ -23,7 +21,6 @@ tests7.dat:32
 tests8.dat:6
 tests10.dat:30
 tests10.dat:31
-tests10.dat:36
 tests15.dat:11
 tests16.dat:88
 tests16.dat:185
@@ -67,14 +64,11 @@ template.dat:68
 template.dat:77
 template.dat:90
 template.dat:99
-tricky01.dat:4
 tricky01.dat:5
 tricky01.dat:8
 webkit01.dat:23
 webkit01.dat:24
 webkit01.dat:25
-webkit01.dat:36
-webkit01.dat:37
 webkit01.dat:48
 webkit02.dat:5
 adoption01.dat:5
