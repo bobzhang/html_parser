@@ -1,0 +1,13 @@
+import {
+  "bobzhang/html_parser",
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/stdio",
+  "moonbitlang/core/env",
+}
+
+supported_targets = "+native"
+
+options(
+  "is-main": true,
+)
