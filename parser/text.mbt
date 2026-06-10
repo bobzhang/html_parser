@@ -144,6 +144,16 @@ fn Parser::merge_into_trailing_text(
       if self.pending_text_is_whitespace && text_has_non_ascii_whitespace(data) {
         self.pending_text_is_whitespace = false
       }
+      // Non-whitespace data is the after-body "anything else" case even
+      // when it merges into an existing forced text node: the mode
+      // switches back to in-body, so later comments insert normally.
+      if self.document_after_body &&
+        !self.is_fragment_parser() &&
+        !self.in_frameset_document() &&
+        text_has_non_ascii_whitespace(data) {
+        self.document_after_body = false
+        self.document_after_html = false
+      }
       true
     }
     _ => false
