@@ -20,6 +20,10 @@ fn Parser::handle_parsed_start_tag(
   if self.handle_disabled_head_noscript_start_tag(name, start) {
     return
   }
+  if self.document_after_body && !self.is_fragment_parser() && name == "head" {
+    self.error_at("unexpected-start-tag", start)
+    return
+  }
   if self.close_current_document_head_for_start(name, start) {
     return
   }

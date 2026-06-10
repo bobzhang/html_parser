@@ -81,7 +81,12 @@ fn Parser::handle_document_body_or_html_end_tag(
     if name == "body" && self.has_open_element("html") {
       return true
     }
-    return false
+    // A stray </body> or </html> still switches the document into the
+    // after-body modes: later tokens reprocess using the in-body rules,
+    // so subsequent top-level content belongs to the body.
+    self.error_at("unexpected-end-tag", pos)
+    self.document_after_body = true
+    return true
   }
   self.pop_until(name, pos)
   self.document_after_body = true
@@ -112,7 +117,14 @@ fn Parser::handle_before_html_end_tag(
   }
   self.before_html_phase = false
   match name {
-    "html" | "head" | "body" => true
+    "html" | "body" => {
+      // The spec's reprocessing chain for a stray </body> or </html> at
+      // the document start ends in the after-body modes; later tokens
+      // reprocess using the in-body rules.
+      self.document_after_body = true
+      true
+    }
+    "head" => true
     "br" => {
       self.error_at("unexpected-end-tag", error_pos)
       self.insert_body_mode_node(
@@ -124,5 +136,21 @@ fn Parser::handle_before_html_end_tag(
       self.error_at("unexpected-end-tag-before-html", error_pos)
       true
     }
+  }
+}
+
+///|
+/// Records a node inserted at the document top level after the body was
+/// closed. The after-body insertion modes reprocess such tokens with the
+/// in-body rules, so the scaffolder must place these nodes in the body
+/// rather than the head.
+fn Parser::mark_after_body_node(self : Parser, node : @dom.Node) -> Unit {
+  if !self.document_after_body || self.is_fragment_parser() {
+    return
+  }
+  let current = self.current_node()
+  if current.kind == Document ||
+    (current.kind == Element && current.name == "html") {
+    self.after_body_nodes.push(node)
   }
 }

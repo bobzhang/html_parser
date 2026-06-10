@@ -47,9 +47,6 @@ tests8.dat:6
 tests10.dat:30
 tests10.dat:31
 tests10.dat:36
-tests15.dat:2
-tests15.dat:3
-tests15.dat:5
 tests15.dat:11
 tests16.dat:88
 tests16.dat:185

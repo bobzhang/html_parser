@@ -66,6 +66,7 @@ fn Parser::append_start_tag_node(
   let foster_mode = self.table_start_foster_mode(name)
   if foster_mode == 0 {
     self.current_node().append_child(node)
+    self.mark_after_body_node(node)
     return
   }
   if foster_mode == 2 {
