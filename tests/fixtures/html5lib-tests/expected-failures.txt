@@ -10,8 +10,6 @@ math.dat:1
 math.dat:2
 math.dat:3
 math.dat:4
-blocks.dat:32
-blocks.dat:44
 tests1.dat:20
 tests1.dat:24
 tests1.dat:25
@@ -74,7 +72,6 @@ tests18.dat:15
 tests18.dat:33
 tests19.dat:1
 tests19.dat:2
-tests19.dat:4
 tests19.dat:20
 tests19.dat:26
 tests19.dat:38
@@ -90,7 +87,6 @@ tests19.dat:98
 tests19.dat:101
 tests20.dat:38
 tests20.dat:41
-tests20.dat:44
 tests21.dat:21
 tests25.dat:3
 tests25.dat:4
