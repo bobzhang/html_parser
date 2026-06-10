@@ -67,6 +67,7 @@ fn check_ci_command() -> @argparse.Command {
       check_no_arg_subcommand("check-tests"),
       check_no_arg_subcommand("check-coverage"),
       check_no_arg_subcommand("smoke-native-cli"),
+      check_no_arg_subcommand("check-html5lib-conformance"),
       check_no_arg_subcommand("check-cram-cli"),
       @argparse.Command(
         "verify-mooncakes-package",
@@ -135,6 +136,7 @@ async fn dispatch(args : ArrayView[String]) -> Int {
     "check-tests" => check_tests(rest)
     "check-coverage" => check_coverage(rest)
     "smoke-native-cli" => smoke_native_cli(rest)
+    "check-html5lib-conformance" => check_html5lib_conformance(rest)
     "check-cram-cli" => check_cram_cli(rest)
     "verify-mooncakes-package" => verify_mooncakes_package(rest)
     "check-publish-archive" => check_publish_archive(rest)
@@ -205,6 +207,8 @@ async fn check_ci(args : ArrayView[String]) -> Int {
   code = run_step("Analyze coverage", run_check_coverage)
   if code != 0 { return code }
   code = run_step("Build and smoke test native CLI", run_smoke_native_cli)
+  if code != 0 { return code }
+  code = run_step("Run html5lib-tests conformance suite", run_check_html5lib_conformance)
   if code != 0 { return code }
   code = run_step("Run Moon Cram native CLI tests", run_check_cram_cli)
   if code != 0 { return code }
@@ -797,7 +801,9 @@ async fn run_check_fixture_sync(require_reference : Bool) -> Int {
 
 ///|
 async fn run_check_fixture_manifest() -> Int {
-  let tracked = git_ls_files(["tests/fixtures/justhtml/**"])
+  let tracked = git_ls_files([
+    "tests/fixtures/justhtml/**", "tests/fixtures/html5lib-tests/**",
+  ])
   let manifest = fixture_manifest()
   let expected : Array[String] = []
   for entry in manifest {
@@ -1162,6 +1168,31 @@ fn coverage_source_path_is_counted(path : String) -> Bool {
   !path.has_suffix("_test.mbt") &&
   !path.has_suffix("_wbtest.mbt") &&
   !path.has_prefix("scripts/")
+}
+
+///|
+async fn check_html5lib_conformance(args : ArrayView[String]) -> Int {
+  if !expect_no_args(args, "usage: moon run --target native scripts/check_ci.mbtx check-html5lib-conformance") { return 2 }
+  run_check_html5lib_conformance()
+}
+
+///|
+async fn run_check_html5lib_conformance() -> Int {
+  let build_code = @process.run(
+    "moon",
+    [
+      "run", "--target", "native", "--release", "--build-only", "cmd/html5lib_conformance",
+    ],
+  )
+  if build_code != 0 {
+    return build_code
+  }
+  let runner = "_build/native/release/build/bobzhang/html_parser/cmd/html5lib_conformance/html5lib_conformance.exe"
+  if !@fs.exists(runner) {
+    eprintln("html5lib conformance runner was not built: \{runner}")
+    return 1
+  }
+  @process.run(runner, [])
 }
 
 ///|
@@ -1917,6 +1948,7 @@ fn validation_commands() -> Array[String] {
     "check-tests",
     "check-coverage",
     "smoke-native-cli",
+    "check-html5lib-conformance",
     "check-cram-cli",
     "verify-mooncakes-package",
     "check-publish-archive",
@@ -1967,6 +1999,10 @@ fn required_fixture_files() -> Array[String] {
     "tests/fixtures/justhtml/justhtml-tests/treebuilder_coverage.dat",
     "tests/fixtures/justhtml/linkify-it/fixtures/links.txt",
     "tests/fixtures/justhtml/linkify-it/fixtures/not_links.txt",
+    "tests/fixtures/html5lib-tests/LICENSE",
+    "tests/fixtures/html5lib-tests/README.md",
+    "tests/fixtures/html5lib-tests/expected-failures.txt",
+    "tests/fixtures/html5lib-tests/tree-construction/tests1.dat",
   ]
 }
 
@@ -2144,6 +2180,70 @@ fn fixture_manifest() -> Array[(String, Int, String)] {
     ("tests/fixtures/justhtml/linkify-it/README.md", 355, "adb5a81e57ce228b417d1f95577f688381bdf3ef8834d40ca7b00767e36f1b55"),
     ("tests/fixtures/justhtml/linkify-it/fixtures/links.txt", 6492, "f3413613c047d2d351b16ebba9c632baa74cfa0d8e253f00483299ed6e2953b9"),
     ("tests/fixtures/justhtml/linkify-it/fixtures/not_links.txt", 763, "857d0168381df03d82acb120ad507accf2e3a9e9c7c520d9dc859d028143d3af"),
+    ("tests/fixtures/html5lib-tests/LICENSE", 1103, "ff512aac9ef231d504be5afaf4429005024e4b2aaf257be39524f37b8402aaf2"),
+    ("tests/fixtures/html5lib-tests/README.md", 2147, "0b2d9d328dea873d747c49b96f81ded71fbc59c997cb4ca2727f9889a397c416"),
+    ("tests/fixtures/html5lib-tests/expected-failures.txt", 5134, "78ba75b90fe78fc800138679f4844edea749ed8e1eca8b5a32e4b265340c0cff"),
+    ("tests/fixtures/html5lib-tests/tree-construction/README.md", 4778, "5935c011ac581c8ab1e20e45bba6373c2a3975255017ec205dfcdb861f7c45c6"),
+    ("tests/fixtures/html5lib-tests/tree-construction/adoption01.dat", 6084, "b2aba05bd1d832f73a0c6103b3c8b151b283bab7c56887274d81f3a062c4963e"),
+    ("tests/fixtures/html5lib-tests/tree-construction/adoption02.dat", 672, "6ca94baf47ef9b6756657f40b15a12ac758802faa5003a7659652b8664e1e7d8"),
+    ("tests/fixtures/html5lib-tests/tree-construction/blocks.dat", 9688, "e3b7da1b57a4ec6991443dfc7ab3270f41d0f5959092a49be3e0edca0dae2104"),
+    ("tests/fixtures/html5lib-tests/tree-construction/comments01.dat", 3502, "79a7a42412b6dc48fa0c779dd8ba48d4d50033e7e9e417619288eec1e59d8db2"),
+    ("tests/fixtures/html5lib-tests/tree-construction/doctype01.dat", 9076, "f3a286c09d729eeed9aa63e0aec13ab12336af04590c169543e6d1e1ef4723b2"),
+    ("tests/fixtures/html5lib-tests/tree-construction/domjs-unsafe.dat", 10356, "eef4fb719e027ffaadfb854787d172893850fc561c29efe72d90c5bfa3c8b7ac"),
+    ("tests/fixtures/html5lib-tests/tree-construction/entities01.dat", 17640, "b73605caac5aed5656184ab8db3f08edff5457ac3186cb04afa28384bca955e3"),
+    ("tests/fixtures/html5lib-tests/tree-construction/entities02.dat", 4952, "f4e0cd461204b0184709be040c00811b776fbde1a6d002bb1c75d02056d9e54a"),
+    ("tests/fixtures/html5lib-tests/tree-construction/foreign-fragment.dat", 9082, "73e1785753c66420c067e5b29f89b17e7ebe1079687a512040ef19c6d42ac2c2"),
+    ("tests/fixtures/html5lib-tests/tree-construction/html5test-com.dat", 4790, "71d2ecbd0947599e82c876ce0300ecfc3a8cafd9d1736b33913f6a6152993bde"),
+    ("tests/fixtures/html5lib-tests/tree-construction/inbody01.dat", 836, "cb722f2853ec9613b71ea68e8bb26f474cc450b64612930591ab2656406222fe"),
+    ("tests/fixtures/html5lib-tests/tree-construction/isindex.dat", 774, "d152de773e276a07a1cfc91e93f01f3ce52c447c110192f2828dab51be2721b6"),
+    ("tests/fixtures/html5lib-tests/tree-construction/main-element.dat", 727, "d56e382994e1a5228ddb2ea49a5ff51ab68487f9a8f79ad34bcad05d40dc1e8f"),
+    ("tests/fixtures/html5lib-tests/tree-construction/math.dat", 1862, "3c2ecc07272c175676ecfafa0cf6e18e74c3293075703702a4b7929fcb0d07bd"),
+    ("tests/fixtures/html5lib-tests/tree-construction/menuitem-element.dat", 4015, "08e5e25f38bbc181c840ce5c5203b2566dc03129aeaf105ca2311645d40aae4d"),
+    ("tests/fixtures/html5lib-tests/tree-construction/namespace-sensitivity.dat", 518, "318fbc9926eddf5863524f1503c711ddaea93b55bcbd1eaab71b7e354ddfeb09"),
+    ("tests/fixtures/html5lib-tests/tree-construction/noscript01.dat", 4619, "e82449304a6371c14ed490384b6d814b7b1eeb1022dbc5caa2045fc8400655d7"),
+    ("tests/fixtures/html5lib-tests/tree-construction/pending-spec-changes-plain-text-unsafe.dat", 927, "f45151f8dc7a4fe1a4b36710cf33606ff43cc98a42f1d2f085a77680683b0c99"),
+    ("tests/fixtures/html5lib-tests/tree-construction/pending-spec-changes.dat", 851, "a6b7c4ecccabe70de2f24184245e4a73a8d12ed44ee658c3d5d25cce04c9d27f"),
+    ("tests/fixtures/html5lib-tests/tree-construction/plain-text-unsafe.dat", 9486, "1aef5e36b7ea04bb1d70684b33529a183938b7604283c562c698d6dad4e3878d"),
+    ("tests/fixtures/html5lib-tests/tree-construction/quirks01.dat", 1170, "b6717cc15d4ed573ccf6755bc9d52073e675b4d09f23bde07961e27592b9717c"),
+    ("tests/fixtures/html5lib-tests/tree-construction/ruby.dat", 4471, "5ae76ac4570d40e6648066798dd3ff729231bec98d3e010fdd67e0257f23a742"),
+    ("tests/fixtures/html5lib-tests/tree-construction/scriptdata01.dat", 6624, "e32ea3adc3d68c90e62ea50b3a41bf80369d1491958532bf00787b3509667322"),
+    ("tests/fixtures/html5lib-tests/tree-construction/scripted/adoption01.dat", 296, "1203be63238a6effc9cc47e3c9b1fa9a0c7e0126a2f78916514afed2d46f42d8"),
+    ("tests/fixtures/html5lib-tests/tree-construction/scripted/ark.dat", 631, "93365261fd9ea7dd9242613b57c23dba94e66bfd837a5d928f725bed81012dd0"),
+    ("tests/fixtures/html5lib-tests/tree-construction/scripted/webkit01.dat", 603, "9d84f68ffd6e8b7b3924c9211280a70a888576b49074654cc9708236834afc58"),
+    ("tests/fixtures/html5lib-tests/tree-construction/search-element.dat", 741, "30be0e9e8cbeea825e0323a7a3a518ab88f44fcada9b4f82b0cc7bbeb9334b76"),
+    ("tests/fixtures/html5lib-tests/tree-construction/svg.dat", 1606, "4c819b8dbdfbd98cfbce9a535a304b0a16597eb29ccc04077131a62810f309cd"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tables01.dat", 7041, "bfd4a53246e3acc527c8bb214cc743082e19260e72365001aad3f1d8f4bd08dc"),
+    ("tests/fixtures/html5lib-tests/tree-construction/template.dat", 25142, "74bc8308e673589d81b63eb71411a6f8ecea6fd6af649b5802c22615b7102a03"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests1.dat", 39802, "8438d7948b366c77821cff1fc71826a8090759a78ac8a691a5c82a51fc7e5d57"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests10.dat", 16458, "2d2624a819c323661e396d864ac23440053127b5ea7adb44a5904f5ceee5fa64"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests11.dat", 17679, "276190e2a7b97e8fcf3bd863a4b4b5346b555a8336c00143cb1d0e8956b94a07"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests12.dat", 1612, "e6c506cea74979a0d6ca47f6b175c7b6177d6e57db708920a89694e31dfd8a42"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests14.dat", 1067, "d151b2426f38de40a5d4ae726e2a56dbc7742a9b1c95299d60c1e2e0fdad1f98"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests15.dat", 3649, "ef784ece74cbd760da3a6947aaf4478810246b73c753f25a04be4d11dd806b2d"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests16.dat", 46454, "3350be682713afc1f6dad37059f2551709497a3643c38c26e1fe36fd07d23745"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests17.dat", 2819, "0567680775f58a5b2ad24e234f41d53f68fb2fc3ef7809bebaec0920e2f13c89"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests18.dat", 12119, "5d0019ae43bb4e0b0da9f2e1d57ac0618a607bd8a1324b163ec7a23a1dc120f3"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests19.dat", 22988, "a9316b1eb4d2821a18e2c840394c6218bfcdb598857b92631490d9c3c1840ce4"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests2.dat", 13193, "9cf76b5f4890065c04fc82ae828379a55b85cbe76f584fb1ef23dcef0a77b86b"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests20.dat", 13524, "07f7661690c4cd7cc0bbb0f1b9c1e1d65135e07c4dde8bbf106692f687e7d33d"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests21.dat", 5092, "b1a67420c79a5131002fefc987084ffb6b6094a3a74b272c6f545a47df06452c"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests22.dat", 4243, "78488328181d0f82f34b1a5e9e456ff7c713b3ff86dab6ace1530f6f07d5370d"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests23.dat", 3478, "2e4752ff4ef898e4a0cf9a450e481440095163d45075a662846a062552afe148"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests24.dat", 929, "fdd5c21f60f42235ded224a03e7182d289088328f460525adaf3c14e772a24ac"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests25.dat", 3586, "f2e08fda6d15a08faf9ff0001ec38560d942069cee6b4e264aeedbbacde7da8d"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests26.dat", 8865, "d55d24dfca2444fba759d59346cbab21f7e70340dbb14e2c7af8da3d44abd4ab"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests3.dat", 4601, "c4b4d8e0ea3d978c49d1e6a985d427164858b71ec980153c4526ed0c398f43b9"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests4.dat", 1041, "e6003a52e1cbffc361eca7c739cdd4459074ac8c59766d1eb171b9c9eb42f517"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests5.dat", 3160, "bf80b927082290541781844906abdcb72f091488f7a11e8b7d9ac00076dd4fce"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests6.dat", 11065, "be16c74d2a9862283262968439c95b9bfce6182ea61055a3c886c28d14f3e01a"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests7.dat", 7339, "aeb9569589c809b1a563c0b163173e8cf980a6a4028cb7c210f19c181b56999a"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests8.dat", 2664, "f3c8b1baece162e7e8c394540cdf9057266bb738bb0ad539a9d9b2f9d365f162"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests9.dat", 10391, "857820f088506a6d20ea6acefbf19c0a6c4de87a39b24988878066397516b36f"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tests_innerHTML_1.dat", 11205, "acb9f835119e302d33204f437d54637a84ae26608ccb7bc961c6f7f44202a44c"),
+    ("tests/fixtures/html5lib-tests/tree-construction/tricky01.dat", 6690, "3fb6d24c5e371860d096ef07f5fff38be3ceaa85f1239bee35cce548b596198a"),
+    ("tests/fixtures/html5lib-tests/tree-construction/void-in-phrasing.dat", 1890, "c8855173aca8ecbd218abc26db34a631393ce0285fffebffdaf69b8bdd6224e9"),
+    ("tests/fixtures/html5lib-tests/tree-construction/webkit01.dat", 14034, "063ca232535a792fa238ae769eeb0ddcc9bd2ee961d3da327ca134612d35d93c"),
+    ("tests/fixtures/html5lib-tests/tree-construction/webkit02.dat", 14921, "03b215350d352faf110df2cc6eac23a44a7f70945b4ea962f0b17bed103459f7"),
   ]
 }
 
