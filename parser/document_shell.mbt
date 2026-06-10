@@ -80,6 +80,9 @@ fn Parser::handle_document_body_or_html_end_tag(
   }
   if !self.has_open_element(name) {
     if name == "body" && self.has_open_element("html") {
+      // A stray </body> with an explicit html element still runs the
+      // after-head transition through body into after-body.
+      self.document_after_body = true
       return true
     }
     if self.has_open_element("template") {
@@ -181,6 +184,7 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
         node.kind == Element ||
         (node.kind == Text && text_has_non_ascii_whitespace(node.data))
       ) {
+      self.document_entered_body = true
       self.document_after_body = false
       self.document_after_html = false
     }
@@ -224,6 +228,7 @@ fn Parser::in_frameset_document(self : Parser) -> Bool {
 /// later comments use normal insertion again. Frameset documents never
 /// reprocess in body.
 fn Parser::leave_after_body_for_token(self : Parser, name : String) -> Unit {
+  self.end_tag_was_after_body = false
   if !self.document_after_body ||
     self.is_fragment_parser() ||
     self.in_frameset_document() ||
@@ -231,6 +236,57 @@ fn Parser::leave_after_body_for_token(self : Parser, name : String) -> Unit {
     name == "html" {
     return
   }
+  // Handlers later in the dispatch (the stray </p> recovery) still need
+  // to know the token arrived in the after-body modes.
+  self.end_tag_was_after_body = true
+  self.document_entered_body = true
   self.document_after_body = false
   self.document_after_html = false
+}
+
+///|
+/// True when a stray </p> arrives before body content has started in a
+/// document parse (the before-head/in-head/after-head modes), where the
+/// in-body act-as-<p> recovery does not apply.
+fn Parser::stray_p_end_tag_is_ignored(self : Parser) -> Bool {
+  if self.is_fragment_parser() {
+    return false
+  }
+  if self.document_after_body ||
+    self.end_tag_was_after_body ||
+    self.document_entered_body {
+    // After-body "anything else" tokens reprocess in body (and the
+    // parser stays in body afterwards), where the act-as-<p> recovery
+    // applies.
+    return false
+  }
+  if self.current_is_document_head() {
+    return true
+  }
+  let current = self.current_node()
+  if !(current.kind == Document ||
+    (current.kind == Element && current.name == "html")) {
+    return false
+  }
+  !document_children_contain_body_content(self.root)
+}
+
+///|
+fn document_children_contain_body_content(root : @dom.Node) -> Bool {
+  for child in root.children {
+    match child.kind {
+      Element =>
+        if child.name == "html" {
+          if document_children_contain_body_content(child) {
+            return true
+          }
+        } else if child.name != "head" &&
+          !is_document_head_element_name(child.name) {
+          return true
+        }
+      Text => if !is_whitespace_text_node(child) { return true }
+      _ => ()
+    }
+  }
+  false
 }

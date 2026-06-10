@@ -151,6 +151,7 @@ fn Parser::merge_into_trailing_text(
         !self.is_fragment_parser() &&
         !self.in_frameset_document() &&
         text_has_non_ascii_whitespace(data) {
+        self.document_entered_body = true
         self.document_after_body = false
         self.document_after_html = false
       }
