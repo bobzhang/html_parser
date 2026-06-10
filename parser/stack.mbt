@@ -5,13 +5,7 @@ fn Parser::pop_until(
   pos : Int,
   source_end_tag? : String,
 ) -> Unit {
-  let mut found = false
-  for node in self.stack {
-    if node.kind == Element && names_match_end_tag(node, name) {
-      found = true
-    }
-  }
-  if !found {
+  if !self.end_tag_target_visible_for_pop(name) {
     self.error_at("unexpected-end-tag", pos)
     return
   }
@@ -70,14 +64,32 @@ fn Parser::generate_implied_end_tags(self : Parser, exclude : String?) -> Unit {
 }
 
 ///|
-fn Parser::close_open_element(self : Parser, name : String) -> Bool {
-  let mut found = false
-  for node in self.stack {
+
+///|
+/// True when an element with this name is on the stack above the nearest
+/// open HTML template. Template contents are a separate tree: end tags
+/// inside a template must not see (or close) elements outside it.
+fn Parser::end_tag_target_visible(self : Parser, name : String) -> Bool {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
     if node.kind == Element && node.name == name {
-      found = true
+      return true
+    }
+    if name != "template" &&
+      node.kind == Element &&
+      node.name == "template" &&
+      (node.ns is None || node.ns is Some("html")) {
+      return false
     }
   }
-  if !found {
+  false
+}
+
+///|
+fn Parser::close_open_element(self : Parser, name : String) -> Bool {
+  if !self.end_tag_target_visible(name) {
     return false
   }
   while self.stack.length() > 1 {
@@ -193,4 +205,25 @@ fn Parser::insert_element_maybe_push(
   if push {
     self.stack.push(node)
   }
+}
+
+///|
+/// Like end_tag_target_visible, but matches the same name rules as
+/// pop_until (names_match_end_tag).
+fn Parser::end_tag_target_visible_for_pop(self : Parser, name : String) -> Bool {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element && names_match_end_tag(node, name) {
+      return true
+    }
+    if name != "template" &&
+      node.kind == Element &&
+      node.name == "template" &&
+      (node.ns is None || node.ns is Some("html")) {
+      return false
+    }
+  }
+  false
 }
