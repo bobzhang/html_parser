@@ -219,11 +219,11 @@ fn Parser::in_frameset_document(self : Parser) -> Bool {
 }
 
 ///|
-/// An end tag other than </body>/</html> seen in the after-body modes is
-/// the "anything else" case: switch back to in-body before reprocessing,
-/// so later comments use normal insertion again. Frameset documents never
+/// A token other than </body>/</html> seen in the after-body modes is the
+/// "anything else" case: switch back to in-body before reprocessing, so
+/// later comments use normal insertion again. Frameset documents never
 /// reprocess in body.
-fn Parser::leave_after_body_for_end_tag(self : Parser, name : String) -> Unit {
+fn Parser::leave_after_body_for_token(self : Parser, name : String) -> Unit {
   if !self.document_after_body ||
     self.is_fragment_parser() ||
     self.in_frameset_document() ||

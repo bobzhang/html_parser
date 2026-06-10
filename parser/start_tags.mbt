@@ -54,9 +54,17 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         return
       }
       let tag_close_pos = self.pos - 1
+      let was_after_body = self.document_after_body
       self.handle_parsed_start_tag(
         name, attrs, self_closing, start, tag_close_pos,
       )
+      // Any start tag in the after-body modes is the "anything else" case:
+      // the mode switches to in-body before reprocessing, even when the
+      // token is then ignored (a late <head> or <frame>). Cleared after
+      // processing so insertion-time marking still sees the state.
+      if was_after_body {
+        self.leave_after_body_for_token(name)
+      }
     }
     _ =>
       if self.current() is None {
