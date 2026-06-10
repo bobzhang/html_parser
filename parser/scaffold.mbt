@@ -31,11 +31,14 @@ fn Parser::document_doctype_is_initial(self : Parser) -> Bool {
 }
 
 ///|
-fn scaffold_document(root : @dom.Node) -> Unit {
+fn scaffold_document(
+  root : @dom.Node,
+  foster_parented_texts : Array[@dom.Node],
+) -> Unit {
   match document_html_element(root) {
     Some(html) => {
       absorb_root_html_siblings(root, html)
-      scaffold_existing_html_element(html)
+      scaffold_existing_html_element(html, foster_parented_texts)
       return
     }
     None => ()
@@ -97,7 +100,13 @@ fn scaffold_document(root : @dom.Node) -> Unit {
         head_children.push(child)
       }
     } else if child.kind == Text && !body_started {
-      if head is None && !head_children.is_empty() {
+      if nodes_contain(foster_parented_texts, child) {
+        // Foster-parented table text was produced after body content
+        // started (a table is open); keep it verbatim, including leading
+        // whitespace.
+        body_started = true
+        body_children.push(child)
+      } else if head is None && !head_children.is_empty() {
         let (leading, rest) = split_text_node_leading_ascii_whitespace(child)
         match leading {
           Some(node) => head_children.push(node)
@@ -150,4 +159,14 @@ fn append_post_body_html_children(
     Some(html) => append_children_to(html, children)
     None => append_children_to(root, children)
   }
+}
+
+///|
+fn nodes_contain(nodes : Array[@dom.Node], node : @dom.Node) -> Bool {
+  for candidate in nodes {
+    if physical_equal(candidate, node) {
+      return true
+    }
+  }
+  false
 }

@@ -50,10 +50,6 @@ tests10.dat:36
 tests15.dat:2
 tests15.dat:3
 tests15.dat:5
-tests15.dat:6
-tests15.dat:7
-tests15.dat:8
-tests15.dat:9
 tests15.dat:11
 tests16.dat:88
 tests16.dat:185
@@ -63,7 +59,6 @@ tests18.dat:33
 tests19.dat:1
 tests19.dat:2
 tests19.dat:20
-tests19.dat:26
 tests19.dat:38
 tests19.dat:80
 tests19.dat:82

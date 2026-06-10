@@ -71,7 +71,10 @@ fn absorb_root_html_siblings(root : @dom.Node, html : @dom.Node) -> Unit {
 }
 
 ///|
-fn scaffold_existing_html_element(html : @dom.Node) -> Unit {
+fn scaffold_existing_html_element(
+  html : @dom.Node,
+  foster_parented_texts : Array[@dom.Node],
+) -> Unit {
   let raw_original = html.children.copy()
   html.children.clear()
   let original : Array[@dom.Node] = []
@@ -139,7 +142,12 @@ fn scaffold_existing_html_element(html : @dom.Node) -> Unit {
         head_children.push(child)
       }
     } else if child.kind == Text && !body_started {
-      if head is None && !head_children.is_empty() {
+      if nodes_contain(foster_parented_texts, child) {
+        // Foster-parented table text keeps its whitespace; body content
+        // had already started when it was inserted.
+        body_started = true
+        body_children.push(child)
+      } else if head is None && !head_children.is_empty() {
         let (leading, rest) = split_text_node_leading_ascii_whitespace(child)
         match leading {
           Some(node) => head_children.push(node)
