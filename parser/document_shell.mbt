@@ -81,6 +81,11 @@ fn Parser::handle_document_body_or_html_end_tag(
     if name == "body" && self.has_open_element("html") {
       return true
     }
+    if self.has_open_element("template") {
+      // In-template end tags other than </template> are ignored and must
+      // not advance the outer document's insertion mode.
+      return false
+    }
     // A stray </body> or </html> still switches the document into the
     // after-body modes: later tokens reprocess using the in-body rules,
     // so subsequent top-level content belongs to the body.
