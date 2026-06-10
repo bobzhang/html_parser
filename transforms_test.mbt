@@ -466,17 +466,17 @@ test "sanitize policy selector limits apply to transform selectors" {
   assert_true(relaxed_divs[0].attrs().get("id") is Some(Some("matched")))
 
   let default_limited = @html_parser.parse_fragment("<div></div>")
-  let default_result = try? @html_parser.apply_transforms(
-    default_limited.root,
-    [
+  try
+    @html_parser.apply_transforms(default_limited.root, [
       @html_parser.TransformSpec::set_attrs(long_selector, {
         "id": Some("matched"),
       }),
       @html_parser.TransformSpec::sanitize(),
-    ],
-  )
-  match default_result {
-    Err(SelectorError(message)) => assert_eq(message, "Selector too long")
+    ])
+  catch {
+    SelectorError(message) => assert_eq(message, "Selector too long")
+    _ => fail("expected selector length limit error")
+  } noraise {
     _ => fail("expected selector length limit error")
   }
 
@@ -499,13 +499,16 @@ test "sanitize policy selector limits apply to transform selectors" {
   let budget = @html_parser.parse_fragment(
     "<div data-x=\"xxxxxxxxxxxxxxxxxxxx\"></div>",
   )
-  let budget_result = try? @html_parser.apply_transforms(budget.root, [
-    @html_parser.TransformSpec::drop("[data-x*=y]"),
-    @html_parser.TransformSpec::sanitize(policy=budget_policy),
-  ])
-  match budget_result {
-    Err(SelectorError(message)) =>
+  try
+    @html_parser.apply_transforms(budget.root, [
+      @html_parser.TransformSpec::drop("[data-x*=y]"),
+      @html_parser.TransformSpec::sanitize(policy=budget_policy),
+    ])
+  catch {
+    SelectorError(message) =>
       assert_eq(message, "Selector match byte budget exceeded")
+    _ => fail("expected selector match byte budget error")
+  } noraise {
     _ => fail("expected selector match byte budget error")
   }
 
@@ -514,16 +517,15 @@ test "sanitize policy selector limits apply to transform selectors" {
     selector_limits=SelectorLimits(max_parse_depth=1),
   )
   let parse_depth = @html_parser.parse_fragment("<p>x</p>")
-  let parse_depth_result = try? @html_parser.apply_transforms(
-    parse_depth.root,
-    [
+  try
+    @html_parser.apply_transforms(parse_depth.root, [
       @html_parser.TransformSpec::drop(":not(:not(:not(p)))"),
       @html_parser.TransformSpec::sanitize(policy=parse_depth_policy),
-    ],
-  )
-  match parse_depth_result {
-    Err(SelectorError(message)) =>
-      assert_eq(message, "Selector nesting is too deep")
+    ])
+  catch {
+    SelectorError(message) => assert_eq(message, "Selector nesting is too deep")
+    _ => fail("expected selector parse depth error")
+  } noraise {
     _ => fail("expected selector parse depth error")
   }
 
@@ -532,16 +534,15 @@ test "sanitize policy selector limits apply to transform selectors" {
     selector_limits=SelectorLimits(max_match_depth=0),
   )
   let match_depth = @html_parser.parse_fragment("<p>x</p>")
-  let match_depth_result = try? @html_parser.apply_transforms(
-    match_depth.root,
-    [
+  try
+    @html_parser.apply_transforms(match_depth.root, [
       @html_parser.TransformSpec::drop(":not(p)"),
       @html_parser.TransformSpec::sanitize(policy=match_depth_policy),
-    ],
-  )
-  match match_depth_result {
-    Err(SelectorError(message)) =>
-      assert_eq(message, "Selector nesting is too deep")
+    ])
+  catch {
+    SelectorError(message) => assert_eq(message, "Selector nesting is too deep")
+    _ => fail("expected selector match depth error")
+  } noraise {
     _ => fail("expected selector match depth error")
   }
 
@@ -550,13 +551,16 @@ test "sanitize policy selector limits apply to transform selectors" {
     selector_limits=SelectorLimits(max_match_steps=0),
   )
   let step_budget = @html_parser.parse_fragment("<p>x</p>")
-  let step_result = try? @html_parser.apply_transforms(step_budget.root, [
-    @html_parser.TransformSpec::drop("p"),
-    @html_parser.TransformSpec::sanitize(policy=step_policy),
-  ])
-  match step_result {
-    Err(SelectorError(message)) =>
+  try
+    @html_parser.apply_transforms(step_budget.root, [
+      @html_parser.TransformSpec::drop("p"),
+      @html_parser.TransformSpec::sanitize(policy=step_policy),
+    ])
+  catch {
+    SelectorError(message) =>
       assert_eq(message, "Selector match budget exceeded")
+    _ => fail("expected selector step budget error")
+  } noraise {
     _ => fail("expected selector step budget error")
   }
 
@@ -565,13 +569,16 @@ test "sanitize policy selector limits apply to transform selectors" {
     selector_limits=SelectorLimits(max_list_items=2),
   )
   let list_limited = @html_parser.parse_fragment("<p>x</p>")
-  let list_result = try? @html_parser.apply_transforms(list_limited.root, [
-    @html_parser.TransformSpec::drop("p, div, span"),
-    @html_parser.TransformSpec::sanitize(policy=list_policy),
-  ])
-  match list_result {
-    Err(SelectorError(message)) =>
+  try
+    @html_parser.apply_transforms(list_limited.root, [
+      @html_parser.TransformSpec::drop("p, div, span"),
+      @html_parser.TransformSpec::sanitize(policy=list_policy),
+    ])
+  catch {
+    SelectorError(message) =>
       assert_eq(message, "Selector list has too many items")
+    _ => fail("expected selector list limit error")
+  } noraise {
     _ => fail("expected selector list limit error")
   }
 
@@ -582,16 +589,16 @@ test "sanitize policy selector limits apply to transform selectors" {
   let complex_limited = @html_parser.parse_fragment(
     "<article><div><p>x</p></div></article>",
   )
-  let complex_result = try? @html_parser.apply_transforms(
-    complex_limited.root,
-    [
+  try
+    @html_parser.apply_transforms(complex_limited.root, [
       @html_parser.TransformSpec::drop("article > div > p"),
       @html_parser.TransformSpec::sanitize(policy=complex_policy),
-    ],
-  )
-  match complex_result {
-    Err(SelectorError(message)) =>
+    ])
+  catch {
+    SelectorError(message) =>
       assert_eq(message, "Selector has too many complex parts")
+    _ => fail("expected complex selector part limit error")
+  } noraise {
     _ => fail("expected complex selector part limit error")
   }
 
@@ -603,16 +610,16 @@ test "sanitize policy selector limits apply to transform selectors" {
   let compound_limited = @html_parser.parse_fragment(
     "<p class=\"a\" id=\"b\">x</p>",
   )
-  let compound_result = try? @html_parser.apply_transforms(
-    compound_limited.root,
-    [
+  try
+    @html_parser.apply_transforms(compound_limited.root, [
       @html_parser.TransformSpec::drop("p.a#b"),
       @html_parser.TransformSpec::sanitize(policy=compound_policy),
-    ],
-  )
-  match compound_result {
-    Err(SelectorError(message)) =>
+    ])
+  catch {
+    SelectorError(message) =>
       assert_eq(message, "Selector has too many simple selectors")
+    _ => fail("expected compound selector limit error")
+  } noraise {
     _ => fail("expected compound selector limit error")
   }
 
@@ -621,13 +628,16 @@ test "sanitize policy selector limits apply to transform selectors" {
     selector_limits=SelectorLimits(max_match_bytes=-1),
   )
   let negative_byte = @html_parser.parse_fragment("<p>x</p>")
-  let negative_result = try? @html_parser.apply_transforms(negative_byte.root, [
-    @html_parser.TransformSpec::drop("p"),
-    @html_parser.TransformSpec::sanitize(policy=negative_byte_policy),
-  ])
-  match negative_result {
-    Err(SelectorError(message)) =>
+  try
+    @html_parser.apply_transforms(negative_byte.root, [
+      @html_parser.TransformSpec::drop("p"),
+      @html_parser.TransformSpec::sanitize(policy=negative_byte_policy),
+    ])
+  catch {
+    SelectorError(message) =>
       assert_eq(message, "Selector match byte budget exceeded")
+    _ => fail("expected negative byte budget error")
+  } noraise {
     _ => fail("expected negative byte budget error")
   }
 
@@ -636,13 +646,16 @@ test "sanitize policy selector limits apply to transform selectors" {
     selector_limits=SelectorLimits(max_match_bytes=4),
   )
   let contains_byte = @html_parser.parse_fragment("<div>needle</div>")
-  let contains_result = try? @html_parser.apply_transforms(contains_byte.root, [
-    @html_parser.TransformSpec::drop("div:contains(needle)"),
-    @html_parser.TransformSpec::sanitize(policy=contains_byte_policy),
-  ])
-  match contains_result {
-    Err(SelectorError(message)) =>
+  try
+    @html_parser.apply_transforms(contains_byte.root, [
+      @html_parser.TransformSpec::drop("div:contains(needle)"),
+      @html_parser.TransformSpec::sanitize(policy=contains_byte_policy),
+    ])
+  catch {
+    SelectorError(message) =>
       assert_eq(message, "Selector match byte budget exceeded")
+    _ => fail("expected contains text byte budget error")
+  } noraise {
     _ => fail("expected contains text byte budget error")
   }
 }
@@ -1227,12 +1240,15 @@ test "sanitize transform propagates unsafe raise policy errors" {
     unsafe_handling=Raise,
   )
   let doc = @html_parser.parse_fragment("<p foo='1'>safe</p>")
-  let result = try? @html_parser.apply_transforms(doc.root, [
-    @html_parser.TransformSpec::sanitize(policy~),
-  ])
-  match result {
-    Err(UnsafeHtml(message)) =>
+  try
+    @html_parser.apply_transforms(doc.root, [
+      @html_parser.TransformSpec::sanitize(policy~),
+    ])
+  catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe attribute 'foo' (not allowed)")
+    _ => fail("expected sanitize transform to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected sanitize transform to raise UnsafeHtml")
   }
 }
@@ -1331,12 +1347,14 @@ test "sanitize transform comment and doctype drops are structural reports" {
     @html_parser.comment("c"),
     @html_parser.element("p", children=[@html_parser.text("ok")]),
   ])
-  let result = try? @html_parser.apply_transforms(doc, [
-    @html_parser.TransformSpec::sanitize(policy~, hook~, report~),
-  ])
-  match result {
-    Ok(clean) => assert_eq(clean.to_html(pretty=false), "<p>ok</p>")
-    Err(_) => fail("comment and doctype drops should not use unsafe handling")
+  try
+    @html_parser.apply_transforms(doc, [
+      @html_parser.TransformSpec::sanitize(policy~, hook~, report~),
+    ])
+  catch {
+    _ => fail("comment and doctype drops should not use unsafe handling")
+  } noraise {
+    clean => assert_eq(clean.to_html(pretty=false), "<p>ok</p>")
   }
   @test.assert_eq(events, [
     "hook:#doctype", "report:Dropped doctype", "node:#doctype", "hook:#comment",

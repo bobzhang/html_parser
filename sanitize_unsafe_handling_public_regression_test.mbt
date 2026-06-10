@@ -48,13 +48,13 @@ test "sanitize_dom can collect and raise unsafe findings" {
     "<p foo=1>safe</p>",
     sanitize=false,
   )
-  let result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    unsafe_fragment.root,
-    policy=raise_policy,
-  )
-  match result {
-    Err(UnsafeHtml(message)) =>
+  try
+    @html_parser.sanitize_dom(unsafe_fragment.root, policy=raise_policy)
+  catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe attribute 'foo' (not allowed)")
+    _ => fail("expected sanitize_dom to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected sanitize_dom to raise UnsafeHtml")
   }
 }
@@ -70,15 +70,13 @@ test "sanitize_dom raise mode reports dangerous attributes and urls" {
     "<p onclick='alert(1)'>x</p>",
     sanitize=false,
   )
-  let attr_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    attr_fragment.root,
-    policy=attr_policy,
-  )
-  match attr_result {
-    Err(UnsafeHtml(message)) =>
+  try @html_parser.sanitize_dom(attr_fragment.root, policy=attr_policy) catch {
+    UnsafeHtml(message) =>
       assert_eq(
         message, "Unsafe attribute 'onclick' (matched forbidden pattern 'on*')",
       )
+    _ => fail("expected dangerous attribute to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected dangerous attribute to raise UnsafeHtml")
   }
 
@@ -95,13 +93,10 @@ test "sanitize_dom raise mode reports dangerous attributes and urls" {
     "<a href='javascript:alert(1)'>x</a>",
     sanitize=false,
   )
-  let link_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    link_fragment.root,
-    policy=link_policy,
-  )
-  match link_result {
-    Err(UnsafeHtml(message)) =>
-      assert_eq(message, "Unsafe URL in attribute 'href'")
+  try @html_parser.sanitize_dom(link_fragment.root, policy=link_policy) catch {
+    UnsafeHtml(message) => assert_eq(message, "Unsafe URL in attribute 'href'")
+    _ => fail("expected unsafe URL to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected unsafe URL to raise UnsafeHtml")
   }
 
@@ -115,13 +110,11 @@ test "sanitize_dom raise mode reports dangerous attributes and urls" {
     "<meta http-equiv='refresh' content='0;url=javascript:alert(1)'>",
     sanitize=false,
   )
-  let meta_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    meta_fragment.root,
-    policy=meta_policy,
-  )
-  match meta_result {
-    Err(UnsafeHtml(message)) =>
+  try @html_parser.sanitize_dom(meta_fragment.root, policy=meta_policy) catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe URL in attribute 'content' (meta refresh)")
+    _ => fail("expected meta refresh content to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected meta refresh content to raise UnsafeHtml")
   }
 }
@@ -146,13 +139,13 @@ test "sanitize_dom raise mode reports URL list and base drops" {
     "<link rel='preload' as='image' imagesrcset='https://evil.example/a 1x'>",
     sanitize=false,
   )
-  let srcset_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    srcset_fragment.root,
-    policy=srcset_policy,
-  )
-  match srcset_result {
-    Err(UnsafeHtml(message)) =>
+  try
+    @html_parser.sanitize_dom(srcset_fragment.root, policy=srcset_policy)
+  catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe URL in attribute 'imagesrcset'")
+    _ => fail("expected unsafe imagesrcset to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected unsafe imagesrcset to raise UnsafeHtml")
   }
 
@@ -169,13 +162,11 @@ test "sanitize_dom raise mode reports URL list and base drops" {
     "<base href='https://evil.example/assets/'>",
     sanitize=false,
   )
-  let base_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    base_fragment.root,
-    policy=base_policy,
-  )
-  match base_result {
-    Err(UnsafeHtml(message)) =>
+  try @html_parser.sanitize_dom(base_fragment.root, policy=base_policy) catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe URL in attribute 'href' (base tag)")
+    _ => fail("expected base href to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected base href to raise UnsafeHtml")
   }
 
@@ -197,13 +188,11 @@ test "sanitize_dom raise mode reports URL list and base drops" {
     "<img src='https://trusted.example/x.png' attributionsrc='https://evil.example/register'>",
     sanitize=false,
   )
-  let attr_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    attr_fragment.root,
-    policy=attr_policy,
-  )
-  match attr_result {
-    Err(UnsafeHtml(message)) =>
+  try @html_parser.sanitize_dom(attr_fragment.root, policy=attr_policy) catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe URL in attribute 'attributionsrc'")
+    _ => fail("expected unsafe attributionsrc to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected unsafe attributionsrc to raise UnsafeHtml")
   }
 }
@@ -219,13 +208,11 @@ test "sanitize_dom raises for disallowed standalone root" {
   guard fragment.root.children().get(0) is Some(root) else {
     fail("expected standalone root")
   }
-  let result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    root,
-    policy~,
-  )
-  match result {
-    Err(UnsafeHtml(message)) =>
+  try @html_parser.sanitize_dom(root, policy~) catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe tag 'x-foo' (not allowed)")
+    _ => fail("expected sanitize_dom to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected sanitize_dom to raise UnsafeHtml")
   }
 }
@@ -244,13 +231,11 @@ test "sanitize_dom raise mode reports dropped content and child tags" {
   guard root_script_fragment.root.children().get(0) is Some(root_script) else {
     fail("expected script root")
   }
-  let root_script_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    root_script,
-    policy=root_script_policy,
-  )
-  match root_script_result {
-    Err(UnsafeHtml(message)) =>
+  try @html_parser.sanitize_dom(root_script, policy=root_script_policy) catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe tag 'script' (dropped content)")
+    _ => fail("expected dropped-content root to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected dropped-content root to raise UnsafeHtml")
   }
 
@@ -266,13 +251,13 @@ test "sanitize_dom raise mode reports dropped content and child tags" {
   guard child_script_fragment.root.children().get(0) is Some(child_script_root) else {
     fail("expected div root")
   }
-  let child_script_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    child_script_root,
-    policy=child_script_policy,
-  )
-  match child_script_result {
-    Err(UnsafeHtml(message)) =>
+  try
+    @html_parser.sanitize_dom(child_script_root, policy=child_script_policy)
+  catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe tag 'script' (dropped content)")
+    _ => fail("expected dropped-content child to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected dropped-content child to raise UnsafeHtml")
   }
 
@@ -288,13 +273,10 @@ test "sanitize_dom raise mode reports dropped content and child tags" {
   guard child_tag_fragment.root.children().get(0) is Some(child_tag_root) else {
     fail("expected div root")
   }
-  let child_tag_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    child_tag_root,
-    policy=child_tag_policy,
-  )
-  match child_tag_result {
-    Err(UnsafeHtml(message)) =>
-      assert_eq(message, "Unsafe tag 'foo' (not allowed)")
+  try @html_parser.sanitize_dom(child_tag_root, policy=child_tag_policy) catch {
+    UnsafeHtml(message) => assert_eq(message, "Unsafe tag 'foo' (not allowed)")
+    _ => fail("expected disallowed child tag to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected disallowed child tag to raise UnsafeHtml")
   }
 }
@@ -314,13 +296,11 @@ test "sanitize_dom raise mode reports foreign namespace drops" {
   guard root_fragment.root.children().get(0) is Some(svg_root) else {
     fail("expected svg root")
   }
-  let root_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    svg_root,
-    policy=root_policy,
-  )
-  match root_result {
-    Err(UnsafeHtml(message)) =>
+  try @html_parser.sanitize_dom(svg_root, policy=root_policy) catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe tag 'svg' (foreign namespace)")
+    _ => fail("expected foreign namespace root to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected foreign namespace root to raise UnsafeHtml")
   }
 
@@ -337,13 +317,11 @@ test "sanitize_dom raise mode reports foreign namespace drops" {
   guard child_fragment.root.children().get(0) is Some(div_root) else {
     fail("expected div root")
   }
-  let child_result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    div_root,
-    policy=child_policy,
-  )
-  match child_result {
-    Err(UnsafeHtml(message)) =>
+  try @html_parser.sanitize_dom(div_root, policy=child_policy) catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe tag 'svg' (foreign namespace)")
+    _ => fail("expected foreign namespace child to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected foreign namespace child to raise UnsafeHtml")
   }
 }
@@ -363,13 +341,11 @@ test "sanitize_dom raise mode reports html namespace foreign root drops" {
       "height": Some("10"),
     }),
   ])
-  let result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    svg,
-    policy~,
-  )
-  match result {
-    Err(UnsafeHtml(message)) =>
+  try @html_parser.sanitize_dom(svg, policy~) catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe tag 'svg' (foreign namespace)")
+    _ => fail("expected html namespace svg root to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected html namespace svg root to raise UnsafeHtml")
   }
 }
@@ -403,13 +379,11 @@ test "public unsafe handling collect and raise modes stay stable" {
     "<p onclick=x>ok</p><script>x</script><a href=javascript:x>link</a>",
     sanitize=false,
   )
-  let raised : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    raise_doc.root,
-    policy=raise_policy,
-  )
-  match raised {
-    Err(UnsafeHtml(message)) =>
+  try @html_parser.sanitize_dom(raise_doc.root, policy=raise_policy) catch {
+    UnsafeHtml(message) =>
       assert_true(message.contains("Unsafe attribute 'onclick'"))
+    _ => fail("expected unsafe sanitizer policy to raise")
+  } noraise {
     _ => fail("expected unsafe sanitizer policy to raise")
   }
 }

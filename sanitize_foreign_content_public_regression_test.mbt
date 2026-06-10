@@ -192,13 +192,11 @@ test "sanitize_dom raise mode reports active foreign mutation tags" {
       "begin": Some("0s"),
     }),
   ])
-  let result : Result[@html_parser.Node, @html_parser.HtmlError] = try? @html_parser.sanitize_dom(
-    svg,
-    policy~,
-  )
-  match result {
-    Err(UnsafeHtml(message)) =>
+  try @html_parser.sanitize_dom(svg, policy~) catch {
+    UnsafeHtml(message) =>
       assert_eq(message, "Unsafe tag 'set' (active foreign content)")
+    _ => fail("expected active foreign content to raise UnsafeHtml")
+  } noraise {
     _ => fail("expected active foreign content to raise UnsafeHtml")
   }
 }
