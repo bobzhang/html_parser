@@ -44,7 +44,6 @@ quirks01.dat:1
 quirks01.dat:2
 quirks01.dat:3
 template.dat:38
-template.dat:41
 template.dat:44
 template.dat:45
 template.dat:47

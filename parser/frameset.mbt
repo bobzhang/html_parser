@@ -145,6 +145,14 @@ fn Parser::handle_document_frameset_start_tag(
   if self.is_fragment_parser() && !self.fragment_context_html {
     return false
   }
+  if (name == "frameset" || name == "frame") &&
+    self.has_open_element("template") {
+    // The in-template rules ignore frameset and frame start tags; a
+    // template's contents must not switch the document into frameset
+    // parsing.
+    self.error_at("unexpected-start-tag", start)
+    return true
+  }
   if self.after_frameset {
     if name == "noframes" {
       return false
