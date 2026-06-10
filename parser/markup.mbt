@@ -128,6 +128,11 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
     self.eof_error_pos()
   }
   let force_quirks = name == "" || external.force_quirks || eof_doctype
+  if !self.is_fragment_parser() && document_doctype_is_initial_target(self) {
+    self.doctype_quirks_mode = doctype_triggers_quirks(
+      name, public_id, system_id, force_quirks,
+    )
+  }
   match missing_before_name {
     Some(pos) => self.error_at("missing-whitespace-before-doctype-name", pos)
     None => ()

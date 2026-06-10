@@ -20,12 +20,16 @@ fn tree_fixture_error_codes(
 }
 
 ///|
-fn assert_tree_fixture(case : TreeFixtureCase) -> Unit raise {
+fn assert_tree_fixture(
+  case : TreeFixtureCase,
+  iframe_srcdoc? : Bool = false,
+) -> Unit raise {
   let parsed = @html_parser.parse(
     case.input,
     collect_errors=true,
     scripting_enabled=case.scripting_enabled,
     xml_coercion=case.xml_coercion,
+    iframe_srcdoc~,
   )
   let actual_tree = @html_parser.to_test_format(parsed.root)
   if actual_tree != case.expected_tree {
@@ -48,7 +52,7 @@ fn assert_tree_fixture(case : TreeFixtureCase) -> Unit raise {
 ///|
 test "tree builder matches vendored iframe srcdoc fixture" {
   for case in iframe_srcdoc_tree_fixture_cases() {
-    assert_tree_fixture(case)
+    assert_tree_fixture(case, iframe_srcdoc=true)
   }
 }
 
@@ -57,6 +61,7 @@ test "tree builder matches reference iframe srcdoc doctype edge" {
   let doc = @html_parser.parse(
     "<!DOCTYPE foo><p><table></table>",
     collect_errors=true,
+    iframe_srcdoc=true,
   )
   assert_eq(
     @html_parser.to_test_format(doc.root),

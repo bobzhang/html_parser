@@ -46,11 +46,11 @@ pub fn linkify_dom(@dom.Node, config? : @linkify.LinkifyConfig, skip_tags? : Arr
 
 pub fn matches(@dom.Node, StringView) -> Bool
 
-pub fn parse(StringView, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> @parser.ParsedHtml raise @core.HtmlError
+pub fn parse(StringView, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool, iframe_srcdoc? : Bool) -> @parser.ParsedHtml raise @core.HtmlError
 
-pub fn parse_bytes(BytesView, encoding? : String, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> @parser.ParsedHtml raise @core.HtmlError
+pub fn parse_bytes(BytesView, encoding? : String, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool, iframe_srcdoc? : Bool) -> @parser.ParsedHtml raise @core.HtmlError
 
-pub fn parse_fragment(StringView, context? : @parser.FragmentContext, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool) -> @parser.ParsedHtml raise @core.HtmlError
+pub fn parse_fragment(StringView, context? : @parser.FragmentContext, sanitize? : Bool, collect_errors? : Bool, strict? : Bool, scripting_enabled? : Bool, xml_coercion? : Bool, track_node_locations? : Bool, iframe_srcdoc? : Bool) -> @parser.ParsedHtml raise @core.HtmlError
 
 pub fn query(@dom.Node, StringView) -> Array[@dom.Node]
 
