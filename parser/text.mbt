@@ -125,7 +125,7 @@ fn Parser::merge_into_trailing_text(
   match parent.children.last() {
     Some(last) if last.kind == Text &&
       !last.sanitize_escape_only &&
-      !self.merge_crosses_after_body_boundary(parent, last) => {
+      !self.merge_crosses_body_boundary(parent, last, data) => {
       let merged = @dom.text(last.data + data)
       merged.parsed_from_source = last.parsed_from_source
       merged.origin_offset = last.origin_offset
@@ -146,26 +146,30 @@ fn Parser::merge_into_trailing_text(
 }
 
 ///|
-/// True when appending would merge body text into a text node produced
-/// before the document switched to after-body mode. Such runs must stay
-/// separate so the scaffolder can keep the earlier node between the head
-/// and the body while filing the new data into the body.
-fn Parser::merge_crosses_after_body_boundary(
+/// True when appending would merge body text into a top-level
+/// whitespace-only run that the scaffolder must keep between the head and
+/// the body (for example `<head></head> </i>X` keeps the space at the
+/// html level and files only `X` into the body). Whitespace merges into
+/// whitespace, non-whitespace text was already body content (X</body>X
+/// yields "XX"), and runs already marked as body content always accept
+/// more data.
+fn Parser::merge_crosses_body_boundary(
   self : Parser,
   parent : @dom.Node,
   last : @dom.Node,
+  data : String,
 ) -> Bool {
-  if !self.document_after_body || self.is_fragment_parser() {
+  if self.is_fragment_parser() {
     return false
   }
   if !(parent.kind == Document ||
     (parent.kind == Element && parent.name == "html")) {
     return false
   }
-  // Only a whitespace-only run from before the switch stays between the
-  // head and the body; non-whitespace text was already body content, and
-  // the spec merges new body data into it (X</body>X yields "XX").
-  !self.node_is_after_body(last) && is_whitespace_text_node(last)
+  if !is_whitespace_text_node(last) || self.node_is_after_body(last) {
+    return false
+  }
+  text_has_non_ascii_whitespace(data)
 }
 
 ///|
