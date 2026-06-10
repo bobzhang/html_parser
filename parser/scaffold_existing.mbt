@@ -55,7 +55,7 @@ fn append_html_node_contents(
 fn absorb_root_html_siblings(
   root : @dom.Node,
   html : @dom.Node,
-  after_body_nodes : Array[@dom.Node],
+  forced_body_nodes : Array[@dom.Node],
 ) -> Unit {
   let original = root.children.copy()
   root.children.clear()
@@ -68,7 +68,7 @@ fn absorb_root_html_siblings(
         root.append_child(child)
         saw_html = true
       }
-    } else if nodes_contain(after_body_nodes, child) {
+    } else if nodes_contain(forced_body_nodes, child) {
       // Content reprocessed in body after a stray </body>/</html> belongs
       // inside the html element; the scaffold pass below files it into the
       // body.
@@ -83,7 +83,7 @@ fn absorb_root_html_siblings(
 fn scaffold_existing_html_element(
   html : @dom.Node,
   foster_parented_texts : Array[@dom.Node],
-  after_body_nodes : Array[@dom.Node],
+  forced_body_nodes : Array[@dom.Node],
 ) -> Unit {
   let raw_original = html.children.copy()
   html.children.clear()
@@ -142,13 +142,13 @@ fn scaffold_existing_html_element(
     } else if child.kind == Element &&
       is_document_head_element_name(child.name) &&
       !body_started &&
-      !nodes_contain(after_body_nodes, child) {
+      !nodes_contain(forced_body_nodes, child) {
       head_children.push(child)
     } else if child.kind == Comment && !body_started {
       head_children.push(child)
     } else if is_whitespace_text_node(child) &&
       !body_started &&
-      !nodes_contain(after_body_nodes, child) {
+      !nodes_contain(forced_body_nodes, child) {
       if head is Some(_) {
         between_head_body_children.push(child)
       } else if !head_children.is_empty() {
@@ -156,7 +156,7 @@ fn scaffold_existing_html_element(
       }
     } else if child.kind == Text && !body_started {
       if nodes_contain(foster_parented_texts, child) ||
-        nodes_contain(after_body_nodes, child) {
+        nodes_contain(forced_body_nodes, child) {
         // Foster-parented table text keeps its whitespace; body content
         // had already started when it was inserted.
         body_started = true

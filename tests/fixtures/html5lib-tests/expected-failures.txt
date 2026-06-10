@@ -18,8 +18,6 @@ tests2.dat:54
 tests3.dat:11
 tests3.dat:23
 tests6.dat:0
-tests7.dat:1
-tests7.dat:7
 tests7.dat:30
 tests7.dat:31
 tests7.dat:32

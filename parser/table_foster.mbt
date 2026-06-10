@@ -66,7 +66,7 @@ fn Parser::append_start_tag_node(
   let foster_mode = self.table_start_foster_mode(name)
   if foster_mode == 0 {
     self.current_node().append_child(node)
-    self.mark_after_body_node(node)
+    self.mark_forced_body_node(node)
     return
   }
   if foster_mode == 2 {
@@ -79,6 +79,10 @@ fn Parser::append_start_tag_node(
     return
   }
   self.insert_node_before_open_table(node, self.last_open_table_index())
+  // A foster-parented element is body content even when it precedes the
+  // table at the document top level; without the marker the scaffolder
+  // would file head-ish names (title, meta, ...) into the head.
+  self.forced_body_nodes.push(node)
 }
 
 ///|

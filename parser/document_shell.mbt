@@ -153,13 +153,13 @@ fn Parser::handle_before_html_end_tag(
 /// closed. The after-body insertion modes reprocess such tokens with the
 /// in-body rules, so the scaffolder must place these nodes in the body
 /// rather than the head.
-fn Parser::mark_after_body_node(self : Parser, node : @dom.Node) -> Unit {
+fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
   if !self.document_after_body || self.is_fragment_parser() {
     return
   }
   let current = self.current_node()
   if current.kind == Document ||
     (current.kind == Element && current.name == "html") {
-    self.after_body_nodes.push(node)
+    self.forced_body_nodes.push(node)
   }
 }
