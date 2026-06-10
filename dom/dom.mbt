@@ -484,6 +484,7 @@ pub fn Node::flatten_template_contents(self : Node) -> Unit {
         self.children.push(grandchild)
       }
       contents.children.clear()
+      contents.parent = None
       self.template_contents = None
     }
     None => ()
