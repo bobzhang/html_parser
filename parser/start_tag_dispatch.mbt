@@ -30,6 +30,17 @@ fn Parser::handle_parsed_start_tag(
   if self.handle_late_document_head_start_tag(name, start) {
     return
   }
+  if !self.is_fragment_parser() &&
+    !self.in_frameset_document() &&
+    name != "html" &&
+    name != "head" &&
+    name != "frameset" &&
+    !is_document_head_element_name(name) {
+    // Any other start tag transitions the document into body parsing,
+    // even when the token itself is then ignored (a lone <frame>); later
+    // stray end tags use the in-body recoveries.
+    self.document_entered_body = true
+  }
   if self.in_select_insertion_mode() && name == "frame" {
     self.error_at("unexpected-start-tag-in-select", start)
     return
