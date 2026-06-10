@@ -14,7 +14,10 @@ fn Parser::handle_document_frameset_end_tag(
   }
   if self.after_frameset {
     if name == "html" {
-      ()
+      // After-frameset </html> switches to after-after-frameset: later
+      // comments attach to the document itself.
+      self.document_after_body = true
+      self.document_after_html = true
     } else if name == "frameset" {
       self.error_at("unexpected-token-after-frameset", tag_close_pos)
     } else {

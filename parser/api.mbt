@@ -30,6 +30,8 @@ pub fn parse(
     root,
     parser.foster_parented_texts,
     parser.forced_body_nodes,
+    parser.after_body_comments,
+    parser.after_html_comments,
   )
   parser.apply_pending_document_html_attrs()
   append_post_body_html_children(root, parser.post_body_html_children)

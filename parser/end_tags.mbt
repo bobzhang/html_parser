@@ -83,6 +83,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_before_html_end_tag(name, start, self.pos - 1) {
     return
   }
+  self.leave_after_body_for_token(name)
   if self.handle_foreign_content_end_tag(name, start) {
     return
   }

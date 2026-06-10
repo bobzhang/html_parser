@@ -15,7 +15,11 @@ fn Parser::parse_comment(self : Parser) -> Unit {
   } else {
     scan.data
   }
-  self.current_node().append_child(self.comment_at(data, comment_start))
+  let node = self.comment_at(data, comment_start)
+  if self.append_after_body_comment(node) {
+    return
+  }
+  self.current_node().append_child(node)
 }
 
 ///|
@@ -27,7 +31,10 @@ fn Parser::parse_bogus_comment(self : Parser, origin_start : Int) -> Unit {
   let view = self.input[data_start:self.pos]
   let data = normalize_bogus_comment_data(view)
   let data = if self.xml_coercion { coerce_comment_for_xml(data) } else { data }
-  self.current_node().append_child(self.comment_at(data, origin_start))
+  let node = self.comment_at(data, origin_start)
+  if !self.append_after_body_comment(node) {
+    self.current_node().append_child(node)
+  }
   if self.current() == Some('>') {
     ignore(self.advance_char())
   }
