@@ -52,7 +52,11 @@ fn append_html_node_contents(
 }
 
 ///|
-fn absorb_root_html_siblings(root : @dom.Node, html : @dom.Node) -> Unit {
+fn absorb_root_html_siblings(
+  root : @dom.Node,
+  html : @dom.Node,
+  after_body_nodes : Array[@dom.Node],
+) -> Unit {
   let original = root.children.copy()
   root.children.clear()
   let mut saw_html = false
@@ -64,6 +68,11 @@ fn absorb_root_html_siblings(root : @dom.Node, html : @dom.Node) -> Unit {
         root.append_child(child)
         saw_html = true
       }
+    } else if nodes_contain(after_body_nodes, child) {
+      // Content reprocessed in body after a stray </body>/</html> belongs
+      // inside the html element; the scaffold pass below files it into the
+      // body.
+      html.append_child(child)
     } else {
       root.append_child(child)
     }

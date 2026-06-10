@@ -38,7 +38,7 @@ fn scaffold_document(
 ) -> Unit {
   match document_html_element(root) {
     Some(html) => {
-      absorb_root_html_siblings(root, html)
+      absorb_root_html_siblings(root, html, after_body_nodes)
       scaffold_existing_html_element(
         html, foster_parented_texts, after_body_nodes,
       )
