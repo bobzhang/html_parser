@@ -135,5 +135,11 @@ fn Parser::start_tag_inserts_empty_nonvoid(
   self : Parser,
   name : StringView,
 ) -> Bool {
-  name == "keygen" || (name == "frame" && self.is_fragment_parser())
+  // basefont and bgsound use the in-head insertion rule: insert the
+  // element and immediately pop it, so following content becomes a
+  // sibling rather than a child.
+  name == "keygen" ||
+  name == "basefont" ||
+  name == "bgsound" ||
+  (name == "frame" && self.is_fragment_parser())
 }
