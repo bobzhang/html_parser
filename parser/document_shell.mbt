@@ -80,6 +80,9 @@ fn Parser::handle_document_body_or_html_end_tag(
   }
   if !self.has_open_element(name) {
     if name == "body" && self.has_open_element("html") {
+      // A stray </body> with an explicit html element still runs the
+      // after-head transition through body into after-body.
+      self.document_after_body = true
       return true
     }
     if self.has_open_element("template") {
