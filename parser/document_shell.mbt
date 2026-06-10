@@ -176,7 +176,10 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
     // again. Whitespace is processed without leaving after-body, and
     // frameset documents never reprocess in body (after-after-frameset
     // accepts noframes/whitespace/comments and ignores everything else).
-    if !self.uses_document_frameset_rules() &&
+    let frameset_document = self.after_frameset ||
+      self.detached_frameset_mode ||
+      self.has_open_element("frameset")
+    if !frameset_document &&
       (
         node.kind == Element ||
         (node.kind == Text && text_has_non_ascii_whitespace(node.data))
