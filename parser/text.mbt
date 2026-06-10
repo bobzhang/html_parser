@@ -123,7 +123,9 @@ fn Parser::merge_into_trailing_text(
   data : String,
 ) -> Bool {
   match parent.children.last() {
-    Some(last) if last.kind == Text && !last.sanitize_escape_only => {
+    Some(last) if last.kind == Text &&
+      !last.sanitize_escape_only &&
+      !self.merge_crosses_after_body_boundary(parent, last) => {
       let merged = @dom.text(last.data + data)
       merged.parsed_from_source = last.parsed_from_source
       merged.origin_offset = last.origin_offset
@@ -141,6 +143,36 @@ fn Parser::merge_into_trailing_text(
     }
     _ => false
   }
+}
+
+///|
+/// True when appending would merge body text into a text node produced
+/// before the document switched to after-body mode. Such runs must stay
+/// separate so the scaffolder can keep the earlier node between the head
+/// and the body while filing the new data into the body.
+fn Parser::merge_crosses_after_body_boundary(
+  self : Parser,
+  parent : @dom.Node,
+  last : @dom.Node,
+) -> Bool {
+  if !self.document_after_body || self.is_fragment_parser() {
+    return false
+  }
+  if !(parent.kind == Document ||
+    (parent.kind == Element && parent.name == "html")) {
+    return false
+  }
+  !self.node_is_after_body(last)
+}
+
+///|
+fn Parser::node_is_after_body(self : Parser, node : @dom.Node) -> Bool {
+  for candidate in self.after_body_nodes {
+    if physical_equal(candidate, node) {
+      return true
+    }
+  }
+  false
 }
 
 ///|
