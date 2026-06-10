@@ -235,7 +235,15 @@ fn node_is_self_or_ancestor(node : Node, descendant : Node) -> Bool {
 fn detach_from_parent(node : Node) -> Unit {
   match node.parent {
     Some(parent) => {
-      parent.remove_child(node)
+      if parent.template_contents is Some(contents) &&
+        physical_equal(contents, node) {
+        // Detaching a template's contents fragment (for example when a
+        // caller appends the fragment elsewhere) must release the
+        // template's reference, or both trees would share the children.
+        parent.template_contents = None
+      } else {
+        parent.remove_child(node)
+      }
       node.parent = None
     }
     None => ()
