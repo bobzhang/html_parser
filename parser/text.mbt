@@ -110,7 +110,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   }
   let text_node = self.text_at(data, text_start)
   parent.append_child(text_node)
-  self.mark_after_body_node(text_node)
+  self.mark_forced_body_node(text_node)
 }
 
 ///|
@@ -185,8 +185,8 @@ fn Parser::flush_pending_text(self : Parser) -> Unit {
     }
     None => ()
   }
-  if self.remove_after_body_node(node) {
-    self.after_body_nodes.push(merged)
+  if self.remove_forced_body_node(node) {
+    self.forced_body_nodes.push(merged)
   }
   if self.remove_foster_parented_text(node) {
     self.foster_parented_texts.push(merged)
@@ -217,7 +217,7 @@ fn Parser::merge_crosses_body_boundary(
     (parent.kind == Element && parent.name == "html")) {
     return false
   }
-  if !self.trailing_text_is_whitespace(last) || self.node_is_after_body(last) {
+  if !self.trailing_text_is_whitespace(last) || self.node_is_forced_body(last) {
     return false
   }
   // After the body has closed, even whitespace belongs to the body (the
@@ -238,8 +238,8 @@ fn Parser::trailing_text_is_whitespace(self : Parser, node : @dom.Node) -> Bool 
 }
 
 ///|
-fn Parser::node_is_after_body(self : Parser, node : @dom.Node) -> Bool {
-  for candidate in self.after_body_nodes {
+fn Parser::node_is_forced_body(self : Parser, node : @dom.Node) -> Bool {
+  for candidate in self.forced_body_nodes {
     if physical_equal(candidate, node) {
       return true
     }
@@ -248,11 +248,11 @@ fn Parser::node_is_after_body(self : Parser, node : @dom.Node) -> Bool {
 }
 
 ///|
-fn Parser::remove_after_body_node(self : Parser, node : @dom.Node) -> Bool {
+fn Parser::remove_forced_body_node(self : Parser, node : @dom.Node) -> Bool {
   let mut index = 0
-  while index < self.after_body_nodes.length() {
-    if physical_equal(self.after_body_nodes[index], node) {
-      ignore(self.after_body_nodes.remove(index))
+  while index < self.forced_body_nodes.length() {
+    if physical_equal(self.forced_body_nodes[index], node) {
+      ignore(self.forced_body_nodes.remove(index))
       return true
     }
     index += 1
