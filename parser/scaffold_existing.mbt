@@ -84,7 +84,6 @@ fn scaffold_existing_html_element(
   html : @dom.Node,
   foster_parented_texts : Array[@dom.Node],
   forced_body_nodes : Array[@dom.Node],
-  after_body_comments : Array[@dom.Node],
 ) -> Unit {
   let raw_original = html.children.copy()
   html.children.clear()
@@ -104,7 +103,6 @@ fn scaffold_existing_html_element(
   let head_children : Array[@dom.Node] = []
   let body_children : Array[@dom.Node] = []
   let after_frameset_children : Array[@dom.Node] = []
-  let trailing_after_body_comments : Array[@dom.Node] = []
   let mut body_started = false
   for child in original {
     if child.kind == Comment &&
@@ -112,9 +110,6 @@ fn scaffold_existing_html_element(
       head is None &&
       head_children.is_empty() {
       before_head_children.push(child)
-    } else if child.kind == Comment && nodes_contain(after_body_comments, child) {
-      // Routed at parse time: re-attached after the body during assembly.
-      trailing_after_body_comments.push(child)
     } else if child.kind == Comment && !body_started && head is Some(_) {
       between_head_body_children.push(child)
     } else if child.kind == Element &&
@@ -204,5 +199,4 @@ fn scaffold_existing_html_element(
       html.append_child(body_node)
     }
   }
-  append_children_to(html, trailing_after_body_comments)
 }

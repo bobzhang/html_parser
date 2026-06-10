@@ -40,32 +40,18 @@ fn scaffold_document(
 ) -> Unit {
   match document_html_element(root) {
     Some(html) => {
-      // Routed comments parsed before a later explicit <html> are still
-      // root children; pull them out so they re-attach after the body
-      // (or after the html element) below.
-      let routed_after_body : Array[@dom.Node] = []
-      let routed_after_html : Array[@dom.Node] = []
-      let kept_root_children : Array[@dom.Node] = []
-      for child in root.children {
-        if child.kind == Comment && nodes_contain(after_body_comments, child) {
-          routed_after_body.push(child)
-        } else if child.kind == Comment &&
-          nodes_contain(after_html_comments, child) {
-          routed_after_html.push(child)
-        } else {
-          kept_root_children.push(child)
-        }
-      }
-      if routed_after_body.length() > 0 || routed_after_html.length() > 0 {
-        root.children.clear()
-        append_children_to(root, kept_root_children)
-      }
+      // Routed comments may sit at the root (parsed before a later
+      // explicit <html>) or inside the html element; strip them from both
+      // places and re-attach from the recorded arrays so the original
+      // comment order is preserved.
+      strip_routed_comments(root, after_body_comments, after_html_comments)
+      strip_routed_comments(html, after_body_comments, after_html_comments)
       absorb_root_html_siblings(root, html, forced_body_nodes)
       scaffold_existing_html_element(
-        html, foster_parented_texts, forced_body_nodes, after_body_comments,
+        html, foster_parented_texts, forced_body_nodes,
       )
-      append_children_to(html, routed_after_body)
-      append_children_to(root, routed_after_html)
+      append_children_to(html, after_body_comments)
+      append_children_to(root, after_html_comments)
       return
     }
     None => ()
@@ -210,4 +196,28 @@ fn nodes_contain(nodes : Array[@dom.Node], node : @dom.Node) -> Bool {
     }
   }
   false
+}
+
+///|
+fn strip_routed_comments(
+  parent : @dom.Node,
+  after_body_comments : Array[@dom.Node],
+  after_html_comments : Array[@dom.Node],
+) -> Unit {
+  let kept : Array[@dom.Node] = []
+  for child in parent.children {
+    if child.kind == Comment &&
+      (
+        nodes_contain(after_body_comments, child) ||
+        nodes_contain(after_html_comments, child)
+      ) {
+      child.parent = None
+    } else {
+      kept.push(child)
+    }
+  }
+  if kept.length() != parent.children.length() {
+    parent.children.clear()
+    append_children_to(parent, kept)
+  }
 }
