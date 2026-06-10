@@ -41,6 +41,7 @@ priv struct Parser {
   forced_body_nodes : Array[@dom.Node]
   mut document_after_html : Bool
   mut end_tag_was_after_body : Bool
+  mut document_entered_body : Bool
   after_body_comments : Array[@dom.Node]
   after_html_comments : Array[@dom.Node]
   mut pending_text_node : @dom.Node?
@@ -110,6 +111,7 @@ fn Parser::Parser(
     forced_body_nodes: [],
     document_after_html: false,
     end_tag_was_after_body: false,
+    document_entered_body: false,
     after_body_comments: [],
     after_html_comments: [],
     pending_text_node: None,

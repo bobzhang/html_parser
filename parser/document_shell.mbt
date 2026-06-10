@@ -181,6 +181,7 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
         node.kind == Element ||
         (node.kind == Text && text_has_non_ascii_whitespace(node.data))
       ) {
+      self.document_entered_body = true
       self.document_after_body = false
       self.document_after_html = false
     }
@@ -235,6 +236,7 @@ fn Parser::leave_after_body_for_token(self : Parser, name : String) -> Unit {
   // Handlers later in the dispatch (the stray </p> recovery) still need
   // to know the token arrived in the after-body modes.
   self.end_tag_was_after_body = true
+  self.document_entered_body = true
   self.document_after_body = false
   self.document_after_html = false
 }
@@ -247,9 +249,12 @@ fn Parser::stray_p_end_tag_is_ignored(self : Parser) -> Bool {
   if self.is_fragment_parser() {
     return false
   }
-  if self.document_after_body || self.end_tag_was_after_body {
-    // After-body "anything else" tokens reprocess in body, where the
-    // act-as-<p> recovery applies.
+  if self.document_after_body ||
+    self.end_tag_was_after_body ||
+    self.document_entered_body {
+    // After-body "anything else" tokens reprocess in body (and the
+    // parser stays in body afterwards), where the act-as-<p> recovery
+    // applies.
     return false
   }
   if self.current_is_document_head() {
