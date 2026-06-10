@@ -182,6 +182,22 @@ moon run --target native examples/cmd/htmlfmt -- "<article><p>Hello <b>MoonBit</
 
 The examples documentation lives in `examples/README.mbt.md`.
 
+## Benchmarks
+
+Benchmark the main entry points (parse, sanitize, serialize, selector query,
+Markdown conversion, linkify, streaming) against the vendored Wikipedia portal
+page (~300 KB UTF-16):
+
+```sh
+moon run --target native --release cmd/benchmark
+```
+
+Pass a path to benchmark a different document, `--json` for machine-readable
+per-workload summaries (one JSON object per line), or `--quick` for a single
+smoke iteration per workload. CI builds and smoke-runs the benchmark on every
+push so the workloads cannot bit-rot; timing numbers are informational and
+never gate CI.
+
 ## Development Checks
 
 Run the same validation entrypoint used by CI:
