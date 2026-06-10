@@ -41,10 +41,16 @@ fn Parser::handle_parsed_start_tag(
     name == "body" &&
     document_children_contain_body_content(self.root) {
     // A late <body> start tag is a parse error: it is ignored, its
-    // attributes merge into the existing body without overwriting, and
-    // frameset-ok becomes not ok.
+    // attributes merge into the existing body without overwriting,
+    // frameset-ok becomes not ok, and (when reprocessed from the
+    // after-body modes) parsing returns to in-body.
     self.error_at("unexpected-start-tag", start)
     self.frameset_ok = false
+    if self.document_after_body {
+      self.document_entered_body = true
+      self.document_after_body = false
+      self.document_after_html = false
+    }
     for attr_name, attr_value in attrs {
       if !self.pending_document_body_attrs.contains(attr_name) {
         self.pending_document_body_attrs[attr_name] = attr_value
