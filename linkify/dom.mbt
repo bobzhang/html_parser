@@ -90,6 +90,11 @@ fn linkify_dom_children(
         let child_skip = skip_linkify ||
           skip_tags.contains(@syn.lower_ascii(child.name))
         linkify_dom_children(child, config, skip_tags, child_skip)
+        match child.template_contents {
+          Some(contents) =>
+            linkify_dom_children(contents, config, skip_tags, child_skip)
+          None => ()
+        }
         index += 1
       }
       _ => index += 1

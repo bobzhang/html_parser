@@ -39,12 +39,14 @@ pub(all) struct Node {
   mut origin_col : Int?
   mut parent : Node?
   children : Array[Node]
+  mut template_contents : Node?
 } derive(@debug.Debug)
 pub fn Node::append_child(Self, Self) -> Unit
 pub fn Node::attrs(Self) -> Map[String, String?]
 pub fn Node::children(Self) -> Array[Self]
 pub fn Node::clone_node(Self, deep? : Bool, override_attrs? : Map[String, String?]) -> Self
 pub fn Node::data(Self) -> String
+pub fn Node::flatten_template_contents(Self) -> Unit
 pub fn Node::has_child_nodes(Self) -> Bool
 pub fn Node::insert_before(Self, Self, Self?) -> Unit
 pub fn Node::kind(Self) -> NodeKind
@@ -57,6 +59,7 @@ pub fn Node::origin_offset(Self) -> Int?
 pub fn Node::parent(Self) -> Self?
 pub fn Node::remove_child(Self, Self) -> Unit
 pub fn Node::replace_child(Self, Self, Self) -> Self?
+pub fn Node::template_content(Self) -> Self?
 pub fn Node::text(Self) -> String
 
 pub(all) enum NodeKind {

@@ -33,4 +33,5 @@ pub(all) struct Node {
   mut origin_col : Int?
   mut parent : Node?
   children : Array[Node]
+  mut template_contents : Node?
 } derive(Debug)

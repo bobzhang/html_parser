@@ -1,9 +1,9 @@
 ///|
 fn element_has_only_text_children(node : @dom.Node) -> Bool {
-  if node.children.is_empty() {
+  if serialized_children(node).is_empty() {
     return false
   }
-  for child in node.children {
+  for child in serialized_children(node) {
     if child.kind != Text {
       return false
     }
@@ -18,12 +18,12 @@ fn compact_pretty_text_children(
 ) -> String raise @core.HtmlError {
   let out = StringBuilder()
   if pretty_text_preserves_whitespace(node.name) {
-    for child in node.children {
+    for child in serialized_children(node) {
       out.write_string(node_to_html_compact(child, quote))
     }
   } else {
     let raw = StringBuilder()
-    for child in node.children {
+    for child in serialized_children(node) {
       if !child.sanitize_escape_only {
         raw.write_string(child.data)
       }
@@ -38,7 +38,7 @@ fn node_contains_layout_block(node : @dom.Node) -> Bool {
   if node.kind == Element && layout_block_element_name(node.name) {
     return true
   }
-  for child in node.children {
+  for child in serialized_children(node) {
     if node_contains_layout_block(child) {
       return true
     }
@@ -50,7 +50,7 @@ fn node_contains_layout_block(node : @dom.Node) -> Bool {
 fn element_has_compact_inline_children(node : @dom.Node) -> Bool {
   let mut has_visible_text = false
   let mut has_inline_element = false
-  for child in node.children {
+  for child in serialized_children(node) {
     match child.kind {
       Text => if text_has_visible_char(child.data) { has_visible_text = true }
       Element => {
@@ -69,7 +69,7 @@ fn element_has_compact_inline_children(node : @dom.Node) -> Bool {
 
 ///|
 fn element_has_comment_child(node : @dom.Node) -> Bool {
-  for child in node.children {
+  for child in serialized_children(node) {
     if child.kind == Comment {
       return true
     }
@@ -123,7 +123,7 @@ fn node_to_html_pretty_inline_runs(
   let runs : Array[Array[@dom.Node]] = []
   let mut current : Array[@dom.Node] = []
   let mut saw_separator = false
-  for child in node.children {
+  for child in serialized_children(node) {
     if node_is_pretty_formatting_separator(child) {
       saw_separator = true
       if !current.is_empty() {
@@ -180,9 +180,9 @@ fn node_to_html_pretty_compact_children(
 ) -> String raise @core.HtmlError {
   let out = StringBuilder()
   out.write_string(serialize_start_tag(node, quote))
-  let child_count = node.children.length()
+  let child_count = serialized_children(node).length()
   for index in 0..<child_count {
-    let child = node.children[index]
+    let child = serialized_children(node)[index]
     match child.kind {
       Text => {
         if child.sanitize_escape_only {
@@ -251,7 +251,7 @@ fn node_to_html_pretty(
   match node.kind {
     Document | Fragment => {
       let parts : Array[String] = []
-      for child in node.children {
+      for child in serialized_children(node) {
         match
           node_to_html_pretty_child_line(child, indent, indent_size, quote) {
           Some(line) => parts.push(line)
@@ -274,7 +274,7 @@ fn node_to_html_pretty(
       }
     Comment | Doctype => " ".repeat(indent) + node_to_html_compact(node, quote)
     Element =>
-      if node.children.is_empty() || is_void_element(node.name) {
+      if serialized_children(node).is_empty() || is_void_element(node.name) {
         " ".repeat(indent) + node_to_html_compact(node, quote)
       } else if pretty_text_preserves_whitespace(node.name) {
         " ".repeat(indent) + node_to_html_compact(node, quote)
@@ -302,7 +302,7 @@ fn node_to_html_pretty(
         out <+ "\{indent_text}\{serialize_start_tag(node, quote)}"
         let child_indent = indent + indent_size
         let mut wrote_child = false
-        for child in node.children {
+        for child in serialized_children(node) {
           match
             node_to_html_pretty_child_line(
               child, child_indent, indent_size, quote,

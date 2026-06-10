@@ -469,7 +469,10 @@ test "parser tracks origins for template column group starts" {
   guard parsed.query_one("template") is Some(template) else {
     fail("expected template")
   }
-  let children = template.children()
+  guard template.template_content() is Some(content) else {
+    fail("expected template content")
+  }
+  let children = content.children()
   assert_eq(children.length(), 2)
   assert_node_origin(children[0], 10, 1, 11)
   assert_node_origin(children[1], 16, 1, 17)

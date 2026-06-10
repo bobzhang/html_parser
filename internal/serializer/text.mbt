@@ -11,7 +11,7 @@ fn collect_text(node : @dom.Node, parts : Array[String], strip : Bool) -> Unit {
       }
     }
     _ =>
-      for child in node.children {
+      for child in serialized_children(node) {
         collect_text(child, parts, strip)
       }
   }
@@ -57,13 +57,13 @@ fn collect_text_block_chunks(
     Element if node.name == "br" => text_chunk_break(chunks)
     Element if is_text_block_element(node.name) => {
       text_chunk_break(chunks)
-      for child in node.children {
+      for child in serialized_children(node) {
         collect_text_block_chunks(child, chunks, strip)
       }
       text_chunk_break(chunks)
     }
     _ =>
-      for child in node.children {
+      for child in serialized_children(node) {
         collect_text_block_chunks(child, chunks, strip)
       }
   }

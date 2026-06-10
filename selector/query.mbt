@@ -14,6 +14,13 @@ fn walk_query(
     matches_selector_list(node, selector) {
     out.push(node)
   }
+  match node.template_contents {
+    Some(contents) =>
+      for child in contents.children {
+        walk_query(child, selector, out, allow_non_elements, visited)
+      }
+    None => ()
+  }
   for child in node.children {
     walk_query(child, selector, out, allow_non_elements, visited)
   }
@@ -25,6 +32,13 @@ pub fn query(root : @dom.Node, selector : StringView) -> Array[@dom.Node] {
   let out : Array[@dom.Node] = []
   let allow_non_elements = selector_allows_non_elements(selector)
   let visited : Array[@dom.Node] = [root]
+  match root.template_contents {
+    Some(contents) =>
+      for child in contents.children {
+        walk_query(child, selector, out, allow_non_elements, visited)
+      }
+    None => ()
+  }
   for child in root.children {
     walk_query(child, selector, out, allow_non_elements, visited)
   }

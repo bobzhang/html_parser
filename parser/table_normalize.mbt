@@ -123,6 +123,10 @@ fn normalize_table(table : @dom.Node) -> Unit {
 
 ///|
 fn normalize_tables(node : @dom.Node) -> Unit {
+  match node.template_contents {
+    Some(contents) => normalize_tables(contents)
+    None => ()
+  }
   match node.kind {
     Element if node.name == "table" => normalize_table(node)
     Element if is_table_section_name(node.name) => normalize_table_section(node)

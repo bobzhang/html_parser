@@ -369,7 +369,7 @@ test "clone_node copies template descendants through child traversal" {
   guard cloned_div.parent() is Some(cloned_parent) else {
     fail("expected cloned template child parent")
   }
-  assert_eq(cloned_parent.name(), "template")
+  assert_eq(cloned_parent.name(), "#document-fragment")
   assert_eq(
     template.to_html(pretty=false),
     "<template><div id=\"content\"></div><span></span></template>",
