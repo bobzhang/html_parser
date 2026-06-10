@@ -171,6 +171,19 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
   if current.kind == Document ||
     (current.kind == Element && current.name == "html") {
     self.forced_body_nodes.push(node)
+    // A non-whitespace token in the after-body modes switches back to
+    // in-body before reprocessing, so later comments use normal insertion
+    // again. Whitespace is processed without leaving after-body, and
+    // frameset documents never reprocess in body (after-after-frameset
+    // accepts noframes/whitespace/comments and ignores everything else).
+    if !self.uses_document_frameset_rules() &&
+      (
+        node.kind == Element ||
+        (node.kind == Text && text_has_non_ascii_whitespace(node.data))
+      ) {
+      self.document_after_body = false
+      self.document_after_html = false
+    }
   }
 }
 
