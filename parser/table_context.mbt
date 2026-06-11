@@ -237,8 +237,16 @@ fn Parser::table_context_start_skips_active_reconstruction(
   self : Parser,
   name : StringView,
 ) -> Bool {
-  is_table_internal_start_name(name) &&
-  self.table_context_without_cell_or_caption() >= 0
+  if !is_table_internal_start_name(name) {
+    return false
+  }
+  if self.table_context_without_cell_or_caption() >= 0 {
+    return true
+  }
+  // Table-structure tokens entering an open template-content section
+  // also skip reconstruction, like the normal table path.
+  self.in_template_content_without_inner_table() &&
+  self.template_content_at_structural_position()
 }
 
 ///|
