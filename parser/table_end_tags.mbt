@@ -87,8 +87,19 @@ fn Parser::handle_table_end_tag(
   name : String,
   tag_close_pos : Int,
 ) -> Bool {
-  if name != "table" || !self.close_open_element("table") {
+  if name != "table" {
     return false
+  }
+  let table_index = self.last_open_table_index()
+  let cell_index = self.last_open_html_table_cell_index()
+  let closes_open_cell = table_index >= 0 && cell_index > table_index
+  if !self.close_open_element("table") {
+    return false
+  }
+  if closes_open_cell {
+    // Closing the table implicitly ends the open cell, which clears the
+    // active formatting list up to the cell's marker.
+    self.clear_active_formatting_to_marker()
   }
   if self.pending_table_view_implied_end_tag {
     self.error_at("unexpected-implied-end-tag-in-table-view", tag_close_pos)
@@ -111,5 +122,20 @@ fn Parser::handle_table_structural_end_tag(
   self : Parser,
   name : String,
 ) -> Bool {
-  table_structural_end_tag_can_close(name) && self.close_open_element(name)
+  if !table_structural_end_tag_can_close(name) {
+    return false
+  }
+  let table_index = self.last_open_table_index()
+  let cell_index = self.last_open_html_table_cell_index()
+  let had_open_cell = cell_index > table_index && table_index >= 0
+  if !self.close_open_element(name) {
+    return false
+  }
+  if name == "td" || name == "th" || name == "caption" || had_open_cell {
+    // Ending a cell or caption — explicitly or implicitly through a
+    // row/section end tag — clears the active formatting list up to the
+    // marker pushed when the cell opened.
+    self.clear_active_formatting_to_marker()
+  }
+  true
 }

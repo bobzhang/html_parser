@@ -94,6 +94,7 @@ fn Parser::parse_table_cell_fragment_context(
   self.stack.push(section)
   self.stack.push(row)
   self.stack.push(cell)
+  self.push_active_formatting_marker()
   self.parse_all()
   normalize_tables(cell)
   unwrap_fragment_context_element(row, cell)

@@ -54,7 +54,7 @@ fn applet_like_element_name(name : StringView) -> Bool {
 ///|
 fn active_formatting_marker_element_name(name : StringView) -> Bool {
   match name {
-    "caption" | "template" => true
+    "caption" | "template" | "td" | "th" => true
     _ => applet_like_element_name(name)
   }
 }
