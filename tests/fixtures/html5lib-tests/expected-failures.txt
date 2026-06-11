@@ -1,6 +1,5 @@
 # Failing html5lib-tests tree-construction cases (file:case-index).
 # Regenerate with: moon run --target native cmd/html5lib_conformance -- --update-expected
-tests1.dat:25
 tests1.dat:30
 tests1.dat:32
 tests1.dat:78
