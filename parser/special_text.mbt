@@ -184,26 +184,27 @@ fn Parser::consume_special_element_content(
 ) -> Unit {
   let content_start = self.pos
   if name == "plaintext" {
-    // Plaintext characters are ordinary in-body tokens: active
-    // formatting reconstructs inside the plaintext element first.
-    let stack_before = self.stack.length()
-    self.stack.push(parent)
-    self.reconstruct_active_formatting_elements()
-    let target = self.current_node()
-    while self.stack.length() > stack_before {
-      ignore(self.stack.pop())
-    }
     let view = self.input[content_start:self.input.length()]
-    self.append_special_text(
-      target,
-      self.decoded_special_text(
-        name,
-        view,
-        content_start,
-        eof_error_pos(self.input),
-      ),
+    let decoded = self.decoded_special_text(
+      name,
+      view,
       content_start,
+      eof_error_pos(self.input),
     )
+    // Plaintext characters are ordinary in-body tokens: active
+    // formatting reconstructs inside the plaintext element when
+    // characters are actually inserted.
+    let mut target = parent
+    if decoded != "" {
+      let stack_before = self.stack.length()
+      self.stack.push(parent)
+      self.reconstruct_active_formatting_elements()
+      target = self.current_node()
+      while self.stack.length() > stack_before {
+        ignore(self.stack.pop())
+      }
+    }
+    self.append_special_text(target, decoded, content_start)
     self.error_at_special_text_eof(name)
     self.pos = self.input.length()
     return
