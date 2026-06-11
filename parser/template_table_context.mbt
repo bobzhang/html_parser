@@ -174,7 +174,7 @@ fn Parser::record_template_content_close(self : Parser, name : String) -> Unit {
   match name {
     "td" | "th" => self.set_template_content_mode("row")
     "tr" => self.set_template_content_mode("table-body")
-    "tbody" | "tfoot" | "thead" | "caption" =>
+    "tbody" | "tfoot" | "thead" | "caption" | "colgroup" =>
       self.set_template_content_mode("table")
     _ => ()
   }
