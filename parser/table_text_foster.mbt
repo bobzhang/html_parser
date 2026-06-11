@@ -88,7 +88,9 @@ fn Parser::foster_parent_table_text(
       // The appropriate place for inserting fostered characters is
       // immediately before the table; when a text node already sits
       // there, the characters merge into it ("A" and "C" around a cell
-      // become one "AC" node).
+      // become one "AC" node). Materialize any batched trailing text
+      // first so the sibling's data is current.
+      self.flush_pending_text()
       let mut table_pos = -1
       let mut sibling_index = 0
       while sibling_index < parent.children.length() {
