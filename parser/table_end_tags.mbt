@@ -379,5 +379,8 @@ fn Parser::close_open_html_table_element(self : Parser, name : String) -> Bool {
   while self.stack.length() > html_index {
     ignore(self.stack.pop())
   }
+  // A select popped with the foreign content no longer holds the parser
+  // in select mode.
+  self.reset_select_insertion_mode()
   true
 }
