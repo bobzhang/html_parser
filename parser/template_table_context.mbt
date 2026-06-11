@@ -14,14 +14,17 @@ fn Parser::handle_template_table_context_start_tag(
     return true
   }
   if name == "caption" {
-    match self.template_content_mode() {
-      "row" | "table-body" => {
-        // A caption after row or cell content acts as an end tag with
-        // nothing in scope: parse error, ignore.
-        self.error_at("unexpected-start-tag", start)
-        return true
+    if !self.close_open_template_content_section() {
+      match self.template_content_mode() {
+        "row" | "table-body" => {
+          // A caption after row or cell content acts as an end tag with
+          // nothing in scope: parse error, ignore. With an open section
+          // the in-table-body rules close it and the caption inserts.
+          self.error_at("unexpected-start-tag", start)
+          return true
+        }
+        _ => ()
       }
-      _ => ()
     }
     let node = self.node_with_origin(@dom.element("caption", attrs~), start)
     self.current_node().append_child(node)
@@ -31,6 +34,7 @@ fn Parser::handle_template_table_context_start_tag(
     return true
   }
   if (name == "col" || name == "colgroup") &&
+    !self.close_open_template_content_section() &&
     (
       self.template_content_mode() == "row" ||
       self.template_content_mode() == "table-body"
@@ -225,4 +229,36 @@ fn Parser::bare_template_row_fosters(self : Parser, name : StringView) -> Bool {
   (last.ns is None || last.ns is Some("html")) &&
   below.kind == Element &&
   below.name == "template"
+}
+
+///|
+/// Closes an open table section (and any open row) sitting above the
+/// current template on the stack, recording table mode. Returns true when
+/// a section was open: the in-table-body rules close it and let the
+/// caption or column group insert after it instead of being ignored.
+fn Parser::close_open_template_content_section(self : Parser) -> Bool {
+  let template_index = self.last_open_template_index()
+  if template_index < 0 {
+    return false
+  }
+  let mut section_index = -1
+  let mut index = self.stack.length()
+  while index > template_index + 1 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element &&
+      (node.name == "tbody" || node.name == "tfoot" || node.name == "thead") &&
+      (node.ns is None || node.ns is Some("html")) {
+      section_index = index
+      break
+    }
+  }
+  if section_index < 0 {
+    return false
+  }
+  while self.stack.length() > section_index {
+    ignore(self.stack.pop())
+  }
+  self.set_template_content_mode("table")
+  true
 }
