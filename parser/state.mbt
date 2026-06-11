@@ -47,6 +47,8 @@ priv struct Parser {
   mut doctype_quirks_mode : Bool
   mut fragment_context_html_entered_body : Bool
   mut pending_initial_lf_skip : Bool
+  mut document_head_closed : Bool
+  after_head_whitespace : Array[@dom.Node]
   template_content_modes : Array[(@dom.Node, String)]
   after_body_comments : Array[@dom.Node]
   after_html_comments : Array[@dom.Node]
@@ -124,6 +126,8 @@ fn Parser::Parser(
     doctype_quirks_mode: true,
     fragment_context_html_entered_body: false,
     pending_initial_lf_skip: false,
+    document_head_closed: false,
+    after_head_whitespace: [],
     template_content_modes: [],
     after_body_comments: [],
     after_html_comments: [],

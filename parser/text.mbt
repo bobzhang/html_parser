@@ -131,6 +131,17 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   let text_node = self.text_at(data, text_start)
   parent.append_child(text_node)
   self.mark_forced_body_node(text_node)
+  if self.document_head_closed &&
+    !self.is_fragment_parser() &&
+    is_whitespace_text_node(text_node) &&
+    (
+      parent.kind == Document ||
+      (parent.kind == Element && parent.name == "html")
+    ) &&
+    !document_children_contain_body_content(self.root) {
+    // Whitespace after </head> belongs between the head and the body.
+    self.after_head_whitespace.push(text_node)
+  }
 }
 
 ///|

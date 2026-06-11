@@ -37,6 +37,7 @@ fn scaffold_document(
   forced_body_nodes : Array[@dom.Node],
   after_body_comments : Array[@dom.Node],
   after_html_comments : Array[@dom.Node],
+  after_head_whitespace : Array[@dom.Node],
 ) -> Unit {
   match document_html_element(root) {
     Some(html) => {
@@ -118,7 +119,7 @@ fn scaffold_document(
     } else if is_whitespace_text_node(child) &&
       !body_started &&
       !nodes_contain(forced_body_nodes, child) {
-      if head is Some(_) {
+      if head is Some(_) || nodes_contain(after_head_whitespace, child) {
         between_head_body_children.push(child)
       } else if !head_children.is_empty() {
         head_children.push(child)

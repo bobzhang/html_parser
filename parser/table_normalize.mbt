@@ -113,6 +113,20 @@ fn normalize_table(table : @dom.Node) -> Unit {
       row.append_child(child)
       current_colgroup = None
     } else {
+      if child.kind == Text &&
+        is_whitespace_text_node(child) &&
+        table.children.length() > 0 {
+        // Whitespace following table structure stays inside the
+        // preceding row group (the in-table-body insertion point).
+        let last = table.children[table.children.length() - 1]
+        if last.kind == Element && is_table_section_name(last.name) {
+          last.append_child(child)
+          current_body = None
+          current_row = None
+          current_colgroup = None
+          continue
+        }
+      }
       table.append_child(child)
       current_body = None
       current_row = None

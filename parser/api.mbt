@@ -34,6 +34,7 @@ pub fn parse(
     parser.forced_body_nodes,
     parser.after_body_comments,
     parser.after_html_comments,
+    parser.after_head_whitespace,
   )
   parser.apply_pending_document_html_attrs()
   parser.apply_pending_document_body_attrs()
