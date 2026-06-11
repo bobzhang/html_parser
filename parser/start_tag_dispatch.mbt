@@ -79,6 +79,7 @@ fn Parser::handle_parsed_start_tag(
     self.frameset_ok = false
     if self.document_after_body {
       self.document_entered_body = true
+      self.document_entered_body_from_after_body = true
       self.document_after_body = false
       self.document_after_html = false
     }

@@ -37,6 +37,7 @@ fn scaffold_document(
   forced_body_nodes : Array[@dom.Node],
   after_body_comments : Array[@dom.Node],
   after_html_comments : Array[@dom.Node],
+  after_head_whitespace : Array[@dom.Node],
 ) -> Unit {
   match document_html_element(root) {
     Some(html) => {
@@ -46,9 +47,17 @@ fn scaffold_document(
       // comment order is preserved.
       strip_routed_comments(root, after_body_comments, after_html_comments)
       strip_routed_comments(html, after_body_comments, after_html_comments)
-      absorb_root_html_siblings(root, html, forced_body_nodes)
+      absorb_root_html_siblings(
+        root,
+        html,
+        forced_body_nodes,
+        after_head_whitespace~,
+      )
       scaffold_existing_html_element(
-        html, foster_parented_texts, forced_body_nodes,
+        html,
+        foster_parented_texts,
+        forced_body_nodes,
+        after_head_whitespace~,
       )
       append_children_to(html, after_body_comments)
       append_children_to(root, after_html_comments)
@@ -118,7 +127,7 @@ fn scaffold_document(
     } else if is_whitespace_text_node(child) &&
       !body_started &&
       !nodes_contain(forced_body_nodes, child) {
-      if head is Some(_) {
+      if head is Some(_) || nodes_contain(after_head_whitespace, child) {
         between_head_body_children.push(child)
       } else if !head_children.is_empty() {
         head_children.push(child)

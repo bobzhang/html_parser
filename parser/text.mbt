@@ -131,6 +131,17 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   let text_node = self.text_at(data, text_start)
   parent.append_child(text_node)
   self.mark_forced_body_node(text_node)
+  if self.document_head_closed &&
+    !self.is_fragment_parser() &&
+    is_whitespace_text_node(text_node) &&
+    (
+      parent.kind == Document ||
+      (parent.kind == Element && parent.name == "html")
+    ) &&
+    !document_children_contain_body_content(self.root) {
+    // Whitespace after </head> belongs between the head and the body.
+    self.after_head_whitespace.push(text_node)
+  }
 }
 
 ///|
@@ -172,6 +183,7 @@ fn Parser::merge_into_trailing_text(
         !self.in_frameset_document() &&
         text_has_non_ascii_whitespace(data) {
         self.document_entered_body = true
+        self.document_entered_body_from_after_body = true
         self.document_after_body = false
         self.document_after_html = false
       }
@@ -222,6 +234,12 @@ fn Parser::flush_pending_text(self : Parser) -> Unit {
   if self.remove_foster_parented_text(node) {
     self.foster_parented_texts.push(merged)
   }
+  if node_array_contains_identity(self.after_head_whitespace, node) {
+    remove_parser_node_identity(self.after_head_whitespace, node)
+    if is_whitespace_text_node(merged) {
+      self.after_head_whitespace.push(merged)
+    }
+  }
 }
 
 ///|
@@ -253,8 +271,14 @@ fn Parser::merge_crosses_body_boundary(
   }
   // After the body has closed, even whitespace belongs to the body (the
   // in-body rules reprocess it), so it must not merge into an unmarked
-  // pre-body run either.
-  text_has_non_ascii_whitespace(data) || self.document_after_body
+  // pre-body run either. Similarly, whitespace after </head> must not
+  // merge into a pre-head run: it stays between the head and the body.
+  text_has_non_ascii_whitespace(data) ||
+  self.document_after_body ||
+  (
+    self.document_head_closed &&
+    !node_array_contains_identity(self.after_head_whitespace, last)
+  )
 }
 
 ///|

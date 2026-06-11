@@ -56,6 +56,7 @@ fn absorb_root_html_siblings(
   root : @dom.Node,
   html : @dom.Node,
   forced_body_nodes : Array[@dom.Node],
+  after_head_whitespace? : Array[@dom.Node] = [],
 ) -> Unit {
   let original = root.children.copy()
   root.children.clear()
@@ -72,9 +73,16 @@ fn absorb_root_html_siblings(
       child.kind == Text &&
       is_whitespace_text_node(child) &&
       !nodes_contain(forced_body_nodes, child) {
-      // Whitespace before the html element is ignored by the before-html
-      // mode; a document node never holds text.
-      child.parent = None
+      if nodes_contain(after_head_whitespace, child) {
+        // Whitespace recorded after </head> moves into the html element
+        // so the head/body classification places it between them.
+        child.parent = None
+        html.append_child(child)
+      } else {
+        // Whitespace before the html element is ignored by the
+        // before-html mode; a document node never holds text.
+        child.parent = None
+      }
     } else if nodes_contain(forced_body_nodes, child) {
       // Content reprocessed in body after a stray </body>/</html> belongs
       // inside the html element; the scaffold pass below files it into the
@@ -91,6 +99,7 @@ fn scaffold_existing_html_element(
   html : @dom.Node,
   foster_parented_texts : Array[@dom.Node],
   forced_body_nodes : Array[@dom.Node],
+  after_head_whitespace? : Array[@dom.Node] = [],
 ) -> Unit {
   let raw_original = html.children.copy()
   html.children.clear()
@@ -123,6 +132,13 @@ fn scaffold_existing_html_element(
       head_children.is_empty() {
       before_head_children.push(child)
     } else if child.kind == Comment && !body_started && head is Some(_) {
+      between_head_body_children.push(child)
+    } else if child.kind == Text &&
+      is_whitespace_text_node(child) &&
+      !nodes_contain(forced_body_nodes, child) &&
+      nodes_contain(after_head_whitespace, child) {
+      // Whitespace recorded after </head> stays between the head and
+      // the body.
       between_head_body_children.push(child)
     } else if child.kind == Element &&
       child.name == "head" &&
