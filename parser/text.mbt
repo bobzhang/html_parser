@@ -107,6 +107,20 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     self.pending_initial_lf_skip = false
     if data.has_prefix("\n") {
       data = data[1:].to_owned()
+      if data == "" {
+        // The text was only the skipped newline; nothing to insert.
+        return
+      }
+      // Advance the recorded origin past the consumed character
+      // reference so tracked locations point at the remaining text.
+      let mut entity_end = 0
+      for ch in cleaned {
+        entity_end += 1
+        if ch == ';' {
+          break
+        }
+      }
+      text_start = text_start + entity_end
     }
   }
   if self.fragment_context_html_after_body &&
