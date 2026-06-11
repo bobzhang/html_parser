@@ -115,6 +115,14 @@ fn Parser::handle_foster_parented_end_tag(
   if target_index <= table_index {
     return false
   }
+  if active_formatting_element_name(name) &&
+    self.active_formatting_index(name) >= 0 {
+    // Formatting end tags in table context use the in-body rules with
+    // foster parenting: the adoption agency algorithm restructures the
+    // fostered elements (its common-ancestor insertion fosters before
+    // the table).
+    return false
+  }
   let target = self.stack[target_index]
   if self.remove_foster_parented_start_error_node(target) {
     self.error_at("unexpected-end-tag-implies-table-voodoo", start)

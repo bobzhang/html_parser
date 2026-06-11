@@ -122,7 +122,7 @@ fn Parser::adoption_agency(
       last_node = new_node
     }
     let common_ancestor = self.stack[formatting_open_index - 1]
-    common_ancestor.append_child(last_node)
+    self.adoption_insert_into_common_ancestor(common_ancestor, last_node)
     let entry = self.active_formatting[formatting_index]
     let new_formatting_element = element_from_formatting_entry(entry)
     self.active_formatting[formatting_index] = formatting_entry_with_node(
@@ -141,4 +141,30 @@ fn Parser::adoption_agency(
     let furthest_index = self.stack_index_by_node(furthest_block)
     self.stack.insert(furthest_index + 1, new_formatting_element)
   }
+}
+
+///|
+/// Step 14 of the adoption agency algorithm inserts into the common
+/// ancestor using the appropriate place for inserting a node: when the
+/// common ancestor is a table element, the node is foster-parented before
+/// the open table instead of appended inside it.
+fn Parser::adoption_insert_into_common_ancestor(
+  self : Parser,
+  common_ancestor : @dom.Node,
+  node : @dom.Node,
+) -> Unit {
+  if common_ancestor.kind == Element &&
+    is_table_start_foster_target(common_ancestor.name) {
+    let table_index = self.last_open_table_index()
+    if table_index >= 0 {
+      if self.table_index_is_fragment_context_table(table_index) {
+        self.current_node().append_child(node)
+      } else {
+        self.insert_node_before_open_table(node, table_index)
+        self.forced_body_nodes.push(node)
+      }
+      return
+    }
+  }
+  common_ancestor.append_child(node)
 }

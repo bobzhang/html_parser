@@ -380,8 +380,7 @@ test "fragment table contexts foster active formatting text" {
     collect_errors=true,
   )
   assert_eq(text_only.to_html(pretty=false), "<a>x</a>")
-  assert_eq(text_only.errors.length(), 3)
+  assert_eq(text_only.errors.length(), 2)
   assert_eq(text_only.errors[0].code, "foster-parenting-start-tag")
   assert_eq(text_only.errors[1].code, "foster-parenting-character")
-  assert_eq(text_only.errors[2].code, "unexpected-end-tag-implies-table-voodoo")
 }
