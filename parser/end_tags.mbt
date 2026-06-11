@@ -158,6 +158,17 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   if name == "p" {
+    if !self.p_in_button_scope() {
+      // No p in button scope: parse error, act as <p> then close,
+      // leaving an empty paragraph at the insertion point.
+      self.error_at("unexpected-end-tag", tag_close_pos)
+      if !self.stray_p_end_tag_is_ignored() {
+        self.insert_body_mode_node(
+          self.node_with_origin(@dom.element("p"), start),
+        )
+      }
+      return
+    }
     if !self.close_open_element("p") {
       self.error_at("unexpected-end-tag", tag_close_pos)
       // The act-as-<p>-then-close recovery is an in-body rule; before the
@@ -210,4 +221,29 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
       source_end_tag=self.source_tag_slice(start, tag_close_pos),
     )
   }
+}
+
+///|
+/// True when an open HTML p element is in button scope: the default scope
+/// terminators plus button end the search.
+fn Parser::p_in_button_scope(self : Parser) -> Bool {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind != Element {
+      continue
+    }
+    if node.name == "p" && (node.ns is None || node.ns is Some("html")) {
+      return true
+    }
+    if (node.ns is None || node.ns is Some("html")) &&
+      (node.name == "button" || is_default_scope_terminator(node.name)) {
+      return false
+    }
+    if is_foreign_special_element(node) {
+      return false
+    }
+  }
+  false
 }

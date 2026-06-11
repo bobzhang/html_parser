@@ -77,7 +77,52 @@ fn Parser::handle_table_context_ignored_end_tag(
   if self.last_stack_index_of(name) > table_index {
     return false
   }
+  if name == "tbody" && self.close_virtual_table_section() {
+    return true
+  }
   self.error_at("unexpected-end-tag", start)
+  true
+}
+
+///|
+/// Materialized rows sitting at the table level form a virtual tbody; a
+/// </tbody> wraps them so later cells start a new row group. Returns true
+/// when a section was closed this way.
+fn Parser::close_virtual_table_section(self : Parser) -> Bool {
+  let table_index = self.last_open_table_index()
+  if table_index < 0 || table_index != self.stack.length() - 1 {
+    return false
+  }
+  let parent = self.stack[table_index]
+  let mut run = parent.children.length()
+  while run > 0 {
+    let child = parent.children[run - 1]
+    if child.kind == Element &&
+      (child.name == "tr" || child.name == "td" || child.name == "th") &&
+      (child.ns is None || child.ns is Some("html")) {
+      run -= 1
+    } else {
+      break
+    }
+  }
+  if run == parent.children.length() {
+    return false
+  }
+  let section = @dom.element("tbody")
+  let moved : Array[@dom.Node] = []
+  let mut index = run
+  while index < parent.children.length() {
+    moved.push(parent.children[index])
+    index += 1
+  }
+  while parent.children.length() > run {
+    ignore(parent.children.pop())
+  }
+  for node in moved {
+    node.parent = None
+    section.append_child(node)
+  }
+  parent.append_child(section)
   true
 }
 
@@ -129,6 +174,127 @@ fn Parser::handle_table_structural_end_tag(
   let cell_index = self.last_open_html_table_cell_index()
   let had_open_cell = cell_index > table_index && table_index >= 0
   if !self.close_open_element(name) {
+    if !had_open_cell && name == "tbody" && self.close_virtual_table_section() {
+      return true
+    }
+    if had_open_cell && (name == "tbody" || name == "tr") {
+      // The row always has a virtual ancestor, and a bare cell's section
+      // is a virtual tbody (synthesized after parsing); an explicit
+      // thead/tfoot section means </tbody> finds nothing in scope.
+      let mut explicit_section = false
+      if name == "tbody" {
+        let mut index = cell_index
+        while index > table_index {
+          index -= 1
+          let node = self.stack[index]
+          if node.kind == Element &&
+            (node.name == "thead" || node.name == "tfoot") &&
+            (node.ns is None || node.ns is Some("html")) {
+            explicit_section = true
+            break
+          }
+        }
+      }
+      if !explicit_section {
+        // Pop to the innermost explicit row group when one is open (a
+        // tr fallback inside a section keeps the section), otherwise to
+        // the table.
+        let mut floor = table_index
+        let mut index = cell_index
+        while index > table_index {
+          index -= 1
+          let node = self.stack[index]
+          if node.kind == Element &&
+            (
+              node.name == "tbody" ||
+              node.name == "tfoot" ||
+              node.name == "thead"
+            ) &&
+            (node.ns is None || node.ns is Some("html")) {
+            floor = index
+            break
+          }
+        }
+        while self.stack.length() > floor + 1 {
+          ignore(self.stack.pop())
+        }
+        self.clear_active_formatting_to_marker()
+        // A select popped with the cell no longer holds the parser in
+        // select mode.
+        self.reset_select_insertion_mode()
+        // Materialize the closed virtual structure so later cells start
+        // a new row (and row group) during normalization.
+        let parent = self.stack[floor]
+        let mut run = parent.children.length()
+        while run > 0 {
+          let child = parent.children[run - 1]
+          if child.kind == Element &&
+            (child.name == "td" || child.name == "th") &&
+            (child.ns is None || child.ns is Some("html")) {
+            run -= 1
+          } else {
+            break
+          }
+        }
+        if name == "tbody" && run == parent.children.length() {
+          // No bare trailing cells (the cell sat in an explicit row):
+          // the virtual tbody still closes over the trailing rows.
+          ignore(self.close_virtual_table_section())
+        }
+        if run < parent.children.length() {
+          let row = @dom.element("tr")
+          let moved : Array[@dom.Node] = []
+          let mut index = run
+          while index < parent.children.length() {
+            moved.push(parent.children[index])
+            index += 1
+          }
+          while parent.children.length() > run {
+            ignore(parent.children.pop())
+          }
+          for cell in moved {
+            cell.parent = None
+            row.append_child(cell)
+          }
+          if name == "tbody" {
+            // Earlier materialized rows from the same virtual section
+            // join the closed tbody ahead of the final row.
+            let section = @dom.element("tbody")
+            let mut row_run = parent.children.length()
+            while row_run > 0 {
+              let child = parent.children[row_run - 1]
+              if child.kind == Element &&
+                child.name == "tr" &&
+                (child.ns is None || child.ns is Some("html")) {
+                row_run -= 1
+              } else {
+                break
+              }
+            }
+            if row_run < parent.children.length() {
+              let rows : Array[@dom.Node] = []
+              let mut row_index = row_run
+              while row_index < parent.children.length() {
+                rows.push(parent.children[row_index])
+                row_index += 1
+              }
+              while parent.children.length() > row_run {
+                ignore(parent.children.pop())
+              }
+              for earlier in rows {
+                earlier.parent = None
+                section.append_child(earlier)
+              }
+            }
+            section.append_child(row)
+            parent.append_child(section)
+          } else {
+            parent.append_child(row)
+          }
+        }
+        return true
+      }
+    }
     return false
   }
   if name == "td" || name == "th" || name == "caption" || had_open_cell {
