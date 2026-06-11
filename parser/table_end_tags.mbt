@@ -113,6 +113,16 @@ fn Parser::close_virtual_table_section(self : Parser) -> Bool {
   if !saw_structure || run == parent.children.length() {
     return false
   }
+  // Leading whitespace before the first row was inserted as a table
+  // child in the table mode and stays there.
+  while run < parent.children.length() {
+    let child = parent.children[run]
+    if child.kind == Text && is_whitespace_text_node(child) {
+      run += 1
+    } else {
+      break
+    }
+  }
   let section = @dom.element("tbody")
   let moved : Array[@dom.Node] = []
   let mut index = run
