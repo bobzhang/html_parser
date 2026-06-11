@@ -236,6 +236,11 @@ fn Parser::handle_table_structural_end_tag(
             break
           }
         }
+        if name == "tbody" && run == parent.children.length() {
+          // No bare trailing cells (the cell sat in an explicit row):
+          // the virtual tbody still closes over the trailing rows.
+          ignore(self.close_virtual_table_section())
+        }
         if run < parent.children.length() {
           let row = @dom.element("tr")
           let moved : Array[@dom.Node] = []
