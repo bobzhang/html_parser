@@ -42,6 +42,11 @@ fn Parser::handle_parsed_start_tag(
     self.merge_document_html_attrs(attrs)
     return
   }
+  if self.fragment_context_html_after_body && name != "body" && name != "html" {
+    // Any other token after a stray </html> returns the fragment to
+    // body mode, so later comments stay in the body.
+    self.fragment_context_html_after_body = false
+  }
   if name == "body" &&
     (self.has_open_element("template") || self.in_select_insertion_mode()) {
     // The in-template and in-select rules ignore body start tags

@@ -69,6 +69,10 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     text_has_non_ascii_whitespace(cleaned) {
     self.frameset_ok = false
   }
+  if self.fragment_context_html_after_body &&
+    text_has_non_ascii_whitespace(cleaned) {
+    self.fragment_context_html_after_body = false
+  }
   if self.handle_template_column_group_text(cleaned, text_start) {
     return
   }
