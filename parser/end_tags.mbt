@@ -169,6 +169,14 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   }
   if name == "li" {
     if self.li_in_list_item_scope() {
+      let current = self.current_node()
+      if !(current.kind == Element &&
+        current.name == "li" &&
+        (current.ns is None || current.ns is Some("html"))) {
+        // Implied end tags leave an intervening element: parse error
+        // before popping through it.
+        self.error_at("end-tag-too-early", tag_close_pos)
+      }
       ignore(self.close_open_element("li"))
     } else {
       // An inner list hides the li from list-item scope: ignore.
