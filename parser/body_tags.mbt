@@ -20,11 +20,15 @@ fn Parser::col_start_tag_is_ignored_outside_table(
 ///|
 fn Parser::close_open_table_cell(self : Parser) -> Unit {
   if self.has_open_element("td") {
-    ignore(self.close_open_element("td"))
-    self.clear_active_formatting_to_marker()
+    // The close can fail when a template boundary hides the cell; only a
+    // successful close pops the cell's formatting marker.
+    if self.close_open_element("td") {
+      self.clear_active_formatting_to_marker()
+    }
   } else if self.has_open_element("th") {
-    ignore(self.close_open_element("th"))
-    self.clear_active_formatting_to_marker()
+    if self.close_open_element("th") {
+      self.clear_active_formatting_to_marker()
+    }
   }
 }
 
