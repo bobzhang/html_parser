@@ -47,7 +47,12 @@ fn scaffold_document(
       // comment order is preserved.
       strip_routed_comments(root, after_body_comments, after_html_comments)
       strip_routed_comments(html, after_body_comments, after_html_comments)
-      absorb_root_html_siblings(root, html, forced_body_nodes)
+      absorb_root_html_siblings(
+        root,
+        html,
+        forced_body_nodes,
+        after_head_whitespace~,
+      )
       scaffold_existing_html_element(
         html,
         foster_parented_texts,

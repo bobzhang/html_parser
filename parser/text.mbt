@@ -234,6 +234,12 @@ fn Parser::flush_pending_text(self : Parser) -> Unit {
   if self.remove_foster_parented_text(node) {
     self.foster_parented_texts.push(merged)
   }
+  if node_array_contains_identity(self.after_head_whitespace, node) {
+    remove_parser_node_identity(self.after_head_whitespace, node)
+    if is_whitespace_text_node(merged) {
+      self.after_head_whitespace.push(merged)
+    }
+  }
 }
 
 ///|
