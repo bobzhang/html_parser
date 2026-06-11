@@ -1,6 +1,16 @@
 ///|
 fn Parser::last_open_template_index(self : Parser) -> Int {
-  self.last_stack_index_of("template")
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element &&
+      node.name == "template" &&
+      (node.ns is None || node.ns is Some("html")) {
+      return index
+    }
+  }
+  -1
 }
 
 ///|
