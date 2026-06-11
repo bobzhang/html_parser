@@ -329,8 +329,22 @@ fn Parser::prepare_bare_template_row_start(
     name == "tfoot" ||
     name == "thead" ||
     name == "table" {
+    let mut popped_cell = false
     while self.stack.length() > row_index {
-      ignore(self.stack.pop())
+      match self.stack.pop() {
+        Some(node) =>
+          if node.kind == Element &&
+            (node.name == "td" || node.name == "th") &&
+            (node.ns is None || node.ns is Some("html")) {
+            popped_cell = true
+          }
+        None => ()
+      }
+    }
+    if popped_cell {
+      // Closing the row through an open cell also clears the cell's
+      // formatting marker.
+      self.clear_active_formatting_to_marker()
     }
     self.set_template_content_mode("table-body")
     self.enable_template_table_context_mode()
