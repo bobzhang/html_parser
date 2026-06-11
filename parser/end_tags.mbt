@@ -197,6 +197,20 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
           }
         }
       }
+      let mut li_index = self.stack.length()
+      while li_index > 0 {
+        li_index -= 1
+        let node = self.stack[li_index]
+        if node.kind == Element &&
+          node.name == "li" &&
+          (node.ns is None || node.ns is Some("html")) {
+          set_node_source_end_tag(
+            node,
+            self.source_tag_slice(start, tag_close_pos),
+          )
+          break
+        }
+      }
       ignore(self.close_open_element("li"))
     } else {
       // An inner list hides the li from list-item scope: ignore.

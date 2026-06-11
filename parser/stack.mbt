@@ -327,16 +327,7 @@ fn Parser::end_tag_target_visible_for_pop(self : Parser, name : String) -> Bool 
     // scope: applet-like elements, table cells, templates, and the
     // foreign integration points terminate the search, so e.g. </div>
     // cannot pop through an open <marquee> or <foreignObject>. The
-    // table-internal end tags use table scope instead, where only
-    // html, table, and template terminate.
-    if is_table_internal_start_name(name) {
-      if node.kind == Element &&
-        (node.ns is None || node.ns is Some("html")) &&
-        (node.name == "table" || node.name == "template" || node.name == "html") {
-        return false
-      }
-      continue
-    }
+    // table-structural machinery performs its own table-scope walk.
     if name != node.name &&
       node.kind == Element &&
       (node.ns is None || node.ns is Some("html")) &&
