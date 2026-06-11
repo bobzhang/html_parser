@@ -77,7 +77,50 @@ fn Parser::handle_table_context_ignored_end_tag(
   if self.last_stack_index_of(name) > table_index {
     return false
   }
+  if name == "tbody" && self.close_virtual_table_section() {
+    return true
+  }
   self.error_at("unexpected-end-tag", start)
+  true
+}
+
+///|
+/// Materialized rows sitting at the table level form a virtual tbody; a
+/// </tbody> wraps them so later cells start a new row group. Returns true
+/// when a section was closed this way.
+fn Parser::close_virtual_table_section(self : Parser) -> Bool {
+  let table_index = self.last_open_table_index()
+  if table_index < 0 || table_index != self.stack.length() - 1 {
+    return false
+  }
+  let parent = self.stack[table_index]
+  let mut run = parent.children.length()
+  while run > 0 {
+    let child = parent.children[run - 1]
+    if child.kind == Element &&
+      (child.name == "tr" || child.name == "td" || child.name == "th") &&
+      (child.ns is None || child.ns is Some("html")) {
+      run -= 1
+    } else {
+      break
+    }
+  }
+  if run == parent.children.length() {
+    return false
+  }
+  let section = @dom.element("tbody")
+  let moved = parent.children.copy()
+  while parent.children.length() > run {
+    ignore(parent.children.pop())
+  }
+  let mut index = run
+  while index < moved.length() {
+    let node = moved[index]
+    node.parent = None
+    section.append_child(node)
+    index += 1
+  }
+  parent.append_child(section)
   true
 }
 
@@ -129,6 +172,9 @@ fn Parser::handle_table_structural_end_tag(
   let cell_index = self.last_open_html_table_cell_index()
   let had_open_cell = cell_index > table_index && table_index >= 0
   if !self.close_open_element(name) {
+    if !had_open_cell && name == "tbody" && self.close_virtual_table_section() {
+      return true
+    }
     if had_open_cell && (name == "tbody" || name == "tr") {
       // The row always has a virtual ancestor, and a bare cell's section
       // is a virtual tbody (synthesized after parsing); an explicit
