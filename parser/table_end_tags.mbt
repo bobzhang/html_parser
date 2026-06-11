@@ -111,5 +111,16 @@ fn Parser::handle_table_structural_end_tag(
   self : Parser,
   name : String,
 ) -> Bool {
-  table_structural_end_tag_can_close(name) && self.close_open_element(name)
+  if !table_structural_end_tag_can_close(name) {
+    return false
+  }
+  if !self.close_open_element(name) {
+    return false
+  }
+  if name == "td" || name == "th" || name == "caption" {
+    // Ending a cell or caption clears the active formatting list up to
+    // the marker pushed when it opened.
+    self.clear_active_formatting_to_marker()
+  }
+  true
 }

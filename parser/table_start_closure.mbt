@@ -41,6 +41,7 @@ fn Parser::close_current_table_cell_for_start(
   while self.stack.length() > cell_index {
     ignore(self.stack.pop())
   }
+  self.clear_active_formatting_to_marker()
   true
 }
 
