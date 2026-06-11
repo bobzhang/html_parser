@@ -129,6 +129,32 @@ fn Parser::handle_table_structural_end_tag(
   let cell_index = self.last_open_html_table_cell_index()
   let had_open_cell = cell_index > table_index && table_index >= 0
   if !self.close_open_element(name) {
+    if had_open_cell && (name == "tbody" || name == "tr") {
+      // The row always has a virtual ancestor, and a bare cell's section
+      // is a virtual tbody (synthesized after parsing); an explicit
+      // thead/tfoot section means </tbody> finds nothing in scope.
+      let mut explicit_section = false
+      if name == "tbody" {
+        let mut index = cell_index
+        while index > table_index {
+          index -= 1
+          let node = self.stack[index]
+          if node.kind == Element &&
+            (node.name == "thead" || node.name == "tfoot") &&
+            (node.ns is None || node.ns is Some("html")) {
+            explicit_section = true
+            break
+          }
+        }
+      }
+      if !explicit_section {
+        while self.stack.length() > table_index + 1 {
+          ignore(self.stack.pop())
+        }
+        self.clear_active_formatting_to_marker()
+        return true
+      }
+    }
     return false
   }
   if name == "td" || name == "th" || name == "caption" || had_open_cell {
