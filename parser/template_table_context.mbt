@@ -416,6 +416,11 @@ fn Parser::record_template_content_flow_insert(
   if !self.in_template_content_without_inner_table() {
     return
   }
+  if self.template_content_mode() != "" {
+    // Only the initial in-template mode flips to in-body; established
+    // table modes (row, table-body, table) persist through flow content.
+    return
+  }
   let current = self.current_node()
   if current.kind == Element &&
     current.name == "template" &&
