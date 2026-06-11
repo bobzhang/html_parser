@@ -67,12 +67,14 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
     ignore(self.advance_char())
   }
   let view = self.input[start:self.pos]
+  // Input-stream newline preprocessing happens before any null handling
+  // so a NUL between CR and LF does not fabricate a CRLF pair.
+  let normalized = normalize_raw_newlines(view)
   let cleaned = if self.current_node_uses_foreign_content_for_text() {
-    self.clean_foreign_content_text(view, start)
+    self.clean_foreign_content_text(normalized, start)
   } else {
-    self.remove_null_characters(view, start)
+    self.remove_null_characters(normalized, start)
   }
-  let cleaned = normalize_raw_newlines(cleaned)
   if !cleaned.is_empty() {
     let cleaned = normalize_tree_builder_text(cleaned)
     let data = if self.xml_coercion {
