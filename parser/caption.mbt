@@ -33,6 +33,7 @@ fn Parser::close_current_caption_for_start(
     }
     self.error_at("unexpected-start-tag-implies-end-tag", tag_close_pos)
     self.close_open_caption_element()
+    self.set_template_content_mode("table")
     self.enable_template_table_context_mode()
     return true
   }
@@ -60,6 +61,7 @@ fn Parser::handle_caption_end_tag(
     match name {
       "caption" => {
         self.close_open_caption_element()
+        self.set_template_content_mode("table")
         self.enable_template_table_context_mode()
         true
       }
