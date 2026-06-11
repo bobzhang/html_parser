@@ -84,7 +84,42 @@ fn Parser::foster_parent_table_text(
   }
   let table = self.stack[table_index]
   match table.parent {
-    Some(parent) => parent.insert_before(fostered, Some(table))
+    Some(parent) => {
+      // The appropriate place for inserting fostered characters is
+      // immediately before the table; when a text node already sits
+      // there, the characters merge into it ("A" and "C" around a cell
+      // become one "AC" node).
+      let mut table_pos = -1
+      let mut sibling_index = 0
+      while sibling_index < parent.children.length() {
+        if physical_equal(parent.children[sibling_index], table) {
+          table_pos = sibling_index
+          break
+        }
+        sibling_index += 1
+      }
+      if table_pos > 0 &&
+        parent.children[table_pos - 1].kind == Text &&
+        !parent.children[table_pos - 1].sanitize_escape_only {
+        let previous = parent.children[table_pos - 1]
+        let merged = @dom.text(previous.data + fostered.data)
+        merged.parsed_from_source = previous.parsed_from_source
+        merged.origin_offset = previous.origin_offset
+        merged.origin_line = previous.origin_line
+        merged.origin_col = previous.origin_col
+        merged.parent = Some(parent)
+        parent.children[table_pos - 1] = merged
+        previous.parent = None
+        if self.remove_foster_parented_text(previous) {
+          self.foster_parented_texts.push(merged)
+        }
+        if self.remove_forced_body_node(previous) {
+          self.forced_body_nodes.push(merged)
+        }
+        return true
+      }
+      parent.insert_before(fostered, Some(table))
+    }
     None => self.root.append_child(fostered)
   }
   self.foster_parented_texts.push(fostered)
