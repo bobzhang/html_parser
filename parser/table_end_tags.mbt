@@ -125,12 +125,16 @@ fn Parser::handle_table_structural_end_tag(
   if !table_structural_end_tag_can_close(name) {
     return false
   }
+  let table_index = self.last_open_table_index()
+  let cell_index = self.last_open_table_cell_index()
+  let had_open_cell = cell_index > table_index && table_index >= 0
   if !self.close_open_element(name) {
     return false
   }
-  if name == "td" || name == "th" || name == "caption" {
-    // Ending a cell or caption clears the active formatting list up to
-    // the marker pushed when it opened.
+  if name == "td" || name == "th" || name == "caption" || had_open_cell {
+    // Ending a cell or caption — explicitly or implicitly through a
+    // row/section end tag — clears the active formatting list up to the
+    // marker pushed when the cell opened.
     self.clear_active_formatting_to_marker()
   }
   true
