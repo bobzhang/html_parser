@@ -248,7 +248,33 @@ fn Parser::handle_table_structural_end_tag(
             index += 1
           }
           if name == "tbody" {
+            // Earlier materialized rows from the same virtual section
+            // join the closed tbody ahead of the final row.
             let section = @dom.element("tbody")
+            let mut row_run = parent.children.length()
+            while row_run > 0 {
+              let child = parent.children[row_run - 1]
+              if child.kind == Element &&
+                child.name == "tr" &&
+                (child.ns is None || child.ns is Some("html")) {
+                row_run -= 1
+              } else {
+                break
+              }
+            }
+            if row_run < parent.children.length() {
+              let rows = parent.children.copy()
+              while parent.children.length() > row_run {
+                ignore(parent.children.pop())
+              }
+              let mut row_index = row_run
+              while row_index < rows.length() {
+                let earlier = rows[row_index]
+                earlier.parent = None
+                section.append_child(earlier)
+                row_index += 1
+              }
+            }
             section.append_child(row)
             parent.append_child(section)
           } else {
