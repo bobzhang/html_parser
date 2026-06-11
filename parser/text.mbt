@@ -404,6 +404,27 @@ fn normalize_tree_builder_text(value : StringView) -> String {
 }
 
 ///|
+/// Input-stream preprocessing for raw character data (CDATA sections):
+/// CR and CRLF normalize to LF before any further handling. Decoded
+/// character references are exempt — they happen after preprocessing.
+fn normalize_raw_newlines(value : StringView) -> String {
+  let out = StringBuilder(size_hint=value.length())
+  let mut last_was_cr = false
+  for ch in value {
+    if ch == '\r' {
+      out.write_char('\n')
+      last_was_cr = true
+    } else if ch == '\n' && last_was_cr {
+      last_was_cr = false
+    } else {
+      out.write_char(ch)
+      last_was_cr = false
+    }
+  }
+  out.to_string()
+}
+
+///|
 fn decode_entities_for_tree_text(value : StringView) -> String {
   let decoded = @tok.decode_entities(value, in_attribute=false)
   normalize_tree_builder_text(decoded)

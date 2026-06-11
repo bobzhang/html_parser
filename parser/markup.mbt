@@ -67,11 +67,34 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
     ignore(self.advance_char())
   }
   let view = self.input[start:self.pos]
-  let cleaned = if self.current_node_uses_foreign_content_for_text() {
-    self.clean_foreign_content_text(view, start)
-  } else {
-    self.remove_null_characters(view, start)
+  // Null diagnostics use raw-view offsets; the newline preprocessing
+  // (which can shorten CRLF pairs) and the silent null cleanup follow.
+  let foreign = self.current_node_uses_foreign_content_for_text()
+  let mut null_offset = 0
+  for ch in view {
+    if ch == '\u{0000}' {
+      self.error_at("unexpected-null-character", start + null_offset)
+      if foreign {
+        self.error_at(
+          "invalid-codepoint-in-foreign-content",
+          start + null_offset,
+        )
+      }
+    }
+    null_offset += ch.utf16_len()
   }
+  let normalized = normalize_raw_newlines(view)
+  let out = StringBuilder(size_hint=normalized.length())
+  for ch in normalized {
+    if ch == '\u{0000}' {
+      if foreign {
+        out.write_char('\u{FFFD}')
+      }
+    } else {
+      out.write_char(ch)
+    }
+  }
+  let cleaned = out.to_string()
   if !cleaned.is_empty() {
     let cleaned = normalize_tree_builder_text(cleaned)
     let data = if self.xml_coercion {
