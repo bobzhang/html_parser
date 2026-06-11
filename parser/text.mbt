@@ -65,8 +65,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     }
     return
   }
-  if self.uses_document_frameset_rules() &&
-    text_has_non_ascii_whitespace(cleaned) {
+  if self.uses_document_frameset_rules() && text_clears_frameset_ok(raw) {
     self.frameset_ok = false
   }
   if self.handle_template_column_group_text(cleaned, text_start) {
@@ -122,6 +121,19 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     // that decodes to whitespace does not leave after-body mode.
     self.fragment_context_html_after_body = false
     self.fragment_context_html_entered_body = true
+  }
+  let table_parent = self.current_node()
+  if !text_has_non_ascii_whitespace(data) &&
+    table_parent.kind == Element &&
+    is_table_start_foster_target(table_parent.name) &&
+    self.last_open_table_index() >= 0 {
+    // Whitespace-only table text inserts at the current table position
+    // without reconstructing fostered formatting.
+    if self.merge_into_trailing_text(table_parent, data) {
+      return
+    }
+    table_parent.append_child(self.text_at(data, text_start))
+    return
   }
   self.reconstruct_active_formatting_elements()
   let parent = self.current_node()
@@ -476,4 +488,17 @@ fn initial_newline_reference_length(text : StringView) -> Int {
     }
   }
   length
+}
+
+///|
+/// Character tokens clear frameset-ok unless they are whitespace; a NUL
+/// (replaced by U+FFFD in foreign content) takes the dedicated parse
+/// error path that leaves the flag alone.
+fn text_clears_frameset_ok(raw : StringView) -> Bool {
+  for ch in raw {
+    if !ch.is_ascii_whitespace() && ch != '\u{0}' {
+      return true
+    }
+  }
+  false
 }

@@ -104,7 +104,7 @@ fn Parser::reconstruct_active_formatting_elements(self : Parser) -> Unit {
     let entry = self.active_formatting[index]
     let node = @dom.element(entry.name, attrs=entry.attrs.copy(), ns=entry.ns)
     copy_node_origin_from(node, entry.node)
-    self.current_node().append_child(node)
+    self.append_reconstructed_formatting_node(node)
     self.stack.push(node)
     self.active_formatting[index] = {
       marker: false,
@@ -115,4 +115,28 @@ fn Parser::reconstruct_active_formatting_elements(self : Parser) -> Unit {
     }
     index += 1
   }
+}
+
+///|
+/// Reconstructed formatting elements insert at the appropriate place:
+/// in table context that is the foster position before the open table,
+/// matching the in-body-with-foster reprocessing.
+fn Parser::append_reconstructed_formatting_node(
+  self : Parser,
+  node : @dom.Node,
+) -> Unit {
+  let current = self.current_node()
+  if current.kind == Element && is_table_start_foster_target(current.name) {
+    let table_index = self.last_open_table_index()
+    if table_index >= 0 {
+      if self.table_index_is_fragment_context_table(table_index) {
+        current.append_child(node)
+      } else {
+        self.insert_node_before_open_table(node, table_index)
+        self.forced_body_nodes.push(node)
+      }
+      return
+    }
+  }
+  current.append_child(node)
 }
