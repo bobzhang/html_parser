@@ -58,6 +58,11 @@ fn Parser::handle_disabled_head_noscript_start_tag(
     self.error_at("unexpected-start-tag", start)
     return true
   }
+  if name == "html" {
+    // The in-body rules merge html attributes without leaving the
+    // noscript.
+    return false
+  }
   self.error_at("unexpected-start-tag", start)
   self.pop_disabled_head_noscript_for_reprocess()
   false

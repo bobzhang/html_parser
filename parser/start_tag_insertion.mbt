@@ -70,6 +70,9 @@ fn Parser::insert_normal_start_tag(
       self.push_active_formatting_marker()
     }
     if node_ns == "html" && start_tag_ignores_initial_lf(adjusted_name) {
+      // A literal newline is skipped here; an entity-encoded one decodes
+      // later, so the text path drops it via the pending flag.
+      self.pending_initial_lf_skip = self.current() is Some('&')
       self.skip_one_initial_lf()
     }
   }

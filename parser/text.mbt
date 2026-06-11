@@ -98,10 +98,16 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     self.error_at(error.code, text_start + error.offset)
   }
   let decoded = normalize_tree_builder_text(decoded_result.data)
-  let data = if self.xml_coercion {
+  let mut data = if self.xml_coercion {
     coerce_text_for_xml(decoded)
   } else {
     decoded
+  }
+  if self.pending_initial_lf_skip {
+    self.pending_initial_lf_skip = false
+    if data.has_prefix("\n") {
+      data = data[1:].to_owned()
+    }
   }
   if self.fragment_context_html_after_body &&
     text_has_non_ascii_whitespace(data) {

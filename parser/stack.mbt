@@ -324,12 +324,16 @@ fn Parser::end_tag_target_visible_for_pop(self : Parser, name : String) -> Bool 
       return true
     }
     // The dedicated block end tags only close an element in (default)
-    // scope: applet-like elements, table cells, and templates terminate
-    // the search, so e.g. </div> cannot pop through an open <marquee>.
+    // scope: applet-like elements, table cells, templates, and the
+    // foreign integration points terminate the search, so e.g. </div>
+    // cannot pop through an open <marquee> or <foreignObject>.
     if name != node.name &&
       node.kind == Element &&
       (node.ns is None || node.ns is Some("html")) &&
       is_default_scope_terminator(node.name) {
+      return false
+    }
+    if node.kind == Element && is_foreign_special_element(node) {
       return false
     }
   }
@@ -355,8 +359,30 @@ fn Parser::special_blocks_end_tag(self : Parser, name : String) -> Bool {
       is_special_element_name(node.name) {
       return true
     }
+    if is_foreign_special_element(node) {
+      return true
+    }
   }
   false
+}
+
+///|
+/// The spec's special category also covers the foreign integration
+/// points: MathML text containers and the SVG elements whose content is
+/// HTML.
+fn is_foreign_special_element(node : @dom.Node) -> Bool {
+  match node.ns {
+    Some("svg") =>
+      node.name == "foreignObject" ||
+      node.name == "desc" ||
+      node.name == "title"
+    Some("math") | Some("mathml") =>
+      match node.name {
+        "mi" | "mo" | "mn" | "ms" | "mtext" | "annotation-xml" => true
+        _ => false
+      }
+    _ => false
+  }
 }
 
 ///|
