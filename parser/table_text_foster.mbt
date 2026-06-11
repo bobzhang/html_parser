@@ -102,7 +102,11 @@ fn Parser::foster_parent_table_text(
       }
       if table_pos > 0 &&
         parent.children[table_pos - 1].kind == Text &&
-        !parent.children[table_pos - 1].sanitize_escape_only {
+        !parent.children[table_pos - 1].sanitize_escape_only &&
+        !self.foster_merge_crosses_body_boundary(
+          parent,
+          parent.children[table_pos - 1],
+        ) {
         let previous = parent.children[table_pos - 1]
         let merged = @dom.text(previous.data + fostered.data)
         merged.parsed_from_source = previous.parsed_from_source
@@ -168,4 +172,35 @@ fn Parser::report_foster_parented_table_context_text(
     return
   }
   ignore(self.report_foster_parenting_character_errors(cleaned, start))
+}
+
+///|
+/// A top-level whitespace-only run that is not already marked as body or
+/// fostered content belongs between the head and the body; fostered
+/// characters must not merge into it (same boundary as the trailing-text
+/// merge).
+fn Parser::foster_merge_crosses_body_boundary(
+  self : Parser,
+  parent : @dom.Node,
+  previous : @dom.Node,
+) -> Bool {
+  if self.is_fragment_parser() && !self.fragment_context_html {
+    return false
+  }
+  if !(parent.kind == Document ||
+    (parent.kind == Element && parent.name == "html")) {
+    return false
+  }
+  if !is_whitespace_text_node(previous) {
+    return false
+  }
+  if self.node_is_forced_body(previous) {
+    return false
+  }
+  for candidate in self.foster_parented_texts {
+    if physical_equal(candidate, previous) {
+      return false
+    }
+  }
+  true
 }
