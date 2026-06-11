@@ -207,9 +207,24 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
 /// child of the html element, after-after-body comments attach to the
 /// document itself. Returns false when normal insertion applies.
 fn Parser::append_after_body_comment(self : Parser, node : @dom.Node) -> Bool {
-  if self.is_fragment_parser() ||
-    !self.document_after_body ||
-    self.has_open_element("template") {
+  if self.is_fragment_parser() {
+    // An html-context fragment that saw </html> places later comments
+    // after the body, mirroring the after-body rules.
+    if self.fragment_context_html &&
+      self.fragment_context_html_after_body &&
+      !self.has_open_element("template") {
+      match self.fragment_context_html_root {
+        Some(html) => {
+          html.append_child(node)
+          self.after_html_comments.push(node)
+          return true
+        }
+        None => ()
+      }
+    }
+    return false
+  }
+  if !self.document_after_body || self.has_open_element("template") {
     return false
   }
   if self.document_after_html {
