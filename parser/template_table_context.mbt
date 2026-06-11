@@ -212,7 +212,16 @@ fn Parser::bare_template_row_fosters(self : Parser, name : StringView) -> Bool {
     name == "tr" ||
     name == "template" ||
     name == "script" ||
-    name == "style" {
+    name == "style" ||
+    name == "caption" ||
+    name == "col" ||
+    name == "colgroup" ||
+    name == "tbody" ||
+    name == "tfoot" ||
+    name == "thead" ||
+    name == "table" {
+    // Cells, in-head elements, and table-structural tags are not flow
+    // content; they take the row/table-body structural handling.
     return false
   }
   if !self.in_template_content_without_inner_table() {
@@ -261,4 +270,54 @@ fn Parser::close_open_template_content_section(self : Parser) -> Bool {
   }
   self.set_template_content_mode("table")
   true
+}
+
+///|
+/// Prepares a bare template-content row for an incoming start tag: cells
+/// clear the stack back to the row (popping fostered flow elements), and
+/// table-structural tags close the row (acting as </tr>) so the mode
+/// handler can gate or reprocess them.
+fn Parser::prepare_bare_template_row_start(
+  self : Parser,
+  name : StringView,
+) -> Unit {
+  if !self.in_template_content_without_inner_table() {
+    return
+  }
+  let template_index = self.last_open_template_index()
+  let mut row_index = -1
+  let mut index = self.stack.length()
+  while index > template_index + 1 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element &&
+      node.name == "tr" &&
+      (node.ns is None || node.ns is Some("html")) {
+      row_index = index
+      break
+    }
+  }
+  if row_index < 0 {
+    return
+  }
+  if name == "td" || name == "th" {
+    while self.stack.length() > row_index + 1 {
+      ignore(self.stack.pop())
+    }
+    return
+  }
+  if name == "tr" ||
+    name == "caption" ||
+    name == "col" ||
+    name == "colgroup" ||
+    name == "tbody" ||
+    name == "tfoot" ||
+    name == "thead" ||
+    name == "table" {
+    while self.stack.length() > row_index {
+      ignore(self.stack.pop())
+    }
+    self.set_template_content_mode("table-body")
+    self.enable_template_table_context_mode()
+  }
 }
