@@ -109,16 +109,18 @@ fn Parser::close_virtual_table_section(self : Parser) -> Bool {
     return false
   }
   let section = @dom.element("tbody")
-  let moved = parent.children.copy()
+  let moved : Array[@dom.Node] = []
+  let mut index = run
+  while index < parent.children.length() {
+    moved.push(parent.children[index])
+    index += 1
+  }
   while parent.children.length() > run {
     ignore(parent.children.pop())
   }
-  let mut index = run
-  while index < moved.length() {
-    let node = moved[index]
+  for node in moved {
     node.parent = None
     section.append_child(node)
-    index += 1
   }
   parent.append_child(section)
   true
@@ -236,16 +238,18 @@ fn Parser::handle_table_structural_end_tag(
         }
         if run < parent.children.length() {
           let row = @dom.element("tr")
-          let moved = parent.children.copy()
+          let moved : Array[@dom.Node] = []
+          let mut index = run
+          while index < parent.children.length() {
+            moved.push(parent.children[index])
+            index += 1
+          }
           while parent.children.length() > run {
             ignore(parent.children.pop())
           }
-          let mut index = run
-          while index < moved.length() {
-            let cell = moved[index]
+          for cell in moved {
             cell.parent = None
             row.append_child(cell)
-            index += 1
           }
           if name == "tbody" {
             // Earlier materialized rows from the same virtual section
@@ -263,16 +267,18 @@ fn Parser::handle_table_structural_end_tag(
               }
             }
             if row_run < parent.children.length() {
-              let rows = parent.children.copy()
+              let rows : Array[@dom.Node] = []
+              let mut row_index = row_run
+              while row_index < parent.children.length() {
+                rows.push(parent.children[row_index])
+                row_index += 1
+              }
               while parent.children.length() > row_run {
                 ignore(parent.children.pop())
               }
-              let mut row_index = row_run
-              while row_index < rows.length() {
-                let earlier = rows[row_index]
+              for earlier in rows {
                 earlier.parent = None
                 section.append_child(earlier)
-                row_index += 1
               }
             }
             section.append_child(row)
