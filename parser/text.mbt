@@ -98,10 +98,23 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     self.error_at(error.code, text_start + error.offset)
   }
   let decoded = normalize_tree_builder_text(decoded_result.data)
-  let data = if self.xml_coercion {
+  let mut data = if self.xml_coercion {
     coerce_text_for_xml(decoded)
   } else {
     decoded
+  }
+  if self.pending_initial_lf_skip {
+    self.pending_initial_lf_skip = false
+    if data.has_prefix("\n") {
+      data = data[1:].to_owned()
+      if data == "" {
+        // The text was only the skipped newline; nothing to insert.
+        return
+      }
+      // Advance the recorded origin past the consumed character
+      // reference so tracked locations point at the remaining text.
+      text_start = text_start + initial_newline_reference_length(cleaned)
+    }
   }
   if self.fragment_context_html_after_body &&
     text_has_non_ascii_whitespace(data) {
@@ -396,4 +409,47 @@ fn Parser::replace_null_characters(
     }
   }
   out.to_string()
+}
+
+///|
+/// Length of the leading character reference that decoded to the skipped
+/// newline: '&' then either '#' digits / '#x' hex digits (numeric) or
+/// letters (named), with an optional terminating semicolon.
+fn initial_newline_reference_length(text : StringView) -> Int {
+  let mut length = 0
+  let mut numeric = false
+  let mut hex = false
+  for ch in text {
+    if length == 0 {
+      length += 1 // the '&'
+      continue
+    }
+    if ch == ';' {
+      length += 1
+      break
+    }
+    if length == 1 && ch == '#' {
+      numeric = true
+      length += 1
+      continue
+    }
+    if numeric && length == 2 && (ch == 'x' || ch == 'X') {
+      hex = true
+      length += 1
+      continue
+    }
+    let in_body = if hex {
+      ch.is_ascii_hexdigit()
+    } else if numeric {
+      ch.is_ascii_digit()
+    } else {
+      ch.is_ascii_alphabetic() || ch.is_ascii_digit()
+    }
+    if in_body {
+      length += 1
+    } else {
+      break
+    }
+  }
+  length
 }

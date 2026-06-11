@@ -4,12 +4,9 @@ tests1.dat:30
 tests1.dat:32
 tests1.dat:101
 tests1.dat:103
-tests3.dat:11
 tests6.dat:0
 tests7.dat:30
 tests7.dat:32
-tests10.dat:30
-tests10.dat:31
 tests19.dat:82
 tests19.dat:93
 tests19.dat:97
@@ -24,7 +21,6 @@ tricky01.dat:8
 webkit01.dat:48
 webkit02.dat:5
 adoption01.dat:12
-noscript01.dat:1
 domjs-unsafe.dat:1
 plain-text-unsafe.dat:18
 plain-text-unsafe.dat:19
