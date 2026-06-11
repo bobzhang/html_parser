@@ -2210,7 +2210,7 @@ fn fixture_manifest() -> Array[(String, Int, String)] {
     ("tests/fixtures/justhtml/linkify-it/fixtures/not_links.txt", 763, "857d0168381df03d82acb120ad507accf2e3a9e9c7c520d9dc859d028143d3af"),
     ("tests/fixtures/html5lib-tests/LICENSE", 1103, "ff512aac9ef231d504be5afaf4429005024e4b2aaf257be39524f37b8402aaf2"),
     ("tests/fixtures/html5lib-tests/README.md", 2147, "0b2d9d328dea873d747c49b96f81ded71fbc59c997cb4ca2727f9889a397c416"),
-    ("tests/fixtures/html5lib-tests/expected-failures.txt", 723, "24de9a1c2e09339492d924517919f7b0e5f2edb5b80efd8533e455a940001f13"),
+    ("tests/fixtures/html5lib-tests/expected-failures.txt", 655, "961abdca605141ddbd6d1ab404bc9c9f4edc008b703176196048c3ea5e007997"),
     ("tests/fixtures/html5lib-tests/tree-construction/README.md", 4778, "5935c011ac581c8ab1e20e45bba6373c2a3975255017ec205dfcdb861f7c45c6"),
     ("tests/fixtures/html5lib-tests/tree-construction/adoption01.dat", 6084, "b2aba05bd1d832f73a0c6103b3c8b151b283bab7c56887274d81f3a062c4963e"),
     ("tests/fixtures/html5lib-tests/tree-construction/adoption02.dat", 672, "6ca94baf47ef9b6756657f40b15a12ac758802faa5003a7659652b8664e1e7d8"),

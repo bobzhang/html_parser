@@ -9,12 +9,14 @@ fn Parser::pop_until(
     self.error_at("unexpected-end-tag", pos)
     return
   }
-  if !is_special_element_name(name) &&
+  if (!is_special_element_name(name) || special_name_without_end_tag_rule(name)) &&
     !active_formatting_element_name(name) &&
     self.special_blocks_end_tag(name) {
     // Names with dedicated end-tag rules (div, ul, ...) close through
     // their scope, and formatting end tags use the adoption agency
     // rules; only the any-other-end-tag walk stops at a special element.
+    // Special elements without a dedicated end-tag rule (menuitem,
+    // iframe, the voids) also take the any-other-end-tag walk.
     self.error_at("unexpected-end-tag", pos)
     return
   }
@@ -355,4 +357,28 @@ fn Parser::special_blocks_end_tag(self : Parser, name : String) -> Bool {
     }
   }
   false
+}
+
+///|
+/// Special elements whose end tags have no dedicated in-body rule: they
+/// process as any-other-end-tag, so the walk stops at special elements.
+fn special_name_without_end_tag_rule(name : StringView) -> Bool {
+  match name {
+    "menuitem"
+    | "iframe"
+    | "noembed"
+    | "embed"
+    | "area"
+    | "img"
+    | "input"
+    | "hr"
+    | "wbr"
+    | "param"
+    | "source"
+    | "track"
+    | "keygen"
+    | "basefont"
+    | "bgsound" => true
+    _ => false
+  }
 }
