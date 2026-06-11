@@ -116,7 +116,6 @@ fn Parser::handle_parsed_start_tag(
     self.error_at("unexpected-start-tag-ignored", start)
     return
   }
-  self.close_bare_template_row_for_flow(name)
   if self.handle_template_table_context_start_tag(name, attrs, start) {
     return
   }

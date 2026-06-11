@@ -198,38 +198,31 @@ fn Parser::record_template_content_close(self : Parser, name : String) -> Unit {
 }
 
 ///|
-/// Flow content (anything but a cell) directly inside a bare
-/// template-content row closes the row first and becomes its sibling,
-/// mirroring the in-row anything-else handling without a real table.
-fn Parser::close_bare_template_row_for_flow(
-  self : Parser,
-  name : String,
-) -> Unit {
+/// Flow content (anything but a cell or an in-head element) arriving while
+/// the current node is a bare template-content row is foster-parented into
+/// the row's parent — the row stays open for later cells, mirroring the
+/// in-row anything-else handling without a real table.
+fn Parser::bare_template_row_fosters(self : Parser, name : StringView) -> Bool {
   if name == "td" ||
     name == "th" ||
+    name == "tr" ||
     name == "template" ||
     name == "script" ||
     name == "style" {
-    // Cells belong in the row, and the in-row mode handles template,
-    // script, and style with the in-head rules (they nest inside).
-    return
+    return false
   }
   if !self.in_template_content_without_inner_table() {
-    return
+    return false
   }
   let len = self.stack.length()
   if len < 2 {
-    return
+    return false
   }
   let last = self.stack[len - 1]
   let below = self.stack[len - 2]
-  if last.kind == Element &&
-    last.name == "tr" &&
-    (last.ns is None || last.ns is Some("html")) &&
-    below.kind == Element &&
-    below.name == "template" {
-    ignore(self.stack.pop())
-    self.set_template_content_mode("table-body")
-    self.enable_template_table_context_mode()
-  }
+  last.kind == Element &&
+  last.name == "tr" &&
+  (last.ns is None || last.ns is Some("html")) &&
+  below.kind == Element &&
+  below.name == "template"
 }
