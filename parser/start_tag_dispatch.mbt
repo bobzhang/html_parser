@@ -14,6 +14,12 @@ fn Parser::handle_parsed_start_tag(
     ) {
     return
   }
+  if self.fragment_context_html_after_body && name != "body" && name != "html" {
+    // Any other token after a stray </html> returns the fragment to
+    // body mode, so later comments stay in the body.
+    self.fragment_context_html_after_body = false
+    self.fragment_context_html_entered_body = true
+  }
   if self.handle_fragment_shell_start_tag(name, attrs, start) {
     return
   }
@@ -232,7 +238,11 @@ fn Parser::handle_parsed_start_tag(
   } else if name == "option" || name == "optgroup" {
     self.close_open_select_item(name)
   } else if name == "td" || name == "th" {
-    self.close_open_table_cell()
+    // Only a cell above the last open table is in scope; a context cell
+    // below a nested table must not be closed through it.
+    if self.last_open_html_table_cell_index() > self.last_open_table_index() {
+      self.close_open_table_cell()
+    }
   }
   if is_heading_element_name(name) {
     self.close_current_heading_element()

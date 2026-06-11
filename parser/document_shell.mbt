@@ -167,8 +167,24 @@ fn Parser::handle_before_html_end_tag(
 /// in-body rules, so the scaffolder must place these nodes in the body
 /// rather than the head.
 fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
-  if self.is_fragment_parser() ||
-    (!self.document_after_body && !self.document_entered_body) {
+  if self.is_fragment_parser() {
+    // An html fragment that re-entered body mode after a stray </html>
+    // records top-level nodes as body content for scaffolding.
+    if self.fragment_context_html &&
+      self.fragment_context_html_entered_body &&
+      !self.fragment_context_html_after_body &&
+      !self.in_frameset_document() {
+      match node.parent {
+        Some(parent) =>
+          if parent.kind == Element && parent.name == "html" {
+            self.forced_body_nodes.push(node)
+          }
+        None => ()
+      }
+    }
+    return
+  }
+  if !self.document_after_body && !self.document_entered_body {
     return
   }
   if !self.document_after_body &&
@@ -207,9 +223,24 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
 /// child of the html element, after-after-body comments attach to the
 /// document itself. Returns false when normal insertion applies.
 fn Parser::append_after_body_comment(self : Parser, node : @dom.Node) -> Bool {
-  if self.is_fragment_parser() ||
-    !self.document_after_body ||
-    self.has_open_element("template") {
+  if self.is_fragment_parser() {
+    // An html-context fragment that saw </html> places later comments
+    // after the body, mirroring the after-body rules.
+    if self.fragment_context_html &&
+      self.fragment_context_html_after_body &&
+      !self.has_open_element("template") {
+      match self.fragment_context_html_root {
+        Some(html) => {
+          html.append_child(node)
+          self.after_html_comments.push(node)
+          return true
+        }
+        None => ()
+      }
+    }
+    return false
+  }
+  if !self.document_after_body || self.has_open_element("template") {
     return false
   }
   if self.document_after_html {
@@ -344,8 +375,22 @@ fn document_has_any_content(root : @dom.Node) -> Bool {
 /// in-body (a non-whitespace token followed </html>) belongs in the body:
 /// mark it so the scaffolder moves it there.
 fn Parser::mark_entered_body_comment(self : Parser, node : @dom.Node) -> Unit {
-  if self.is_fragment_parser() ||
-    !self.document_entered_body ||
+  if self.is_fragment_parser() {
+    if self.fragment_context_html &&
+      self.fragment_context_html_entered_body &&
+      !self.fragment_context_html_after_body &&
+      !self.in_frameset_document() {
+      match node.parent {
+        Some(parent) =>
+          if parent.kind == Element && parent.name == "html" {
+            self.forced_body_nodes.push(node)
+          }
+        None => ()
+      }
+    }
+    return
+  }
+  if !self.document_entered_body ||
     self.document_after_body ||
     self.in_frameset_document() ||
     !document_children_contain_body_content(self.root) {

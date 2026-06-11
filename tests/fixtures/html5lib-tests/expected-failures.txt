@@ -32,7 +32,5 @@ domjs-unsafe.dat:1
 menuitem-element.dat:7
 plain-text-unsafe.dat:18
 plain-text-unsafe.dat:19
-tests_innerHTML_1.dat:73
 tests_innerHTML_1.dat:75
-tests_innerHTML_1.dat:78
 namespace-sensitivity.dat:0

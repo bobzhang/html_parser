@@ -84,6 +84,12 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     return
   }
   self.leave_after_body_for_token(name)
+  if self.fragment_context_html_after_body && name != "body" && name != "html" {
+    // Any other end tag after a stray </html> is the after-body
+    // anything-else case: the fragment returns to body mode.
+    self.fragment_context_html_after_body = false
+    self.fragment_context_html_entered_body = true
+  }
   if self.handle_foreign_content_end_tag(name, start) {
     return
   }
