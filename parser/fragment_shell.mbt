@@ -8,7 +8,9 @@ fn Parser::fragment_end_tag_is_ignored(
   }
   match name {
     "html" => {
-      if self.fragment_context_html {
+      if self.fragment_context_html && !self.in_select_insertion_mode() {
+        // In select mode the </html> end tag is simply ignored; it does
+        // not move the fragment to the after-body state.
         self.fragment_context_html_after_body = true
       }
       true
