@@ -18,6 +18,7 @@ fn Parser::handle_parsed_start_tag(
     // Any other token after a stray </html> returns the fragment to
     // body mode, so later comments stay in the body.
     self.fragment_context_html_after_body = false
+    self.fragment_context_html_entered_body = true
   }
   if self.handle_fragment_shell_start_tag(name, attrs, start) {
     return

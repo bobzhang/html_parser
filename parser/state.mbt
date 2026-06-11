@@ -45,6 +45,7 @@ priv struct Parser {
   mut document_entered_body : Bool
   iframe_srcdoc : Bool
   mut doctype_quirks_mode : Bool
+  mut fragment_context_html_entered_body : Bool
   template_content_modes : Array[(@dom.Node, String)]
   after_body_comments : Array[@dom.Node]
   after_html_comments : Array[@dom.Node]
@@ -120,6 +121,7 @@ fn Parser::Parser(
     end_tag_was_after_body: false,
     document_entered_body: false,
     doctype_quirks_mode: true,
+    fragment_context_html_entered_body: false,
     template_content_modes: [],
     after_body_comments: [],
     after_html_comments: [],

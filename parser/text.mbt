@@ -108,6 +108,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     // The whitespace decision uses the decoded characters: an entity
     // that decodes to whitespace does not leave after-body mode.
     self.fragment_context_html_after_body = false
+    self.fragment_context_html_entered_body = true
   }
   self.reconstruct_active_formatting_elements()
   let parent = self.current_node()

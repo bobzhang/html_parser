@@ -61,7 +61,11 @@ fn Parser::parse_html_fragment_context(self : Parser) -> Unit {
   self.root.append_child(html)
   self.stack.push(html)
   self.parse_all()
-  scaffold_existing_html_element(html, self.foster_parented_texts, [])
+  scaffold_existing_html_element(
+    html,
+    self.foster_parented_texts,
+    self.forced_body_nodes,
+  )
   for comment in self.after_html_comments {
     match comment.parent {
       Some(parent) => {
