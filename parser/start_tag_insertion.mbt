@@ -12,6 +12,7 @@ fn Parser::insert_normal_start_tag(
     self.prepare_active_formatting_start(name, start)
   }
   if !start_tag_closes_p(name) &&
+    !start_tag_uses_in_head_rules(name) &&
     !self.table_context_start_skips_active_reconstruction(name) {
     self.reconstruct_active_formatting_elements()
   }
@@ -75,5 +76,24 @@ fn Parser::insert_normal_start_tag(
       self.pending_initial_lf_skip = self.current() is Some('&')
       self.skip_one_initial_lf()
     }
+  }
+}
+
+///|
+/// In-body start tags handled by the in-head rules insert without
+/// reconstructing active formatting.
+fn start_tag_uses_in_head_rules(name : StringView) -> Bool {
+  match name {
+    "base"
+    | "basefont"
+    | "bgsound"
+    | "link"
+    | "meta"
+    | "noframes"
+    | "script"
+    | "style"
+    | "template"
+    | "title" => true
+    _ => false
   }
 }
