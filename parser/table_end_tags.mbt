@@ -91,7 +91,7 @@ fn Parser::handle_table_end_tag(
     return false
   }
   let table_index = self.last_open_table_index()
-  let cell_index = self.last_open_table_cell_index()
+  let cell_index = self.last_open_html_table_cell_index()
   let closes_open_cell = table_index >= 0 && cell_index > table_index
   if !self.close_open_element("table") {
     return false
@@ -126,7 +126,7 @@ fn Parser::handle_table_structural_end_tag(
     return false
   }
   let table_index = self.last_open_table_index()
-  let cell_index = self.last_open_table_cell_index()
+  let cell_index = self.last_open_html_table_cell_index()
   let had_open_cell = cell_index > table_index && table_index >= 0
   if !self.close_open_element(name) {
     return false
