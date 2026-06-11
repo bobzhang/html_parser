@@ -313,3 +313,18 @@ fn Parser::apply_pending_document_body_attrs(self : Parser) -> Unit {
     None => ()
   }
 }
+
+///|
+/// True when the document already holds an element or non-whitespace text
+/// at the top level: a subsequent <html> start tag is no longer the
+/// document's structural html element.
+fn document_has_any_content(root : @dom.Node) -> Bool {
+  for child in root.children {
+    match child.kind {
+      Element => return true
+      Text => if !is_whitespace_text_node(child) { return true }
+      _ => ()
+    }
+  }
+  false
+}

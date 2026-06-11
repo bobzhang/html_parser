@@ -4,9 +4,6 @@ tests1.dat:30
 tests1.dat:32
 tests1.dat:101
 tests1.dat:103
-tests2.dat:50
-tests2.dat:53
-tests2.dat:54
 tests3.dat:11
 tests6.dat:0
 tests7.dat:30
@@ -46,8 +43,6 @@ webkit02.dat:5
 adoption01.dat:12
 noscript01.dat:1
 domjs-unsafe.dat:1
-domjs-unsafe.dat:35
-domjs-unsafe.dat:38
 menuitem-element.dat:7
 plain-text-unsafe.dat:18
 plain-text-unsafe.dat:19

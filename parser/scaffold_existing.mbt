@@ -68,6 +68,13 @@ fn absorb_root_html_siblings(
         root.append_child(child)
         saw_html = true
       }
+    } else if !saw_html &&
+      child.kind == Text &&
+      is_whitespace_text_node(child) &&
+      !nodes_contain(forced_body_nodes, child) {
+      // Whitespace before the html element is ignored by the before-html
+      // mode; a document node never holds text.
+      child.parent = None
     } else if nodes_contain(forced_body_nodes, child) {
       // Content reprocessed in body after a stray </body>/</html> belongs
       // inside the html element; the scaffold pass below files it into the
