@@ -328,3 +328,24 @@ fn document_has_any_content(root : @dom.Node) -> Bool {
   }
   false
 }
+
+///|
+/// A comment arriving at the top level after parsing has returned to
+/// in-body (a non-whitespace token followed </html>) belongs in the body:
+/// mark it so the scaffolder moves it there.
+fn Parser::mark_entered_body_comment(self : Parser, node : @dom.Node) -> Unit {
+  if self.is_fragment_parser() ||
+    !self.document_entered_body ||
+    self.document_after_body ||
+    self.in_frameset_document() {
+    return
+  }
+  match node.parent {
+    Some(parent) =>
+      if parent.kind == Document ||
+        (parent.kind == Element && parent.name == "html") {
+        self.forced_body_nodes.push(node)
+      }
+    None => ()
+  }
+}

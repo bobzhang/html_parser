@@ -24,9 +24,6 @@ tests26.dat:2
 template.dat:99
 tricky01.dat:5
 tricky01.dat:8
-webkit01.dat:23
-webkit01.dat:24
-webkit01.dat:25
 webkit01.dat:48
 webkit02.dat:5
 adoption01.dat:12

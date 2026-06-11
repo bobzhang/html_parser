@@ -20,6 +20,7 @@ fn Parser::parse_comment(self : Parser) -> Unit {
     return
   }
   self.current_node().append_child(node)
+  self.mark_entered_body_comment(node)
 }
 
 ///|
@@ -34,6 +35,7 @@ fn Parser::parse_bogus_comment(self : Parser, origin_start : Int) -> Unit {
   let node = self.comment_at(data, origin_start)
   if !self.append_after_body_comment(node) {
     self.current_node().append_child(node)
+    self.mark_entered_body_comment(node)
   }
   if self.current() == Some('>') {
     ignore(self.advance_char())
