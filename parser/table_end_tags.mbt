@@ -188,6 +188,16 @@ fn Parser::handle_table_structural_end_tag(
   let table_index = self.last_open_table_index()
   let cell_index = self.last_open_html_table_cell_index()
   let had_open_cell = cell_index > table_index && table_index >= 0
+  if self.close_open_html_table_element(name) {
+    if name == "td" || name == "th" || name == "caption" || had_open_cell {
+      self.clear_active_formatting_to_marker()
+    }
+    if self.in_template_content_without_inner_table() {
+      self.record_template_content_close(name)
+      self.enable_template_table_context_mode()
+    }
+    return true
+  }
   if !self.close_open_element(name) {
     if !had_open_cell && name == "tbody" && self.close_virtual_table_section() {
       return true
@@ -322,5 +332,55 @@ fn Parser::handle_table_structural_end_tag(
     self.record_template_content_close(name)
     self.enable_template_table_context_mode()
   }
+  true
+}
+
+///|
+/// Closes an HTML-namespace table element through any foreign elements
+/// above it (the in-cell rules pop foreign content on the way), used
+/// when an identically named foreign element sits closer to the top.
+fn Parser::close_open_html_table_element(self : Parser, name : String) -> Bool {
+  let mut index = self.stack.length()
+  let mut html_index = -1
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind != Element {
+      continue
+    }
+    if node.name == name && (node.ns is None || node.ns is Some("html")) {
+      html_index = index
+      break
+    }
+    if (node.ns is None || node.ns is Some("html")) &&
+      (node.name == "table" || node.name == "template" || node.name == "html") {
+      return false
+    }
+    if (node.ns is None || node.ns is Some("html")) && node.name == name {
+      // Identical HTML name found by the plain walk: defer to it.
+      return false
+    }
+  }
+  if html_index < 0 {
+    return false
+  }
+  let mut saw_foreign = false
+  index = html_index + 1
+  while index < self.stack.length() {
+    let node = self.stack[index]
+    if node.kind == Element && !(node.ns is None || node.ns is Some("html")) {
+      saw_foreign = true
+    }
+    index += 1
+  }
+  if !saw_foreign {
+    return false
+  }
+  while self.stack.length() > html_index {
+    ignore(self.stack.pop())
+  }
+  // A select popped with the foreign content no longer holds the parser
+  // in select mode.
+  self.reset_select_insertion_mode()
   true
 }

@@ -167,6 +167,57 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
     self.adoption_agency(name, tag_close_pos)
     return
   }
+  if name == "li" {
+    if self.li_in_list_item_scope() {
+      // Implied end tags (except li) pop silently; an element outside
+      // that set above the li is a parse error before popping through.
+      let mut index = self.stack.length()
+      while index > 0 {
+        index -= 1
+        let node = self.stack[index]
+        if node.kind != Element {
+          continue
+        }
+        if node.name == "li" && (node.ns is None || node.ns is Some("html")) {
+          break
+        }
+        match node.name {
+          "dd"
+          | "dt"
+          | "optgroup"
+          | "option"
+          | "p"
+          | "rb"
+          | "rp"
+          | "rt"
+          | "rtc" => continue
+          _ => {
+            self.error_at("end-tag-too-early", tag_close_pos)
+            break
+          }
+        }
+      }
+      let mut li_index = self.stack.length()
+      while li_index > 0 {
+        li_index -= 1
+        let node = self.stack[li_index]
+        if node.kind == Element &&
+          node.name == "li" &&
+          (node.ns is None || node.ns is Some("html")) {
+          set_node_source_end_tag(
+            node,
+            self.source_tag_slice(start, tag_close_pos),
+          )
+          break
+        }
+      }
+      ignore(self.close_open_element("li"))
+    } else {
+      // An inner list hides the li from list-item scope: ignore.
+      self.error_at("unexpected-end-tag", tag_close_pos)
+    }
+    return
+  }
   if name == "p" {
     if !self.p_in_button_scope() {
       // No p in button scope: parse error, act as <p> then close,
@@ -249,6 +300,31 @@ fn Parser::p_in_button_scope(self : Parser) -> Bool {
     }
     if (node.ns is None || node.ns is Some("html")) &&
       (node.name == "button" || is_default_scope_terminator(node.name)) {
+      return false
+    }
+    if is_foreign_special_element(node) {
+      return false
+    }
+  }
+  false
+}
+
+///|
+/// True when an open HTML li element is in list-item scope (default
+/// scope plus ul and ol terminate the search).
+fn Parser::li_in_list_item_scope(self : Parser) -> Bool {
+  let mut index = self.stack.length()
+  while index > 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind != Element {
+      continue
+    }
+    if (node.ns is None || node.ns is Some("html")) && node.name == "li" {
+      return true
+    }
+    if (node.ns is None || node.ns is Some("html")) &&
+      is_list_item_scope_terminator(node.name) {
       return false
     }
     if is_foreign_special_element(node) {
