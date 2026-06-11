@@ -62,14 +62,18 @@ fn Parser::handle_template_table_context_start_tag(
     return true
   }
   if name == "tbody" || name == "tfoot" || name == "thead" {
-    match self.template_content_mode() {
-      "row" | "table-body" => {
-        // A section start tag after row or cell content acts as an end
-        // tag that finds nothing in scope: parse error, ignore.
-        self.error_at("unexpected-start-tag", start)
-        return true
+    if !self.close_open_template_content_section() {
+      match self.template_content_mode() {
+        "row" | "table-body" => {
+          // A section start tag after row or cell content acts as an end
+          // tag that finds nothing in scope: parse error, ignore. With
+          // an open section the in-table-body rules close it first and
+          // the new section inserts after it.
+          self.error_at("unexpected-start-tag", start)
+          return true
+        }
+        _ => ()
       }
-      _ => ()
     }
     let node = self.node_with_origin(@dom.element(name, attrs~), start)
     self.current_node().append_child(node)
@@ -234,7 +238,12 @@ fn Parser::bare_template_row_fosters(self : Parser, name : StringView) -> Bool {
   let last = self.stack[len - 1]
   let below = self.stack[len - 2]
   last.kind == Element &&
-  last.name == "tr" &&
+  (
+    last.name == "tr" ||
+    last.name == "tbody" ||
+    last.name == "tfoot" ||
+    last.name == "thead"
+  ) &&
   (last.ns is None || last.ns is Some("html")) &&
   below.kind == Element &&
   below.name == "template"
@@ -298,6 +307,27 @@ fn Parser::prepare_bare_template_row_start(
     }
   }
   if row_index < 0 {
+    if name == "tr" || name == "td" || name == "th" {
+      // With an open section but no open row, pop foster-parented flow
+      // elements back to the section so rows and cells enter it.
+      let mut section_index = -1
+      index = self.stack.length()
+      while index > template_index + 1 {
+        index -= 1
+        let node = self.stack[index]
+        if node.kind == Element &&
+          (node.name == "tbody" || node.name == "tfoot" || node.name == "thead") &&
+          (node.ns is None || node.ns is Some("html")) {
+          section_index = index
+          break
+        }
+      }
+      if section_index >= 0 && section_index < self.stack.length() - 1 {
+        while self.stack.length() > section_index + 1 {
+          ignore(self.stack.pop())
+        }
+      }
+    }
     return
   }
   if name == "td" || name == "th" {
@@ -351,5 +381,90 @@ fn Parser::prepare_bare_template_row_start(
     self.reset_select_insertion_mode()
     self.set_template_content_mode("table-body")
     self.enable_template_table_context_mode()
+  }
+}
+
+///|
+/// True when the current node can host the template content's table
+/// machinery: the template itself or an open table-structure element.
+/// Inside flow content (e.g. a div) the in-body rules apply instead and
+/// stray table-structural start tags are ignored.
+fn Parser::template_content_at_structural_position(self : Parser) -> Bool {
+  if self.template_content_mode() == "body" {
+    return false
+  }
+  let current = self.current_node()
+  if current.kind == Element &&
+    current.name == "template" &&
+    (current.ns is None || current.ns is Some("html")) {
+    return true
+  }
+  // Any open table-structure element above the template keeps the
+  // machinery active, even with a foster-parented flow element on top.
+  let template_index = self.last_open_template_index()
+  let mut index = self.stack.length()
+  while index > template_index + 1 && template_index >= 0 {
+    index -= 1
+    let node = self.stack[index]
+    if node.kind == Element && (node.ns is None || node.ns is Some("html")) {
+      match node.name {
+        "tr"
+        | "tbody"
+        | "tfoot"
+        | "thead"
+        | "caption"
+        | "colgroup"
+        | "td"
+        | "th" => return true
+        _ => ()
+      }
+    }
+  }
+  false
+}
+
+///|
+/// Flow content inserted directly at the template content top switches
+/// the template's mode to in-body: later table-structural start tags are
+/// then ignored per the in-body rules instead of synthesizing structure.
+/// The in-head elements (template, script, style) leave the mode alone.
+fn Parser::record_template_content_flow_insert(
+  self : Parser,
+  name : StringView,
+) -> Unit {
+  if name == "template" ||
+    name == "script" ||
+    name == "style" ||
+    name == "base" ||
+    name == "basefont" ||
+    name == "bgsound" ||
+    name == "link" ||
+    name == "meta" ||
+    name == "noframes" ||
+    name == "title" ||
+    name == "col" ||
+    name == "colgroup" ||
+    name == "caption" ||
+    name == "tbody" ||
+    name == "tfoot" ||
+    name == "thead" ||
+    name == "tr" ||
+    name == "td" ||
+    name == "th" {
+    return
+  }
+  if !self.in_template_content_without_inner_table() {
+    return
+  }
+  if self.template_content_mode() != "" {
+    // Only the initial in-template mode flips to in-body; established
+    // table modes (row, table-body, table) persist through flow content.
+    return
+  }
+  let current = self.current_node()
+  if current.kind == Element &&
+    current.name == "template" &&
+    (current.ns is None || current.ns is Some("html")) {
+    self.set_template_content_mode("body")
   }
 }
