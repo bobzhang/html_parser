@@ -321,10 +321,13 @@ fn Parser::end_tag_target_visible_for_pop(self : Parser, name : String) -> Bool 
     if node.kind == Element && names_match_end_tag(node, name) {
       return true
     }
-    if name != "template" &&
+    // The dedicated block end tags only close an element in (default)
+    // scope: applet-like elements, table cells, and templates terminate
+    // the search, so e.g. </div> cannot pop through an open <marquee>.
+    if name != node.name &&
       node.kind == Element &&
-      node.name == "template" &&
-      (node.ns is None || node.ns is Some("html")) {
+      (node.ns is None || node.ns is Some("html")) &&
+      is_default_scope_terminator(node.name) {
       return false
     }
   }
