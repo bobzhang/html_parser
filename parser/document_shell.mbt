@@ -78,6 +78,14 @@ fn Parser::handle_document_body_or_html_end_tag(
   if self.is_fragment_parser() || (name != "body" && name != "html") {
     return false
   }
+  for node in self.stack {
+    if node.kind == Element && is_foreign_special_element(node) {
+      // Inside a foreign integration point body/html are not in scope:
+      // the end tag is ignored without entering the after-body modes.
+      self.error_at("unexpected-end-tag", pos)
+      return true
+    }
+  }
   if !self.has_open_element(name) {
     if name == "body" && self.has_open_element("html") {
       // A stray </body> with an explicit html element still runs the
