@@ -42,11 +42,24 @@ fn Parser::handle_parsed_start_tag(
     self.merge_document_html_attrs(attrs)
     return
   }
-  if (name == "body" || name == "html") &&
+  if name == "body" &&
     (self.has_open_element("template") || self.in_select_insertion_mode()) {
-    // The in-template and in-select rules ignore body and html start
-    // tags entirely; their attributes never reach the document shell.
+    // The in-template and in-select rules ignore body start tags
+    // entirely; their attributes never reach the document body.
     self.error_at("unexpected-start-tag", start)
+    return
+  }
+  if name == "html" && self.has_open_element("template") {
+    // The in-template rules ignore html start tags; in select mode they
+    // use the in-body attribute merge below.
+    self.error_at("unexpected-start-tag", start)
+    return
+  }
+  if name == "html" && self.in_select_insertion_mode() {
+    // Select-mode html start tags process via the in-body rules: merge
+    // missing attributes into the document shell, ignore the element.
+    self.error_at("unexpected-start-tag", start)
+    self.merge_document_html_attrs(attrs)
     return
   }
   if !self.is_fragment_parser() &&
