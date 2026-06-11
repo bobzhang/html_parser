@@ -346,6 +346,9 @@ fn Parser::prepare_bare_template_row_start(
       // formatting marker.
       self.clear_active_formatting_to_marker()
     }
+    // A select popped with the row no longer holds the parser in select
+    // mode.
+    self.reset_select_insertion_mode()
     self.set_template_content_mode("table-body")
     self.enable_template_table_context_mode()
   }
