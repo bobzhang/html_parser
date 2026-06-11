@@ -169,13 +169,33 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   }
   if name == "li" {
     if self.li_in_list_item_scope() {
-      let current = self.current_node()
-      if !(current.kind == Element &&
-        current.name == "li" &&
-        (current.ns is None || current.ns is Some("html"))) {
-        // Implied end tags leave an intervening element: parse error
-        // before popping through it.
-        self.error_at("end-tag-too-early", tag_close_pos)
+      // Implied end tags (except li) pop silently; an element outside
+      // that set above the li is a parse error before popping through.
+      let mut index = self.stack.length()
+      while index > 0 {
+        index -= 1
+        let node = self.stack[index]
+        if node.kind != Element {
+          continue
+        }
+        if node.name == "li" && (node.ns is None || node.ns is Some("html")) {
+          break
+        }
+        match node.name {
+          "dd"
+          | "dt"
+          | "optgroup"
+          | "option"
+          | "p"
+          | "rb"
+          | "rp"
+          | "rt"
+          | "rtc" => continue
+          _ => {
+            self.error_at("end-tag-too-early", tag_close_pos)
+            break
+          }
+        }
       }
       ignore(self.close_open_element("li"))
     } else {
