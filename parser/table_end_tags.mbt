@@ -171,34 +171,41 @@ fn Parser::handle_table_structural_end_tag(
           ignore(self.stack.pop())
         }
         self.clear_active_formatting_to_marker()
-        if name == "tr" {
-          // Materialize the closed virtual row so later cells start a
-          // new one during normalization.
-          let parent = self.stack[floor]
-          let mut run = parent.children.length()
-          while run > 0 {
-            let child = parent.children[run - 1]
-            if child.kind == Element &&
-              (child.name == "td" || child.name == "th") &&
-              (child.ns is None || child.ns is Some("html")) {
-              run -= 1
-            } else {
-              break
-            }
+        // A select popped with the cell no longer holds the parser in
+        // select mode.
+        self.reset_select_insertion_mode()
+        // Materialize the closed virtual structure so later cells start
+        // a new row (and row group) during normalization.
+        let parent = self.stack[floor]
+        let mut run = parent.children.length()
+        while run > 0 {
+          let child = parent.children[run - 1]
+          if child.kind == Element &&
+            (child.name == "td" || child.name == "th") &&
+            (child.ns is None || child.ns is Some("html")) {
+            run -= 1
+          } else {
+            break
           }
-          if run < parent.children.length() {
-            let row = @dom.element("tr")
-            let moved = parent.children.copy()
-            while parent.children.length() > run {
-              ignore(parent.children.pop())
-            }
-            let mut index = run
-            while index < moved.length() {
-              let cell = moved[index]
-              cell.parent = None
-              row.append_child(cell)
-              index += 1
-            }
+        }
+        if run < parent.children.length() {
+          let row = @dom.element("tr")
+          let moved = parent.children.copy()
+          while parent.children.length() > run {
+            ignore(parent.children.pop())
+          }
+          let mut index = run
+          while index < moved.length() {
+            let cell = moved[index]
+            cell.parent = None
+            row.append_child(cell)
+            index += 1
+          }
+          if name == "tbody" {
+            let section = @dom.element("tbody")
+            section.append_child(row)
+            parent.append_child(section)
+          } else {
             parent.append_child(row)
           }
         }
