@@ -72,6 +72,7 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
   } else {
     self.remove_null_characters(view, start)
   }
+  let cleaned = normalize_raw_newlines(cleaned)
   if !cleaned.is_empty() {
     let cleaned = normalize_tree_builder_text(cleaned)
     let data = if self.xml_coercion {

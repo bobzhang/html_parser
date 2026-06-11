@@ -69,7 +69,13 @@ fn Parser::adoption_agency(
     while index < self.stack.length() {
       let candidate = self.stack[index]
       if candidate.kind == Element &&
-        is_special_element_for_any_other_end_tag(candidate.name) {
+        (
+          (
+            (candidate.ns is None || candidate.ns is Some("html")) &&
+            is_special_element_for_any_other_end_tag(candidate.name)
+          ) ||
+          is_foreign_special_element(candidate)
+        ) {
         furthest_block_index = index
         break
       }

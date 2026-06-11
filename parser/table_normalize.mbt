@@ -149,9 +149,11 @@ fn normalize_tables(node : @dom.Node) -> Unit {
     Some(contents) => normalize_tables(contents)
     None => ()
   }
+  let html_ns = node.ns is None || node.ns is Some("html")
   match node.kind {
-    Element if node.name == "table" => normalize_table(node)
-    Element if is_table_section_name(node.name) => normalize_table_section(node)
+    Element if html_ns && node.name == "table" => normalize_table(node)
+    Element if html_ns && is_table_section_name(node.name) =>
+      normalize_table_section(node)
     _ =>
       for child in node.children {
         normalize_tables(child)

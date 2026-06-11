@@ -3,8 +3,5 @@
 tests1.dat:32
 tests1.dat:103
 template.dat:99
-webkit01.dat:48
-adoption01.dat:12
-domjs-unsafe.dat:1
 tests_innerHTML_1.dat:75
 namespace-sensitivity.dat:0
