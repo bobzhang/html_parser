@@ -55,10 +55,14 @@ fn Parser::close_current_table_cell_for_start(
   if table_index < 0 || cell_index <= table_index {
     return false
   }
+  let html_cell_index = self.last_open_html_table_cell_index()
   while self.stack.length() > cell_index {
     ignore(self.stack.pop())
   }
-  self.clear_active_formatting_to_marker()
+  if html_cell_index == cell_index {
+    // Only HTML cells pushed a marker; foreign td/th did not.
+    self.clear_active_formatting_to_marker()
+  }
   true
 }
 

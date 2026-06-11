@@ -65,6 +65,7 @@ fn Parser::handle_template_table_context_start_tag(
       let cell = self.node_with_origin(@dom.element(name, attrs~), start)
       row.append_child(cell)
       self.stack.push(cell)
+      self.push_active_formatting_marker()
     }
     self.disable_current_template_table_context_mode()
     return true
