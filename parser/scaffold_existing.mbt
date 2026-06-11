@@ -128,6 +128,7 @@ fn scaffold_existing_html_element(
     } else if child.kind == Text &&
       is_whitespace_text_node(child) &&
       !body_started &&
+      !nodes_contain(forced_body_nodes, child) &&
       nodes_contain(after_head_whitespace, child) {
       // Whitespace recorded after </head> stays between the head and
       // the body.
