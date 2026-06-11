@@ -271,8 +271,14 @@ fn Parser::merge_crosses_body_boundary(
   }
   // After the body has closed, even whitespace belongs to the body (the
   // in-body rules reprocess it), so it must not merge into an unmarked
-  // pre-body run either.
-  text_has_non_ascii_whitespace(data) || self.document_after_body
+  // pre-body run either. Similarly, whitespace after </head> must not
+  // merge into a pre-head run: it stays between the head and the body.
+  text_has_non_ascii_whitespace(data) ||
+  self.document_after_body ||
+  (
+    self.document_head_closed &&
+    !node_array_contains_identity(self.after_head_whitespace, last)
+  )
 }
 
 ///|
