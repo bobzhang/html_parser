@@ -87,8 +87,19 @@ fn Parser::handle_table_end_tag(
   name : String,
   tag_close_pos : Int,
 ) -> Bool {
-  if name != "table" || !self.close_open_element("table") {
+  if name != "table" {
     return false
+  }
+  let table_index = self.last_open_table_index()
+  let cell_index = self.last_open_table_cell_index()
+  let closes_open_cell = table_index >= 0 && cell_index > table_index
+  if !self.close_open_element("table") {
+    return false
+  }
+  if closes_open_cell {
+    // Closing the table implicitly ends the open cell, which clears the
+    // active formatting list up to the cell's marker.
+    self.clear_active_formatting_to_marker()
   }
   if self.pending_table_view_implied_end_tag {
     self.error_at("unexpected-implied-end-tag-in-table-view", tag_close_pos)
