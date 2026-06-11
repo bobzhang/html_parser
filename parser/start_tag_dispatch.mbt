@@ -122,7 +122,8 @@ fn Parser::handle_parsed_start_tag(
   }
   self.report_template_table_context_fostered_start(name, start)
   self.clear_detached_template_table_context_for_template_start(name)
-  let in_template_table_context = self.in_template_content_without_inner_table()
+  let in_template_table_context = self.in_template_content_without_inner_table() &&
+    self.template_content_at_structural_position()
   if name == "col" && in_template_table_context {
     let current = self.current_node()
     if current.kind == Element && current.name == "template" {

@@ -65,6 +65,7 @@ fn Parser::append_start_tag_node(
 ) -> Unit {
   let foster_mode = self.table_start_foster_mode(name)
   if foster_mode == 0 {
+    self.record_template_content_flow_insert(name)
     if self.bare_template_row_fosters(name) && !node_is_hidden_input(node) {
       // Hidden inputs are the table-mode exception: they stay at the
       // insertion point instead of being foster-parented.
