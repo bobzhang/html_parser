@@ -14,7 +14,8 @@ fn Parser::col_start_tag_is_ignored_outside_table(
   name == "col" &&
   !self.is_fragment_parser() &&
   !self.has_open_element("table") &&
-  !self.in_template_content_without_inner_table()
+  !(self.in_template_content_without_inner_table() &&
+  self.template_content_at_structural_position())
 }
 
 ///|
