@@ -225,6 +225,11 @@ fn eof_allows_unclosed_element(name : StringView) -> Bool {
 
 ///|
 fn Parser::report_eof_tree_errors(self : Parser) -> Unit {
+  if self.document_after_body {
+    // The after-body modes accept EOF; unclosed elements were already
+    // reported when the body closed.
+    return
+  }
   let table_index = self.last_open_table_index()
   let caption_index = self.last_stack_index_of("caption")
   if table_index >= 0 && caption_index > table_index {
