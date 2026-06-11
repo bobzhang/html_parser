@@ -148,10 +148,60 @@ fn Parser::handle_table_structural_end_tag(
         }
       }
       if !explicit_section {
-        while self.stack.length() > table_index + 1 {
+        // Pop to the innermost explicit row group when one is open (a
+        // tr fallback inside a section keeps the section), otherwise to
+        // the table.
+        let mut floor = table_index
+        let mut index = cell_index
+        while index > table_index {
+          index -= 1
+          let node = self.stack[index]
+          if node.kind == Element &&
+            (
+              node.name == "tbody" ||
+              node.name == "tfoot" ||
+              node.name == "thead"
+            ) &&
+            (node.ns is None || node.ns is Some("html")) {
+            floor = index
+            break
+          }
+        }
+        while self.stack.length() > floor + 1 {
           ignore(self.stack.pop())
         }
         self.clear_active_formatting_to_marker()
+        if name == "tr" {
+          // Materialize the closed virtual row so later cells start a
+          // new one during normalization.
+          let parent = self.stack[floor]
+          let mut run = parent.children.length()
+          while run > 0 {
+            let child = parent.children[run - 1]
+            if child.kind == Element &&
+              (child.name == "td" || child.name == "th") &&
+              (child.ns is None || child.ns is Some("html")) {
+              run -= 1
+            } else {
+              break
+            }
+          }
+          if run < parent.children.length() {
+            let row = @dom.element("tr")
+            let moved = parent.children.copy()
+            while parent.children.length() > run {
+              ignore(parent.children.pop())
+            }
+            let mut index = run
+            while index < moved.length() {
+              let cell = moved[index]
+              cell.parent = None
+              row.append_child(cell)
+              index += 1
+            }
+            parent.append_child(row)
+          }
+        }
         return true
       }
     }
