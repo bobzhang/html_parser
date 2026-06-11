@@ -167,8 +167,24 @@ fn Parser::handle_before_html_end_tag(
 /// in-body rules, so the scaffolder must place these nodes in the body
 /// rather than the head.
 fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
-  if self.is_fragment_parser() ||
-    (!self.document_after_body && !self.document_entered_body) {
+  if self.is_fragment_parser() {
+    // An html fragment that re-entered body mode after a stray </html>
+    // records top-level nodes as body content for scaffolding.
+    if self.fragment_context_html &&
+      self.fragment_context_html_entered_body &&
+      !self.fragment_context_html_after_body &&
+      !self.in_frameset_document() {
+      match node.parent {
+        Some(parent) =>
+          if parent.kind == Element && parent.name == "html" {
+            self.forced_body_nodes.push(node)
+          }
+        None => ()
+      }
+    }
+    return
+  }
+  if !self.document_after_body && !self.document_entered_body {
     return
   }
   if !self.document_after_body &&
