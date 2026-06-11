@@ -301,8 +301,23 @@ fn Parser::prepare_bare_template_row_start(
     return
   }
   if name == "td" || name == "th" {
+    let mut popped_cell = false
     while self.stack.length() > row_index + 1 {
-      ignore(self.stack.pop())
+      match self.stack.pop() {
+        Some(node) =>
+          if node.kind == Element &&
+            (node.name == "td" || node.name == "th") &&
+            (node.ns is None || node.ns is Some("html")) {
+            popped_cell = true
+          }
+        None => ()
+      }
+    }
+    if popped_cell {
+      // The implied close of the previous cell clears its formatting
+      // marker, so stale formatting does not reconstruct into the next
+      // cell.
+      self.clear_active_formatting_to_marker()
     }
     return
   }
