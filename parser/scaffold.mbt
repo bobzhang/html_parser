@@ -49,7 +49,10 @@ fn scaffold_document(
       strip_routed_comments(html, after_body_comments, after_html_comments)
       absorb_root_html_siblings(root, html, forced_body_nodes)
       scaffold_existing_html_element(
-        html, foster_parented_texts, forced_body_nodes,
+        html,
+        foster_parented_texts,
+        forced_body_nodes,
+        after_head_whitespace~,
       )
       append_children_to(html, after_body_comments)
       append_children_to(root, after_html_comments)

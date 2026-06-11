@@ -125,11 +125,12 @@ fn normalize_table(table : @dom.Node) -> Unit {
         // explicitly closed section it remains a table child.
         let last = table.children[table.children.length() - 1]
         if last.kind == Element && is_table_section_name(last.name) {
+          // The implicit row group stays open: a following row joins it
+          // rather than starting a new one.
           last.append_child(child)
-          current_body = None
+          current_body = Some(last)
           current_row = None
           current_colgroup = None
-          in_implicit_section = false
           continue
         }
       }
