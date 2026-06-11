@@ -112,22 +112,22 @@ fn Parser::handle_document_body_or_html_end_tag(
     }
     return true
   }
-  let current = self.current_node()
-  if name == "body" &&
-    current.kind == Element &&
-    current.name != "body" &&
-    current.name != "html" &&
-    current.name != "head" {
-    // The spec leaves the stack open in after-body; remember the
-    // insertion point so later character tokens (processed in body)
-    // continue inside the still-open element.
-    self.after_body_insertion_node = Some(current)
+  if name == "body" {
+    // The spec leaves the stack open in after-body: later tokens
+    // reprocessed in body continue inside any still-open element.
+    self.document_after_body = true
+    return true
   }
-  self.pop_until(name, pos)
+  // The body was left open by the after-body rules; the html end tag
+  // pops silently (the spec reports unclosed-element errors at </body>).
+  while self.stack.length() > 0 {
+    match self.stack.pop() {
+      Some(node) if node.kind == Element && node.name == "html" => break
+      _ => ()
+    }
+  }
   self.document_after_body = true
-  if name == "html" {
-    self.document_after_html = true
-  }
+  self.document_after_html = true
   true
 }
 
@@ -306,7 +306,6 @@ fn Parser::leave_after_body_for_token(self : Parser, name : String) -> Unit {
   self.end_tag_was_after_body = true
   self.document_entered_body = true
   self.document_entered_body_from_after_body = true
-  self.after_body_insertion_node = None
   self.document_after_body = false
   self.document_after_html = false
 }
