@@ -112,6 +112,12 @@ fn Parser::handle_document_body_or_html_end_tag(
     }
     return true
   }
+  if !self.has_open_element_in_default_scope(name) {
+    // Inside a template or another scope terminator the body/html end
+    // tag finds nothing in scope: parse error, ignore.
+    self.error_at("unexpected-end-tag", pos)
+    return true
+  }
   // Per the spec, an element other than the implied-end set still open
   // at </body> (or a direct </html>) is a parse error.
   self.report_unclosed_elements_at_body_end(pos)
