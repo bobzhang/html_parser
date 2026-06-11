@@ -113,14 +113,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
       }
       // Advance the recorded origin past the consumed character
       // reference so tracked locations point at the remaining text.
-      let mut entity_end = 0
-      for ch in cleaned {
-        entity_end += 1
-        if ch == ';' {
-          break
-        }
-      }
-      text_start = text_start + entity_end
+      text_start = text_start + initial_newline_reference_length(cleaned)
     }
   }
   if self.fragment_context_html_after_body &&
@@ -416,4 +409,47 @@ fn Parser::replace_null_characters(
     }
   }
   out.to_string()
+}
+
+///|
+/// Length of the leading character reference that decoded to the skipped
+/// newline: '&' then either '#' digits / '#x' hex digits (numeric) or
+/// letters (named), with an optional terminating semicolon.
+fn initial_newline_reference_length(text : StringView) -> Int {
+  let mut length = 0
+  let mut numeric = false
+  let mut hex = false
+  for ch in text {
+    if length == 0 {
+      length += 1 // the '&'
+      continue
+    }
+    if ch == ';' {
+      length += 1
+      break
+    }
+    if length == 1 && ch == '#' {
+      numeric = true
+      length += 1
+      continue
+    }
+    if numeric && length == 2 && (ch == 'x' || ch == 'X') {
+      hex = true
+      length += 1
+      continue
+    }
+    let in_body = if hex {
+      ch.is_ascii_hexdigit()
+    } else if numeric {
+      ch.is_ascii_digit()
+    } else {
+      ch.is_ascii_alphabetic() || ch.is_ascii_digit()
+    }
+    if in_body {
+      length += 1
+    } else {
+      break
+    }
+  }
+  length
 }
