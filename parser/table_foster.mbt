@@ -65,6 +65,17 @@ fn Parser::append_start_tag_node(
 ) -> Unit {
   let foster_mode = self.table_start_foster_mode(name)
   if foster_mode == 0 {
+    if self.bare_template_row_fosters(name) && !node_is_hidden_input(node) {
+      // Hidden inputs are the table-mode exception: they stay at the
+      // insertion point instead of being foster-parented.
+      match self.current_node().parent {
+        Some(contents) => {
+          contents.append_child(node)
+          return
+        }
+        None => ()
+      }
+    }
     self.current_node().append_child(node)
     self.mark_forced_body_node(node)
     return
@@ -129,4 +140,15 @@ fn Parser::handle_foster_parented_end_tag(
   }
   self.pop_until(name, start)
   true
+}
+
+///|
+fn node_is_hidden_input(node : @dom.Node) -> Bool {
+  if node.kind != Element || node.name != "input" {
+    return false
+  }
+  match node.attrs.get("type") {
+    Some(Some(value)) => @syn.lower_ascii(value) == "hidden"
+    _ => false
+  }
 }
