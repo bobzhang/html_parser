@@ -340,10 +340,9 @@ fn Parser::mark_entered_body_comment(self : Parser, node : @dom.Node) -> Unit {
     !self.document_entered_body ||
     self.document_after_body ||
     self.in_frameset_document() ||
-    self.frameset_ok {
-    // While frameset-ok still holds, no real body content has appeared
-    // and a frameset may yet replace the body: leave the comment where
-    // normal insertion put it.
+    !document_children_contain_body_content(self.root) {
+    // Until real body content has appeared a frameset may yet replace
+    // the body: leave the comment where normal insertion put it.
     return
   }
   match node.parent {
