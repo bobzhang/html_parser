@@ -7,15 +7,21 @@ fn Parser::current_is_disabled_head_noscript(self : Parser) -> Bool {
   if !(current.kind == Element && current.name == "noscript") {
     return false
   }
+  let mut below_is_shell = true
   for node in self.stack {
     if physical_equal(node, current) {
-      return false
+      break
     }
     if node.kind == Element && node.name == "head" {
       return true
     }
+    if !(node.kind == Document || (node.kind == Element && node.name == "html")) {
+      below_is_shell = false
+    }
   }
-  false
+  // A noscript sitting directly at the document shell is in the implied
+  // head while no body content has started.
+  below_is_shell && !document_children_contain_body_content(self.root)
 }
 
 ///|

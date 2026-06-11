@@ -10,9 +10,6 @@ tests7.dat:30
 tests7.dat:32
 tests10.dat:30
 tests10.dat:31
-tests16.dat:88
-tests16.dat:185
-tests18.dat:4
 tests19.dat:82
 tests19.dat:93
 tests19.dat:97
@@ -29,7 +26,6 @@ webkit02.dat:5
 adoption01.dat:12
 noscript01.dat:1
 domjs-unsafe.dat:1
-menuitem-element.dat:7
 plain-text-unsafe.dat:18
 plain-text-unsafe.dat:19
 tests_innerHTML_1.dat:75
