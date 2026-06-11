@@ -76,6 +76,7 @@ fn normalize_table(table : @dom.Node) -> Unit {
   let mut current_body : @dom.Node? = None
   let mut current_row : @dom.Node? = None
   let mut current_colgroup : @dom.Node? = None
+  let mut in_implicit_section = false
   for child in original {
     normalize_tables(child)
     if child.kind == Element && child.name == "col" {
@@ -98,6 +99,7 @@ fn normalize_table(table : @dom.Node) -> Unit {
       body.append_child(child)
       current_row = None
       current_colgroup = None
+      in_implicit_section = true
     } else if child.kind == Element && is_table_cell_name(child.name) {
       let (body, next_body) = table_implicit_body(table, current_body)
       current_body = next_body
@@ -112,18 +114,22 @@ fn normalize_table(table : @dom.Node) -> Unit {
       }
       row.append_child(child)
       current_colgroup = None
+      in_implicit_section = true
     } else {
       if child.kind == Text &&
         is_whitespace_text_node(child) &&
+        in_implicit_section &&
         table.children.length() > 0 {
-        // Whitespace following table structure stays inside the
-        // preceding row group (the in-table-body insertion point).
+        // Whitespace while an implicit row group is still open stays
+        // inside it (the in-table-body insertion point); after an
+        // explicitly closed section it remains a table child.
         let last = table.children[table.children.length() - 1]
         if last.kind == Element && is_table_section_name(last.name) {
           last.append_child(child)
           current_body = None
           current_row = None
           current_colgroup = None
+          in_implicit_section = false
           continue
         }
       }
@@ -131,6 +137,7 @@ fn normalize_table(table : @dom.Node) -> Unit {
       current_body = None
       current_row = None
       current_colgroup = None
+      in_implicit_section = false
     }
   }
 }
