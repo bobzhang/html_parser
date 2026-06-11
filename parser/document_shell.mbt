@@ -167,7 +167,8 @@ fn Parser::handle_before_html_end_tag(
 /// in-body rules, so the scaffolder must place these nodes in the body
 /// rather than the head.
 fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
-  if !self.document_after_body || self.is_fragment_parser() {
+  if self.is_fragment_parser() ||
+    (!self.document_after_body && !self.document_entered_body) {
     return
   }
   let current = self.current_node()
@@ -179,7 +180,8 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
     // again. Whitespace is processed without leaving after-body, and
     // frameset documents never reprocess in body (after-after-frameset
     // accepts noframes/whitespace/comments and ignores everything else).
-    if !self.in_frameset_document() &&
+    if self.document_after_body &&
+      !self.in_frameset_document() &&
       (
         node.kind == Element ||
         (node.kind == Text && text_has_non_ascii_whitespace(node.data))
