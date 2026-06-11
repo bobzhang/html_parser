@@ -171,6 +171,14 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
     (!self.document_after_body && !self.document_entered_body) {
     return
   }
+  if !self.document_after_body &&
+    !document_children_contain_body_content(self.root) {
+    // Purely entered-body marking (after the after-body flags cleared)
+    // only applies once real body content exists; until then a frameset
+    // may still replace the body and head-phase tags keep their normal
+    // placement.
+    return
+  }
   let current = self.current_node()
   if current.kind == Document ||
     (current.kind == Element && current.name == "html") {
