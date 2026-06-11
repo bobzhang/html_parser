@@ -73,6 +73,20 @@ fn Parser::foster_parent_table_text(
       cleaned, start, table_index, formatting_index,
     )
   }
+  // Fostered characters process in body: reconstruction (itself
+  // foster-aware) reopens formatting before the table and the text goes
+  // inside it.
+  let stack_before = self.stack.length()
+  self.reconstruct_active_formatting_elements()
+  if self.stack.length() > stack_before {
+    ignore(self.report_foster_parenting_character_errors(cleaned, start))
+    let fostered = self.text_at(
+      @tok.decode_entities(cleaned, in_attribute=false),
+      start,
+    )
+    self.current_node().append_child(fostered)
+    return true
+  }
   ignore(self.report_foster_parenting_character_errors(cleaned, start))
   let fostered = self.text_at(
     @tok.decode_entities(cleaned, in_attribute=false),

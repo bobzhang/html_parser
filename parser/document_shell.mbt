@@ -112,12 +112,72 @@ fn Parser::handle_document_body_or_html_end_tag(
     }
     return true
   }
-  self.pop_until(name, pos)
-  self.document_after_body = true
-  if name == "html" {
-    self.document_after_html = true
+  if !self.has_open_element_in_default_scope(name) {
+    // Inside a template or another scope terminator the body/html end
+    // tag finds nothing in scope: parse error, ignore.
+    self.error_at("unexpected-end-tag", pos)
+    return true
   }
+  // Per the spec, an element other than the implied-end set still open
+  // at </body> (or a direct </html>) is a parse error.
+  self.report_unclosed_elements_at_body_end(pos)
+  if name == "body" {
+    // The spec leaves the stack open in after-body: later tokens
+    // reprocessed in body continue inside any still-open element.
+    self.document_after_body = true
+    return true
+  }
+  // The body was left open by the after-body rules; the html end tag
+  // pops silently (the unclosed-element error is reported above).
+  while self.stack.length() > 0 {
+    match self.stack.pop() {
+      Some(node) if node.kind == Element && node.name == "html" => break
+      _ => ()
+    }
+  }
+  self.document_after_body = true
+  self.document_after_html = true
   true
+}
+
+///|
+fn Parser::report_unclosed_elements_at_body_end(
+  self : Parser,
+  pos : Int,
+) -> Unit {
+  if self.document_after_body || self.document_after_html {
+    // Already reported when the body first closed.
+    return
+  }
+  for node in self.stack {
+    if node.kind == Element && (node.ns is None || node.ns is Some("html")) {
+      match node.name {
+        "dd"
+        | "dt"
+        | "li"
+        | "optgroup"
+        | "option"
+        | "p"
+        | "rb"
+        | "rp"
+        | "rt"
+        | "rtc"
+        | "tbody"
+        | "td"
+        | "tfoot"
+        | "th"
+        | "thead"
+        | "tr"
+        | "body"
+        | "html"
+        | "head" => ()
+        _ => {
+          self.error_at("end-tag-too-early", pos)
+          return
+        }
+      }
+    }
+  }
 }
 
 ///|

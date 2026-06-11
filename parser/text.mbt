@@ -137,6 +137,17 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   }
   self.reconstruct_active_formatting_elements()
   let parent = self.current_node()
+  if self.document_after_body &&
+    !self.is_fragment_parser() &&
+    !self.in_frameset_document() &&
+    text_has_non_ascii_whitespace(data) {
+    // Non-whitespace after-body text reprocesses in body wherever the
+    // insertion point is; parsing stays in body afterwards.
+    self.document_entered_body = true
+    self.document_entered_body_from_after_body = true
+    self.document_after_body = false
+    self.document_after_html = false
+  }
   if self.merge_into_trailing_text(parent, data) {
     return
   }
