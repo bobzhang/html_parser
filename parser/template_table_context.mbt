@@ -14,11 +14,28 @@ fn Parser::handle_template_table_context_start_tag(
     return true
   }
   if name == "caption" {
+    match self.template_content_mode() {
+      "row" | "table-body" => {
+        // A caption after row or cell content acts as an end tag with
+        // nothing in scope: parse error, ignore.
+        self.error_at("unexpected-start-tag", start)
+        return true
+      }
+      _ => ()
+    }
     let node = self.node_with_origin(@dom.element("caption", attrs~), start)
     self.current_node().append_child(node)
     self.stack.push(node)
     self.push_active_formatting_marker()
     self.disable_current_template_table_context_mode()
+    return true
+  }
+  if (name == "col" || name == "colgroup") &&
+    (
+      self.template_content_mode() == "row" ||
+      self.template_content_mode() == "table-body"
+    ) {
+    self.error_at("unexpected-start-tag", start)
     return true
   }
   if name == "col" {
@@ -177,5 +194,42 @@ fn Parser::record_template_content_close(self : Parser, name : String) -> Unit {
     "tbody" | "tfoot" | "thead" | "caption" | "colgroup" =>
       self.set_template_content_mode("table")
     _ => ()
+  }
+}
+
+///|
+/// Flow content (anything but a cell) directly inside a bare
+/// template-content row closes the row first and becomes its sibling,
+/// mirroring the in-row anything-else handling without a real table.
+fn Parser::close_bare_template_row_for_flow(
+  self : Parser,
+  name : String,
+) -> Unit {
+  if name == "td" ||
+    name == "th" ||
+    name == "template" ||
+    name == "script" ||
+    name == "style" {
+    // Cells belong in the row, and the in-row mode handles template,
+    // script, and style with the in-head rules (they nest inside).
+    return
+  }
+  if !self.in_template_content_without_inner_table() {
+    return
+  }
+  let len = self.stack.length()
+  if len < 2 {
+    return
+  }
+  let last = self.stack[len - 1]
+  let below = self.stack[len - 2]
+  if last.kind == Element &&
+    last.name == "tr" &&
+    (last.ns is None || last.ns is Some("html")) &&
+    below.kind == Element &&
+    below.name == "template" {
+    ignore(self.stack.pop())
+    self.set_template_content_mode("table-body")
+    self.enable_template_table_context_mode()
   }
 }

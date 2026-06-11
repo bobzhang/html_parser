@@ -21,10 +21,6 @@ tests19.dat:101
 tests20.dat:38
 tests20.dat:41
 tests26.dat:2
-template.dat:44
-template.dat:48
-template.dat:49
-template.dat:52
 template.dat:56
 template.dat:68
 template.dat:77
