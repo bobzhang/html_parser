@@ -82,7 +82,9 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   self.flush_deferred_initial_doctype_error()
   if name == "head" &&
     !self.is_fragment_parser() &&
-    !self.has_open_element("template") {
+    !self.has_open_element("template") &&
+    !self.document_after_body &&
+    !self.document_entered_body {
     // After any </head> the document is in the after-head mode: later
     // top-level whitespace stays between the head and the body. Inside
     // a template the end tag is ignored and the outer head stays open.

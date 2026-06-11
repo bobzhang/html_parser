@@ -196,11 +196,15 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
     return
   }
   if !self.document_after_body &&
-    !document_children_contain_body_content(self.root) {
+    !document_children_contain_body_content(self.root) &&
+    !(self.document_entered_body_from_after_body &&
+    node.kind == Text &&
+    is_whitespace_text_node(node)) {
     // Purely entered-body marking (after the after-body flags cleared)
     // only applies once real body content exists; until then a frameset
     // may still replace the body and head-phase tags keep their normal
-    // placement.
+    // placement. Whitespace after a real after-body revert is body
+    // content regardless.
     return
   }
   let current = self.current_node()
@@ -219,6 +223,7 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
         (node.kind == Text && text_has_non_ascii_whitespace(node.data))
       ) {
       self.document_entered_body = true
+      self.document_entered_body_from_after_body = true
       self.document_after_body = false
       self.document_after_html = false
     }
@@ -289,6 +294,7 @@ fn Parser::leave_after_body_for_token(self : Parser, name : String) -> Unit {
   // to know the token arrived in the after-body modes.
   self.end_tag_was_after_body = true
   self.document_entered_body = true
+  self.document_entered_body_from_after_body = true
   self.document_after_body = false
   self.document_after_html = false
 }

@@ -95,17 +95,22 @@ fn Parser::close_virtual_table_section(self : Parser) -> Bool {
   }
   let parent = self.stack[table_index]
   let mut run = parent.children.length()
+  let mut saw_structure = false
   while run > 0 {
     let child = parent.children[run - 1]
     if child.kind == Element &&
       (child.name == "tr" || child.name == "td" || child.name == "th") &&
       (child.ns is None || child.ns is Some("html")) {
+      saw_structure = true
+      run -= 1
+    } else if child.kind == Text && is_whitespace_text_node(child) {
+      // Whitespace between rows belongs to the virtual section too.
       run -= 1
     } else {
       break
     }
   }
-  if run == parent.children.length() {
+  if !saw_structure || run == parent.children.length() {
     return false
   }
   let section = @dom.element("tbody")
