@@ -33,6 +33,7 @@ fn Parser::handle_parsed_start_tag(
   if name == "html" &&
     !self.is_fragment_parser() &&
     !self.in_frameset_document() &&
+    !self.has_open_element("template") &&
     self.open_html_element() is None &&
     document_has_any_content(self.root) {
     // A non-first <html> start tag merges its attributes into the
@@ -41,10 +42,10 @@ fn Parser::handle_parsed_start_tag(
     self.merge_document_html_attrs(attrs)
     return
   }
-  if name == "body" &&
+  if (name == "body" || name == "html") &&
     (self.has_open_element("template") || self.in_select_insertion_mode()) {
-    // The in-template and in-select rules ignore body start tags
-    // entirely; their attributes never reach the document body.
+    // The in-template and in-select rules ignore body and html start
+    // tags entirely; their attributes never reach the document shell.
     self.error_at("unexpected-start-tag", start)
     return
   }
