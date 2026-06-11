@@ -116,8 +116,18 @@ fn normalize_table(table : @dom.Node) -> Unit {
       current_colgroup = None
       in_implicit_section = true
     } else {
-      if child.kind == Text &&
-        is_whitespace_text_node(child) &&
+      if child.kind == Comment &&
+        in_implicit_section &&
+        current_row is Some(row) {
+        // A comment between bare cells stays in the still-open implicit
+        // row; the next cell continues it.
+        row.append_child(child)
+        continue
+      }
+      if (
+          child.kind == Comment ||
+          (child.kind == Text && is_whitespace_text_node(child))
+        ) &&
         in_implicit_section &&
         table.children.length() > 0 {
         // Whitespace while an implicit row group is still open stays
