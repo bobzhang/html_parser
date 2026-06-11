@@ -378,7 +378,8 @@ fn Parser::mark_entered_body_comment(self : Parser, node : @dom.Node) -> Unit {
   if self.is_fragment_parser() {
     if self.fragment_context_html &&
       self.fragment_context_html_entered_body &&
-      !self.fragment_context_html_after_body {
+      !self.fragment_context_html_after_body &&
+      !self.in_frameset_document() {
       match node.parent {
         Some(parent) =>
           if parent.kind == Element && parent.name == "html" {
