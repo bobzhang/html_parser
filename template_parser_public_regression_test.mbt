@@ -18,7 +18,11 @@ test "template content keeps table structural children" {
     implicit_row_end.to_html(pretty=false),
     "<template><tr><td>x</td></tr></template>",
   )
-  assert_eq(implicit_row_end.errors.length(), 0)
+  assert_eq(implicit_row_end.errors.length(), 1)
+  assert_eq(
+    implicit_row_end.errors[0].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
   let cells = @html_parser.parse_fragment(
     "<template><td>x</td><td>y</td></template>",
     collect_errors=true,
@@ -27,7 +31,8 @@ test "template content keeps table structural children" {
     cells.to_html(pretty=false),
     "<template><td>x</td><td>y</td></template>",
   )
-  assert_eq(cells.errors.length(), 0)
+  assert_eq(cells.errors.length(), 1)
+  assert_eq(cells.errors[0].code, "unexpected-end-tag-implies-table-voodoo")
   let colgroup = @html_parser.parse_fragment(
     "<template><colgroup><col></colgroup></template>",
     collect_errors=true,
@@ -304,7 +309,10 @@ test "template table recovery accepts structural starts after caption" {
     "<template><caption>x</caption><tbody><tr><td>y</td></tr></tbody></template>",
   )
   assert_eq(direct_cell.errors.length(), 1)
-  assert_eq(direct_cell.errors[0].code, "unexpected-cell-in-table-body")
+  assert_eq(
+    direct_cell.errors[0].code,
+    "unexpected-end-tag-implies-table-voodoo",
+  )
   let script = @html_parser.parse_fragment(
     "<template><caption>x</caption><script>y</script></template>",
     collect_errors=true,

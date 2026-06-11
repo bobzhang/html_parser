@@ -137,5 +137,9 @@ fn Parser::handle_table_structural_end_tag(
     // marker pushed when the cell opened.
     self.clear_active_formatting_to_marker()
   }
+  if self.in_template_content_without_inner_table() {
+    self.record_template_content_close(name)
+    self.enable_template_table_context_mode()
+  }
   true
 }
