@@ -112,7 +112,12 @@ fn scaffold_existing_html_element(
   let after_frameset_children : Array[@dom.Node] = []
   let mut body_started = false
   for child in original {
-    if child.kind == Comment &&
+    if child.kind == Comment && nodes_contain(forced_body_nodes, child) {
+      // A comment recorded as body content (parsing had re-entered the
+      // body when it arrived) belongs in the body regardless of where
+      // it sits among the html children.
+      body_children.push(child)
+    } else if child.kind == Comment &&
       !body_started &&
       head is None &&
       head_children.is_empty() {

@@ -167,7 +167,16 @@ fn Parser::handle_before_html_end_tag(
 /// in-body rules, so the scaffolder must place these nodes in the body
 /// rather than the head.
 fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
-  if !self.document_after_body || self.is_fragment_parser() {
+  if self.is_fragment_parser() ||
+    (!self.document_after_body && !self.document_entered_body) {
+    return
+  }
+  if !self.document_after_body &&
+    !document_children_contain_body_content(self.root) {
+    // Purely entered-body marking (after the after-body flags cleared)
+    // only applies once real body content exists; until then a frameset
+    // may still replace the body and head-phase tags keep their normal
+    // placement.
     return
   }
   let current = self.current_node()
@@ -179,7 +188,8 @@ fn Parser::mark_forced_body_node(self : Parser, node : @dom.Node) -> Unit {
     // again. Whitespace is processed without leaving after-body, and
     // frameset documents never reprocess in body (after-after-frameset
     // accepts noframes/whitespace/comments and ignores everything else).
-    if !self.in_frameset_document() &&
+    if self.document_after_body &&
+      !self.in_frameset_document() &&
       (
         node.kind == Element ||
         (node.kind == Text && text_has_non_ascii_whitespace(node.data))
@@ -327,4 +337,28 @@ fn document_has_any_content(root : @dom.Node) -> Bool {
     }
   }
   false
+}
+
+///|
+/// A comment arriving at the top level after parsing has returned to
+/// in-body (a non-whitespace token followed </html>) belongs in the body:
+/// mark it so the scaffolder moves it there.
+fn Parser::mark_entered_body_comment(self : Parser, node : @dom.Node) -> Unit {
+  if self.is_fragment_parser() ||
+    !self.document_entered_body ||
+    self.document_after_body ||
+    self.in_frameset_document() ||
+    !document_children_contain_body_content(self.root) {
+    // Until real body content has appeared a frameset may yet replace
+    // the body: leave the comment where normal insertion put it.
+    return
+  }
+  match node.parent {
+    Some(parent) =>
+      if parent.kind == Document ||
+        (parent.kind == Element && parent.name == "html") {
+        self.forced_body_nodes.push(node)
+      }
+    None => ()
+  }
 }

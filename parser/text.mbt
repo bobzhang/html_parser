@@ -299,6 +299,7 @@ fn Parser::insert_body_mode_node(self : Parser, node : @dom.Node) -> Unit {
     }
   }
   self.current_node().append_child(node)
+  self.mark_forced_body_node(node)
 }
 
 ///|
