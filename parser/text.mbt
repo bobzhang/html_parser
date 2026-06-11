@@ -68,6 +68,28 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   if self.uses_document_frameset_rules() && text_clears_frameset_ok(raw) {
     self.frameset_ok = false
   }
+  if !self.is_fragment_parser() &&
+    self.document_after_body &&
+    self.after_body_insertion_node is Some(target) &&
+    target.parent is Some(_) {
+    // After-body character tokens process in body: they continue inside
+    // the element that was still open when the body closed.
+    let decoded = @tok.decode_entities(cleaned, in_attribute=false)
+    let appended = normalize_tree_builder_text(decoded)
+    if appended != "" {
+      if !self.merge_into_trailing_text(target, appended) {
+        target.append_child(self.text_at(appended, text_start))
+      }
+      if text_has_non_ascii_whitespace(appended) {
+        self.document_entered_body = true
+        self.document_entered_body_from_after_body = true
+        self.after_body_insertion_node = None
+        self.document_after_body = false
+        self.document_after_html = false
+      }
+    }
+    return
+  }
   if self.handle_template_column_group_text(cleaned, text_start) {
     return
   }
