@@ -45,7 +45,7 @@ fn Parser::decoded_special_text(
   raw : StringView,
   start : Int,
   error_pos : Int,
-) -> String {
+) -> StringView {
   let (raw, offset) = if name == "textarea" {
     strip_one_initial_lf_with_offset(raw)
   } else {
@@ -63,7 +63,7 @@ fn Parser::decoded_special_text(
   }
   let data = normalize_tree_builder_text(data)
   if self.xml_coercion {
-    coerce_text_for_xml(data)
+    coerce_text_for_xml(data)[:]
   } else {
     data
   }
@@ -168,7 +168,7 @@ fn Parser::consume_matching_special_end_tag(self : Parser) -> Bool {
 fn Parser::append_special_text(
   self : Parser,
   parent : @dom.Node,
-  data : String,
+  data : StringView,
   content_start : Int,
 ) -> Unit {
   if !data.is_empty() {
@@ -195,7 +195,7 @@ fn Parser::consume_special_element_content(
     // formatting reconstructs inside the plaintext element when
     // characters are actually inserted.
     let mut target = parent
-    if decoded != "" {
+    if !decoded.is_empty() {
       let stack_before = self.stack.length()
       self.stack.push(parent)
       self.reconstruct_active_formatting_elements()
@@ -217,7 +217,7 @@ fn Parser::consume_special_element_content(
     if !scan.data.is_empty() {
       let scan_data = normalize_tree_builder_text(scan.data)
       let data = if self.xml_coercion {
-        coerce_text_for_xml(scan_data)
+        coerce_text_for_xml(scan_data)[:]
       } else {
         scan_data
       }

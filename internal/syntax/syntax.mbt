@@ -189,7 +189,7 @@ pub fn strip_leading_bom(input : StringView) -> StringView {
 pub fn normalize_newlines(input : StringView) -> String {
   // The common case has no carriage returns: a single plain copy
   // suffices.
-  if !input.contains("\r") {
+  if !input.contains_char('\r') {
     return input.to_owned()
   }
   let out = StringBuilder(size_hint=input.length())
@@ -221,7 +221,7 @@ pub fn normalize_newlines(input : StringView) -> String {
 pub fn normalize_bogus_comment_data(input : StringView) -> String {
   // The common case has neither nulls nor carriage returns: a single
   // plain copy suffices.
-  if !input.contains("\u{0000}") && !input.contains("\r") {
+  if !input.contains_char('\u{0000}') && !input.contains_char('\r') {
     return input.to_owned()
   }
   let out = StringBuilder(size_hint=input.length())

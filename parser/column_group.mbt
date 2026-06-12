@@ -54,16 +54,18 @@ fn Parser::handle_column_group_text(
 }
 
 ///|
-fn leading_ascii_whitespace(value : StringView) -> String {
-  let out = StringBuilder(size_hint=value.length())
+fn leading_ascii_whitespace(value : StringView) -> StringView {
+  // ASCII whitespace is always a single code unit, so the prefix can be
+  // returned as a plain slice of the input.
+  let mut length = 0
   for ch in value {
     if ch.is_ascii_whitespace() {
-      out.write_char(ch)
+      length += 1
     } else {
       break
     }
   }
-  out.to_string()
+  value[:length]
 }
 
 ///|

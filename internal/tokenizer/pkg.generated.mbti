@@ -10,7 +10,7 @@ pub fn consume_named_entity_with_errors(StringView, Int, in_attribute~ : Bool) -
 
 pub fn decode_attribute_value_with_errors(StringView) -> EntityDecodeResult
 
-pub fn decode_entities(StringView, in_attribute~ : Bool) -> String
+pub fn decode_entities(StringView, in_attribute~ : Bool) -> StringView
 
 pub fn decode_entities_with_errors(StringView, in_attribute~ : Bool) -> EntityDecodeResult
 
@@ -83,7 +83,7 @@ pub(all) struct EntityDecodeError {
 } derive(Eq, @debug.Debug)
 
 pub(all) struct EntityDecodeResult {
-  data : String
+  data : StringView
   errors : Array[EntityDecodeError]
 } derive(Eq, @debug.Debug)
 

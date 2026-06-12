@@ -82,7 +82,7 @@ fn SourceTokenizer::parse_attribute_value(self : SourceTokenizer) -> String {
       for error in decoded.errors {
         self.error_at(error.code, self.pos)
       }
-      decoded.data
+      decoded.data.to_owned()
     }
   }
 }
@@ -113,5 +113,5 @@ fn SourceTokenizer::parse_quoted_attribute_value(
   for error in decoded.errors {
     self.error_at(error.code, self.pos)
   }
-  decoded.data
+  decoded.data.to_owned()
 }

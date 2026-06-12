@@ -79,7 +79,7 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
       for error in decoded.errors {
         self.error_at(error.code, self.pos)
       }
-      decoded.data
+      decoded.data.to_owned()
     }
   }
   if !duplicate {
@@ -120,5 +120,5 @@ fn Parser::parse_quoted_attribute_value(self : Parser, quote : Char) -> String {
   for error in decoded.errors {
     self.error_at(error.code, self.pos)
   }
-  decoded.data
+  decoded.data.to_owned()
 }

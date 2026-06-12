@@ -9,8 +9,13 @@ fn strip_leading_bom(input : StringView) -> StringView {
 }
 
 ///|
-fn normalize_newlines(input : StringView) -> String {
-  @syn.normalize_newlines(input)
+fn normalize_newlines(input : StringView) -> StringView {
+  // The common case has no carriage returns: the input view passes
+  // through unchanged without the copy @syn.normalize_newlines makes.
+  if !input.contains_char('\r') {
+    return input
+  }
+  @syn.normalize_newlines(input)[:]
 }
 
 ///|

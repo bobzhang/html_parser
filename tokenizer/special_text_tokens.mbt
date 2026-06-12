@@ -14,12 +14,12 @@ fn SourceTokenizer::decoded_special_text(
     }
     decoded.data
   } else {
-    @syn.normalize_newlines(raw)
+    @syn.normalize_newlines(raw)[:]
   }
   if self.xml_coercion {
     @syn.coerce_text_for_xml(data)
   } else {
-    data
+    data.to_owned()
   }
 }
 
@@ -28,7 +28,12 @@ fn SourceTokenizer::replace_special_text_nulls(
   self : SourceTokenizer,
   raw : StringView,
   start : Int,
-) -> String {
+) -> StringView {
+  // The common case has no nulls: the input view passes through
+  // unchanged.
+  if !raw.contains_char('\u{0000}') {
+    return raw
+  }
   let out = StringBuilder(size_hint=raw.length())
   let mut pos = 0
   for ch in raw {
@@ -40,7 +45,7 @@ fn SourceTokenizer::replace_special_text_nulls(
     }
     pos += ch.utf16_len()
   }
-  out.to_string()
+  out.to_string()[:]
 }
 
 ///|

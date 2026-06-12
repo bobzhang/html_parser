@@ -68,9 +68,9 @@ fn Parser::clean_foreign_content_text(
   self : Parser,
   raw : StringView,
   start : Int,
-) -> String {
-  if !raw.contains("\u{0000}") {
-    return raw.to_owned()
+) -> StringView {
+  if !raw.contains_char('\u{0000}') {
+    return raw
   }
   let out = StringBuilder(size_hint=raw.length())
   let mut offset = 0
@@ -84,7 +84,7 @@ fn Parser::clean_foreign_content_text(
     }
     offset += ch.utf16_len()
   }
-  out.to_string()
+  out.to_string()[:]
 }
 
 ///|
