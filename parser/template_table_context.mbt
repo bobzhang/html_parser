@@ -453,6 +453,14 @@ fn Parser::record_template_content_flow_insert(
     name == "th" {
     return
   }
+  let current = self.current_node()
+  if !(current.kind == Element &&
+    current.name == "template" &&
+    (current.ns is None || current.ns is Some("html"))) {
+    // The cheap current-node test runs before any stack walk: only
+    // content-top insertions can flip the mode.
+    return
+  }
   if !self.in_template_content_without_inner_table() {
     return
   }
@@ -461,10 +469,5 @@ fn Parser::record_template_content_flow_insert(
     // table modes (row, table-body, table) persist through flow content.
     return
   }
-  let current = self.current_node()
-  if current.kind == Element &&
-    current.name == "template" &&
-    (current.ns is None || current.ns is Some("html")) {
-    self.set_template_content_mode("body")
-  }
+  self.set_template_content_mode("body")
 }

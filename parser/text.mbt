@@ -392,6 +392,16 @@ fn ascii_whitespace_chars_only(value : StringView) -> String {
 
 ///|
 fn normalize_tree_builder_text(value : StringView) -> String {
+  let mut needs_copy = false
+  for ch in value {
+    if ch == '\u{000C}' {
+      needs_copy = true
+      break
+    }
+  }
+  if !needs_copy {
+    return value.to_owned()
+  }
   let out = StringBuilder(size_hint=value.length())
   for ch in value {
     if ch == '\u{000C}' {
@@ -408,6 +418,16 @@ fn normalize_tree_builder_text(value : StringView) -> String {
 /// CR and CRLF normalize to LF before any further handling. Decoded
 /// character references are exempt — they happen after preprocessing.
 fn normalize_raw_newlines(value : StringView) -> String {
+  let mut has_cr = false
+  for ch in value {
+    if ch == '\r' {
+      has_cr = true
+      break
+    }
+  }
+  if !has_cr {
+    return value.to_owned()
+  }
   let out = StringBuilder(size_hint=value.length())
   let mut last_was_cr = false
   for ch in value {
@@ -436,6 +456,16 @@ fn Parser::remove_null_characters(
   raw : StringView,
   start : Int,
 ) -> String {
+  let mut has_null = false
+  for ch in raw {
+    if ch == '\u{0000}' {
+      has_null = true
+      break
+    }
+  }
+  if !has_null {
+    return raw.to_owned()
+  }
   let out = StringBuilder(size_hint=raw.length())
   let mut pos = 0
   while pos < raw.length() {
