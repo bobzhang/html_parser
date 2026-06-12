@@ -9,7 +9,7 @@ test "detached recovery helpers ignore stale parser state" {
     xml_coercion=false,
   )
   let div = @dom.element("div")
-  parser.stack.push(div)
+  parser.push_open_element(div)
   parser.foreign_table_row_recovery_mode = true
   parser.report_foreign_table_row_recovery_text("x", 0)
   assert_eq(parser.errors.length(), 0)

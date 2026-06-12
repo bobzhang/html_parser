@@ -99,7 +99,7 @@ fn Parser::pop_until_html_or_integration_point(self : Parser) -> Unit {
         if self.node_is_foreign_fragment_context(current) {
           return
         }
-        ignore(self.stack.pop())
+        ignore(self.pop_open_element())
       }
       _ => return
     }
@@ -133,7 +133,7 @@ fn Parser::handle_foreign_content_start_tag(
   )
   self.current_node().append_child(node)
   if !self_closing {
-    self.stack.push(node)
+    self.push_open_element(node)
   }
   true
 }
@@ -168,7 +168,7 @@ fn Parser::handle_foreign_content_end_tag(
         return false
       }
       while self.stack.length() > index {
-        ignore(self.stack.pop())
+        ignore(self.pop_open_element())
       }
       return true
     }
@@ -193,7 +193,7 @@ fn Parser::parse_foreign_fragment_context(
   let wrapper = @dom.element(name, ns~)
   self.fragment_context_foreign = Some(wrapper)
   self.root.append_child(wrapper)
-  self.stack.push(wrapper)
+  self.push_open_element(wrapper)
   self.parse_all()
   unwrap_fragment_context_element(self.root, wrapper)
   self.fragment_context_foreign = None

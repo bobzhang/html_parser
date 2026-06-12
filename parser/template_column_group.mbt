@@ -77,7 +77,7 @@ fn Parser::handle_template_column_group_end_tag(
   let template_index = self.last_open_template_index()
   if template_index >= 0 {
     while self.stack.length() > template_index {
-      ignore(self.stack.pop())
+      ignore(self.pop_open_element())
     }
   }
   self.enable_template_table_context_mode()

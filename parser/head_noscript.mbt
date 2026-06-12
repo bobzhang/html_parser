@@ -34,10 +34,10 @@ fn disabled_head_noscript_allows_start(name : StringView) -> Bool {
 
 ///|
 fn Parser::pop_disabled_head_noscript_for_reprocess(self : Parser) -> Unit {
-  ignore(self.stack.pop())
+  ignore(self.pop_open_element())
   match self.stack.last() {
     Some(node) if node.kind == Element && node.name == "head" =>
-      ignore(self.stack.pop())
+      ignore(self.pop_open_element())
     _ => ()
   }
 }
@@ -78,7 +78,7 @@ fn Parser::handle_disabled_head_noscript_end_tag(
     return false
   }
   if name == "noscript" {
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
     return true
   }
   self.error_at("unexpected-end-tag", start)

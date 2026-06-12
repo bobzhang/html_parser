@@ -57,7 +57,7 @@ fn Parser::close_current_table_cell_for_start(
   }
   let html_cell_index = self.last_open_html_table_cell_index()
   while self.stack.length() > cell_index {
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
   }
   if html_cell_index == cell_index {
     // Only HTML cells pushed a marker; foreign td/th did not.
@@ -98,7 +98,7 @@ fn Parser::close_current_table_row_for_start(
     return
   }
   while self.stack.length() > row_index {
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
   }
 }
 
@@ -137,6 +137,6 @@ fn Parser::close_current_table_section_for_start(
     return
   }
   while self.stack.length() > section_index {
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
   }
 }

@@ -36,12 +36,12 @@ test "active formatting helpers respect marker boundaries" {
   assert_eq(parser.active_formatting.length(), 1)
   assert_eq(parser.active_formatting_index("a"), 0)
   let transient = @dom.element("span")
-  parser.stack.push(transient)
+  parser.push_open_element(transient)
   parser.remove_last_open_element_by_name("span")
   assert_eq(parser.stack.length(), 1)
   let parent = @dom.element("div")
   parser.root.append_child(parent)
-  parser.stack.push(parent)
+  parser.push_open_element(parent)
   let orphan_strong = @dom.element("strong", attrs={ "id": Some("orphan") })
   parser.active_formatting.clear()
   parser.active_formatting.push({
@@ -76,7 +76,7 @@ test "active formatting helpers respect marker boundaries" {
     xml_coercion=false,
   )
   let current_b = @dom.element("b")
-  current_only.stack.push(current_b)
+  current_only.push_open_element(current_b)
   current_only.adoption_agency("b", 4)
   assert_eq(current_only.stack.length(), 1)
   assert_eq(current_only.errors.length(), 0)
@@ -88,8 +88,8 @@ test "active formatting helpers respect marker boundaries" {
     xml_coercion=false,
   )
   let scoped_b = @dom.element("b")
-  scoped.stack.push(scoped_b)
-  scoped.stack.push(@dom.element("table"))
+  scoped.push_open_element(scoped_b)
+  scoped.push_open_element(@dom.element("table"))
   scoped.active_formatting.push({
     marker: false,
     name: "b",
@@ -115,9 +115,9 @@ test "adoption agency removes non-formatting inner stack nodes" {
   let original_b = @dom.element("b", attrs={ "data-origin": Some("start") })
   let loose_span = @dom.element("span")
   let furthest_block = @dom.element("p")
-  parser.stack.push(original_b)
-  parser.stack.push(loose_span)
-  parser.stack.push(furthest_block)
+  parser.push_open_element(original_b)
+  parser.push_open_element(loose_span)
+  parser.push_open_element(furthest_block)
   parser.active_formatting.push({
     marker: false,
     name: "b",
@@ -163,12 +163,12 @@ test "adoption agency prunes late active inner nodes" {
   let loose_two = @dom.element("span")
   let top_em = @dom.element("em", attrs={ "data-top": Some("keep") })
   let furthest_block = @dom.element("p")
-  parser.stack.push(original_b)
-  parser.stack.push(late_i)
-  parser.stack.push(loose_one)
-  parser.stack.push(loose_two)
-  parser.stack.push(top_em)
-  parser.stack.push(furthest_block)
+  parser.push_open_element(original_b)
+  parser.push_open_element(late_i)
+  parser.push_open_element(loose_one)
+  parser.push_open_element(loose_two)
+  parser.push_open_element(top_em)
+  parser.push_open_element(furthest_block)
   parser.active_formatting.push({
     marker: false,
     name: "b",

@@ -56,7 +56,7 @@ fn Parser::insert_normal_start_tag(
   } else if !self_closes_tree &&
     !@ser.is_void_element(adjusted_name) &&
     !inserts_empty_nonvoid {
-    self.stack.push(node)
+    self.push_open_element(node)
     if node_ns == "html" && active_formatting_element_name(adjusted_name) {
       let duplicate_index = self.active_formatting_duplicate_index(
         adjusted_name,

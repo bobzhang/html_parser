@@ -26,7 +26,7 @@ fn Parser::handle_repeated_document_html_start_tag(
       merge_missing_attrs_from_map(html, attrs)
       self.repeated_document_html_shell = true
       if !self.stack_contains_node(html) {
-        self.stack.push(html)
+        self.push_open_element(html)
       }
       true
     }
@@ -103,7 +103,7 @@ fn Parser::handle_document_body_or_html_end_tag(
     // so subsequent top-level content belongs to the body. The spec's
     // reprocessing chain pops an open head on the way there.
     if self.current_is_document_head() {
-      ignore(self.stack.pop())
+      ignore(self.pop_open_element())
     }
     self.error_at("unexpected-end-tag", pos)
     self.document_after_body = true
@@ -130,7 +130,7 @@ fn Parser::handle_document_body_or_html_end_tag(
   // The body was left open by the after-body rules; the html end tag
   // pops silently (the unclosed-element error is reported above).
   while self.stack.length() > 0 {
-    match self.stack.pop() {
+    match self.pop_open_element() {
       Some(node) if node.kind == Element && node.name == "html" => break
       _ => ()
     }

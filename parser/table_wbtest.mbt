@@ -6,10 +6,10 @@ test "table foster helpers handle detached helper state" {
   let parser = Parser("", root, scripting_enabled=true, xml_coercion=false)
   let table = @dom.element("table")
   let tbody = @dom.element("tbody")
-  parser.stack.clear()
-  parser.stack.push(root)
-  parser.stack.push(table)
-  parser.stack.push(tbody)
+  parser.clear_open_elements()
+  parser.push_open_element(root)
+  parser.push_open_element(table)
+  parser.push_open_element(tbody)
   assert_true(parser.foster_parent_table_text("x", 0))
   assert_eq(@ser.to_html(root, pretty=false), "x")
   assert_eq(parser.errors.length(), 1)
@@ -27,10 +27,10 @@ test "table foster helpers handle detached helper state" {
   )
   let blocked_table = @dom.element("table")
   let div = @dom.element("div")
-  blocked.stack.clear()
-  blocked.stack.push(blocked.root)
-  blocked.stack.push(blocked_table)
-  blocked.stack.push(div)
+  blocked.clear_open_elements()
+  blocked.push_open_element(blocked.root)
+  blocked.push_open_element(blocked_table)
+  blocked.push_open_element(div)
   assert_eq(blocked.handle_nested_table_start_tag("table", 0), false)
   assert_eq(blocked.table_start_foster_mode("p"), 0)
 
@@ -42,8 +42,8 @@ test "table foster helpers handle detached helper state" {
   )
   let section_table = @dom.element("table")
   let section = @dom.element("tbody")
-  open_section.stack.push(section_table)
-  open_section.stack.push(section)
+  open_section.push_open_element(section_table)
+  open_section.push_open_element(section)
   assert_eq(
     open_section.handle_table_context_ignored_end_tag("tbody", 0),
     false,
@@ -67,9 +67,9 @@ fn stale_template_column_group_parser() -> (Parser, @dom.Node) {
   let table = @dom.element("table")
   parser.root.append_child(template)
   template.append_child(table)
-  parser.stack.push(template)
+  parser.push_open_element(template)
   parser.enable_template_column_group_mode()
-  parser.stack.push(table)
+  parser.push_open_element(table)
   (parser, table)
 }
 

@@ -14,7 +14,7 @@ test "document head helpers tolerate detached parser stacks" {
   assert_eq(head_parser.current_is_document_head(), false)
   let shell = @dom.fragment()
   shell.append_child(head)
-  head_parser.stack.clear()
+  head_parser.clear_open_elements()
   assert_true(head_parser.current_is_document_head())
   assert_eq(head_parser.close_current_document_head_for_start("p", 0), false)
   assert_eq(head_parser.stack.length(), 0)
@@ -27,8 +27,8 @@ test "document head helpers tolerate detached parser stacks" {
   )
   let body = @dom.element("body")
   let noscript = @dom.element("noscript")
-  noscript_parser.stack.push(body)
-  noscript_parser.stack.push(noscript)
+  noscript_parser.push_open_element(body)
+  noscript_parser.push_open_element(noscript)
   noscript_parser.pop_disabled_head_noscript_for_reprocess()
   guard noscript_parser.stack.last() is Some(last) else {
     fail("expected non-head parent to remain after noscript pop")
@@ -64,10 +64,10 @@ test "document frameset helpers preserve reprocess state" {
   html.append_child(frameset)
   let root = @dom.document(children=[html])
   let parser = Parser("", root, scripting_enabled=true, xml_coercion=false)
-  parser.stack.clear()
-  parser.stack.push(root)
-  parser.stack.push(html)
-  parser.stack.push(frameset)
+  parser.clear_open_elements()
+  parser.push_open_element(root)
+  parser.push_open_element(html)
+  parser.push_open_element(frameset)
   parser.frameset_reprocesses_in_body_mode = true
   assert_true(
     parser.handle_document_frameset_start_tag(

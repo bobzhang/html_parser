@@ -1,6 +1,6 @@
 ///|
 fn Parser::has_open_html_select(self : Parser) -> Bool {
-  self.has_open_html_element("select")
+  self.open_select_count > 0
 }
 
 ///|
@@ -53,7 +53,7 @@ fn Parser::close_select_for_reprocessed_start_tag(
 ///|
 fn Parser::pop_until_select_in_insertion_mode(self : Parser) -> Unit {
   while self.stack.length() > 1 {
-    let node = self.stack.pop().unwrap()
+    let node = self.pop_open_element().unwrap()
     if node.kind == Element && node.name == "select" {
       break
     }
@@ -191,7 +191,7 @@ fn Parser::close_open_select_common_element(
   let target_index = self.last_stack_index_of(name)
   if target_index > select_index {
     while self.stack.length() > target_index {
-      ignore(self.stack.pop())
+      ignore(self.pop_open_element())
     }
   }
 }

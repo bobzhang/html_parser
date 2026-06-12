@@ -27,14 +27,14 @@ fn Parser::close_current_document_head_for_start(
   }
   if name == "head" {
     self.error_at("unexpected-start-tag", start)
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
     let duplicate = @dom.element("head")
     self.current_node().append_child(duplicate)
-    self.stack.push(duplicate)
+    self.push_open_element(duplicate)
     self.duplicate_head_element = Some(duplicate)
     return true
   }
-  match self.stack.pop() {
+  match self.pop_open_element() {
     Some(node) =>
       if self.duplicate_head_element is Some(duplicate) &&
         physical_equal(node, duplicate) {
@@ -83,7 +83,7 @@ fn Parser::handle_late_document_head_start_tag(
     Some(html) => html.append_child(duplicate)
     None => self.root.append_child(duplicate)
   }
-  self.stack.push(duplicate)
+  self.push_open_element(duplicate)
   self.duplicate_head_element = Some(duplicate)
   true
 }
@@ -100,7 +100,7 @@ fn Parser::handle_duplicate_head_end_tag(
   match (self.stack.last(), self.duplicate_head_element) {
     (Some(current), Some(duplicate)) if physical_equal(current, duplicate) => {
       self.error_at("unexpected-end-tag", start)
-      ignore(self.stack.pop())
+      ignore(self.pop_open_element())
       self.duplicate_head_element = None
       true
     }

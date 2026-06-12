@@ -11,15 +11,15 @@ fn Parser::parse_table_fragment_context(self : Parser) -> Unit {
   let table = @dom.element("table")
   self.fragment_context_table = Some(table)
   self.root.append_child(table)
-  self.stack.push(table)
+  self.push_open_element(table)
   self.parse_all()
   normalize_tables(table)
   unwrap_fragment_context_element(self.root, table)
   let table_index = self.last_stack_index_of_node(table)
   let caption_index = self.last_stack_index_of("caption")
   if table_index < 0 || caption_index <= table_index {
-    self.stack.clear()
-    self.stack.push(self.root)
+    self.clear_open_elements()
+    self.push_open_element(self.root)
   }
   self.fragment_context_table = None
 }
@@ -35,14 +35,14 @@ fn Parser::parse_table_section_fragment_context(
   self.fragment_context_table_section = Some(section)
   self.root.append_child(table)
   table.append_child(section)
-  self.stack.push(table)
-  self.stack.push(section)
+  self.push_open_element(table)
+  self.push_open_element(section)
   self.parse_all()
   normalize_tables(section)
   unwrap_fragment_context_element(table, section)
   unwrap_fragment_context_element(self.root, table)
-  self.stack.clear()
-  self.stack.push(self.root)
+  self.clear_open_elements()
+  self.push_open_element(self.root)
   self.fragment_context_table_section = None
   self.fragment_context_table = None
 }
@@ -58,16 +58,16 @@ fn Parser::parse_table_row_fragment_context(self : Parser) -> Unit {
   self.root.append_child(table)
   table.append_child(section)
   section.append_child(row)
-  self.stack.push(table)
-  self.stack.push(section)
-  self.stack.push(row)
+  self.push_open_element(table)
+  self.push_open_element(section)
+  self.push_open_element(row)
   self.parse_all()
   normalize_tables(row)
   unwrap_fragment_context_element(section, row)
   unwrap_fragment_context_element(table, section)
   unwrap_fragment_context_element(self.root, table)
-  self.stack.clear()
-  self.stack.push(self.root)
+  self.clear_open_elements()
+  self.push_open_element(self.root)
   self.fragment_context_table_row = None
   self.fragment_context_table_section = None
   self.fragment_context_table = None
@@ -90,10 +90,10 @@ fn Parser::parse_table_cell_fragment_context(
   table.append_child(section)
   section.append_child(row)
   row.append_child(cell)
-  self.stack.push(table)
-  self.stack.push(section)
-  self.stack.push(row)
-  self.stack.push(cell)
+  self.push_open_element(table)
+  self.push_open_element(section)
+  self.push_open_element(row)
+  self.push_open_element(cell)
   self.push_active_formatting_marker()
   self.parse_all()
   normalize_tables(cell)
@@ -101,8 +101,8 @@ fn Parser::parse_table_cell_fragment_context(
   unwrap_fragment_context_element(section, row)
   unwrap_fragment_context_element(table, section)
   unwrap_fragment_context_element(self.root, table)
-  self.stack.clear()
-  self.stack.push(self.root)
+  self.clear_open_elements()
+  self.push_open_element(self.root)
   self.fragment_context_table_cell = None
   self.fragment_context_table_row = None
   self.fragment_context_table_section = None

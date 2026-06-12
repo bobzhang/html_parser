@@ -73,7 +73,7 @@ fn Parser::handle_applet_like_end_tag(
     return true
   }
   while self.stack.length() > 1 {
-    match self.stack.pop() {
+    match self.pop_open_element() {
       Some(node) if node.kind == Element && node.name == name => break
       _ => ()
     }
@@ -105,7 +105,7 @@ fn Parser::reconstruct_active_formatting_elements(self : Parser) -> Unit {
     let node = @dom.element(entry.name, attrs=entry.attrs.copy(), ns=entry.ns)
     copy_node_origin_from(node, entry.node)
     self.append_reconstructed_formatting_node(node)
-    self.stack.push(node)
+    self.push_open_element(node)
     self.active_formatting[index] = {
       marker: false,
       name: entry.name,

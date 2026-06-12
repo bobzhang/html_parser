@@ -28,7 +28,7 @@ fn Parser::handle_template_table_context_start_tag(
     }
     let node = self.node_with_origin(@dom.element("caption", attrs~), start)
     self.current_node().append_child(node)
-    self.stack.push(node)
+    self.push_open_element(node)
     self.push_active_formatting_marker()
     self.disable_current_template_table_context_mode()
     return true
@@ -48,7 +48,7 @@ fn Parser::handle_template_table_context_start_tag(
     colgroup.append_child(
       self.node_with_origin(@dom.element("col", attrs~), start),
     )
-    self.stack.push(colgroup)
+    self.push_open_element(colgroup)
     self.disable_current_template_table_context_mode()
     self.template_detached_column_group_mode = !self.in_template_content_without_inner_table()
     return true
@@ -56,7 +56,7 @@ fn Parser::handle_template_table_context_start_tag(
   if name == "colgroup" {
     let node = self.node_with_origin(@dom.element("colgroup", attrs~), start)
     self.current_node().append_child(node)
-    self.stack.push(node)
+    self.push_open_element(node)
     self.disable_current_template_table_context_mode()
     self.template_detached_column_group_mode = !self.in_template_content_without_inner_table()
     return true
@@ -77,7 +77,7 @@ fn Parser::handle_template_table_context_start_tag(
     }
     let node = self.node_with_origin(@dom.element(name, attrs~), start)
     self.current_node().append_child(node)
-    self.stack.push(node)
+    self.push_open_element(node)
     self.disable_current_template_table_context_mode()
     return true
   }
@@ -92,10 +92,10 @@ fn Parser::handle_template_table_context_start_tag(
         // In-table tr synthesizes a table body section.
         let section = @dom.element("tbody")
         self.current_node().append_child(section)
-        self.stack.push(section)
+        self.push_open_element(section)
         let row = self.node_with_origin(@dom.element("tr"), start)
         section.append_child(row)
-        self.stack.push(row)
+        self.push_open_element(row)
         self.disable_current_template_table_context_mode()
         return true
       }
@@ -103,7 +103,7 @@ fn Parser::handle_template_table_context_start_tag(
         // In-template and in-table-body insert a bare row.
         let row = self.node_with_origin(@dom.element("tr", attrs~), start)
         self.current_node().append_child(row)
-        self.stack.push(row)
+        self.push_open_element(row)
         self.disable_current_template_table_context_mode()
         return true
       }
@@ -115,20 +115,20 @@ fn Parser::handle_template_table_context_start_tag(
       // In-table cell synthesizes a section and a row.
       let section = @dom.element("tbody")
       self.current_node().append_child(section)
-      self.stack.push(section)
+      self.push_open_element(section)
       let row = @dom.element("tr")
       section.append_child(row)
-      self.stack.push(row)
+      self.push_open_element(row)
     } else if mode == "table-body" {
       // In-table-body cell synthesizes a bare row.
       self.error_at("unexpected-cell-in-table-body", start)
       let row = @dom.element("tr")
       self.current_node().append_child(row)
-      self.stack.push(row)
+      self.push_open_element(row)
     }
     let cell = self.node_with_origin(@dom.element(name, attrs~), start)
     self.current_node().append_child(cell)
-    self.stack.push(cell)
+    self.push_open_element(cell)
     self.push_active_formatting_marker()
     self.disable_current_template_table_context_mode()
     return true
@@ -275,7 +275,7 @@ fn Parser::close_open_template_content_section(self : Parser) -> Bool {
     return false
   }
   while self.stack.length() > section_index {
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
   }
   self.set_template_content_mode("table")
   true
@@ -324,7 +324,7 @@ fn Parser::prepare_bare_template_row_start(
       }
       if section_index >= 0 && section_index < self.stack.length() - 1 {
         while self.stack.length() > section_index + 1 {
-          ignore(self.stack.pop())
+          ignore(self.pop_open_element())
         }
       }
     }
@@ -333,7 +333,7 @@ fn Parser::prepare_bare_template_row_start(
   if name == "td" || name == "th" {
     let mut popped_cell = false
     while self.stack.length() > row_index + 1 {
-      match self.stack.pop() {
+      match self.pop_open_element() {
         Some(node) =>
           if node.kind == Element &&
             (node.name == "td" || node.name == "th") &&
@@ -361,7 +361,7 @@ fn Parser::prepare_bare_template_row_start(
     name == "table" {
     let mut popped_cell = false
     while self.stack.length() > row_index {
-      match self.stack.pop() {
+      match self.pop_open_element() {
         Some(node) =>
           if node.kind == Element &&
             (node.name == "td" || node.name == "th") &&

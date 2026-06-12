@@ -241,7 +241,7 @@ fn Parser::handle_table_structural_end_tag(
           }
         }
         while self.stack.length() > floor + 1 {
-          ignore(self.stack.pop())
+          ignore(self.pop_open_element())
         }
         self.clear_active_formatting_to_marker()
         // A select popped with the cell no longer holds the parser in
@@ -377,7 +377,7 @@ fn Parser::close_open_html_table_element(self : Parser, name : String) -> Bool {
     return false
   }
   while self.stack.length() > html_index {
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
   }
   // A select popped with the foreign content no longer holds the parser
   // in select mode.

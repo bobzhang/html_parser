@@ -177,13 +177,3 @@ fn Parser::has_open_element(self : Parser, name : String) -> Bool {
   }
   false
 }
-
-///|
-fn Parser::has_open_html_element(self : Parser, name : String) -> Bool {
-  for node in self.stack {
-    if node.kind == Element && node.name == name && node.ns is Some("html") {
-      return true
-    }
-  }
-  false
-}

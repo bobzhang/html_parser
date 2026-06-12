@@ -73,10 +73,10 @@ fn Parser::reset_stack_to_frameset_replacement_parent(
   self : Parser,
   parent : @dom.Node,
 ) -> Unit {
-  self.stack.clear()
-  self.stack.push(self.root)
+  self.clear_open_elements()
+  self.push_open_element(self.root)
   if !physical_equal(parent, self.root) {
-    self.stack.push(parent)
+    self.push_open_element(parent)
   }
 }
 

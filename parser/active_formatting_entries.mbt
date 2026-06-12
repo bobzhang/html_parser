@@ -113,7 +113,7 @@ fn Parser::remove_last_open_element_by_name(
     index -= 1
     let node = self.stack[index]
     if node.kind == Element && node.name == target {
-      ignore(self.stack.remove(index))
+      ignore(self.remove_open_element_at(index))
       return
     }
   }
