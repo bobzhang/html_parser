@@ -23,7 +23,7 @@ fn Parser::has_foreign_table_row_on_stack(self : Parser) -> Bool {
 ///|
 fn Parser::clear_open_elements_to_root(self : Parser) -> Unit {
   while self.stack.length() > 1 {
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
   }
 }
 
@@ -45,7 +45,7 @@ fn Parser::handle_select_reprocessed_foreign_cell_start_tag(
   let node = self.node_with_origin(@dom.element(name, attrs~), start)
   self.post_body_html_children.push(node)
   if !self_closing {
-    self.stack.push(node)
+    self.push_open_element(node)
   }
   true
 }
@@ -69,7 +69,7 @@ fn Parser::handle_recovered_post_body_cell_start_tag(
   let node = self.node_with_origin(@dom.element(name, attrs~), start)
   self.post_body_html_children.push(node)
   if !self_closing {
-    self.stack.push(node)
+    self.push_open_element(node)
   }
   true
 }
@@ -93,7 +93,7 @@ fn Parser::handle_foreign_table_row_recovery_start_tag(
   self.post_body_html_children.push(node)
   self.foreign_table_row_recovery_mode = !self_closing
   if !self_closing {
-    self.stack.push(node)
+    self.push_open_element(node)
   }
   true
 }

@@ -197,11 +197,11 @@ fn Parser::consume_special_element_content(
     let mut target = parent
     if !decoded.is_empty() {
       let stack_before = self.stack.length()
-      self.stack.push(parent)
+      self.push_open_element(parent)
       self.reconstruct_active_formatting_elements()
       target = self.current_node()
       while self.stack.length() > stack_before {
-        ignore(self.stack.pop())
+        ignore(self.pop_open_element())
       }
     }
     self.append_special_text(target, decoded, content_start)

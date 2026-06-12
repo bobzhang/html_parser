@@ -1,5 +1,8 @@
 ///|
 fn Parser::last_open_template_index(self : Parser) -> Int {
+  if self.open_template_count == 0 {
+    return -1
+  }
   let mut index = self.stack.length()
   while index > 0 {
     index -= 1
@@ -190,7 +193,7 @@ fn Parser::handle_template_end_tag(
   self.clear_template_content_mode_for_node(template)
   self.template_detached_column_group_mode = false
   while self.stack.length() > template_index {
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
   }
   self.clear_active_formatting_to_marker()
   true

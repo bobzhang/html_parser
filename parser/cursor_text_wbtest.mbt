@@ -16,7 +16,7 @@ test "parser cursor helpers use utf16 offsets and safe fallbacks" {
   assert_true(parser.advance_char() is None)
   assert_eq(parser.pos, 2)
   let root = parser.root
-  ignore(parser.stack.pop())
+  ignore(parser.pop_open_element())
   assert_true(physical_equal(parser.current_node(), root))
   parser.append_text("", 0)
   assert_eq(root.children.length(), 0)

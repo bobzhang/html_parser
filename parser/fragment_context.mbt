@@ -59,7 +59,7 @@ fn Parser::parse_html_fragment_context(self : Parser) -> Unit {
   self.fragment_context_html_after_body = false
   self.frameset_ok = true
   self.root.append_child(html)
-  self.stack.push(html)
+  self.push_open_element(html)
   self.parse_all()
   scaffold_existing_html_element(
     html,

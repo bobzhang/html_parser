@@ -45,7 +45,7 @@ fn is_heading_element_name(name : StringView) -> Bool {
 fn Parser::close_current_heading_element(self : Parser) -> Unit {
   match self.stack.last() {
     Some(node) if node.kind == Element && is_heading_element_name(node.name) =>
-      ignore(self.stack.pop())
+      ignore(self.pop_open_element())
     _ => ()
   }
 }
@@ -71,7 +71,7 @@ fn Parser::close_open_heading_element(
     _ => self.error_at("end-tag-too-early", pos)
   }
   while self.stack.length() > 1 {
-    let node = self.stack.pop().unwrap()
+    let node = self.pop_open_element().unwrap()
     if node.kind == Element && is_heading_element_name(node.name) {
       break
     }

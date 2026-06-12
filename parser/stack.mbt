@@ -1,4 +1,82 @@
 ///|
+/// Stack mutations route through these wrappers so cheap open-element
+/// counters stay accurate; the hot index walks early-out on them.
+fn Parser::track_open_element(
+  self : Parser,
+  node : @dom.Node,
+  delta : Int,
+) -> Unit {
+  if node.kind != Element {
+    return
+  }
+  let len = node.name.length()
+  if len == 8 &&
+    node.name == "template" &&
+    (node.ns is None || node.ns is Some("html")) {
+    self.open_template_count += delta
+  } else if len == 5 && node.name == "table" {
+    self.open_table_count += delta
+  } else if len == 6 && node.name == "select" && node.ns is Some("html") {
+    // Mirrors the has_open_html_select predicate exactly: the count is
+    // used as the boolean answer, not just as an early-out.
+    self.open_select_count += delta
+  }
+}
+
+///|
+fn Parser::push_open_element(self : Parser, node : @dom.Node) -> Unit {
+  self.track_open_element(node, 1)
+  self.stack.push(node)
+}
+
+///|
+fn Parser::pop_open_element(self : Parser) -> @dom.Node? {
+  match self.stack.pop() {
+    Some(node) => {
+      self.track_open_element(node, -1)
+      Some(node)
+    }
+    None => None
+  }
+}
+
+///|
+fn Parser::remove_open_element_at(self : Parser, index : Int) -> @dom.Node {
+  let node = self.stack.remove(index)
+  self.track_open_element(node, -1)
+  node
+}
+
+///|
+fn Parser::insert_open_element_at(
+  self : Parser,
+  index : Int,
+  node : @dom.Node,
+) -> Unit {
+  self.track_open_element(node, 1)
+  self.stack.insert(index, node)
+}
+
+///|
+fn Parser::replace_open_element_at(
+  self : Parser,
+  index : Int,
+  node : @dom.Node,
+) -> Unit {
+  self.track_open_element(self.stack[index], -1)
+  self.track_open_element(node, 1)
+  self.stack[index] = node
+}
+
+///|
+fn Parser::clear_open_elements(self : Parser) -> Unit {
+  self.stack.clear()
+  self.open_template_count = 0
+  self.open_table_count = 0
+  self.open_select_count = 0
+}
+
+///|
 fn Parser::pop_until(
   self : Parser,
   name : String,
@@ -24,7 +102,7 @@ fn Parser::pop_until(
     match self.stack.last() {
       Some(node) if node.kind == Element &&
         node.name != name &&
-        is_implied_end_tag_name(node.name) => ignore(self.stack.pop())
+        is_implied_end_tag_name(node.name) => ignore(self.pop_open_element())
       _ => break
     }
   }
@@ -33,7 +111,7 @@ fn Parser::pop_until(
     _ => self.error_at("end-tag-too-early", pos)
   }
   while self.stack.length() > 1 {
-    let node = self.stack.pop().unwrap()
+    let node = self.pop_open_element().unwrap()
     if node.kind == Element && names_match_end_tag(node, name) {
       match source_end_tag {
         Some(raw) => set_node_source_end_tag(node, raw)
@@ -68,7 +146,7 @@ fn Parser::generate_implied_end_tags(self : Parser, exclude : String?) -> Unit {
       Some(node) if node.kind == Element &&
         is_implied_end_tag_name(node.name) &&
         !(exclude is Some(excluded) && node.name == excluded) =>
-        ignore(self.stack.pop())
+        ignore(self.pop_open_element())
       _ => break
     }
   }
@@ -198,7 +276,7 @@ fn Parser::close_open_element(self : Parser, name : String) -> Bool {
     return false
   }
   while self.stack.length() > 1 {
-    let node = self.stack.pop().unwrap()
+    let node = self.pop_open_element().unwrap()
     if node.kind == Element && node.name == name {
       break
     }
@@ -210,7 +288,7 @@ fn Parser::close_open_element(self : Parser, name : String) -> Bool {
 fn Parser::pop_current_element_if_name(self : Parser, name : String) -> Bool {
   match self.stack.last() {
     Some(node) if node.kind == Element && node.name == name => {
-      ignore(self.stack.pop())
+      ignore(self.pop_open_element())
       true
     }
     _ => false
@@ -272,7 +350,7 @@ fn Parser::remove_open_node(self : Parser, target : @dom.Node) -> Bool {
   let mut index = 0
   while index < self.stack.length() {
     if physical_equal(self.stack[index], target) {
-      ignore(self.stack.remove(index))
+      ignore(self.remove_open_element_at(index))
       return true
     }
     index += 1
@@ -308,7 +386,7 @@ fn Parser::insert_element_maybe_push(
   }
   self.current_node().append_child(node)
   if push {
-    self.stack.push(node)
+    self.push_open_element(node)
   }
 }
 

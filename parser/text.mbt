@@ -20,7 +20,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     text_has_non_ascii_whitespace(cleaned) {
     let whitespace = leading_ascii_whitespace(cleaned)
     self.error_at("unexpected-start-tag", start + whitespace.length())
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
     if !whitespace.is_empty() {
       let data = if self.xml_coercion {
         coerce_text_for_xml(whitespace)[:]
@@ -30,7 +30,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
       self.current_node().append_child(self.text_at(data, start))
     }
     if self.current_is_document_head() {
-      ignore(self.stack.pop())
+      ignore(self.pop_open_element())
     }
     cleaned = cleaned[whitespace.length():]
     text_start += whitespace.length()
@@ -45,7 +45,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
       }
       self.current_node().append_child(self.text_at(data, text_start))
     }
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
     cleaned = cleaned[whitespace.length():]
     text_start += whitespace.length()
   }

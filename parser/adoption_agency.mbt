@@ -83,7 +83,7 @@ fn Parser::adoption_agency(
     }
     if furthest_block_index < 0 {
       while self.stack.length() > 1 {
-        match self.stack.pop() {
+        match self.pop_open_element() {
           Some(node) if physical_equal(node, formatting_element) => break
           _ => ()
         }
@@ -112,7 +112,7 @@ fn Parser::adoption_agency(
         node_formatting_index = -1
       }
       if node_formatting_index < 0 {
-        ignore(self.stack.remove(node_index))
+        ignore(self.remove_open_element_at(node_index))
         continue
       }
       let entry = self.active_formatting[node_formatting_index]
@@ -120,7 +120,7 @@ fn Parser::adoption_agency(
       self.active_formatting[node_formatting_index] = formatting_entry_with_node(
         entry, new_node,
       )
-      self.stack[node_index] = new_node
+      self.replace_open_element_at(node_index, new_node)
       if physical_equal(last_node, furthest_block) {
         bookmark = node_formatting_index + 1
       }
@@ -145,7 +145,7 @@ fn Parser::adoption_agency(
     self.active_formatting.insert(bookmark, replacement_entry)
     ignore(self.remove_open_node(formatting_element))
     let furthest_index = self.stack_index_by_node(furthest_block)
-    self.stack.insert(furthest_index + 1, new_formatting_element)
+    self.insert_open_element_at(furthest_index + 1, new_formatting_element)
   }
 }
 

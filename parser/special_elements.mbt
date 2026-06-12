@@ -100,7 +100,7 @@ fn Parser::close_ruby_end_tag(self : Parser, start : Int) -> Unit {
         self.error_at("end-tag-too-early", start)
       }
       while self.stack.length() > index {
-        ignore(self.stack.pop())
+        ignore(self.pop_open_element())
       }
       return
     }

@@ -116,6 +116,6 @@ test "foreign adjustment helper tables match spec names" {
     scripting_enabled=true,
     xml_coercion=false,
   )
-  parser.stack.push(@dom.element("svg", ns="svg"))
+  parser.push_open_element(@dom.element("svg", ns="svg"))
   assert_eq(parser.start_tag_namespace("g"), "svg")
 }

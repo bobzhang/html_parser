@@ -146,7 +146,7 @@ fn Parser::close_current_column_group_for_start(
       if name == "colgroup" {
         self.error_at("unexpected-start-tag-implies-end-tag", start)
       }
-      ignore(self.stack.pop())
+      ignore(self.pop_open_element())
     }
     _ => ()
   }
@@ -162,7 +162,7 @@ fn Parser::close_current_column_group_for_end(
   }
   match self.stack.last() {
     Some(node) if node.kind == Element && node.name == "colgroup" =>
-      ignore(self.stack.pop())
+      ignore(self.pop_open_element())
     _ => ()
   }
 }

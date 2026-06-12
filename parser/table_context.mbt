@@ -25,6 +25,9 @@ fn is_table_internal_start_name(name : StringView) -> Bool {
 
 ///|
 fn Parser::last_open_table_index(self : Parser) -> Int {
+  if self.open_table_count == 0 {
+    return -1
+  }
   let mut index = self.stack.length()
   while index > 0 {
     index -= 1
@@ -229,7 +232,7 @@ fn Parser::clear_stack_to_table_context_for_start(
   }
   let keep_index = self.table_context_keep_index_for_start(name, table_index)
   while self.stack.length() > keep_index + 1 {
-    ignore(self.stack.pop())
+    ignore(self.pop_open_element())
   }
 }
 

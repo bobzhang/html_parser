@@ -24,5 +24,5 @@ test "parser insertion helpers keep omitted origins optional" {
     fail("expected pushed helper node")
   }
   assert_true(physical_equal(last, span))
-  assert_true(parser.has_open_html_element("span"))
+  assert_true(span.ns is Some("html"))
 }
