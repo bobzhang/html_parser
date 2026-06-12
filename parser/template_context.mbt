@@ -5,7 +5,6 @@ fn Parser::last_open_template_index(self : Parser) -> Int {
     index -= 1
     let node = self.stack[index]
     if node.kind == Element &&
-      node.name.length() == 8 &&
       node.name == "template" &&
       (node.ns is None || node.ns is Some("html")) {
       return index

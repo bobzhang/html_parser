@@ -170,14 +170,8 @@ fn Parser::close_open_definition_item(self : Parser, name : String) -> Unit {
 
 ///|
 fn Parser::has_open_element(self : Parser, name : String) -> Bool {
-  // The inline length check avoids the string-equality call entirely on
-  // mismatches; removing these guards measured ~10% slower end-to-end
-  // parse (the equality intrinsic costs even when lengths differ).
-  let target_length = name.length()
   for node in self.stack {
-    if node.kind == Element &&
-      node.name.length() == target_length &&
-      node.name == name {
+    if node.kind == Element && node.name == name {
       return true
     }
   }
@@ -186,12 +180,8 @@ fn Parser::has_open_element(self : Parser, name : String) -> Bool {
 
 ///|
 fn Parser::has_open_html_element(self : Parser, name : String) -> Bool {
-  let target_length = name.length()
   for node in self.stack {
-    if node.kind == Element &&
-      node.name.length() == target_length &&
-      node.name == name &&
-      node.ns is Some("html") {
+    if node.kind == Element && node.name == name && node.ns is Some("html") {
       return true
     }
   }
