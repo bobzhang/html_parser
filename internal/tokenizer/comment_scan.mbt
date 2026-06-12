@@ -5,8 +5,11 @@
 /// normalizes CRLF and bare CR to LF and replaces null characters with U+FFFD.
 /// `end` is the offset after the consumed comment closer, or `input.length()`
 /// when the scan reaches EOF. Parse errors use offsets in the original input.
+///
+/// The scan writes nothing while running: kept characters are the input
+/// verbatim (trailing closer dashes excluded), so each exit materializes the
+/// data from its source slice via scanned_data_slice.
 pub fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
-  let out = StringBuilder(size_hint=input.length() - start)
   let errors : Array[CommentScanError] = []
   if start >= input.length() {
     push_comment_scan_error(errors, "eof-in-comment", @syn.eof_error_pos(input))
@@ -35,51 +38,49 @@ pub fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
         let dash_count = pos - dash_start
         if dash_count >= 2 {
           match input.get_char(pos) {
-            Some('>') => {
-              write_comment_hyphens(out, dash_count - 2)
-              return { data: out.to_string(), end: pos + 1, eof: false, errors }
-            }
+            Some('>') =>
+              // The final two dashes belong to the closer, not the data.
+              return {
+                data: scanned_data_slice(input, start, pos - 2),
+                end: pos + 1,
+                eof: false,
+                errors,
+              }
             Some('!') =>
               match input.get_char(pos + 1) {
                 Some('>') => {
-                  write_comment_hyphens(out, dash_count - 2)
                   push_comment_scan_error(
                     errors,
                     "incorrectly-closed-comment",
                     pos + 1,
                   )
                   return {
-                    data: out.to_string(),
+                    data: scanned_data_slice(input, start, pos - 2),
                     end: pos + 2,
                     eof: false,
                     errors,
                   }
                 }
                 Some('\u{0000}') => {
-                  write_comment_hyphens(out, dash_count)
-                  out.write_char('!')
                   push_comment_scan_error(
                     errors,
                     "unexpected-null-character",
                     pos + 1,
                   )
-                  out.write_char('\u{FFFD}')
                   pos += 2
                 }
-                Some(ch) => {
-                  write_comment_hyphens(out, dash_count)
-                  out.write_char('!')
-                  pos = write_comment_char(out, input, pos + 1, ch)
-                }
+                Some(ch) =>
+                  // The bang and the character after it are plain data;
+                  // that character never starts a closer of its own.
+                  pos = pos + 1 + ch.utf16_len()
                 None => {
-                  write_comment_hyphens(out, dash_count - 2)
                   push_comment_scan_error(
                     errors,
                     "eof-in-comment",
                     @syn.eof_error_pos(input),
                   )
                   return {
-                    data: out.to_string(),
+                    data: scanned_data_slice(input, start, pos - 2),
                     end: input.length(),
                     eof: true,
                     errors,
@@ -87,46 +88,44 @@ pub fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
                 }
               }
             Some('\u{0000}') => {
-              write_comment_hyphens(out, dash_count - 2)
-              out.write_string("--")
               push_comment_scan_error(errors, "unexpected-null-character", pos)
-              out.write_char('\u{FFFD}')
               pos += 1
             }
             Some(ch) => {
-              write_comment_hyphens(out, dash_count - 2)
               push_comment_scan_error(errors, "incorrectly-closed-comment", pos)
-              out.write_string("--")
-              pos = write_comment_char(out, input, pos, ch)
+              pos += ch.utf16_len()
             }
             None => {
-              write_comment_hyphens(out, dash_count - 2)
               push_comment_scan_error(
                 errors,
                 "eof-in-comment",
                 @syn.eof_error_pos(input),
               )
               return {
-                data: out.to_string(),
+                data: scanned_data_slice(input, start, pos - 2),
                 end: input.length(),
                 eof: true,
                 errors,
               }
             }
           }
-        } else {
-          out.write_char('-')
         }
       }
       Some('\u{0000}') => {
         push_comment_scan_error(errors, "unexpected-null-character", pos)
-        out.write_char('\u{FFFD}')
         pos += 1
       }
-      Some(ch) => pos = write_comment_char(out, input, pos, ch)
+      Some(ch) => pos += ch.utf16_len()
       None => break
     }
   }
   push_comment_scan_error(errors, "eof-in-comment", @syn.eof_error_pos(input))
-  { data: out.to_string(), end: input.length(), eof: true, errors }
+  // pos equals input.length() at a normal EOF; on a get_char fail-closed
+  // break it marks where the consumed data stopped.
+  {
+    data: scanned_data_slice(input, start, pos),
+    end: input.length(),
+    eof: true,
+    errors,
+  }
 }

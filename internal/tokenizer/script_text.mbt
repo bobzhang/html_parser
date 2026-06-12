@@ -7,11 +7,45 @@
 /// null characters with U+FFFD while collecting diagnostics. `end_start` points
 /// at the `<` of the matching end tag when one is found.
 pub fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
-  let out = StringBuilder(size_hint=input.length() - start)
   let errors : Array[SpecialTextError] = []
-  let mut state = ScriptRawText
-  let mut temp = ""
+  // Fast path: script text without a `<!--` escape opener is the input
+  // verbatim, so this loop only locates the end tag and the data
+  // materializes as one slice copy. The escaped states are not verbatim
+  // (a `<` after `--` is kept twice), so they keep the writing machine.
   let mut pos = start
+  while pos < input.length() {
+    if script_end_tag_at(input, pos) {
+      return {
+        data: scanned_data_slice(input, start, pos),
+        end_start: Some(pos),
+        errors,
+      }
+    }
+    if @syn.view_starts_with_at(input, pos, "<!--") {
+      return scan_escaped_script_text(input, start, pos, errors)
+    }
+    pos = skip_script_text_char(input, pos, errors)
+  }
+  { data: scanned_data_slice(input, start, pos), end_start: None, errors }
+}
+
+///|
+/// Continue a script-text scan that hit a `<!--` opener at `escape_start`,
+/// building the data explicitly through the escaped-state machine. The
+/// builder is seeded with the (already diagnosed) verbatim prefix and grows
+/// as needed instead of preallocating the rest of the document.
+fn scan_escaped_script_text(
+  input : StringView,
+  start : Int,
+  escape_start : Int,
+  errors : Array[SpecialTextError],
+) -> ScriptTextScan {
+  let out = StringBuilder()
+  out.write_string(scanned_data_slice(input, start, escape_start))
+  out.write_string("<!--")
+  let mut state = ScriptEscaped
+  let mut temp = ""
+  let mut pos = escape_start + 4
   while pos < input.length() {
     match state {
       ScriptRawText =>

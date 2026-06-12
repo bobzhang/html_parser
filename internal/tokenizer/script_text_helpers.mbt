@@ -1,4 +1,20 @@
 ///|
+fn skip_script_text_char(
+  input : StringView,
+  pos : Int,
+  errors : Array[SpecialTextError],
+) -> Int {
+  match input.get_char(pos) {
+    Some('\u{0000}') => {
+      errors.push({ code: "unexpected-null-character", offset: pos })
+      pos + 1
+    }
+    Some(ch) => pos + ch.utf16_len()
+    None => pos
+  }
+}
+
+///|
 fn write_script_text_char(
   input : StringView,
   pos : Int,
