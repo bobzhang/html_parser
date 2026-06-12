@@ -258,7 +258,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   if self.handle_template_end_tag(
       name,
       tag_close_pos,
-      source_end_tag=self.source_tag_slice(start, tag_close_pos),
+      Some(self.source_tag_slice(start, tag_close_pos)),
     ) {
     return
   }

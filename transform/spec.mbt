@@ -114,7 +114,7 @@ pub struct TransformSpec {
 ///|
 fn make_transform_spec(
   kind : TransformKind,
-  enabled? : Bool = true,
+  enabled : Bool,
   selector? : String = "",
   attr_patch? : Map[String, String?],
   attr_patterns? : Array[String] = [],
