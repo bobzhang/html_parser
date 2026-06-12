@@ -187,6 +187,11 @@ pub fn strip_leading_bom(input : StringView) -> StringView {
 /// CRLF and bare CR are emitted as a single `\n`. All other characters are
 /// copied unchanged.
 pub fn normalize_newlines(input : StringView) -> String {
+  // The common case has no carriage returns: a single plain copy
+  // suffices.
+  if !input.contains("\r") {
+    return input.to_owned()
+  }
   let out = StringBuilder(size_hint=input.length())
   let mut pos = 0
   while pos < input.length() {
@@ -214,6 +219,11 @@ pub fn normalize_newlines(input : StringView) -> String {
 /// Null characters are replaced with U+FFFD, and CRLF or bare CR newlines are
 /// normalized to LF. Other characters are copied unchanged.
 pub fn normalize_bogus_comment_data(input : StringView) -> String {
+  // The common case has neither nulls nor carriage returns: a single
+  // plain copy suffices.
+  if !input.contains("\u{0000}") && !input.contains("\r") {
+    return input.to_owned()
+  }
   let out = StringBuilder(size_hint=input.length())
   let mut pos = 0
   while pos < input.length() {

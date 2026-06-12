@@ -474,6 +474,10 @@ fn Parser::replace_null_characters(
   raw : StringView,
   start : Int,
 ) -> String {
+  // The common case has no nulls: a single plain copy suffices.
+  if !raw.contains("\u{0000}") {
+    return raw.to_owned()
+  }
   let out = StringBuilder(size_hint=raw.length())
   let mut pos = 0
   while pos < raw.length() {
