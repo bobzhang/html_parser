@@ -5,7 +5,7 @@
 /// numeric and named references are decoded, CRLF and bare CR normalize to LF,
 /// and diagnostics are discarded. Set `in_attribute=true` to apply HTML's
 /// ambiguous-ampersand rule for legacy references in attribute values.
-pub fn decode_entities(input : StringView, in_attribute~ : Bool) -> String {
+pub fn decode_entities(input : StringView, in_attribute~ : Bool) -> StringView {
   decode_entities_with_errors(input, in_attribute~).data
 }
 
@@ -20,9 +20,9 @@ pub fn decode_entities_with_errors(
   in_attribute~ : Bool,
 ) -> EntityDecodeResult {
   // The common case has no character references and no carriage returns:
-  // the decode is the identity and a single plain copy suffices.
+  // the decode is the identity and the input view passes through unchanged.
   if !input.any(ch => ch is ('&' | '\r')) {
-    return { data: input.to_owned(), errors: [] }
+    return { data: input, errors: [] }
   }
   let out = StringBuilder(size_hint=input.length())
   let errors : Array[EntityDecodeError] = []
@@ -47,7 +47,7 @@ pub fn decode_entities_with_errors(
       _ => pos = @syn.write_normalized_char(input, pos, out)
     }
   }
-  { data: out.to_string(), errors }
+  { data: out.to_string()[:], errors }
 }
 
 ///|
@@ -60,7 +60,7 @@ pub fn decode_attribute_value_with_errors(
   input : StringView,
 ) -> EntityDecodeResult {
   let decoded = decode_entities_with_errors(input, in_attribute=true)
-  if !decoded.data.contains("\u{0000}") {
+  if !decoded.data.contains_char('\u{0000}') {
     return decoded
   }
   {

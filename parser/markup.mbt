@@ -98,7 +98,7 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
   if !cleaned.is_empty() {
     let cleaned = normalize_tree_builder_text(cleaned)
     let data = if self.xml_coercion {
-      coerce_text_for_xml(cleaned)
+      coerce_text_for_xml(cleaned)[:]
     } else {
       cleaned
     }

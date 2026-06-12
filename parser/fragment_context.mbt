@@ -26,7 +26,7 @@ fn Parser::append_fragment_context_text(
   let raw = self.replace_null_characters(raw, start)
   let data = normalize_newlines(raw)
   let data = normalize_tree_builder_text(data)
-  let data = if self.xml_coercion { coerce_text_for_xml(data) } else { data }
+  let data = if self.xml_coercion { coerce_text_for_xml(data)[:] } else { data }
   self.root.append_child(self.text_at(data, start))
 }
 

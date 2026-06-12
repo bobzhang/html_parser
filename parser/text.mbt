@@ -23,7 +23,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     ignore(self.stack.pop())
     if !whitespace.is_empty() {
       let data = if self.xml_coercion {
-        coerce_text_for_xml(whitespace)
+        coerce_text_for_xml(whitespace)[:]
       } else {
         whitespace
       }
@@ -32,21 +32,21 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     if self.current_is_document_head() {
       ignore(self.stack.pop())
     }
-    cleaned = cleaned[whitespace.length():].to_owned()
+    cleaned = cleaned[whitespace.length():]
     text_start += whitespace.length()
   }
   if self.current_is_document_head() && text_has_non_ascii_whitespace(cleaned) {
     let whitespace = leading_ascii_whitespace(cleaned)
     if !whitespace.is_empty() {
       let data = if self.xml_coercion {
-        coerce_text_for_xml(whitespace)
+        coerce_text_for_xml(whitespace)[:]
       } else {
         whitespace
       }
       self.current_node().append_child(self.text_at(data, text_start))
     }
     ignore(self.stack.pop())
-    cleaned = cleaned[whitespace.length():].to_owned()
+    cleaned = cleaned[whitespace.length():]
     text_start += whitespace.length()
   }
   if self.uses_document_frameset_rules() &&
@@ -98,15 +98,15 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
   }
   let decoded = normalize_tree_builder_text(decoded_result.data)
   let mut data = if self.xml_coercion {
-    coerce_text_for_xml(decoded)
+    coerce_text_for_xml(decoded)[:]
   } else {
     decoded
   }
   if self.pending_initial_lf_skip {
     self.pending_initial_lf_skip = false
     if data.has_prefix("\n") {
-      data = data[1:].to_owned()
-      if data == "" {
+      data = data[1:]
+      if data.is_empty() {
         // The text was only the skipped newline; nothing to insert.
         return
       }
@@ -174,7 +174,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
 fn Parser::merge_into_trailing_text(
   self : Parser,
   parent : @dom.Node,
-  data : String,
+  data : StringView,
 ) -> Bool {
   match parent.children.last() {
     Some(last) if last.kind == Text &&
@@ -194,7 +194,7 @@ fn Parser::merge_into_trailing_text(
           self.pending_text_is_whitespace = is_whitespace_text_node(last)
         }
       }
-      self.pending_text_builder.write_string(data)
+      self.pending_text_builder.write_view(data)
       if self.pending_text_is_whitespace && text_has_non_ascii_whitespace(data) {
         self.pending_text_is_whitespace = false
       }
@@ -277,7 +277,7 @@ fn Parser::merge_crosses_body_boundary(
   self : Parser,
   parent : @dom.Node,
   last : @dom.Node,
-  data : String,
+  data : StringView,
 ) -> Bool {
   // The html fragment context scaffolds head/body like a document, so the
   // boundary applies there too; other fragment contexts have no head/body
@@ -391,11 +391,11 @@ fn ascii_whitespace_chars_only(value : StringView) -> String {
 }
 
 ///|
-fn normalize_tree_builder_text(value : StringView) -> String {
-  // The common case has no form feeds: a single plain copy suffices and
-  // the per-character rebuild below is skipped.
-  if !value.contains("\u{000C}") {
-    return value.to_owned()
+fn normalize_tree_builder_text(value : StringView) -> StringView {
+  // The common case has no form feeds: the input view passes through
+  // unchanged and the per-character rebuild below is skipped.
+  if !value.contains_char('\u{000C}') {
+    return value
   }
   let out = StringBuilder(size_hint=value.length())
   for ch in value {
@@ -405,18 +405,18 @@ fn normalize_tree_builder_text(value : StringView) -> String {
       out.write_char(ch)
     }
   }
-  out.to_string()
+  out.to_string()[:]
 }
 
 ///|
 /// Input-stream preprocessing for raw character data (CDATA sections):
 /// CR and CRLF normalize to LF before any further handling. Decoded
 /// character references are exempt — they happen after preprocessing.
-fn normalize_raw_newlines(value : StringView) -> String {
-  // The common case has no carriage returns: a single plain copy
-  // suffices.
-  if !value.contains("\r") {
-    return value.to_owned()
+fn normalize_raw_newlines(value : StringView) -> StringView {
+  // The common case has no carriage returns: the input view passes
+  // through unchanged.
+  if !value.contains_char('\r') {
+    return value
   }
   let out = StringBuilder(size_hint=value.length())
   let mut last_was_cr = false
@@ -431,11 +431,11 @@ fn normalize_raw_newlines(value : StringView) -> String {
       last_was_cr = false
     }
   }
-  out.to_string()
+  out.to_string()[:]
 }
 
 ///|
-fn decode_entities_for_tree_text(value : StringView) -> String {
+fn decode_entities_for_tree_text(value : StringView) -> StringView {
   let decoded = @tok.decode_entities(value, in_attribute=false)
   normalize_tree_builder_text(decoded)
 }
@@ -445,10 +445,11 @@ fn Parser::remove_null_characters(
   self : Parser,
   raw : StringView,
   start : Int,
-) -> String {
-  // The common case has no nulls: a single plain copy suffices.
-  if !raw.contains("\u{0000}") {
-    return raw.to_owned()
+) -> StringView {
+  // The common case has no nulls: the input view passes through
+  // unchanged.
+  if !raw.contains_char('\u{0000}') {
+    return raw
   }
   let out = StringBuilder(size_hint=raw.length())
   let mut pos = 0
@@ -465,7 +466,7 @@ fn Parser::remove_null_characters(
       }
     }
   }
-  out.to_string()
+  out.to_string()[:]
 }
 
 ///|
@@ -473,10 +474,11 @@ fn Parser::replace_null_characters(
   self : Parser,
   raw : StringView,
   start : Int,
-) -> String {
-  // The common case has no nulls: a single plain copy suffices.
-  if !raw.contains("\u{0000}") {
-    return raw.to_owned()
+) -> StringView {
+  // The common case has no nulls: the input view passes through
+  // unchanged.
+  if !raw.contains_char('\u{0000}') {
+    return raw
   }
   let out = StringBuilder(size_hint=raw.length())
   let mut pos = 0
@@ -494,7 +496,7 @@ fn Parser::replace_null_characters(
       }
     }
   }
-  out.to_string()
+  out.to_string()[:]
 }
 
 ///|

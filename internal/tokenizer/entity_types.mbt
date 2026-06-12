@@ -11,10 +11,12 @@ pub(all) struct EntityDecodeError {
 ///|
 /// Result of decoding character references in a string.
 ///
-/// `data` is the decoded text. `errors` contains parse diagnostics such as
+/// `data` is the decoded text; when the decode was the identity it borrows
+/// the input, so callers that need an owned `String` call `to_owned` (free
+/// for full-string views). `errors` contains parse diagnostics such as
 /// missing semicolons, control references, and noncharacter references.
 pub(all) struct EntityDecodeResult {
-  data : String
+  data : StringView
   errors : Array[EntityDecodeError]
 } derive(Debug, Eq)
 

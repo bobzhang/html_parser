@@ -4,7 +4,7 @@ test "decode_entities_with_errors reports invalid numeric reference" {
   debug_inspect(
     result,
     content=(
-      #|{ data: "&#xZZZ;", errors: [] }
+      #|{ data: <StringView: "&#xZZZ;">, errors: [] }
     ),
   )
 }

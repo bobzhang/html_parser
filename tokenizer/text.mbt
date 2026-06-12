@@ -16,11 +16,10 @@ fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
     for error in decoded.errors {
       self.error_at(error.code, start + error.offset)
     }
-    let data = decoded.data
     let data = if self.xml_coercion {
-      @syn.coerce_text_for_xml(data)
+      @syn.coerce_text_for_xml(decoded.data)
     } else {
-      data
+      decoded.data.to_owned()
     }
     self.tokens.push(Characters(data))
   }
@@ -47,11 +46,10 @@ fn SourceTokenizer::parse_invalid_tag_open_as_text(
     for error in decoded.errors {
       self.error_at(error.code, start + error.offset)
     }
-    let data = decoded.data
     let data = if self.xml_coercion {
-      @syn.coerce_text_for_xml(data)
+      @syn.coerce_text_for_xml(decoded.data)
     } else {
-      data
+      decoded.data.to_owned()
     }
     self.tokens.push(Characters(data))
   }
