@@ -1,4 +1,13 @@
 ///|
+test "script text char skipper fails closed on surrogate-split offsets" {
+  let value = "x😀>"
+  let mid_surrogate = 2
+  let errors : Array[SpecialTextError] = []
+  assert_eq(skip_script_text_char(value, mid_surrogate, errors), mid_surrogate)
+  assert_eq(errors.length(), 0)
+}
+
+///|
 test "script text char writer fails closed on surrogate-split offsets" {
   let value = "x😀>"
   let mid_surrogate = 2
