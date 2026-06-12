@@ -19,7 +19,8 @@ fn write_script_text_char(
 ///|
 fn script_end_tag_at(input : StringView, pos : Int) -> Bool {
   let needle = "</script"
-  if @syn.starts_with_case_insensitive(input, pos, needle) {
+  if input.get_char(pos) == Some('<') &&
+    @syn.starts_with_case_insensitive(input, pos, needle) {
     script_end_tag_boundary(input.get_char(pos + needle.length()))
   } else {
     false

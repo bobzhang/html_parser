@@ -63,7 +63,8 @@ pub fn find_matching_end_tag(
   let needle = "</" + name.to_owned()
   let mut pos = start
   while pos < input.length() {
-    if @syn.starts_with_case_insensitive(input, pos, needle) {
+    if input.get_char(pos) == Some('<') &&
+      @syn.starts_with_case_insensitive(input, pos, needle) {
       let after_name = pos + needle.length()
       match input.get_char(after_name) {
         Some('>') => return Some(pos)
