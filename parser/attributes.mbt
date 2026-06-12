@@ -13,7 +13,7 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
   while self.pos < input_length {
     match input[self.pos] {
       '=' | '/' | '>' => break
-      ' ' | '\t' | '\n' | '\r' | '\u{000C}' => break
+      ' ' | '\t' | '\n' | '\u{000B}' | '\u{000C}' | '\r' => break
       '<' | '"' | '\'' => {
         self.error_at("unexpected-character-in-attribute-name", self.pos)
         self.pos += 1
@@ -59,7 +59,7 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
       while self.pos < input_length {
         match input[self.pos] {
           '>' => break
-          ' ' | '\t' | '\n' | '\r' | '\u{000C}' => break
+          ' ' | '\t' | '\n' | '\u{000B}' | '\u{000C}' | '\r' => break
           '\u{0000}' => {
             self.error_at("unexpected-null-character", self.pos)
             self.pos += 1

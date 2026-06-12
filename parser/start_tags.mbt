@@ -12,7 +12,8 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       let input_length = input.length()
       while self.pos < input_length {
         match input[self.pos] {
-          '>' | '/' | ' ' | '\t' | '\n' | '\r' | '\u{000C}' => break
+          '>' | '/' | ' ' | '\t' | '\n' | '\u{000B}' | '\u{000C}' | '\r' =>
+            break
           _ => self.pos += 1
         }
       }
