@@ -32,13 +32,10 @@ fn Parser::last_open_table_index(self : Parser) -> Int {
     if node.kind != Element {
       continue
     }
-    let name_length = node.name.length()
-    if name_length == 5 && node.name == "table" {
+    if node.name == "table" {
       return index
     }
-    if name_length == 8 &&
-      node.name == "template" &&
-      (node.ns is None || node.ns is Some("html")) {
+    if node.name == "template" && (node.ns is None || node.ns is Some("html")) {
       // Template contents are a separate tree: the table machinery must
       // not reach past an open template to a table outside it.
       return -1
