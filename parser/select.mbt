@@ -96,6 +96,13 @@ fn Parser::handle_select_end_tag(
       }
     "select" =>
       if self.in_select_insertion_mode() {
+        if self.fragment_context_select && !self.has_open_element("select") {
+          // The fragment case: no select in scope, the end tag is a
+          // parse error and the stack is left alone. (Documents keep
+          // the reference's empty-stack pop behavior.)
+          self.error_at("unexpected-end-tag-in-select", tag_close_pos)
+          return true
+        }
         self.pop_until_select_in_insertion_mode()
         self.reset_select_insertion_mode()
         true
