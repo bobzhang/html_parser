@@ -224,11 +224,14 @@ fn Parser::close_current_element_if_name(self : Parser, name : String) -> Unit {
 
 ///|
 fn Parser::last_stack_index_of(self : Parser, name : String) -> Int {
+  let target_length = name.length()
   let mut index = self.stack.length()
   while index > 0 {
     index -= 1
     let node = self.stack[index]
-    if node.kind == Element && node.name == name {
+    if node.kind == Element &&
+      node.name.length() == target_length &&
+      node.name == name {
       return index
     }
   }

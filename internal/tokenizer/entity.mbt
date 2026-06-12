@@ -19,6 +19,18 @@ pub fn decode_entities_with_errors(
   input : StringView,
   in_attribute~ : Bool,
 ) -> EntityDecodeResult {
+  // The common case has no character references and no carriage returns:
+  // the decode is the identity and a single plain copy suffices.
+  let mut needs_decode = false
+  for ch in input {
+    if ch == '&' || ch == '\r' {
+      needs_decode = true
+      break
+    }
+  }
+  if !needs_decode {
+    return { data: input.to_owned(), errors: [] }
+  }
   let out = StringBuilder(size_hint=input.length())
   let errors : Array[EntityDecodeError] = []
   let mut pos = 0
@@ -55,6 +67,9 @@ pub fn decode_attribute_value_with_errors(
   input : StringView,
 ) -> EntityDecodeResult {
   let decoded = decode_entities_with_errors(input, in_attribute=true)
+  if !decoded.data.contains("\u{0000}") {
+    return decoded
+  }
   {
     data: decoded.data.replace_all(old="\u{0000}", new="\u{FFFD}"),
     errors: decoded.errors,

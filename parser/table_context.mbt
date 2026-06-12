@@ -29,10 +29,14 @@ fn Parser::last_open_table_index(self : Parser) -> Int {
   while index > 0 {
     index -= 1
     let node = self.stack[index]
-    if node.kind == Element && node.name == "table" {
+    if node.kind != Element {
+      continue
+    }
+    let name_length = node.name.length()
+    if name_length == 5 && node.name == "table" {
       return index
     }
-    if node.kind == Element &&
+    if name_length == 8 &&
       node.name == "template" &&
       (node.ns is None || node.ns is Some("html")) {
       // Template contents are a separate tree: the table machinery must
