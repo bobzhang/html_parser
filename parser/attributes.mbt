@@ -5,18 +5,20 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
     self.error_at("unexpected-equals-sign-before-attribute-name", self.pos)
     ignore(self.advance_char())
   }
-  while !self.is_eof() {
-    let ch = self.current().unwrap()
-    if ch.is_ascii_whitespace() || ch == '=' || ch == '/' || ch == '>' {
-      break
-    } else {
-      match ch {
-        '<' | '"' | '\'' => {
-          self.error_at("unexpected-character-in-attribute-name", self.pos)
-          ignore(self.advance_char())
-        }
-        _ => ignore(self.advance_char())
+  // Scan with direct code-unit indexing: the delimiters are ASCII, which
+  // never matches inside a surrogate pair, so stepping one unit at a
+  // time is safe and avoids the Char? boxing of get_char per character.
+  let input = self.input
+  let input_length = input.length()
+  while self.pos < input_length {
+    match input[self.pos] {
+      '=' | '/' | '>' => break
+      ' ' | '\t' | '\n' | '\r' | '\u{000C}' => break
+      '<' | '"' | '\'' => {
+        self.error_at("unexpected-character-in-attribute-name", self.pos)
+        self.pos += 1
       }
+      _ => self.pos += 1
     }
   }
   let (name, name_errors) = @tok.parse_lower_name_value_replacing_nulls(
@@ -53,24 +55,23 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
     Some('\'') => self.parse_quoted_attribute_value('\'')
     _ => {
       let start = self.pos
-      while !self.is_eof() {
-        let ch = self.current().unwrap()
-        if ch.is_ascii_whitespace() || ch == '>' {
-          break
-        }
-        match ch {
+      // Direct code-unit scan; see the attribute-name loop above.
+      while self.pos < input_length {
+        match input[self.pos] {
+          '>' => break
+          ' ' | '\t' | '\n' | '\r' | '\u{000C}' => break
           '\u{0000}' => {
             self.error_at("unexpected-null-character", self.pos)
-            ignore(self.advance_char())
+            self.pos += 1
           }
           '"' | '\'' | '<' | '=' | '`' => {
             self.error_at(
               "unexpected-character-in-unquoted-attribute-value",
               self.pos,
             )
-            ignore(self.advance_char())
+            self.pos += 1
           }
-          _ => ignore(self.advance_char())
+          _ => self.pos += 1
         }
       }
       let view = self.input[start:self.pos]
@@ -90,11 +91,21 @@ fn Parser::parse_attribute(self : Parser, attrs : Map[String, String?]) -> Unit 
 fn Parser::parse_quoted_attribute_value(self : Parser, quote : Char) -> String {
   ignore(self.advance_char())
   let start = self.pos
-  while !self.is_eof() && self.current() != Some(quote) {
-    if self.current() == Some('\u{0000}') {
+  // Direct code-unit scan: the quote and NUL are ASCII, which never
+  // matches inside a surrogate pair, so stepping one unit at a time is
+  // safe and avoids the Char? boxing of get_char per character.
+  let input = self.input
+  let input_length = input.length()
+  let quote_unit = quote.to_int()
+  while self.pos < input_length {
+    let ch = input[self.pos]
+    if ch.to_int() == quote_unit {
+      break
+    }
+    if ch is '\u{0000}' {
       self.error_at("unexpected-null-character", self.pos)
     }
-    ignore(self.advance_char())
+    self.pos += 1
   }
   let raw = self.input[start:self.pos]
   if self.current() == Some(quote) {
