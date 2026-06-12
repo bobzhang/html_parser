@@ -105,6 +105,17 @@ fn Parser::handle_parsed_start_tag(
     self.error_at("unexpected-start-tag-in-select", start)
     return
   }
+  if self.in_select_insertion_mode() &&
+    !self.has_open_element("select") &&
+    name == "input" {
+    // The fragment case: with no select element to close, the
+    // acts-as-</select> recovery has nothing to do and the input token
+    // is ignored. (The reference implementation keeps the input here —
+    // its single html5lib failure; the spec and html5lib expect the
+    // ignore.)
+    self.error_at("unexpected-start-tag-in-select", start)
+    return
+  }
   if self.handle_select_special_start_tag(
       name, attrs, self_closing, start, tag_close_pos,
     ) {

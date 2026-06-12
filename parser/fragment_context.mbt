@@ -141,6 +141,14 @@ fn Parser::parse_fragment_context(
     self.parse_table_cell_fragment_context(name)
     return true
   }
+  if name == "select" {
+    // The fragment algorithm resets the insertion mode for a select
+    // context to in-select.
+    self.fragment_context_select = true
+    self.parse_all()
+    self.fragment_context_select = false
+    return true
+  }
   if name == "caption" {
     self.fragment_context_caption = true
     self.parse_all()
