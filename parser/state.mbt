@@ -23,6 +23,7 @@ priv struct Parser {
   mut fragment_context_table_row : @dom.Node?
   mut fragment_context_table_cell : @dom.Node?
   mut fragment_context_caption : Bool
+  mut fragment_context_select : Bool
   mut fragment_context_colgroup : Bool
   mut fragment_context_html : Bool
   mut fragment_context_html_root : @dom.Node?
@@ -104,6 +105,7 @@ fn Parser::Parser(
     fragment_context_table_row: None,
     fragment_context_table_cell: None,
     fragment_context_caption: false,
+    fragment_context_select: false,
     fragment_context_colgroup: false,
     fragment_context_html: false,
     fragment_context_html_root: None,
