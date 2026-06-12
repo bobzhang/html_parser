@@ -224,6 +224,8 @@ fn Parser::close_current_element_if_name(self : Parser, name : String) -> Unit {
 
 ///|
 fn Parser::last_stack_index_of(self : Parser, name : String) -> Int {
+  // Length-first: see has_open_element — the guards measured ~10%
+  // end-to-end parse.
   let target_length = name.length()
   let mut index = self.stack.length()
   while index > 0 {
