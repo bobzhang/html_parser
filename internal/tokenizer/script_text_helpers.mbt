@@ -18,9 +18,14 @@ fn write_script_text_char(
 
 ///|
 fn script_end_tag_at(input : StringView, pos : Int) -> Bool {
+  // This runs for every character of script text: peeking for '<' first
+  // skips the view allocation and case-insensitive compare on the vast
+  // majority of positions.
+  if !(input.get_char(pos) is Some('<')) {
+    return false
+  }
   let needle = "</script"
-  if input.get_char(pos) == Some('<') &&
-    @syn.starts_with_case_insensitive(input, pos, needle) {
+  if @syn.starts_with_case_insensitive(input, pos, needle) {
     script_end_tag_boundary(input.get_char(pos + needle.length()))
   } else {
     false

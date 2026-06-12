@@ -63,7 +63,9 @@ pub fn find_matching_end_tag(
   let needle = "</" + name.to_owned()
   let mut pos = start
   while pos < input.length() {
-    if input.get_char(pos) == Some('<') &&
+    // Peeking for '<' first skips the view allocation and
+    // case-insensitive compare on the vast majority of positions.
+    if input.get_char(pos) is Some('<') &&
       @syn.starts_with_case_insensitive(input, pos, needle) {
       let after_name = pos + needle.length()
       match input.get_char(after_name) {

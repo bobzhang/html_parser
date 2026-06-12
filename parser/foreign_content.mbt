@@ -69,14 +69,7 @@ fn Parser::clean_foreign_content_text(
   raw : StringView,
   start : Int,
 ) -> String {
-  let mut has_null = false
-  for ch in raw {
-    if ch == '\u{0000}' {
-      has_null = true
-      break
-    }
-  }
-  if !has_null {
+  if !raw.iter().any(ch => ch == '\u{0000}') {
     return raw.to_owned()
   }
   let out = StringBuilder(size_hint=raw.length())
