@@ -6,7 +6,7 @@ fn Parser::has_open_html_select(self : Parser) -> Bool {
 ///|
 fn Parser::in_select_insertion_mode(self : Parser) -> Bool {
   self.select_insertion_mode ||
-  self.fragment_context_select ||
+  (self.fragment_context_select && !self.has_open_element("template")) ||
   self.has_open_html_select()
 }
 
