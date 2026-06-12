@@ -21,7 +21,7 @@ pub fn decode_entities_with_errors(
 ) -> EntityDecodeResult {
   // The common case has no character references and no carriage returns:
   // the decode is the identity and a single plain copy suffices.
-  if !input.any(ch => ch == '&' || ch == '\r') {
+  if !input.any(ch => ch is ('&' | '\r')) {
     return { data: input.to_owned(), errors: [] }
   }
   let out = StringBuilder(size_hint=input.length())
