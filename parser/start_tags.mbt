@@ -5,10 +5,15 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
   match self.current() {
     Some(ch) if @tok.is_tag_name_start(ch) => {
       let name_start = self.pos
-      while !self.is_eof() {
-        match self.current() {
-          Some(ch) if !@tok.is_tag_name_end(ch) => ignore(self.advance_char())
-          _ => break
+      // Direct code-unit scan: the name-ending delimiters are ASCII,
+      // which never matches inside a surrogate pair, so stepping one
+      // unit at a time is safe and avoids the Char? boxing of get_char.
+      let input = self.input
+      let input_length = input.length()
+      while self.pos < input_length {
+        match input[self.pos] {
+          '>' | '/' | ' ' | '\t' | '\n' | '\r' | '\u{000C}' => break
+          _ => self.pos += 1
         }
       }
       let (name, name_errors) = @tok.parse_lower_name_value_replacing_nulls(

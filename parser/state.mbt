@@ -175,9 +175,13 @@ fn Parser::starts_with(self : Parser, prefix : StringView) -> Bool {
 
 ///|
 fn Parser::skip_ascii_whitespace(self : Parser) -> Unit {
-  while !self.is_eof() {
-    match self.current() {
-      Some(ch) if ch.is_ascii_whitespace() => ignore(self.advance_char())
+  // Direct code-unit scan: ASCII whitespace never matches inside a
+  // surrogate pair.
+  let input = self.input
+  let input_length = input.length()
+  while self.pos < input_length {
+    match input[self.pos] {
+      ' ' | '\t' | '\n' | '\r' | '\u{000C}' => self.pos += 1
       _ => return
     }
   }
