@@ -31,13 +31,12 @@ fn Parser::push_open_element(self : Parser, node : @dom.Node) -> Unit {
 
 ///|
 fn Parser::pop_open_element(self : Parser) -> @dom.Node? {
-  match self.stack.pop() {
-    Some(node) => {
-      self.track_open_element(node, -1)
-      Some(node)
-    }
-    None => None
+  // Return the popped option as-is instead of rebuilding a new Some.
+  let popped = self.stack.pop()
+  if popped is Some(node) {
+    self.track_open_element(node, -1)
   }
+  popped
 }
 
 ///|
