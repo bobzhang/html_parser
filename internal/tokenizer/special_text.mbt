@@ -64,8 +64,10 @@ pub fn find_matching_end_tag(
   let mut pos = start
   while pos < input.length() {
     // Peeking for '<' first skips the view allocation and
-    // case-insensitive compare on the vast majority of positions.
-    if input.get_char(pos) is Some('<') &&
+    // case-insensitive compare on the vast majority of positions; the
+    // loop condition already bounds pos, so direct indexing avoids the
+    // Char? boxing of get_char.
+    if input[pos] is '<' &&
       @syn.starts_with_case_insensitive(input, pos, needle) {
       let after_name = pos + needle.length()
       match input.get_char(after_name) {

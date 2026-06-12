@@ -20,8 +20,9 @@ fn write_script_text_char(
 fn script_end_tag_at(input : StringView, pos : Int) -> Bool {
   // This runs for every character of script text: peeking for '<' first
   // skips the view allocation and case-insensitive compare on the vast
-  // majority of positions.
-  if !(input.get_char(pos) is Some('<')) {
+  // majority of positions; the explicit bounds check lets direct
+  // indexing avoid the Char? boxing of get_char.
+  if !(pos < input.length() && input[pos] is '<') {
     return false
   }
   let needle = "</script"
