@@ -393,16 +393,8 @@ fn ascii_whitespace_chars_only(value : StringView) -> String {
 ///|
 fn normalize_tree_builder_text(value : StringView) -> String {
   // The common case has no form feeds: a single plain copy suffices and
-  // the per-character rebuild below is skipped. This runs for every
-  // text run, so the scan is a plain loop rather than an iterator chain.
-  let mut needs_copy = false
-  for ch in value {
-    if ch == '\u{000C}' {
-      needs_copy = true
-      break
-    }
-  }
-  if !needs_copy {
+  // the per-character rebuild below is skipped.
+  if !value.any(ch => ch == '\u{000C}') {
     return value.to_owned()
   }
   let out = StringBuilder(size_hint=value.length())
@@ -423,7 +415,7 @@ fn normalize_tree_builder_text(value : StringView) -> String {
 fn normalize_raw_newlines(value : StringView) -> String {
   // The common case has no carriage returns: a single plain copy
   // suffices.
-  if !value.iter().any(ch => ch == '\r') {
+  if !value.any(ch => ch == '\r') {
     return value.to_owned()
   }
   let out = StringBuilder(size_hint=value.length())
@@ -454,17 +446,8 @@ fn Parser::remove_null_characters(
   raw : StringView,
   start : Int,
 ) -> String {
-  // The common case has no nulls: a single plain copy suffices. This
-  // runs for every text run, so the scan is a plain loop rather than an
-  // iterator chain.
-  let mut has_null = false
-  for ch in raw {
-    if ch == '\u{0000}' {
-      has_null = true
-      break
-    }
-  }
-  if !has_null {
+  // The common case has no nulls: a single plain copy suffices.
+  if !raw.any(ch => ch == '\u{0000}') {
     return raw.to_owned()
   }
   let out = StringBuilder(size_hint=raw.length())
