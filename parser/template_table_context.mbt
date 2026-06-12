@@ -453,12 +453,12 @@ fn Parser::record_template_content_flow_insert(
     name == "th" {
     return
   }
+  // Only content-top insertions (current node is the template itself)
+  // can flip the mode, and this runs for every element insertion: the
+  // cheap current-node test goes before any stack walk.
   let current = self.current_node()
-  if !(current.kind == Element &&
-    current.name == "template" &&
-    (current.ns is None || current.ns is Some("html"))) {
-    // The cheap current-node test runs before any stack walk: only
-    // content-top insertions can flip the mode.
+  if !(current
+    is { kind: Element, name: "template", ns: None | Some("html"), .. }) {
     return
   }
   if !self.in_template_content_without_inner_table() {
