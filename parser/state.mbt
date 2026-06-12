@@ -181,7 +181,7 @@ fn Parser::skip_ascii_whitespace(self : Parser) -> Unit {
   let input_length = input.length()
   while self.pos < input_length {
     match input[self.pos] {
-      ' ' | '\t' | '\n' | '\r' | '\u{000C}' => self.pos += 1
+      ' ' | '\t' | '\n' | '\u{000B}' | '\u{000C}' | '\r' => self.pos += 1
       _ => return
     }
   }
