@@ -20,17 +20,8 @@ pub fn decode_entities_with_errors(
   in_attribute~ : Bool,
 ) -> EntityDecodeResult {
   // The common case has no character references and no carriage returns:
-  // the decode is the identity and a single plain copy suffices. This is
-  // the hottest text path (every text run and attribute value), so the
-  // scan is a plain loop rather than an iterator chain.
-  let mut needs_decode = false
-  for ch in input {
-    if ch == '&' || ch == '\r' {
-      needs_decode = true
-      break
-    }
-  }
-  if !needs_decode {
+  // the decode is the identity and a single plain copy suffices.
+  if !input.any(ch => ch == '&' || ch == '\r') {
     return { data: input.to_owned(), errors: [] }
   }
   let out = StringBuilder(size_hint=input.length())
