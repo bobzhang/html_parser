@@ -107,6 +107,7 @@ fn Parser::handle_parsed_start_tag(
   }
   if self.in_select_insertion_mode() &&
     !self.has_open_element("select") &&
+    !self.has_open_element("template") &&
     name == "input" {
     // The fragment case: with no select element to close, the
     // acts-as-</select> recovery has nothing to do and the input token
