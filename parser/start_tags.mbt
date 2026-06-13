@@ -30,6 +30,11 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       let mut closed = false
       while !self.is_eof() {
         self.skip_ascii_whitespace()
+        // The whitespace skip can run to EOF; the !closed path below
+        // reports eof-in-tag.
+        if self.is_eof() {
+          break
+        }
         let ch = self.current().unwrap()
         match ch {
           '>' => {
