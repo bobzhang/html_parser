@@ -26,8 +26,8 @@ fn Parser::parse_comment(self : Parser) -> Unit {
 ///|
 fn Parser::parse_bogus_comment(self : Parser, origin_start : Int) -> Unit {
   let data_start = self.pos
-  while !self.is_eof() && self.current() != Some('>') {
-    ignore(self.advance_char())
+  while self.current() is Some(ch) && ch != '>' {
+    self.pos += ch.utf16_len()
   }
   let view = self.input[data_start:self.pos]
   let data = normalize_bogus_comment_data(view)
@@ -37,7 +37,7 @@ fn Parser::parse_bogus_comment(self : Parser, origin_start : Int) -> Unit {
     self.current_node().append_child(node)
     self.mark_entered_body_comment(node)
   }
-  if self.current() == Some('>') {
+  if self.current() is Some('>') {
     ignore(self.advance_char())
   }
 }

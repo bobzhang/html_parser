@@ -23,7 +23,7 @@ fn SourceTokenizer::parse_tag_tail(self : SourceTokenizer) -> TagTailScan {
       }
       '/' => {
         ignore(self.advance_char())
-        if self.current() == Some('>') {
+        if self.current() is Some('>') {
           ignore(self.advance_char())
           self_closing = true
           closed = true
