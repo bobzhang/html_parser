@@ -94,7 +94,7 @@ pub fn parse_lower_name_value_replacing_nulls(
       '\u{0000}' | 'A'..='Z' => break
       // Surrogate-range units take the slow path, which fails closed on
       // split pairs where slicing would abort.
-      unit if unit.to_int() >= 0xD800 => break
+      unit if unit >= 0xD800 => break
       _ => scan += 1
     }
   }
