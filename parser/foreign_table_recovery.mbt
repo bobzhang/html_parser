@@ -38,7 +38,7 @@ fn Parser::handle_select_reprocessed_foreign_cell_start_tag(
   if name != "td" && name != "th" {
     return false
   }
-  if self.has_open_element("table") || !self.has_foreign_table_cell_on_stack() {
+  if self.has_open_table() || !self.has_foreign_table_cell_on_stack() {
     return false
   }
   self.clear_open_elements_to_root()
@@ -61,7 +61,7 @@ fn Parser::handle_recovered_post_body_cell_start_tag(
   if name != "td" && name != "th" {
     return false
   }
-  if self.has_open_element("table") ||
+  if self.has_open_table() ||
     (!self.has_open_element("td") && !self.has_open_element("th")) {
     return false
   }
@@ -85,7 +85,7 @@ fn Parser::handle_foreign_table_row_recovery_start_tag(
   if name != "tr" {
     return false
   }
-  if self.has_open_element("table") || !self.has_foreign_table_row_on_stack() {
+  if self.has_open_table() || !self.has_foreign_table_row_on_stack() {
     return false
   }
   self.clear_open_elements_to_root()

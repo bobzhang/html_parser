@@ -174,13 +174,11 @@ fn Parser::handle_parsed_start_tag(
   if self.handle_fragment_context_caption_start_tag(name, start) {
     return
   }
-  if !self.has_open_element("table") &&
-    !in_template_table_context &&
-    name == "caption" {
+  if !self.has_open_table() && !in_template_table_context && name == "caption" {
     self.error_at("unexpected-start-tag", start)
     return
   }
-  if !self.has_open_element("table") &&
+  if !self.has_open_table() &&
     !in_template_table_context &&
     table_start_tag_is_ignored_outside_table(name) {
     self.error_at("unexpected-start-tag-ignored", start)
