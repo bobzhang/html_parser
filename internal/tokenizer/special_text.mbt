@@ -60,11 +60,13 @@ pub fn find_matching_end_tag(
   start : Int,
   name : StringView,
 ) -> Int? {
-  // Fail closed on a surrogate-split start offset, matching get_char.
-  if start < input.length() && input.get_char(start) is None {
+  // Fail closed on a surrogate-split start offset: a trailing surrogate
+  // at `start` means the offset lands inside a pair, which the
+  // scanner-helper contract treats as no match.
+  if start < input.length() && input[start].is_trailing_surrogate() {
     return None
   }
-  let needle = "</" + name.to_owned()
+  let needle = "</\{name}"
   let mut pos = start
   while pos < input.length() {
     // Peeking for '<' first skips the view allocation and
