@@ -60,13 +60,20 @@ pub fn find_matching_end_tag(
   start : Int,
   name : StringView,
 ) -> Int? {
-  let needle = "</" + name.to_owned()
+  // Fail closed on a surrogate-split start offset: a trailing surrogate
+  // at `start` means the offset lands inside a pair, which the
+  // scanner-helper contract treats as no match.
+  if start < input.length() && input[start].is_trailing_surrogate() {
+    return None
+  }
+  let needle = "</\{name}"
   let mut pos = start
   while pos < input.length() {
     // Peeking for '<' first skips the view allocation and
     // case-insensitive compare on the vast majority of positions; the
     // loop condition already bounds pos, so direct indexing avoids the
-    // Char? boxing of get_char.
+    // Char? boxing of get_char. Advancing one code unit at a time is
+    // safe for the same reason: '<' never matches a surrogate half.
     if input[pos] is '<' &&
       @syn.starts_with_case_insensitive(input, pos, needle) {
       let after_name = pos + needle.length()
@@ -77,10 +84,7 @@ pub fn find_matching_end_tag(
         _ => ()
       }
     }
-    match input.get_char(pos) {
-      Some(ch) => pos += ch.utf16_len()
-      None => break
-    }
+    pos += 1
   }
   None
 }
