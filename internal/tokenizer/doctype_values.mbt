@@ -84,6 +84,23 @@ pub fn parse_lower_name_value_replacing_nulls(
   if start >= end {
     return ("", errors)
   }
+  // Names are usually already lowercase with no nulls. Scanning code
+  // units directly is safe (uppercase ASCII and NUL never appear inside
+  // a surrogate pair) and lets the common case return one plain copy
+  // instead of building character by character.
+  let mut scan = start
+  while scan < end {
+    match input[scan] {
+      '\u{0000}' | 'A'..='Z' => break
+      // Surrogate-range units take the slow path, which fails closed on
+      // split pairs where slicing would abort.
+      unit if unit.to_int() >= 0xD800 => break
+      _ => scan += 1
+    }
+  }
+  if scan == end {
+    return (input[start:end].to_owned(), errors)
+  }
   let out = StringBuilder(size_hint=end - start)
   let mut pos = start
   while pos < end {
