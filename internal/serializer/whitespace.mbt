@@ -68,7 +68,7 @@ fn normalize_formatting_whitespace(value : StringView) -> String {
   while pos < value.length() {
     guard value.get_char(pos) is Some(ch) else { break }
     if formatting_whitespace_char(ch) {
-      while !out.is_empty() && out.last() == Some(" ") {
+      while out.last() is Some(" ") {
         ignore(out.pop())
       }
       let mut run_has_space = false

@@ -15,13 +15,12 @@ pub fn parse_quoted_doctype_value_at(
       guard quote_opt is Some(quote)
       let mut pos = start + quote.utf16_len()
       let value_start = pos
-      while pos < input.length() && input.get_char(pos) != Some(quote) {
-        let ch = input.get_char(pos).unwrap()
+      while input.get_char(pos) is Some(ch) && ch != quote {
         pos += ch.utf16_len()
       }
       let mut closed = false
       let value = Some(normalize_doctype_value(input, value_start, pos, errors))
-      if input.get_char(pos) == Some(quote) {
+      if input.get_char(pos) is Some(ch) && ch == quote {
         pos += quote.utf16_len()
         closed = true
       }

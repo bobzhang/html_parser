@@ -88,7 +88,7 @@ fn Parser::skip_one_initial_lf(self : Parser) -> Unit {
   match self.current() {
     Some('\r') => {
       self.pos += 1
-      if self.current() == Some('\n') {
+      if self.current() is Some('\n') {
         self.pos += 1
       }
     }
@@ -115,7 +115,7 @@ fn Parser::skip_matching_end_tag(self : Parser) -> Unit {
       ignore(self.advance_char())
     }
   }
-  if self.current() == Some('>') {
+  if self.current() is Some('>') {
     ignore(self.advance_char())
   }
 }
@@ -144,7 +144,7 @@ fn Parser::consume_matching_special_end_tag(self : Parser) -> Bool {
       }
       '/' => {
         ignore(self.advance_char())
-        if self.current() == Some('>') {
+        if self.current() is Some('>') {
           ignore(self.advance_char())
           closed = true
           break

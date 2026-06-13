@@ -4,7 +4,7 @@ fn SourceTokenizer::parse_attribute(
   attrs : Map[String, String?],
 ) -> Unit {
   let name_start = self.pos
-  if self.current() == Some('=') {
+  if self.current() is Some('=') {
     self.error_at("unexpected-equals-sign-before-attribute-name", self.pos)
     ignore(self.advance_char())
   }
@@ -36,7 +36,7 @@ fn SourceTokenizer::parse_attribute(
     self.error_at("duplicate-attribute", name_start)
   }
   self.skip_ascii_whitespace()
-  if self.current() != Some('=') {
+  if !(self.current() is Some('=')) {
     if !duplicate {
       attrs[name] = Some("")
     }
@@ -44,7 +44,7 @@ fn SourceTokenizer::parse_attribute(
   }
   ignore(self.advance_char())
   self.skip_ascii_whitespace()
-  if self.current() == Some('>') {
+  if self.current() is Some('>') {
     self.error_at("missing-attribute-value", self.pos)
   }
   let value = self.parse_attribute_value()
@@ -94,14 +94,14 @@ fn SourceTokenizer::parse_quoted_attribute_value(
 ) -> String {
   ignore(self.advance_char())
   let start = self.pos
-  while !self.is_eof() && self.current() != Some(quote) {
-    if self.current() == Some('\u{0000}') {
+  while self.current() is Some(ch) && ch != quote {
+    if ch is '\u{0000}' {
       self.error_at("unexpected-null-character", self.pos)
     }
-    ignore(self.advance_char())
+    self.pos += ch.utf16_len()
   }
   let raw = self.input[start:self.pos]
-  if self.current() == Some(quote) {
+  if self.current() is Some(ch) && ch == quote {
     ignore(self.advance_char())
     match self.current() {
       Some(ch) if !ch.is_ascii_whitespace() && ch != '>' && ch != '/' =>

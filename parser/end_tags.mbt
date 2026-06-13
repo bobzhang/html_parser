@@ -54,7 +54,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
       '/' => {
         ignore(self.advance_char())
         noncanonical_end_tag = true
-        if self.current() == Some('>') {
+        if self.current() is Some('>') {
           ignore(self.advance_char())
           closed = true
           break

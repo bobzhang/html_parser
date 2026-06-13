@@ -28,8 +28,8 @@ fn SourceTokenizer::parse_markup_declaration(self : SourceTokenizer) -> Unit {
 ///|
 fn SourceTokenizer::parse_bogus_comment(self : SourceTokenizer) -> Unit {
   let data_start = self.pos
-  while !self.is_eof() && self.current() != Some('>') {
-    ignore(self.advance_char())
+  while self.current() is Some(ch) && ch != '>' {
+    self.pos += ch.utf16_len()
   }
   let data = @syn.normalize_bogus_comment_data(self.input[data_start:self.pos])
   let data = if self.xml_coercion {
@@ -37,7 +37,7 @@ fn SourceTokenizer::parse_bogus_comment(self : SourceTokenizer) -> Unit {
   } else {
     data
   }
-  if self.current() == Some('>') {
+  if self.current() is Some('>') {
     ignore(self.advance_char())
   }
   self.tokens.push(CommentToken(data))

@@ -93,7 +93,7 @@ fn SourceTokenizer::parse_start_tag_or_text(self : SourceTokenizer) -> Unit {
       if self.current() is None {
         self.error_at_eof("eof-before-tag-name")
         self.tokens.push(Characters("<"))
-      } else if self.current() == Some('?') {
+      } else if self.current() is Some('?') {
         self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)
         self.parse_bogus_comment()
       } else {

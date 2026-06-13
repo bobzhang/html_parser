@@ -39,7 +39,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
           }
           '/' => {
             ignore(self.advance_char())
-            if self.current() == Some('>') {
+            if self.current() is Some('>') {
               ignore(self.advance_char())
               self_closing = true
               closed = true
@@ -77,7 +77,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
         self.error_at_eof("eof-before-tag-name")
         self.flush_deferred_initial_doctype_error()
         self.current_node().append_child(self.text_at("<", start))
-      } else if self.current() == Some('?') {
+      } else if self.current() is Some('?') {
         self.error_at("unexpected-question-mark-instead-of-tag-name", self.pos)
         self.parse_bogus_comment(start)
         self.append_sanitize_escape_source_text(start, self.pos)
