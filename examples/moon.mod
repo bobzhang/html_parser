@@ -16,4 +16,4 @@ import {
   "bobzhang/html_parser@0.1.7",
 }
 
-warnings = "+test_unqualified_package+unnecessary_annotation+missing_doc"
+warnings = "+test_unqualified_package+unnecessary_annotation+missing_doc+unused_optional_argument"
