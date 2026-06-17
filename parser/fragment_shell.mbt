@@ -11,7 +11,7 @@ fn Parser::fragment_end_tag_is_ignored(
       if self.fragment_context_html &&
         !self.in_select_insertion_mode() &&
         !self.current_node_is_foreign_namespace() &&
-        !self.has_open_element("template") {
+        !self.has_open_template() {
         // In select mode or foreign content the </html> end tag is
         // simply ignored; it does not move the fragment to the
         // after-body state.
