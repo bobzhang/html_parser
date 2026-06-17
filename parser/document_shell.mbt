@@ -93,7 +93,7 @@ fn Parser::handle_document_body_or_html_end_tag(
       self.document_after_body = true
       return true
     }
-    if self.has_open_element("template") {
+    if self.has_open_template() {
       // In-template end tags other than </template> are ignored and must
       // not advance the outer document's insertion mode.
       return false
@@ -301,7 +301,7 @@ fn Parser::append_after_body_comment(self : Parser, node : @dom.Node) -> Bool {
     // after the body, mirroring the after-body rules.
     if self.fragment_context_html &&
       self.fragment_context_html_after_body &&
-      !self.has_open_element("template") {
+      !self.has_open_template() {
       match self.fragment_context_html_root {
         Some(html) => {
           html.append_child(node)
@@ -313,7 +313,7 @@ fn Parser::append_after_body_comment(self : Parser, node : @dom.Node) -> Bool {
     }
     return false
   }
-  if !self.document_after_body || self.has_open_element("template") {
+  if !self.document_after_body || self.has_open_template() {
     return false
   }
   if self.document_after_html {
