@@ -29,14 +29,10 @@ fn cli_read_failure(message : String) -> @html_parser.CliResult {
 
 ///|
 #coverage.skip
-fn cli_immediate(
-  code : Int,
-  stdout? : String = "",
-  stderr? : String = "",
-) -> @html_parser.CliResult {
+fn cli_immediate(code : Int, stderr? : String = "") -> @html_parser.CliResult {
   {
     exit_code: code,
-    stdout,
+    stdout: "",
     stderr,
     file_output_path: None,
     file_output_content: None,

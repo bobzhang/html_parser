@@ -166,7 +166,7 @@ fn non_element_simple_selector_matches_with_context(
 ) -> Bool raise @core.HtmlError {
   let mut pos = 0
   while pos < selector.length() {
-    context.tick()
+    context.tick(1)
     guard selector.get_char(pos) is Some(':') else { return false }
     let start = pos + ':'.utf16_len()
     let end = next_simple_selector_marker(selector, start)
@@ -187,7 +187,7 @@ fn matches_simple_selector_with_context(
   context : SelectorMatchContext,
   depth : Int,
 ) -> Bool raise @core.HtmlError {
-  context.tick()
+  context.tick(1)
   let selector = selector.trim()
   if selector.is_empty() {
     return false
@@ -221,7 +221,7 @@ fn matches_simple_selector_with_context(
     }
   }
   while pos < selector.length() {
-    context.tick()
+    context.tick(1)
     let marker = selector.get_char(pos).unwrap()
     if marker == '[' {
       guard find_attribute_selector_end(selector, pos) is Some(end) else {
