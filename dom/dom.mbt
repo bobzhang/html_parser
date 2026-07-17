@@ -227,10 +227,7 @@ pub fn Node::insert_before(self : Node, child : Node, before : Node?) -> Unit {
 
 ///|
 fn node_accepts_children(node : Node) -> Bool {
-  match node.kind {
-    Document | Fragment | Element => true
-    _ => false
-  }
+  node.kind is (Document | Fragment | Element)
 }
 
 ///|

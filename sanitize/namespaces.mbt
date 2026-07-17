@@ -38,10 +38,7 @@ pub fn node_is_effectively_foreign(node : @dom.Node) -> Bool {
 
 ///|
 fn is_active_foreign_mutation_tag(name : String) -> Bool {
-  match name {
-    "animate" | "annotation-xml" | "foreignobject" | "set" => true
-    _ => false
-  }
+  name is ("animate" | "annotation-xml" | "foreignobject" | "set")
 }
 
 ///|

@@ -139,10 +139,7 @@ fn apply_stage_items(
 
 ///|
 fn transform_kind_is_prune_empty(transform : TransformSpec) -> Bool {
-  match transform.kind {
-    PruneEmptyElements => true
-    _ => false
-  }
+  transform.kind is PruneEmptyElements
 }
 
 ///|

@@ -94,10 +94,7 @@ fn attribute_hyphen_matches(actual : StringView, expected : StringView) -> Bool 
   if actual.length() <= expected.length() || !actual.has_prefix(expected) {
     return false
   }
-  match actual.get_char(expected.length()) {
-    Some('-') => true
-    _ => false
-  }
+  actual.get_char(expected.length()) is Some('-')
 }
 
 ///|

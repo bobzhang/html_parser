@@ -99,10 +99,7 @@ fn Parser::skip_one_initial_lf(self : Parser) -> Unit {
 
 ///|
 fn start_tag_ignores_initial_lf(name : StringView) -> Bool {
-  match name {
-    "pre" | "listing" => true
-    _ => false
-  }
+  name is ("pre" | "listing")
 }
 
 ///|

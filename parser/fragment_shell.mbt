@@ -26,10 +26,7 @@ fn Parser::fragment_end_tag_is_ignored(
 
 ///|
 fn fragment_shell_start_is_ignored(name : StringView) -> Bool {
-  match name {
-    "body" | "head" | "html" => true
-    _ => false
-  }
+  name is ("body" | "head" | "html")
 }
 
 ///|

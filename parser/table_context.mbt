@@ -1,9 +1,6 @@
 ///|
 fn is_table_or_section_context(name : StringView) -> Bool {
-  match name {
-    "table" | "tbody" | "tfoot" | "thead" => true
-    _ => false
-  }
+  name is ("table" | "tbody" | "tfoot" | "thead")
 }
 
 ///|
