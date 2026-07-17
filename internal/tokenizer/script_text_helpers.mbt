@@ -51,11 +51,7 @@ fn script_end_tag_at(input : StringView, pos : Int) -> Bool {
 
 ///|
 fn script_end_tag_boundary(ch : Char?) -> Bool {
-  match ch {
-    Some('>') | Some('/') => true
-    Some(ch) if ch.is_ascii_whitespace() => true
-    _ => false
-  }
+  ch is Some(ch) && is_tag_name_end(ch)
 }
 
 ///|

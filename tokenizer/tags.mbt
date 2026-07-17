@@ -20,13 +20,8 @@ fn SourceTokenizer::parse_end_tag(self : SourceTokenizer) -> Unit {
     _ => ()
   }
   let name_start = self.pos
-  while !self.is_eof() {
-    match self.current().unwrap() {
-      '>' => break
-      '/' => break
-      ch if ch.is_ascii_whitespace() => break
-      _ => ignore(self.advance_char())
-    }
+  while self.current() is Some(ch) && !@impl.is_tag_name_end(ch) {
+    ignore(self.advance_char())
   }
   let (name, name_errors) = @impl.parse_lower_name_value_replacing_nulls(
     self.input,
