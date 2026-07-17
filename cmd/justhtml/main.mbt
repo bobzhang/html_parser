@@ -56,10 +56,9 @@ async fn read_cli_input(path : String) -> Bytes {
 ///|
 #coverage.skip
 async fn emit_cli_result(result : @html_parser.CliResult) -> Unit {
-  match (result.file_output_path, result.file_output_content) {
-    (Some(path), Some(content)) =>
-      @fs.write_file(path, content, create_mode=CreateOrTruncate)
-    _ => ()
+  if result.file_output_path is Some(path) &&
+    result.file_output_content is Some(content) {
+    @fs.write_file(path, content, create_mode=CreateOrTruncate)
   }
   if !result.stdout.is_empty() {
     @stdio.stdout.write(result.stdout)

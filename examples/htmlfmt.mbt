@@ -24,7 +24,7 @@ pub fn run_htmlfmt(args : ArrayView[String]) -> HtmlFmtResult raise {
       return {
         exit_code: 2,
         stdout: "",
-        stderr: error.to_string() + "\n\n" + command.render_help(),
+        stderr: "\{error}\n\n\{command.render_help()}",
       }
   }
   let input = matches.values["html"][0]
