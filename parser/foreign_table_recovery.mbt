@@ -1,23 +1,17 @@
 ///|
 fn Parser::has_foreign_table_cell_on_stack(self : Parser) -> Bool {
-  for node in self.stack {
-    if node.kind == Element &&
-      (node.name == "td" || node.name == "th") &&
-      !(node.ns is Some("html")) {
-      return true
-    }
-  }
-  false
+  self.stack.any(node => {
+    node.kind == Element &&
+    (node.name == "td" || node.name == "th") &&
+    !(node.ns is Some("html"))
+  })
 }
 
 ///|
 fn Parser::has_foreign_table_row_on_stack(self : Parser) -> Bool {
-  for node in self.stack {
-    if node.kind == Element && node.name == "tr" && !(node.ns is Some("html")) {
-      return true
-    }
-  }
-  false
+  self.stack.any(node => {
+    node.kind == Element && node.name == "tr" && !(node.ns is Some("html"))
+  })
 }
 
 ///|

@@ -52,22 +52,12 @@ fn html_fragment_child_is_before_body(child : @dom.Node) -> Bool {
 
 ///|
 fn html_fragment_children_are_before_head(html : @dom.Node) -> Bool {
-  for child in html.children {
-    if !html_fragment_child_is_before_head(child) {
-      return false
-    }
-  }
-  true
+  html.children.all(child => html_fragment_child_is_before_head(child))
 }
 
 ///|
 fn html_fragment_children_are_before_body(html : @dom.Node) -> Bool {
-  for child in html.children {
-    if !html_fragment_child_is_before_body(child) {
-      return false
-    }
-  }
-  true
+  html.children.all(child => html_fragment_child_is_before_body(child))
 }
 
 ///|

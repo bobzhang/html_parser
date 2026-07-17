@@ -3,12 +3,7 @@ fn is_whitespace_text_node(node : @dom.Node) -> Bool {
   if node.kind != Text {
     return false
   }
-  for ch in node.data {
-    if !ch.is_ascii_whitespace() {
-      return false
-    }
-  }
-  true
+  node.data.all(ch => ch.is_ascii_whitespace())
 }
 
 ///|

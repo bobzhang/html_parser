@@ -37,12 +37,7 @@ fn node_array_contains_identity(
   nodes : Array[@dom.Node],
   target : @dom.Node,
 ) -> Bool {
-  for node in nodes {
-    if physical_equal(node, target) {
-      return true
-    }
-  }
-  false
+  nodes[:].any(node => physical_equal(node, target))
 }
 
 ///|
@@ -184,9 +179,8 @@ fn Parser::handle_template_end_tag(
     return true
   }
   let template = self.stack[template_index]
-  match source_end_tag {
-    Some(raw) => set_node_source_end_tag(template, raw)
-    None => ()
+  if source_end_tag is Some(raw) {
+    set_node_source_end_tag(template, raw)
   }
   self.disable_template_column_group_mode_for_node(template)
   self.disable_template_table_context_mode_for_node(template)

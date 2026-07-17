@@ -317,12 +317,7 @@ fn Parser::trailing_text_is_whitespace(self : Parser, node : @dom.Node) -> Bool 
 
 ///|
 fn Parser::node_is_forced_body(self : Parser, node : @dom.Node) -> Bool {
-  for candidate in self.forced_body_nodes {
-    if physical_equal(candidate, node) {
-      return true
-    }
-  }
-  false
+  self.forced_body_nodes[:].any(candidate => physical_equal(candidate, node))
 }
 
 ///|
@@ -371,12 +366,7 @@ fn Parser::insert_body_mode_node(self : Parser, node : @dom.Node) -> Unit {
 
 ///|
 fn text_has_non_ascii_whitespace(value : StringView) -> Bool {
-  for ch in value {
-    if !ch.is_ascii_whitespace() {
-      return true
-    }
-  }
-  false
+  value.any(ch => !ch.is_ascii_whitespace())
 }
 
 ///|
@@ -547,10 +537,5 @@ fn initial_newline_reference_length(text : StringView) -> Int {
 /// (replaced by U+FFFD in foreign content) takes the dedicated parse
 /// error path that leaves the flag alone.
 fn text_clears_frameset_ok(raw : StringView) -> Bool {
-  for ch in raw {
-    if !ch.is_ascii_whitespace() && ch != '\u{0}' {
-      return true
-    }
-  }
-  false
+  raw.any(ch => !ch.is_ascii_whitespace() && ch != '\u{0}')
 }

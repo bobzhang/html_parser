@@ -55,15 +55,12 @@ fn append_cloned_children(source : @dom.Node, target : @dom.Node) -> Unit {
 fn populate_selectedcontent(root : @dom.Node) -> Unit {
   let selects = find_elements_by_name(root, "select")
   for select in selects {
-    match find_first_element_by_name(select, "selectedcontent") {
-      Some(selectedcontent) => {
-        let options = find_elements_by_name(select, "option")
-        match selected_option_in(options) {
-          Some(option) => append_cloned_children(option, selectedcontent)
-          None => ()
-        }
+    if find_first_element_by_name(select, "selectedcontent")
+      is Some(selectedcontent) {
+      let options = find_elements_by_name(select, "option")
+      if selected_option_in(options) is Some(option) {
+        append_cloned_children(option, selectedcontent)
       }
-      None => ()
     }
   }
 }

@@ -41,12 +41,10 @@ fn Parser::merge_document_html_attrs(
 
 ///|
 fn Parser::apply_pending_document_html_attrs(self : Parser) -> Unit {
-  if self.pending_document_html_attrs.length() == 0 {
+  if self.pending_document_html_attrs.is_empty() {
     return
   }
-  match document_html_element(self.root) {
-    Some(html) =>
-      merge_missing_attrs_from_map(html, self.pending_document_html_attrs)
-    None => ()
+  if document_html_element(self.root) is Some(html) {
+    merge_missing_attrs_from_map(html, self.pending_document_html_attrs)
   }
 }

@@ -142,9 +142,8 @@ fn scaffold_document(
         body_children.push(child)
       } else if head is None && !head_children.is_empty() {
         let (leading, rest) = split_text_node_leading_ascii_whitespace(child)
-        match leading {
-          Some(node) => head_children.push(node)
-          None => ()
+        if leading is Some(node) {
+          head_children.push(node)
         }
         body_started = true
         body_children.push(rest.unwrap())
@@ -199,12 +198,7 @@ fn append_post_body_html_children(
 
 ///|
 fn nodes_contain(nodes : Array[@dom.Node], node : @dom.Node) -> Bool {
-  for candidate in nodes {
-    if physical_equal(candidate, node) {
-      return true
-    }
-  }
-  false
+  nodes[:].any(candidate => physical_equal(candidate, node))
 }
 
 ///|

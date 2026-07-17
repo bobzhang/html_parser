@@ -56,12 +56,9 @@ fn Parser::close_open_heading_element(
   name : String,
   pos : Int,
 ) -> Unit {
-  let mut found = false
-  for node in self.stack {
-    if node.kind == Element && is_heading_element_name(node.name) {
-      found = true
-    }
-  }
+  let found = self.stack.any(node => {
+    node.kind == Element && is_heading_element_name(node.name)
+  })
   if !found {
     self.error_at("unexpected-end-tag", pos)
     return

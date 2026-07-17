@@ -112,9 +112,8 @@ fn Parser::pop_until(
   while self.stack.length() > 1 {
     let node = self.pop_open_element().unwrap()
     if node.kind == Element && names_match_end_tag(node, name) {
-      match source_end_tag {
-        Some(raw) => set_node_source_end_tag(node, raw)
-        None => ()
+      if source_end_tag is Some(raw) {
+        set_node_source_end_tag(node, raw)
       }
       break
     }
@@ -336,12 +335,7 @@ fn Parser::open_html_element(self : Parser) -> @dom.Node? {
 
 ///|
 fn Parser::stack_contains_node(self : Parser, target : @dom.Node) -> Bool {
-  for node in self.stack {
-    if physical_equal(node, target) {
-      return true
-    }
-  }
-  false
+  self.stack[:].any(node => physical_equal(node, target))
 }
 
 ///|

@@ -211,10 +211,7 @@ fn Parser::foster_merge_crosses_body_boundary(
   if self.node_is_forced_body(previous) {
     return false
   }
-  for candidate in self.foster_parented_texts {
-    if physical_equal(candidate, previous) {
-      return false
-    }
-  }
-  true
+  !self.foster_parented_texts[:].any(candidate => {
+    physical_equal(candidate, previous)
+  })
 }
