@@ -33,7 +33,7 @@ fn transform_escaped_end_tag_for(node : @dom.Node) -> String? {
   if @ser.is_void_element(node.name) {
     None
   } else {
-    Some("</" + node.name + ">")
+    Some("</\{node.name}>")
   }
 }
 
