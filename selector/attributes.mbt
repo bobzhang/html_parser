@@ -25,37 +25,26 @@ priv enum AttributeSelectorOperator {
 }
 
 ///|
-fn attribute_name_with_operator(
-  name : StringView,
-  operator : AttributeSelectorOperator,
-) -> (StringView, AttributeSelectorOperator)? {
-  let end = name.length() - 1
-  guard name.get_view(start=0, end~) is Some(name) else { return None }
-  let name = name.trim()
-  if !selector_identifier_is_valid(name) {
-    None
-  } else {
-    Some((name, operator))
-  }
-}
-
-///|
 fn attribute_name_and_operator(
   name : StringView,
 ) -> (StringView, AttributeSelectorOperator)? {
   let name = name.trim()
-  if name.has_suffix("~") {
-    attribute_name_with_operator(name, AttrWord)
-  } else if name.has_suffix("|") {
-    attribute_name_with_operator(name, AttrHyphen)
-  } else if name.has_suffix("^") {
-    attribute_name_with_operator(name, AttrPrefix)
-  } else if name.has_suffix("$") {
-    attribute_name_with_operator(name, AttrSuffix)
-  } else if name.has_suffix("*") {
-    attribute_name_with_operator(name, AttrContains)
-  } else if selector_identifier_is_valid(name) {
-    Some((name, AttrExact))
+  let (base, operator) = match name {
+    [.. base, '~'] => (base, AttrWord)
+    [.. base, '|'] => (base, AttrHyphen)
+    [.. base, '^'] => (base, AttrPrefix)
+    [.. base, '$'] => (base, AttrSuffix)
+    [.. base, '*'] => (base, AttrContains)
+    _ =>
+      return if selector_identifier_is_valid(name) {
+        Some((name, AttrExact))
+      } else {
+        None
+      }
+  }
+  let base = base.trim()
+  if selector_identifier_is_valid(base) {
+    Some((base, operator))
   } else {
     None
   }

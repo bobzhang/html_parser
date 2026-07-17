@@ -57,7 +57,7 @@ fn sanitize_container_children(
           sanitize_report_unsafe(
             policy,
             observer,
-            "Unsafe tag '" + tag_name + "' (foreign namespace)",
+            "Unsafe tag '\{tag_name}' (foreign namespace)",
             Some(child),
           )
           remove_child_at(parent, index)
@@ -66,7 +66,7 @@ fn sanitize_container_children(
           sanitize_report_unsafe(
             policy,
             observer,
-            "Unsafe tag '" + tag_name + "' (active foreign content)",
+            "Unsafe tag '\{tag_name}' (active foreign content)",
             Some(child),
           )
           remove_child_at(parent, index)
@@ -74,7 +74,7 @@ fn sanitize_container_children(
           sanitize_report_unsafe(
             policy,
             observer,
-            "Unsafe tag '" + tag_name + "' (dropped content)",
+            "Unsafe tag '\{tag_name}' (dropped content)",
             Some(child),
           )
           remove_child_at(parent, index)
@@ -82,7 +82,7 @@ fn sanitize_container_children(
           sanitize_report_unsafe(
             policy,
             observer,
-            "Unsafe tag '" + tag_name + "' (not allowed)",
+            "Unsafe tag '\{tag_name}' (not allowed)",
             Some(child),
           )
           match policy.disallowed_tag_handling {
