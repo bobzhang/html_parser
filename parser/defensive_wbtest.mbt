@@ -20,7 +20,7 @@ test "parser private defensive branches keep no-op behavior" {
     scripting_enabled=true,
     xml_coercion=false,
   )
-  let attrs : Map[String, String?] = {}
+  let attrs : Map[String, String?] = Map([])
   attr_parser.parse_attribute(attrs)
   assert_eq(attr_parser.pos, 1)
   assert_eq(attrs.length(), 0)

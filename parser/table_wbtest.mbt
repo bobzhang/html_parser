@@ -84,7 +84,7 @@ test "template column group mode drops stale inner table state" {
 
   let (start_parser, start_table) = stale_template_column_group_parser()
   assert_eq(
-    start_parser.handle_template_column_group_start_tag("col", {}, 0),
+    start_parser.handle_template_column_group_start_tag("col", Map([]), 0),
     false,
   )
   assert_eq(start_parser.template_column_group_mode_active(), false)

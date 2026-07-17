@@ -2,7 +2,7 @@
 test "sanitize_dom drop mode returns empty fragment for disallowed standalone root" {
   let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     [],
-    allowed_attributes={},
+    allowed_attributes=Map([]),
     disallowed_tag_handling=Drop,
   )
   let root = @html_parser.element("x-foo", children=[@html_parser.text("bad")])
@@ -91,7 +91,7 @@ test "sanitize_dom handles standalone text comment and doctype roots" {
   assert_eq(@html_parser.sanitize_dom(@html_parser.text("x")).to_html(), "x")
   let keep_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     [],
-    allowed_attributes={},
+    allowed_attributes=Map([]),
     drop_comments=false,
     drop_doctype=false,
   )
@@ -117,7 +117,7 @@ test "sanitize_dom handles standalone text comment and doctype roots" {
   )
   let raise_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     [],
-    allowed_attributes={},
+    allowed_attributes=Map([]),
     unsafe_handling=Raise,
   )
   try

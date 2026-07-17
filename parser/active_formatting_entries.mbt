@@ -167,7 +167,7 @@ fn Parser::push_active_formatting_marker(self : Parser) -> Unit {
     marker: true,
     name: "",
     ns: "",
-    attrs: {},
+    attrs: Map([]),
     node: self.root,
   })
 }

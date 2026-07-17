@@ -131,7 +131,7 @@ fn Parser::consume_matching_special_end_tag(self : Parser) -> Bool {
       _ => ignore(self.advance_char())
     }
   }
-  let attrs : Map[String, String?] = {}
+  let attrs : Map[String, String?] = Map([])
   let mut closed = false
   while !self.is_eof() {
     self.skip_ascii_whitespace()

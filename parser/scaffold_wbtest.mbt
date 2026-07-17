@@ -140,10 +140,10 @@ test "document and fragment helpers tolerate missing shells" {
     scripting_enabled=true,
     xml_coercion=false,
   )
-  fragment_parser.insert_html_fragment_body_marker({}, None)
+  fragment_parser.insert_html_fragment_body_marker(Map([]), None)
   assert_eq(fragment_parser.root.children.length(), 0)
   assert_eq(
-    fragment_parser.handle_html_fragment_shell_start_tag("p", {}, 0),
+    fragment_parser.handle_html_fragment_shell_start_tag("p", Map([]), 0),
     false,
   )
 }

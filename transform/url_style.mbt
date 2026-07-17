@@ -64,7 +64,7 @@ fn apply_drop_url_attrs_transform(
     return false
   }
   let to_drop : Array[String] = []
-  let to_set : Map[String, String?] = {}
+  let to_set : Map[String, String?] = Map([])
   let tag_name = @syn.lower_ascii(node.name)
   match
     (

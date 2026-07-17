@@ -23,7 +23,7 @@ fn normalize_transform_strings(values : Array[String]) -> Array[String] {
 fn copy_allowed_attrs_map(
   allowed : Map[String, Array[String]],
 ) -> Map[String, Array[String]] {
-  let out : Map[String, Array[String]] = {}
+  let out : Map[String, Array[String]] = Map([])
   for tag, attrs in allowed {
     out[tag] = attrs.copy()
   }
@@ -34,7 +34,7 @@ fn copy_allowed_attrs_map(
 fn normalize_allowed_attrs_map(
   allowed : Map[String, Array[String]],
 ) -> Map[String, Array[String]] {
-  let out : Map[String, Array[String]] = {}
+  let out : Map[String, Array[String]] = Map([])
   for tag, attrs in allowed {
     let normalized_tag = @syn.lower_ascii(tag[:].trim())
     if normalized_tag != "" {

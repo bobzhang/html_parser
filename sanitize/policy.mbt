@@ -44,7 +44,7 @@ fn sanitized_string_list(values : Array[String]) -> Array[String] {
 fn sanitize_allowed_attributes(
   attrs : Map[String, Array[String]],
 ) -> Map[String, Set[String]] {
-  let normalized : Map[String, Set[String]] = {}
+  let normalized : Map[String, Set[String]] = Map([])
   for tag, values in attrs {
     let tag_name = @syn.lower_ascii(tag[:].trim())
     if tag_name != "" {
@@ -121,7 +121,7 @@ fn url_policy_rule_key(tag : String, attr : String) -> String {
 fn sanitize_url_policy_rules(
   rules : Array[UrlPolicyRule],
 ) -> Map[String, UrlRule] {
-  let out : Map[String, UrlRule] = {}
+  let out : Map[String, UrlRule] = Map([])
   for rule in rules {
     if rule.tag != "" && rule.attr != "" {
       out[url_policy_rule_key(rule.tag, rule.attr)] = rule.rule
@@ -183,7 +183,7 @@ fn default_url_policy() -> UrlPolicy {
 /// is set to `Raise` or `Collect`.
 pub fn SanitizationPolicy::SanitizationPolicy(
   allowed_tags : Array[String],
-  allowed_attributes? : Map[String, Array[String]] = {},
+  allowed_attributes? : Map[String, Array[String]] = Map([]),
   url_policy? : UrlPolicy,
   drop_comments? : Bool = true,
   drop_doctype? : Bool = true,
@@ -245,7 +245,7 @@ pub fn SanitizationPolicy::selector_limits(
 fn sanitize_allowed_attributes_to_arrays(
   attrs : Map[String, Set[String]],
 ) -> Map[String, Array[String]] {
-  let out : Map[String, Array[String]] = {}
+  let out : Map[String, Array[String]] = Map([])
   for tag, values in attrs {
     out[tag] = values.to_array()
   }

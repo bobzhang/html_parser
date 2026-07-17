@@ -201,7 +201,7 @@ test "sanitize_dom raise mode reports URL list and base drops" {
 test "sanitize_dom raises for disallowed standalone root" {
   let policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
-    allowed_attributes={},
+    allowed_attributes=Map([]),
     unsafe_handling=Raise,
   )
   let fragment = @html_parser.parse_fragment("<x-foo></x-foo>", sanitize=false)
@@ -221,7 +221,7 @@ test "sanitize_dom raises for disallowed standalone root" {
 test "sanitize_dom raise mode reports dropped content and child tags" {
   let root_script_policy : @html_parser.SanitizationPolicy = SanitizationPolicy(
     ["p"],
-    allowed_attributes={},
+    allowed_attributes=Map([]),
     unsafe_handling=Raise,
   )
   let root_script_fragment = @html_parser.parse_fragment(

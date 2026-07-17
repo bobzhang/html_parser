@@ -48,7 +48,7 @@ test "active formatting helpers respect marker boundaries" {
     marker: false,
     name: "em",
     ns: "html",
-    attrs: {},
+    attrs: Map([]),
     node: parent,
   })
   parser.active_formatting.push({
@@ -94,7 +94,7 @@ test "active formatting helpers respect marker boundaries" {
     marker: false,
     name: "b",
     ns: "html",
-    attrs: {},
+    attrs: Map([]),
     node: scoped_b,
   })
   scoped.adoption_agency("b", 7)
