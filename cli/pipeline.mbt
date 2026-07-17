@@ -6,14 +6,12 @@ fn cli_run_parsed(
   policy : @san.SanitizationPolicy?,
 ) -> CliResult {
   if options.cleanup {
-    match cli_apply_cleanup_or_error(root, safe, policy) {
-      Some(result) => return result
-      None => ()
+    if cli_apply_cleanup_or_error(root, safe, policy) is Some(result) {
+      return result
     }
   } else if safe {
-    match cli_sanitize_or_error(root, policy) {
-      Some(result) => return result
-      None => ()
+    if cli_sanitize_or_error(root, policy) is Some(result) {
+      return result
     }
   }
   let nodes = match cli_selected_nodes(root, options) {

@@ -163,8 +163,8 @@ fn decode_iso88592_lossy(input : BytesView) -> String {
 
 ///|
 fn is_ascii_whitespace_byte(byte : Byte) -> Bool {
-  match byte.to_int() {
-    0x09 | 0x0A | 0x0C | 0x0D | 0x20 => true
+  match byte {
+    b'\t' | b'\n' | b'\x0C' | b'\r' | b' ' => true
     _ => false
   }
 }
@@ -419,15 +419,11 @@ fn parse_meta_tag_declared_encoding(
   while pos < limit {
     let byte = input[pos]
     if byte == b'>' {
-      match charset {
-        Some((start, end)) => {
-          let label = ascii_lower_bytes(input, start, end)
-          match normalize_meta_html_encoding_label(label) {
-            Some(encoding) => return (Some(encoding), pos + 1)
-            None => ()
-          }
+      if charset is Some((start, end)) {
+        let label = ascii_lower_bytes(input, start, end)
+        if normalize_meta_html_encoding_label(label) is Some(encoding) {
+          return (Some(encoding), pos + 1)
         }
-        None => ()
       }
       match (http_equiv, content) {
         (Some((http_start, http_end)), Some((content_start, content_end))) => {
@@ -501,34 +497,25 @@ fn parse_meta_tag_declared_encoding(
       }
     }
     if attr_name == "charset" {
-      match value_range {
-        Some((start, end)) => {
-          let (start, end) = strip_ascii_whitespace_bytes(input, start, end)
-          if start < end {
-            charset = Some((start, end))
-          }
+      if value_range is Some((start, end)) {
+        let (start, end) = strip_ascii_whitespace_bytes(input, start, end)
+        if start < end {
+          charset = Some((start, end))
         }
-        None => ()
       }
     } else if attr_name == "http-equiv" {
-      match value_range {
-        Some((start, end)) => {
-          let (start, end) = strip_ascii_whitespace_bytes(input, start, end)
-          if start < end {
-            http_equiv = Some((start, end))
-          }
+      if value_range is Some((start, end)) {
+        let (start, end) = strip_ascii_whitespace_bytes(input, start, end)
+        if start < end {
+          http_equiv = Some((start, end))
         }
-        None => ()
       }
     } else if attr_name == "content" {
-      match value_range {
-        Some((start, end)) => {
-          let (start, end) = strip_ascii_whitespace_bytes(input, start, end)
-          if start < end {
-            content = Some((start, end))
-          }
+      if value_range is Some((start, end)) {
+        let (start, end) = strip_ascii_whitespace_bytes(input, start, end)
+        if start < end {
+          content = Some((start, end))
         }
-        None => ()
       }
     }
   }

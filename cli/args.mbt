@@ -44,7 +44,7 @@ fn cli_matches_flag(matches : @argparse.Matches, name : String) -> Bool {
 ///|
 fn cli_first_value(matches : @argparse.Matches, name : String) -> String? {
   match matches.values.get(name) {
-    Some(values) => if values.length() == 0 { None } else { Some(values[0]) }
+    Some(values) => values.get(0)
     None => None
   }
 }
@@ -107,23 +107,20 @@ fn cli_parse_args(args : ArrayView[String]) -> CliParseResult {
   }
 
   let options = cli_default_options()
-  match cli_last_value(matches, "format") {
-    Some(value) =>
-      match cli_parse_format(value) {
-        Some(format) => options.format = format
-        None =>
-          return CliParseExit(
-            cli_arg_error("--format must be one of: html, text, markdown"),
-          )
-      }
-    None => ()
+  if cli_last_value(matches, "format") is Some(value) {
+    match cli_parse_format(value) {
+      Some(format) => options.format = format
+      None =>
+        return CliParseExit(
+          cli_arg_error("--format must be one of: html, text, markdown"),
+        )
+    }
   }
   options.output_path = cli_last_value(matches, "output")
   options.selector = cli_last_value(matches, "selector")
   options.allow_tags = cli_last_value(matches, "allow-tags")
-  match cli_last_value(matches, "separator") {
-    Some(value) => options.separator = value
-    None => ()
+  if cli_last_value(matches, "separator") is Some(value) {
+    options.separator = value
   }
   options.unsafe_mode = cli_matches_flag(matches, "unsafe")
   options.cleanup = cli_matches_flag(matches, "cleanup")
