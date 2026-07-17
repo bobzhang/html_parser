@@ -71,9 +71,7 @@ pub fn find_matching_end_tag(
       @syn.starts_with_case_insensitive(input, pos, needle) {
       let after_name = pos + needle.length()
       match input.get_char(after_name) {
-        Some('>') => return Some(pos)
-        Some('/') => return Some(pos)
-        Some(ch) if ch.is_ascii_whitespace() => return Some(pos)
+        Some(ch) if is_tag_name_end(ch) => return Some(pos)
         _ => ()
       }
     }

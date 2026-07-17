@@ -18,7 +18,7 @@ fn named_entity_missing_semicolon_error_offset(
   let mut last = start
   while pos < input.length() {
     match input.get_char(pos) {
-      Some(ch) if ch.is_ascii_alphabetic() || (ch >= '0' && ch <= '9') => {
+      Some(ch) if ch.is_ascii_alphabetic() || ch.is_ascii_digit() => {
         last = pos
         pos += ch.utf16_len()
       }
@@ -34,7 +34,7 @@ fn named_entity_name_end(input : StringView, start : Int) -> Int {
   let mut pos = start + 1
   while pos < input.length() {
     match input.get_char(pos) {
-      Some(ch) if ch.is_ascii_alphabetic() || (ch >= '0' && ch <= '9') =>
+      Some(ch) if ch.is_ascii_alphabetic() || ch.is_ascii_digit() =>
         pos += ch.utf16_len()
       _ => break
     }
@@ -141,7 +141,7 @@ pub fn legacy_entity_blocked_in_attribute(
     return false
   }
   match input.get_char(next) {
-    Some(ch) if ch.is_ascii_alphabetic() || (ch >= '0' && ch <= '9') => true
+    Some(ch) if ch.is_ascii_alphabetic() || ch.is_ascii_digit() => true
     Some('=') => true
     _ => false
   }

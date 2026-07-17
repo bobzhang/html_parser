@@ -108,13 +108,10 @@ pub fn html_numeric_entity_replacement(value : Int) -> Int {
 
 ///|
 fn digit_value(ch : Char) -> Int {
-  if ch >= '0' && ch <= '9' {
-    ch.to_int() - ('0' : Int)
-  } else if ch >= 'a' && ch <= 'f' {
-    ch.to_int() - ('a' : Int) + 10
-  } else if ch >= 'A' && ch <= 'F' {
-    ch.to_int() - ('A' : Int) + 10
-  } else {
-    -1
+  match ch {
+    '0'..='9' => ch.to_int() - ('0' : Int)
+    'a'..='f' => ch.to_int() - ('a' : Int) + 10
+    'A'..='F' => ch.to_int() - ('A' : Int) + 10
+    _ => -1
   }
 }
