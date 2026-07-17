@@ -81,10 +81,8 @@ fn Parser::report_initial_doctype_error(self : Parser) -> @core.ParseError? {
       '<' if view_starts_with_at(self.input, pos, "</") =>
         match find_markup_close(self.input, pos) {
           Some(close) => {
-            let malformed = match self.input.get_char(pos + 2) {
-              Some(ch) if ch == '>' || !@tok.is_tag_name_start(ch) => true
-              _ => false
-            }
+            let malformed = self.input.get_char(pos + 2) is Some(ch) &&
+              (ch == '>' || !@tok.is_tag_name_start(ch))
             if malformed {
               defer_doctype = true
               pos = close + 1

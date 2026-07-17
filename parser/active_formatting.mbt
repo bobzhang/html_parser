@@ -45,10 +45,7 @@ fn Parser::close_open_caption_element(self : Parser) -> Unit {
 
 ///|
 fn applet_like_element_name(name : StringView) -> Bool {
-  match name {
-    "applet" | "marquee" | "object" => true
-    _ => false
-  }
+  name is ("applet" | "marquee" | "object")
 }
 
 ///|

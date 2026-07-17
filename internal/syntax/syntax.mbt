@@ -103,10 +103,7 @@ pub fn input_ends_with_newline(input : StringView) -> Bool {
     last = Some(ch)
     pos += ch.utf16_len()
   }
-  match last {
-    Some('\r') | Some('\n') => true
-    _ => false
-  }
+  last is (Some('\r') | Some('\n'))
 }
 
 ///|

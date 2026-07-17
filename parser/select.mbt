@@ -163,10 +163,7 @@ fn select_formatting_end_reports_in_select(name : StringView) -> Bool {
 
 ///|
 fn select_ignored_start_reports_in_select(name : StringView) -> Bool {
-  match name {
-    "aside" => true
-    _ => false
-  }
+  name is "aside"
 }
 
 ///|

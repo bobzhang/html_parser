@@ -1,9 +1,6 @@
 ///|
 fn is_fragment_table_section_context(name : StringView) -> Bool {
-  match name {
-    "tbody" | "thead" | "tfoot" => true
-    _ => false
-  }
+  name is ("tbody" | "thead" | "tfoot")
 }
 
 ///|

@@ -1,17 +1,11 @@
 ///|
 fn is_fragment_raw_text_context(name : StringView) -> Bool {
-  match name {
-    "style" | "textarea" | "title" => true
-    _ => false
-  }
+  name is ("style" | "textarea" | "title")
 }
 
 ///|
 fn is_fragment_plain_text_context(name : StringView) -> Bool {
-  match name {
-    "plaintext" | "script" => true
-    _ => false
-  }
+  name is ("plaintext" | "script")
 }
 
 ///|

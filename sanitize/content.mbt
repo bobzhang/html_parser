@@ -9,18 +9,9 @@ fn rawtext_serialization_element_name(node : @dom.Node) -> String? {
 
 ///|
 fn is_math_text_integration_child_exception(node : @dom.Node) -> Bool {
-  if node.kind != Element {
-    false
-  } else {
-    match node.ns {
-      Some("math") =>
-        match sanitize_node_name(node) {
-          "mglyph" | "malignmark" => true
-          _ => false
-        }
-      _ => false
-    }
-  }
+  node.kind is Element &&
+  node.ns is Some("math") &&
+  sanitize_node_name(node) is ("mglyph" | "malignmark")
 }
 
 ///|

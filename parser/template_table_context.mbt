@@ -153,20 +153,14 @@ fn Parser::report_template_table_context_fostered_start(
 
 ///|
 fn template_table_context_end_tag_defers_voodoo(name : StringView) -> Bool {
-  match name {
-    "colgroup" | "tr" => true
-    _ => false
-  }
+  name is ("colgroup" | "tr")
 }
 
 ///|
 fn template_table_context_section_end_tag_reports_unexpected(
   name : StringView,
 ) -> Bool {
-  match name {
-    "tbody" | "tfoot" | "thead" => true
-    _ => false
-  }
+  name is ("tbody" | "tfoot" | "thead")
 }
 
 ///|

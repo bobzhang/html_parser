@@ -1,9 +1,6 @@
 ///|
 fn node_is_sanitize_container(node : @dom.Node) -> Bool {
-  match node.kind {
-    Document | Fragment => true
-    _ => false
-  }
+  node.kind is (Document | Fragment)
 }
 
 ///|

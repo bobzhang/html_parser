@@ -194,10 +194,7 @@ fn markdown_escape_line_start(value : StringView) -> (String, Int)? {
 
 ///|
 fn markdown_next_char_is_space(value : StringView, pos : Int) -> Bool {
-  match value.get_char(pos) {
-    Some(' ' | '\t') => true
-    _ => false
-  }
+  value.get_char(pos) is Some(' ' | '\t')
 }
 
 ///|

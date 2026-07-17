@@ -21,10 +21,7 @@ pub fn is_tag_name_end(ch : Char) -> Bool {
 /// HTML RCDATA elements `title` and `textarea` decode character references;
 /// raw-text elements such as `style`, `script`, and `xmp` do not.
 pub fn special_text_decodes_entities(name : StringView) -> Bool {
-  match name {
-    "title" | "textarea" => true
-    _ => false
-  }
+  name is ("title" | "textarea")
 }
 
 ///|

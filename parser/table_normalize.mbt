@@ -1,17 +1,11 @@
 ///|
 fn is_table_section_name(name : StringView) -> Bool {
-  match name {
-    "tbody" | "thead" | "tfoot" => true
-    _ => false
-  }
+  name is ("tbody" | "thead" | "tfoot")
 }
 
 ///|
 fn is_table_cell_name(name : StringView) -> Bool {
-  match name {
-    "td" | "th" => true
-    _ => false
-  }
+  name is ("td" | "th")
 }
 
 ///|
