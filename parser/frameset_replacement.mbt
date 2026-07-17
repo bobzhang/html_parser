@@ -62,10 +62,7 @@ fn replace_implicit_body_children_for_frameset(parent : @dom.Node) -> Unit {
 
 ///|
 fn Parser::frameset_replacement_parent(self : Parser) -> @dom.Node {
-  match self.open_html_element() {
-    Some(html) => html
-    None => self.root
-  }
+  self.open_html_element().unwrap_or(self.root)
 }
 
 ///|

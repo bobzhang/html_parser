@@ -35,26 +35,17 @@ fn cli_option(name : String) -> @argparse.OptionArg {
 
 ///|
 fn cli_matches_flag(matches : @argparse.Matches, name : String) -> Bool {
-  match matches.flags.get(name) {
-    Some(value) => value
-    None => false
-  }
+  matches.flags.get(name).unwrap_or(false)
 }
 
 ///|
 fn cli_first_value(matches : @argparse.Matches, name : String) -> String? {
-  match matches.values.get(name) {
-    Some(values) => values.get(0)
-    None => None
-  }
+  matches.values.get(name).bind(values => values.get(0))
 }
 
 ///|
 fn cli_last_value(matches : @argparse.Matches, name : String) -> String? {
-  match matches.values.get(name) {
-    Some(values) => Some(values[values.length() - 1])
-    None => None
-  }
+  matches.values.get(name).map(values => values[values.length() - 1])
 }
 
 ///|

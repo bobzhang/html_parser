@@ -119,10 +119,7 @@ fn write_test_format_attributes(
   let attrs : Array[(String, String)] = []
   for name, value in node.attrs {
     let display_name = test_format_attribute_name(node, name)
-    let value = match value {
-      Some(value) => value
-      None => ""
-    }
+    let value = value.unwrap_or("")
     attrs.push((display_name, value))
   }
   sort_test_format_attrs(attrs)
@@ -137,14 +134,8 @@ fn doctype_test_format(node : @dom.Node) -> String {
   let out = StringBuilder()
   out <+ "| <!DOCTYPE \{node.data}"
   if node.public_id is Some(_) || node.system_id is Some(_) {
-    let public_id = match node.public_id {
-      Some(value) => value
-      None => ""
-    }
-    let system_id = match node.system_id {
-      Some(value) => value
-      None => ""
-    }
+    let public_id = node.public_id.unwrap_or("")
+    let system_id = node.system_id.unwrap_or("")
     out <+ " \"\{public_id}\" \"\{system_id}\""
   }
   out.write_char('>')

@@ -60,9 +60,6 @@ fn apply_url_handling(
     UrlAllow => Some(value)
     UrlStrip => None
     UrlProxy =>
-      match policy.effective_proxy(rule) {
-        Some(proxy) => proxy_url_value(proxy, value)
-        None => None
-      }
+      policy.effective_proxy(rule).bind(proxy => proxy_url_value(proxy, value))
   }
 }

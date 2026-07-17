@@ -11,12 +11,7 @@ fn node_attribute_value_ignore_case(
   let wanted = @syn.lower_ascii(name)
   for attr_name, attr_value in node.attrs {
     if @syn.lower_ascii(attr_name) == wanted {
-      return Some(
-        match attr_value {
-          Some(value) => value
-          None => ""
-        },
-      )
+      return Some(attr_value.unwrap_or(""))
     }
   }
   None

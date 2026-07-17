@@ -3,12 +3,7 @@ fn attribute_value_by_name(node : @dom.Node, attr_name : StringView) -> String? 
   let wanted = @syn.lower_ascii(attr_name)
   for name, value in node.attrs {
     if @syn.lower_ascii(name) == wanted {
-      return Some(
-        match value {
-          Some(text) => text
-          None => ""
-        },
-      )
+      return Some(value.unwrap_or(""))
     }
   }
   None

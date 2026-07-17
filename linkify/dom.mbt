@@ -10,14 +10,8 @@ pub fn linkify_dom(
   config? : LinkifyConfig,
   skip_tags? : Array[String],
 ) -> @dom.Node {
-  let config = match config {
-    Some(value) => value
-    None => LinkifyConfig()
-  }
-  let skip_tags = match skip_tags {
-    Some(value) => value
-    None => linkify_default_dom_skip_tags()
-  }
+  let config = config.unwrap_or_else(() => LinkifyConfig())
+  let skip_tags = skip_tags.unwrap_or_else(() => linkify_default_dom_skip_tags())
   let skip_set = linkify_dom_skip_tag_set(skip_tags)
   match node.kind {
     Text => {

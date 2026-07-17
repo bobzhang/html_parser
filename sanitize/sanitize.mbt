@@ -144,15 +144,13 @@ pub fn sanitize_dom_with_observer(
   policy : SanitizationPolicy?,
   observer : SanitizeTransformObserver?,
 ) -> @dom.Node raise @core.HtmlError {
-  let policy = match policy {
-    Some(value) => value
-    None =>
-      if node.kind == Document {
-        default_document_sanitization_policy()
-      } else {
-        default_sanitization_policy()
-      }
-  }
+  let policy = policy.unwrap_or_else(() => {
+    if node.kind == Document {
+      default_document_sanitization_policy()
+    } else {
+      default_sanitization_policy()
+    }
+  })
   if node_is_sanitize_container(node) {
     sanitize_container_children(node, policy, observer)
     node

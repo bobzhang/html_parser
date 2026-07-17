@@ -270,17 +270,17 @@ fn sanitize_foreign_url_function_attribute_value(
   attr_name : String,
   value : String,
 ) -> String? {
-  match policy.url_policy.lookup_rule(tag_name, attr_name) {
-    Some(rule) =>
-      sanitize_url_function_value(
-        policy.url_policy,
-        rule,
-        tag_name,
-        attr_name,
-        value,
-      )
-    None => None
-  }
+  policy.url_policy
+  .lookup_rule(tag_name, attr_name)
+  .bind(rule => {
+    sanitize_url_function_value(
+      policy.url_policy,
+      rule,
+      tag_name,
+      attr_name,
+      value,
+    )
+  })
 }
 
 ///|
@@ -320,10 +320,9 @@ fn sanitize_style_declaration(
     return None
   }
   if css_value_may_load_external_resource(value) {
-    match sanitize_css_url_functions(policy, tag_name, prop, value) {
-      Some(sanitized) => Some("\{prop}: \{sanitized}")
-      None => None
-    }
+    sanitize_css_url_functions(policy, tag_name, prop, value).map(sanitized => {
+      "\{prop}: \{sanitized}"
+    })
   } else {
     Some("\{prop}: \{value}")
   }

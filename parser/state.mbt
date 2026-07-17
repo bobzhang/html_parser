@@ -195,8 +195,5 @@ fn Parser::skip_ascii_whitespace(self : Parser) -> Unit {
 
 ///|
 fn Parser::current_node(self : Parser) -> @dom.Node {
-  match self.stack.last() {
-    Some(node) => node
-    None => self.root
-  }
+  self.stack.last().unwrap_or(self.root)
 }

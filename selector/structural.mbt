@@ -214,11 +214,7 @@ fn parse_nth_expression(expr : StringView) -> (Int, Int)? {
       guard b is Some(b) else { return None }
       Some((a, b))
     }
-    None =>
-      match parse_signed_int_view(expr) {
-        Some(b) => Some((0, b))
-        None => None
-      }
+    None => parse_signed_int_view(expr).map(b => (0, b))
   }
 }
 
