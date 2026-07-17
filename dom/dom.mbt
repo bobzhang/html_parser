@@ -39,7 +39,17 @@ fn make_node(
 ///|
 /// Create a document node with optional children.
 pub fn document(children? : Array[Node] = []) -> Node {
-  make_node(Document, "#document", None, {}, "", None, None, false, children)
+  make_node(
+    Document,
+    "#document",
+    None,
+    Map([]),
+    "",
+    None,
+    None,
+    false,
+    children,
+  )
 }
 
 ///|
@@ -49,7 +59,7 @@ pub fn fragment(children? : Array[Node] = []) -> Node {
     Fragment,
     "#document-fragment",
     None,
-    {},
+    Map([]),
     "",
     None,
     None,
@@ -76,7 +86,7 @@ fn normalize_element_namespace(ns : StringView) -> String {
 /// and sanitizer behavior. Child nodes are attached in order.
 pub fn element(
   name : StringView,
-  attrs? : Map[String, String?] = {},
+  attrs? : Map[String, String?] = Map([]),
   children? : Array[Node] = [],
   ns? : String = "html",
 ) -> Node {
@@ -97,13 +107,23 @@ pub fn element(
 ///|
 /// Create a text node.
 pub fn text(data : StringView) -> Node {
-  make_node(Text, "#text", None, {}, data.to_owned(), None, None, false, [])
+  make_node(Text, "#text", None, Map([]), data.to_owned(), None, None, false, [])
 }
 
 ///|
 /// Create a comment node.
 pub fn comment(data : StringView) -> Node {
-  make_node(Comment, "#comment", None, {}, data.to_owned(), None, None, false, [])
+  make_node(
+    Comment,
+    "#comment",
+    None,
+    Map([]),
+    data.to_owned(),
+    None,
+    None,
+    false,
+    [],
+  )
 }
 
 ///|
@@ -118,7 +138,7 @@ pub fn doctype(
     Doctype,
     "#doctype",
     None,
-    {},
+    Map([]),
     name,
     public_id,
     system_id,

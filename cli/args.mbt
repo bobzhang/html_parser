@@ -96,7 +96,7 @@ fn cli_parse_args(args : ArrayView[String]) -> CliParseResult {
     return CliParseExit(cli_exit(1, stderr=cli_help()))
   }
   let command = cli_command()
-  let matches = command.parse(argv=args, env={}) catch {
+  let matches = command.parse(argv=args, env=Map([])) catch {
     error => return CliParseExit(cli_argparse_error(error.to_string()))
   }
   if cli_matches_flag(matches, "help") {

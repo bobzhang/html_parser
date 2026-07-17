@@ -187,7 +187,7 @@ fn apply_drop_attrs_transform(
   if !found {
     return false
   }
-  let out : Map[String, String?] = {}
+  let out : Map[String, String?] = Map([])
   for raw_name, value in node.attrs {
     let name = @syn.lower_ascii(raw_name[:].trim())
     if name != "" && attr_matches_any_pattern(name, transform.attr_patterns) {
@@ -245,7 +245,7 @@ fn apply_allowlist_attrs_transform(
     return false
   }
   let allowed_for_node = allowed_attrs_for_node(node, allowed)
-  let out : Map[String, String?] = {}
+  let out : Map[String, String?] = Map([])
   let mut changed = false
   for raw_name, value in node.attrs {
     let trimmed = raw_name[:].trim()

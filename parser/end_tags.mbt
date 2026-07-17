@@ -39,7 +39,7 @@ fn Parser::parse_end_tag(self : Parser) -> Unit {
   for error in name_errors {
     self.error_at(error.code, error.offset)
   }
-  let attrs : Map[String, String?] = {}
+  let attrs : Map[String, String?] = Map([])
   let mut noncanonical_end_tag = false
   let mut closed = false
   while !self.is_eof() {

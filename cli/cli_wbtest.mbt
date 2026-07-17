@@ -13,7 +13,7 @@ test "CLI HTML error formatter preserves sanitizer and selector messages" {
 
 ///|
 test "CLI argparse command covers equals and no-path plans" {
-  let matches = cli_command().parse(argv=["--format=", "-"], env={})
+  let matches = cli_command().parse(argv=["--format=", "-"], env=Map([]))
   guard cli_last_value(matches, "format") is Some(value) else {
     fail("expected empty equals-form option value")
   }

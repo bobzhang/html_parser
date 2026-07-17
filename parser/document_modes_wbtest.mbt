@@ -51,7 +51,7 @@ test "document frameset helpers preserve reprocess state" {
   )
   assert_eq(blocked.prepare_document_frameset_replacement(), false)
   assert_true(
-    blocked.handle_document_frameset_start_tag("frameset", {}, false, 0, 9),
+    blocked.handle_document_frameset_start_tag("frameset", Map([]), false, 0, 9),
   )
   assert_eq(blocked.errors.length(), 1)
   assert_eq(blocked.errors[0].code, "unexpected-start-tag-ignored")
@@ -84,7 +84,7 @@ test "document frameset helpers preserve reprocess state" {
     fail("expected reprocessed html attrs to merge onto root html")
   }
   assert_eq(
-    parser.handle_document_frameset_start_tag("p", {}, false, 6, 8),
+    parser.handle_document_frameset_start_tag("p", Map([]), false, 6, 8),
     false,
   )
   assert_eq(parser.errors.length(), 1)

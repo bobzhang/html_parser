@@ -25,7 +25,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
       for error in name_errors {
         self.error_at(error.code, error.offset)
       }
-      let attrs : Map[String, String?] = {}
+      let attrs : Map[String, String?] = Map([])
       let mut self_closing = false
       let mut closed = false
       while !self.is_eof() {

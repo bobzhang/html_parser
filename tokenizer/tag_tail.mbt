@@ -7,7 +7,7 @@ priv struct TagTailScan {
 
 ///|
 fn SourceTokenizer::parse_tag_tail(self : SourceTokenizer) -> TagTailScan {
-  let attrs : Map[String, String?] = {}
+  let attrs : Map[String, String?] = Map([])
   let mut self_closing = false
   let mut closed = false
   while !self.is_eof() {

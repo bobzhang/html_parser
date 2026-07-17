@@ -20,7 +20,7 @@ test "tokenizer eof helper reports empty input origin" {
 ///|
 test "tokenizer attribute helper tolerates delimiter at eof" {
   let tokenizer = SourceTokenizer(">", collect_errors=true, xml_coercion=false)
-  let attrs : Map[String, String?] = {}
+  let attrs : Map[String, String?] = Map([])
   tokenizer.parse_attribute(attrs)
   assert_eq(attrs.length(), 0)
   assert_eq(tokenizer.pos, 1)

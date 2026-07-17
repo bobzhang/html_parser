@@ -2404,7 +2404,7 @@ async fn check_native_cli_metadata(name : String?) -> Bool {
     (Some(pkg_text), Some(main_text)) => {
       let package_needles = [
         "supported_targets = \"+native\"",
-        "\"is-main\": true",
+        "pkgtype(kind: \"executable\")",
         "\"moonbitlang/async\"",
         "\"moonbitlang/async/fs\"",
         "\"moonbitlang/async/stdio\"",

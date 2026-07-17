@@ -149,7 +149,7 @@ fn prepare_foreign_attrs(
   ns : StringView,
   attrs : Map[String, String?],
 ) -> Map[String, String?] {
-  let adjusted : Map[String, String?] = {}
+  let adjusted : Map[String, String?] = Map([])
   for name, value in attrs {
     let namespace_adjusted = if ns == "math" {
       adjusted_mathml_attribute_name(name)

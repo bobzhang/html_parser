@@ -95,7 +95,7 @@ async fn run_suite(
   let mut error_count_matches = 0
   let mut error_count_checked = 0
   let failures : Array[String] = []
-  let failure_details : Map[String, String] = {}
+  let failure_details : Map[String, String] = Map([])
   for relative in files {
     let text = match read_text("\{corpus_dir}/\{relative}") {
       Some(value) => value

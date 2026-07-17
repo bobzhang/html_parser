@@ -19,7 +19,7 @@ pub(all) struct HtmlFmtResult {
 /// `HtmlFmtResult` instead of escaping as exceptions.
 pub fn run_htmlfmt(args : ArrayView[String]) -> HtmlFmtResult raise {
   let command = htmlfmt_command()
-  let matches = command.parse(argv=args, env={}) catch {
+  let matches = command.parse(argv=args, env=Map([])) catch {
     error =>
       return {
         exit_code: 2,

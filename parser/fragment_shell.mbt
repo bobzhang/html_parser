@@ -107,7 +107,7 @@ fn Parser::insert_html_fragment_body_marker(
 
 ///|
 fn Parser::insert_empty_html_fragment_body_marker(self : Parser) -> Unit {
-  let attrs : Map[String, String?] = {}
+  let attrs : Map[String, String?] = Map([])
   self.insert_html_fragment_body_marker(attrs, None)
 }
 
