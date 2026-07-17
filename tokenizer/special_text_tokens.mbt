@@ -14,7 +14,7 @@ fn SourceTokenizer::decoded_special_text(
     }
     decoded.data
   } else {
-    @syn.normalize_newlines(raw)[:]
+    @syn.normalize_newlines(raw)
   }
   if self.xml_coercion {
     @syn.coerce_text_for_xml(data)
@@ -45,7 +45,7 @@ fn SourceTokenizer::replace_special_text_nulls(
     }
     pos += ch.utf16_len()
   }
-  out.to_string()[:]
+  out.to_string()
 }
 
 ///|

@@ -395,7 +395,7 @@ fn normalize_tree_builder_text(value : StringView) -> StringView {
       out.write_char(ch)
     }
   }
-  out.to_string()[:]
+  out.to_string()
 }
 
 ///|
@@ -421,7 +421,7 @@ fn normalize_raw_newlines(value : StringView) -> StringView {
       last_was_cr = false
     }
   }
-  out.to_string()[:]
+  out.to_string()
 }
 
 ///|
@@ -456,7 +456,7 @@ fn Parser::remove_null_characters(
       }
     }
   }
-  out.to_string()[:]
+  out.to_string()
 }
 
 ///|
@@ -486,7 +486,7 @@ fn Parser::replace_null_characters(
       }
     }
   }
-  out.to_string()[:]
+  out.to_string()
 }
 
 ///|

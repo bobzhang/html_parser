@@ -63,7 +63,7 @@ fn Parser::decoded_special_text(
   }
   let data = normalize_tree_builder_text(data)
   if self.xml_coercion {
-    coerce_text_for_xml(data)[:]
+    coerce_text_for_xml(data)
   } else {
     data
   }
