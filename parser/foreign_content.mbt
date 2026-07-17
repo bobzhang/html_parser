@@ -84,7 +84,7 @@ fn Parser::clean_foreign_content_text(
     }
     offset += ch.utf16_len()
   }
-  out.to_string()[:]
+  out.to_string()
 }
 
 ///|

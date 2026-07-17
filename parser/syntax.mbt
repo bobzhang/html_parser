@@ -15,7 +15,7 @@ fn normalize_newlines(input : StringView) -> StringView {
   if !input.contains_char('\r') {
     return input
   }
-  @syn.normalize_newlines(input)[:]
+  @syn.normalize_newlines(input)
 }
 
 ///|

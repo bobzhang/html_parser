@@ -47,7 +47,7 @@ pub fn decode_entities_with_errors(
       _ => pos = @syn.write_normalized_char(input, pos, out)
     }
   }
-  { data: out.to_string()[:], errors }
+  { data: out.to_string(), errors }
 }
 
 ///|
