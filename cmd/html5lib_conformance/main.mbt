@@ -168,9 +168,8 @@ async fn run_suite(
     }
     println("")
     println("UNEXPECTED FAILURE \{id}")
-    match failure_details.get(id) {
-      Some(detail) => println(detail)
-      None => ()
+    if failure_details.get(id) is Some(detail) {
+      println(detail)
     }
     shown += 1
   }
@@ -247,9 +246,8 @@ fn parse_dat_cases(file_label : String, text : String) -> Array[DatCase] {
     current.push(lines[i])
     if i + 1 >= lines.length() || lines[i + 1] == "#data" {
       if has_nonblank_line(current) {
-        match parse_single_case(file_label, cases.length(), current) {
-          Some(case) => cases.push(case)
-          None => ()
+        if parse_single_case(file_label, cases.length(), current) is Some(case) {
+          cases.push(case)
         }
       }
       current.clear()
@@ -261,12 +259,7 @@ fn parse_dat_cases(file_label : String, text : String) -> Array[DatCase] {
 ///|
 #coverage.skip
 fn has_nonblank_line(lines : Array[String]) -> Bool {
-  for line in lines {
-    if !line.trim().is_empty() {
-      return true
-    }
-  }
-  false
+  lines.any(line => !line.trim().is_empty())
 }
 
 ///|
@@ -354,23 +347,17 @@ fn decode_escapes(text : String) -> String {
   let mut i = 0
   while i < chars.length() {
     if chars[i] is '\\' && i + 3 < chars.length() && chars[i + 1] is 'x' {
-      match decoded_escape_char(chars, i + 2, 2) {
-        Some(c) => {
-          out.write_char(c)
-          i += 4
-          continue
-        }
-        None => ()
+      if decoded_escape_char(chars, i + 2, 2) is Some(c) {
+        out.write_char(c)
+        i += 4
+        continue
       }
     }
     if chars[i] is '\\' && i + 5 < chars.length() && chars[i + 1] is 'u' {
-      match decoded_escape_char(chars, i + 2, 4) {
-        Some(c) => {
-          out.write_char(c)
-          i += 6
-          continue
-        }
-        None => ()
+      if decoded_escape_char(chars, i + 2, 4) is Some(c) {
+        out.write_char(c)
+        i += 6
+        continue
       }
     }
     out.write_char(chars[i])
