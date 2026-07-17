@@ -76,16 +76,34 @@ pub(all) struct EntityConsumeResult {
   next : Int
   errors : Array[EntityDecodeError]
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn EntityConsumeResult::equal(Self, Self) -> Bool
+#deprecated
+pub fn EntityConsumeResult::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn EntityConsumeResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct EntityDecodeError {
   code : String
   offset : Int
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn EntityDecodeError::equal(Self, Self) -> Bool
+#deprecated
+pub fn EntityDecodeError::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn EntityDecodeError::to_repr(Self) -> @debug.Repr
 
 pub(all) struct EntityDecodeResult {
   data : StringView
   errors : Array[EntityDecodeError]
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn EntityDecodeResult::equal(Self, Self) -> Bool
+#deprecated
+pub fn EntityDecodeResult::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn EntityDecodeResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ScriptTextScan {
   data : String

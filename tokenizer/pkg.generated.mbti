@@ -22,6 +22,12 @@ pub(all) struct DoctypeInfo {
   system_id : String?
   force_quirks : Bool
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn DoctypeInfo::equal(Self, Self) -> Bool
+#deprecated
+pub fn DoctypeInfo::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn DoctypeInfo::to_repr(Self) -> @debug.Repr
 
 pub(all) enum HtmlToken {
   Tag(TagToken)
@@ -30,11 +36,23 @@ pub(all) enum HtmlToken {
   DoctypeToken(DoctypeInfo)
   Eof
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn HtmlToken::equal(Self, Self) -> Bool
+#deprecated
+pub fn HtmlToken::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn HtmlToken::to_repr(Self) -> @debug.Repr
 
 pub(all) enum TagKind {
   StartTag
   EndTag
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn TagKind::equal(Self, Self) -> Bool
+#deprecated
+pub fn TagKind::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn TagKind::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TagToken {
   kind : TagKind
@@ -42,11 +60,19 @@ pub(all) struct TagToken {
   attrs : Map[String, String?]
   self_closing : Bool
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn TagToken::equal(Self, Self) -> Bool
+#deprecated
+pub fn TagToken::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn TagToken::to_repr(Self) -> @debug.Repr
 
 pub(all) struct TokenizedHtml {
   tokens : Array[HtmlToken]
   errors : Array[@core.ParseError]
 } derive(@debug.Debug)
+#deprecated
+pub fn TokenizedHtml::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

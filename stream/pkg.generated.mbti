@@ -22,6 +22,12 @@ pub(all) struct StreamDoctypeEvent {
   public_id : String?
   system_id : String?
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn StreamDoctypeEvent::equal(Self, Self) -> Bool
+#deprecated
+pub fn StreamDoctypeEvent::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn StreamDoctypeEvent::to_repr(Self) -> @debug.Repr
 
 pub(all) enum StreamEvent {
   StreamStart(StreamStartEvent)
@@ -30,13 +36,27 @@ pub(all) enum StreamEvent {
   StreamComment(String)
   StreamDoctype(StreamDoctypeEvent)
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn StreamEvent::equal(Self, Self) -> Bool
+#deprecated
+pub fn StreamEvent::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn StreamEvent::to_repr(Self) -> @debug.Repr
 
 type StreamSink derive(@debug.Debug)
+#deprecated
+pub fn StreamSink::to_repr(Self) -> @debug.Repr
 
 pub(all) struct StreamStartEvent {
   name : String
   attrs : Map[String, String?]
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn StreamStartEvent::equal(Self, Self) -> Bool
+#deprecated
+pub fn StreamStartEvent::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn StreamStartEvent::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

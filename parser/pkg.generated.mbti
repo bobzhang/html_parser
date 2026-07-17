@@ -23,6 +23,12 @@ pub(all) struct FragmentContext {
   ns : String?
 } derive(Eq, @debug.Debug)
 pub fn FragmentContext::FragmentContext(StringView, ns? : String) -> Self
+#deprecated
+pub fn FragmentContext::equal(Self, Self) -> Bool
+#deprecated
+pub fn FragmentContext::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn FragmentContext::to_repr(Self) -> @debug.Repr
 
 pub struct ParsedHtml {
   root : @dom.Node
@@ -33,6 +39,8 @@ pub fn ParsedHtml::query(Self, StringView) -> Array[@dom.Node]
 pub fn ParsedHtml::query_one(Self, StringView) -> @dom.Node?
 pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int, context? : @serializer.HtmlContext, quote? : Char) -> String raise @core.HtmlError
 pub fn ParsedHtml::to_markdown(Self, html_passthrough? : Bool) -> String raise @core.HtmlError
+#deprecated
+pub fn ParsedHtml::to_repr(Self) -> @debug.Repr
 pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_blocks_only? : Bool) -> String
 
 // Type aliases

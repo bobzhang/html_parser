@@ -25,11 +25,19 @@ pub(all) struct LinkMatch {
   href : String
   kind : String
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn LinkMatch::equal(Self, Self) -> Bool
+#deprecated
+pub fn LinkMatch::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn LinkMatch::to_repr(Self) -> @debug.Repr
 
 pub struct LinkifyConfig {
   // private fields
 } derive(@debug.Debug)
 pub fn LinkifyConfig::LinkifyConfig(fuzzy_ip? : Bool, extra_tlds? : Array[String]) -> Self
+#deprecated
+pub fn LinkifyConfig::to_repr(Self) -> @debug.Repr
 pub fn LinkifyConfig::with_extra_tlds(Array[String]) -> Self
 
 // Type aliases

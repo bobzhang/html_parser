@@ -61,6 +61,8 @@ pub fn Node::remove_child(Self, Self) -> Unit
 pub fn Node::replace_child(Self, Self, Self) -> Self?
 pub fn Node::template_content(Self) -> Self?
 pub fn Node::text(Self) -> String
+#deprecated
+pub fn Node::to_repr(Self) -> @debug.Repr
 
 pub(all) enum NodeKind {
   Document
@@ -70,6 +72,12 @@ pub(all) enum NodeKind {
   Comment
   Doctype
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn NodeKind::equal(Self, Self) -> Bool
+#deprecated
+pub fn NodeKind::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn NodeKind::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

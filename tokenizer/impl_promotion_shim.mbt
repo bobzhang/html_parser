@@ -1,0 +1,39 @@
+// Transitional: make the derived-trait method promotion explicit so the
+// `implicit_impl_as_method` lint stays clean. Delete once the promoted
+// methods are no longer relied on (call the trait methods directly).
+
+///|
+#deprecated("implicit derived-impl promotion; call the trait method directly")
+pub extend DoctypeInfo with Debug::{to_repr}
+
+///|
+#deprecated("implicit derived-impl promotion; call the trait method directly")
+pub extend DoctypeInfo with Eq::{equal, not_equal}
+
+///|
+#deprecated("implicit derived-impl promotion; call the trait method directly")
+pub extend HtmlToken with Debug::{to_repr}
+
+///|
+#deprecated("implicit derived-impl promotion; call the trait method directly")
+pub extend HtmlToken with Eq::{equal, not_equal}
+
+///|
+#deprecated("implicit derived-impl promotion; call the trait method directly")
+pub extend TagKind with Debug::{to_repr}
+
+///|
+#deprecated("implicit derived-impl promotion; call the trait method directly")
+pub extend TagKind with Eq::{equal, not_equal}
+
+///|
+#deprecated("implicit derived-impl promotion; call the trait method directly")
+pub extend TagToken with Debug::{to_repr}
+
+///|
+#deprecated("implicit derived-impl promotion; call the trait method directly")
+pub extend TagToken with Eq::{equal, not_equal}
+
+///|
+#deprecated("implicit derived-impl promotion; call the trait method directly")
+pub extend TokenizedHtml with Debug::{to_repr}
