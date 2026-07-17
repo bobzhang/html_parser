@@ -153,12 +153,9 @@ pub fn doctype(
 /// The child is detached from any existing parent first. Non-container nodes
 /// and cycle-producing appends are ignored.
 pub fn Node::append_child(self : Node, child : Node) -> Unit {
-  match self.template_insertion_target() {
-    Some(contents) => {
-      contents.append_child(child)
-      return
-    }
-    None => ()
+  if self.template_insertion_target() is Some(contents) {
+    contents.append_child(child)
+    return
   }
   if !node_accepts_children(self) || node_is_self_or_ancestor(child, self) {
     return
@@ -193,12 +190,9 @@ fn Node::template_insertion_target(self : Node) -> Node? {
 
 ///|
 fn Node::insert_child_before(self : Node, child : Node, before : Node) -> Unit {
-  match self.template_insertion_target() {
-    Some(contents) => {
-      contents.insert_child_before(child, before)
-      return
-    }
-    None => ()
+  if self.template_insertion_target() is Some(contents) {
+    contents.insert_child_before(child, before)
+    return
   }
   if !node_accepts_children(self) || node_is_self_or_ancestor(child, self) {
     return
@@ -253,20 +247,17 @@ fn node_is_self_or_ancestor(node : Node, descendant : Node) -> Bool {
 
 ///|
 fn detach_from_parent(node : Node) -> Unit {
-  match node.parent {
-    Some(parent) => {
-      if parent.template_contents is Some(contents) &&
-        physical_equal(contents, node) {
-        // Detaching a template's contents fragment (for example when a
-        // caller appends the fragment elsewhere) must release the
-        // template's reference, or both trees would share the children.
-        parent.template_contents = None
-      } else {
-        parent.remove_child(node)
-      }
-      node.parent = None
+  if node.parent is Some(parent) {
+    if parent.template_contents is Some(contents) &&
+      physical_equal(contents, node) {
+      // Detaching a template's contents fragment (for example when a
+      // caller appends the fragment elsewhere) must release the
+      // template's reference, or both trees would share the children.
+      parent.template_contents = None
+    } else {
+      parent.remove_child(node)
     }
-    None => ()
+    node.parent = None
   }
 }
 
@@ -455,14 +446,12 @@ pub fn Node::clone_node(
     let stack : Array[(Node, Node)] = [(self, cloned)]
     while !stack.is_empty() {
       let (source, target) = stack.pop().unwrap()
-      match source.template_contents {
-        Some(contents) =>
-          for child in contents.children {
-            let child_clone = child.clone_node(deep=false)
-            target.append_child(child_clone)
-            stack.push((child, child_clone))
-          }
-        None => ()
+      if source.template_contents is Some(contents) {
+        for child in contents.children {
+          let child_clone = child.clone_node(deep=false)
+          target.append_child(child_clone)
+          stack.push((child, child_clone))
+        }
       }
       for child in source.children {
         let child_clone = child.clone_node(deep=false)
@@ -488,9 +477,8 @@ fn append_node_text(node : Node, out : StringBuilder) -> Unit {
     Text if !node.sanitize_escape_only => out.write_string(node.data)
     Text => ()
     _ => {
-      match node.template_contents {
-        Some(contents) => append_node_text(contents, out)
-        None => ()
+      if node.template_contents is Some(contents) {
+        append_node_text(contents, out)
       }
       for child in node.children {
         append_node_text(child, out)
@@ -505,16 +493,13 @@ fn append_node_text(node : Node, out : StringBuilder) -> Unit {
 /// and escape handling, transform unwrap). Bypasses `append_child`, which
 /// would redirect into the contents fragment again.
 pub fn Node::flatten_template_contents(self : Node) -> Unit {
-  match self.template_contents {
-    Some(contents) => {
-      for grandchild in contents.children {
-        grandchild.parent = Some(self)
-        self.children.push(grandchild)
-      }
-      contents.children.clear()
-      contents.parent = None
-      self.template_contents = None
+  if self.template_contents is Some(contents) {
+    for grandchild in contents.children {
+      grandchild.parent = Some(self)
+      self.children.push(grandchild)
     }
-    None => ()
+    contents.children.clear()
+    contents.parent = None
+    self.template_contents = None
   }
 }
