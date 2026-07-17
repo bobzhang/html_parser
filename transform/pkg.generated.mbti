@@ -22,6 +22,12 @@ pub(all) enum DecideAction {
   Empty
   Escape
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn DecideAction::equal(Self, Self) -> Bool
+#deprecated
+pub fn DecideAction::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn DecideAction::to_repr(Self) -> @debug.Repr
 
 pub struct TransformSpec {
   // private fields
@@ -47,6 +53,7 @@ pub fn TransformSpec::prune_empty(StringView, strip_whitespace? : Bool, enabled?
 pub fn TransformSpec::sanitize(policy? : @sanitize.SanitizationPolicy, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::set_attrs(StringView, Map[String, String?], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 pub fn TransformSpec::stage(Array[Self], enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
+pub fn TransformSpec::to_repr(Self) -> @debug.Repr
 pub fn TransformSpec::unwrap(StringView, enabled? : Bool, hook? : (@dom.Node) -> Unit, report? : (String, @dom.Node?) -> Unit) -> Self
 
 // Type aliases

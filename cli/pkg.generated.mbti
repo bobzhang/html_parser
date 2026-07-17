@@ -21,6 +21,12 @@ pub(all) enum CliReadPlan {
   CliImmediate(CliResult)
   CliReadPath(String)
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn CliReadPlan::equal(Self, Self) -> Bool
+#deprecated
+pub fn CliReadPlan::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn CliReadPlan::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CliResult {
   exit_code : Int
@@ -29,6 +35,12 @@ pub(all) struct CliResult {
   file_output_path : String?
   file_output_content : String?
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn CliResult::equal(Self, Self) -> Bool
+#deprecated
+pub fn CliResult::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn CliResult::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

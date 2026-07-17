@@ -25,6 +25,12 @@ pub(all) enum HtmlContext {
   HtmlAttrValue
   Url
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn HtmlContext::equal(Self, Self) -> Bool
+#deprecated
+pub fn HtmlContext::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn HtmlContext::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 

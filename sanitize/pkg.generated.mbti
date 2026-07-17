@@ -39,6 +39,12 @@ pub(all) enum DisallowedTagHandling {
   Escape
   Drop
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn DisallowedTagHandling::equal(Self, Self) -> Bool
+#deprecated
+pub fn DisallowedTagHandling::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn DisallowedTagHandling::to_repr(Self) -> @debug.Repr
 
 pub struct SanitizationPolicy {
   // private fields
@@ -50,6 +56,8 @@ pub fn SanitizationPolicy::reset_collected_security_errors(Self) -> Unit
 pub fn SanitizationPolicy::sanitize_attribute_value(Self, String, String, String, effectively_foreign? : Bool) -> String?
 pub fn SanitizationPolicy::sanitize_inline_style_value(Self, String, String) -> String?
 pub fn SanitizationPolicy::selector_limits(Self) -> @selector.SelectorLimits
+#deprecated
+pub fn SanitizationPolicy::to_repr(Self) -> @debug.Repr
 pub fn SanitizationPolicy::with_extra_allowed_tags(Self, Array[String]) -> Self
 
 pub struct SanitizeTransformObserver {
@@ -62,11 +70,18 @@ pub(all) enum UnsafeHandling {
   Raise
   Collect
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn UnsafeHandling::equal(Self, Self) -> Bool
+#deprecated
+pub fn UnsafeHandling::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn UnsafeHandling::to_repr(Self) -> @debug.Repr
 
 pub struct UrlFilter {
   // private fields
 }
 pub fn UrlFilter::UrlFilter((String, String, String) -> String?) -> Self
+pub fn UrlFilter::to_repr(Self) -> @debug.Repr
 pub impl @debug.Debug for UrlFilter
 
 pub(all) enum UrlHandling {
@@ -74,26 +89,40 @@ pub(all) enum UrlHandling {
   UrlStrip
   UrlProxy
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn UrlHandling::equal(Self, Self) -> Bool
+#deprecated
+pub fn UrlHandling::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn UrlHandling::to_repr(Self) -> @debug.Repr
 
 pub struct UrlPolicy {
   // private fields
 } derive(@debug.Debug)
 pub fn UrlPolicy::UrlPolicy(default_handling? : UrlHandling, default_allow_relative? : Bool, allow_rules? : Array[UrlPolicyRule], proxy? : UrlProxy, url_filter? : UrlFilter) -> Self
+#deprecated
+pub fn UrlPolicy::to_repr(Self) -> @debug.Repr
 
 pub struct UrlPolicyRule {
   // private fields
 } derive(@debug.Debug)
 pub fn UrlPolicyRule::UrlPolicyRule(StringView, StringView, UrlRule) -> Self
+#deprecated
+pub fn UrlPolicyRule::to_repr(Self) -> @debug.Repr
 
 pub struct UrlProxy {
   // private fields
 } derive(@debug.Debug)
 pub fn UrlProxy::UrlProxy(StringView, param? : String) -> Self
+#deprecated
+pub fn UrlProxy::to_repr(Self) -> @debug.Repr
 
 pub struct UrlRule {
   // private fields
 } derive(@debug.Debug)
 pub fn UrlRule::UrlRule(allowed_schemes? : Array[String], allowed_hosts? : Array[String], allow_fragment? : Bool, resolve_protocol_relative? : String?, handling? : UrlHandling, allow_relative? : Bool, proxy? : UrlProxy) -> Self
+#deprecated
+pub fn UrlRule::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
