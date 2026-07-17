@@ -79,10 +79,7 @@ fn linkify_last_char_index(value : StringView, needle : Char) -> Int? {
 
 ///|
 fn linkify_starts_with_digit(value : StringView) -> Bool {
-  match value.get_char(0) {
-    Some(ch) => ch >= '0' && ch <= '9'
-    None => false
-  }
+  value.get_char(0) is Some('0'..='9')
 }
 
 ///|

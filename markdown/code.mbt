@@ -20,9 +20,9 @@ fn markdown_backtick_fence(value : StringView, minimum : Int) -> String {
 fn markdown_code_span(value : StringView) -> String {
   let fence = markdown_backtick_fence(value, 1)
   if value.has_prefix("`") || value.has_suffix("`") {
-    fence + " " + value.to_owned() + " " + fence
+    "\{fence} \{value} \{fence}"
   } else {
-    fence + value.to_owned() + fence
+    "\{fence}\{value}\{fence}"
   }
 }
 

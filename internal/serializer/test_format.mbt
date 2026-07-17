@@ -20,7 +20,7 @@ fn test_format_line(indent : Int, content : StringView) -> String {
 ///|
 fn test_format_qualified_name(node : @dom.Node) -> String {
   match node.ns {
-    Some(ns) if ns != "html" => ns + " " + node.name
+    Some(ns) if ns != "html" => "\{ns} \{node.name}"
     _ => node.name
   }
 }
@@ -128,7 +128,7 @@ fn write_test_format_attributes(
   sort_test_format_attrs(attrs)
   for attr in attrs {
     let (name, value) = attr
-    out.push(test_format_line(indent + 2, name + "=\"" + value + "\""))
+    out.push(test_format_line(indent + 2, "\{name}=\"\{value}\""))
   }
 }
 
@@ -158,19 +158,18 @@ fn write_test_format(
   indent : Int,
 ) -> Unit {
   match node.kind {
-    Document | Fragment =>
-      out.push(test_format_line(indent, "<" + node.name + ">"))
+    Document | Fragment => out.push(test_format_line(indent, "<\{node.name}>"))
     Element => {
       out.push(
-        test_format_line(indent, "<" + test_format_qualified_name(node) + ">"),
+        test_format_line(indent, "<\{test_format_qualified_name(node)}>"),
       )
       write_test_format_attributes(node, out, indent)
     }
     Text =>
       if !node.sanitize_escape_only {
-        out.push(test_format_line(indent, "\"" + node.data + "\""))
+        out.push(test_format_line(indent, "\"\{node.data}\""))
       }
-    Comment => out.push(test_format_line(indent, "<!-- " + node.data + " -->"))
+    Comment => out.push(test_format_line(indent, "<!-- \{node.data} -->"))
     Doctype => out.push(doctype_test_format(node))
   }
   if node.kind == Element &&

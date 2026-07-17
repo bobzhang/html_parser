@@ -28,7 +28,7 @@ fn node_to_html_compact(
           neutralize_rawtext_end_tag_sequences(node.data, parent.name)
         _ => escape_text(node.data)
       }
-    Comment => "<!--" + serialize_comment_data(node.data) + "-->"
+    Comment => "<!--\{serialize_comment_data(node.data)}-->"
     Doctype => {
       let out = StringBuilder()
       out.write_string("<!DOCTYPE")
