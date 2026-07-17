@@ -154,12 +154,10 @@ fn split_complex_selector(
                 return None
               }
           }
-          pending = if ch == '>' {
-            ChildCombinator
-          } else if ch == '+' {
-            AdjacentSiblingCombinator
-          } else {
-            GeneralSiblingCombinator
+          pending = match ch {
+            '>' => ChildCombinator
+            '+' => AdjacentSiblingCombinator
+            _ => GeneralSiblingCombinator
           }
           start = pos + ch.utf16_len()
         }

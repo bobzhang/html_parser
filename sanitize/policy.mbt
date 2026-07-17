@@ -11,22 +11,12 @@ fn sanitized_string_set(values : Array[String]) -> Set[String] {
 }
 
 ///|
-fn string_array_contains(values : Array[String], needle : String) -> Bool {
-  for value in values {
-    if value == needle {
-      return true
-    }
-  }
-  false
-}
-
-///|
 /// Append `value` to `values` if it is non-empty and absent.
 ///
 /// Existing order is preserved, making this suitable for normalized allowlists
 /// and token merges where duplicate entries should be ignored.
 fn push_unique_string(values : Array[String], value : String) -> Unit {
-  if value != "" && !string_array_contains(values, value) {
+  if value != "" && !values.contains(value) {
     values.push(value)
   }
 }

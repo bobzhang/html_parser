@@ -321,11 +321,11 @@ fn sanitize_style_declaration(
   }
   if css_value_may_load_external_resource(value) {
     match sanitize_css_url_functions(policy, tag_name, prop, value) {
-      Some(sanitized) => Some(prop + ": " + sanitized)
+      Some(sanitized) => Some("\{prop}: \{sanitized}")
       None => None
     }
   } else {
-    Some(prop + ": " + value.to_owned())
+    Some("\{prop}: \{value}")
   }
 }
 

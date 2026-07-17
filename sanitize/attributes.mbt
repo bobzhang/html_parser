@@ -230,9 +230,9 @@ fn sanitize_dropped_attr_report_message(
         }
       None => ""
     }
-    "Unsafe URL in attribute '" + attr_name + "'" + suffix
+    "Unsafe URL in attribute '\{attr_name}'\{suffix}"
   } else {
-    "Unsafe attribute '" + attr_name + "' on <" + tag_name + "> was dropped"
+    "Unsafe attribute '\{attr_name}' on <\{tag_name}> was dropped"
   }
 }
 
@@ -262,8 +262,7 @@ fn sanitize_element_attributes(
       sanitize_report_unsafe(
         policy,
         observer,
-        "Stripped invisible Unicode from attribute(s): " +
-        stripped_attr_names.join(", "),
+        "Stripped invisible Unicode from attribute(s): \{stripped_attr_names.join(", ")}",
         Some(node),
       )
     }
@@ -276,11 +275,7 @@ fn sanitize_element_attributes(
         sanitize_report_unsafe(
           policy,
           observer,
-          "Unsafe attribute '" +
-          attr_name +
-          "' (matched forbidden pattern '" +
-          pattern +
-          "')",
+          "Unsafe attribute '\{attr_name}' (matched forbidden pattern '\{pattern}')",
           Some(node),
         )
         node.attrs.remove(key)
@@ -292,7 +287,7 @@ fn sanitize_element_attributes(
       sanitize_report_unsafe(
         policy,
         observer,
-        "Unsafe attribute '" + attr_name + "' (not allowed)",
+        "Unsafe attribute '\{attr_name}' (not allowed)",
         Some(node),
       )
       node.attrs.remove(key)

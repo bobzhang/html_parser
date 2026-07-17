@@ -81,9 +81,7 @@ fn sanitize_foreign_text_integration_children(
         sanitize_report_unsafe(
           policy,
           observer,
-          "Unsafe HTML child inside foreign integration point <" +
-          sanitize_node_name(node) +
-          "> was dropped",
+          "Unsafe HTML child inside foreign integration point <\{sanitize_node_name(node)}> was dropped",
           Some(child),
         )
     }
@@ -132,7 +130,7 @@ fn sanitize_rawtext_element_children(
         sanitize_report_unsafe(
           policy,
           observer,
-          "Unsafe non-text child inside <" + tag_name + "> was dropped",
+          "Unsafe non-text child inside <\{tag_name}> was dropped",
           Some(child),
         )
     }
@@ -148,9 +146,7 @@ fn sanitize_rawtext_element_children(
     sanitize_report_unsafe(
       policy,
       observer,
-      "Unsafe raw text inside <" +
-      tag_name +
-      "> contains a closing tag sequence",
+      "Unsafe raw text inside <\{tag_name}> contains a closing tag sequence",
       Some(node),
     )
   }
