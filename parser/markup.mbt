@@ -158,9 +158,8 @@ fn Parser::parse_doctype(self : Parser) -> Unit {
       name, public_id, system_id, force_quirks,
     )
   }
-  match missing_before_name {
-    Some(pos) => self.error_at("missing-whitespace-before-doctype-name", pos)
-    None => ()
+  if missing_before_name is Some(pos) {
+    self.error_at("missing-whitespace-before-doctype-name", pos)
   }
   for error in name_errors {
     self.error_at(error.code, error.offset)

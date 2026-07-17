@@ -155,9 +155,8 @@ fn normalize_table(table : @dom.Node) -> Unit {
 
 ///|
 fn normalize_tables(node : @dom.Node) -> Unit {
-  match node.template_contents {
-    Some(contents) => normalize_tables(contents)
-    None => ()
+  if node.template_contents is Some(contents) {
+    normalize_tables(contents)
   }
   let html_ns = node.ns is None || node.ns is Some("html")
   match node.kind {

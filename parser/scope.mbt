@@ -170,12 +170,7 @@ fn Parser::close_open_definition_item(self : Parser, name : String) -> Unit {
 
 ///|
 fn Parser::has_open_element(self : Parser, name : String) -> Bool {
-  for node in self.stack {
-    if node.kind == Element && node.name == name {
-      return true
-    }
-  }
-  false
+  self.stack[:].any(node => node.kind == Element && node.name == name)
 }
 
 ///|

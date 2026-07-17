@@ -1,11 +1,6 @@
 ///|
 fn node_has_direct_element_child(node : @dom.Node, name : String) -> Bool {
-  for child in node.children {
-    if child.kind == Element && child.name == name {
-      return true
-    }
-  }
-  false
+  node.children[:].any(child => child.kind == Element && child.name == name)
 }
 
 ///|
@@ -182,12 +177,7 @@ fn Parser::report_unclosed_elements_at_body_end(
 
 ///|
 fn Parser::document_has_element_child(self : Parser) -> Bool {
-  for child in self.root.children {
-    if child.kind == Element {
-      return true
-    }
-  }
-  false
+  self.root.children.any(child => child.kind == Element)
 }
 
 ///|
