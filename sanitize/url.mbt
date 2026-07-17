@@ -98,17 +98,17 @@ fn sanitize_single_url_attribute_value(
   if tag_name == "base" && attr_name == "href" {
     None
   } else {
-    match policy.url_policy.lookup_rule(tag_name, attr_name) {
-      Some(rule) =>
-        sanitize_url_attribute_value_with_rule(
-          policy.url_policy,
-          rule,
-          tag_name,
-          attr_name,
-          value,
-        )
-      None => None
-    }
+    policy.url_policy
+    .lookup_rule(tag_name, attr_name)
+    .bind(rule => {
+      sanitize_url_attribute_value_with_rule(
+        policy.url_policy,
+        rule,
+        tag_name,
+        attr_name,
+        value,
+      )
+    })
   }
 }
 

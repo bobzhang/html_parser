@@ -28,10 +28,7 @@ pub fn run_htmlfmt(args : ArrayView[String]) -> HtmlFmtResult raise {
       }
   }
   let input = matches.values["html"][0]
-  let compact = match matches.flags.get("compact") {
-    Some(value) => value
-    None => false
-  }
+  let compact = matches.flags.get("compact").unwrap_or(false)
   let output = if compact {
     compact_fragment(input)
   } else {

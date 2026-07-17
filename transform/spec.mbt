@@ -162,20 +162,14 @@ fn make_transform_spec(
 fn wrap_transform_node_callback(
   callback : ((@dom.Node) -> Unit)?,
 ) -> TransformNodeCallback? {
-  match callback {
-    Some(callback) => Some({ callback, })
-    None => None
-  }
+  callback.map(callback => { callback, })
 }
 
 ///|
 fn wrap_transform_report_callback(
   callback : ((String, @dom.Node?) -> Unit)?,
 ) -> TransformReportCallback? {
-  match callback {
-    Some(callback) => Some({ callback, })
-    None => None
-  }
+  callback.map(callback => { callback, })
 }
 
 ///|
