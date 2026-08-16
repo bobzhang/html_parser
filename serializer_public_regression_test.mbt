@@ -850,6 +850,33 @@ test "serializer emits raw text element content literally" {
     @html_parser.parse_fragment(breakout_html).to_html(pretty=false),
     breakout_html,
   )
+  // Inside foreign content a nested `math` legitimately keeps the enclosing
+  // namespace, because the tree builder only switches namespace from HTML.
+  // Its `foreignObject` is still a real SVG integration point.
+  let nested_foreign_names = @html_parser.parse_fragment(
+    "<svg><math><foreignObject><script>a<b &amp; c</script></foreignObject></math></svg>",
+  )
+  let nested_names_html = nested_foreign_names.to_html(pretty=false)
+  assert_true(nested_names_html.contains("<script>a<b &amp; c</script>"))
+  assert_eq(
+    @html_parser.parse_fragment(nested_names_html).to_html(pretty=false),
+    nested_names_html,
+  )
+  // An integration point whose namespace its position cannot produce — a
+  // MathML `mtext` directly inside an `svg` — is not trusted.
+  let impossible = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("mtext", ns="math", children=[
+      @html_parser.element("xmp", children=[
+        @html_parser.text("<img src=x onerror=1>"),
+      ]),
+    ]),
+  ])
+  let impossible_html = @html_parser.to_html(impossible, pretty=false)
+  assert_true(impossible_html.contains("&lt;img src=x onerror=1&gt;"))
+  assert_eq(
+    @html_parser.parse_fragment(impossible_html).query("img").length(),
+    0,
+  )
   // A tag name that opens foreign content while claiming the HTML namespace
   // contradicts itself, whatever its case, so the tree is not taken at face
   // value. These shapes only arise from hand-built DOMs.

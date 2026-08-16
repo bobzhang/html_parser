@@ -74,22 +74,43 @@ fn node_in_foreign_context(node : @dom.Node) -> Bool {
   if !(node.ns is (None | Some("html"))) {
     return true
   }
-  let mut foreign = false
-  let mut nearest_found = false
   let mut current = node.parent
   while current is Some(ancestor) {
     if ancestor.kind is Element {
+      if !(ancestor.ns is (None | Some("html"))) {
+        // The nearest foreign ancestor decides: only an integration point
+        // hands parsing back to HTML, and only if its own namespace agrees
+        // with the foreign content it sits in.
+        return !(foreign_element_parses_html_children(ancestor) &&
+          foreign_ancestry_agrees(ancestor))
+      }
       if namespace_contradicts_name(ancestor) {
         return true
-      }
-      if !nearest_found && !(ancestor.ns is (None | Some("html"))) {
-        foreign = !foreign_element_parses_html_children(ancestor)
-        nearest_found = true
       }
     }
     current = ancestor.parent
   }
-  foreign
+  false
+}
+
+///|
+/// Return whether a foreign element's namespace agrees with the foreign
+/// content enclosing it.
+///
+/// A hand-built tree can claim a namespace its position cannot produce — a
+/// MathML `mtext` directly inside an `svg`, say — and accepting it as an
+/// integration point would emit raw text that reparses as SVG content, where
+/// markup breaks out into live elements. An element with no foreign ancestor
+/// has nothing to disagree with.
+fn foreign_ancestry_agrees(node : @dom.Node) -> Bool {
+  let mut current = node.parent
+  while current is Some(ancestor) {
+    if ancestor.kind is Element && !(ancestor.ns is (None | Some("html"))) {
+      return ancestor.ns == node.ns
+    }
+    current = ancestor.parent
+  }
+  true
 }
 
 ///|
@@ -97,7 +118,10 @@ fn node_in_foreign_context(node : @dom.Node) -> Bool {
 ///
 /// `svg` and `math` open foreign content on a reparse whatever namespace the
 /// node claims, so an element carrying one of those names outside the matching
-/// namespace means the tree cannot be taken at face value.
+/// namespace means the tree cannot be taken at face value. This only applies
+/// to elements emitted from HTML content: inside foreign content a nested
+/// `math` legitimately stays in the enclosing namespace, because the tree
+/// builder only switches namespace from HTML.
 fn namespace_contradicts_name(node : @dom.Node) -> Bool {
   if node.name.compare_ignore_ascii_case("svg") == 0 {
     return !(node.ns is Some("svg"))
