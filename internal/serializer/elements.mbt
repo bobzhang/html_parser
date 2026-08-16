@@ -81,20 +81,26 @@ fn node_under_special_text(node : @dom.Node) -> Bool {
 
 ///|
 /// Element names whose content the tokenizer scans as text rather than markup.
+///
+/// Matched case-insensitively, because the tokenizer folds tag names while the
+/// public builder preserves whatever case the caller wrote.
+///
+/// `noscript` is absent on purpose. It is only text when scripting is enabled,
+/// and in that mode it holds a single text node, so it can have no element
+/// descendant for this check to protect. With scripting disabled it holds
+/// ordinary parsed markup, and treating it as text would escape a legitimate
+/// `<script>` inside it on every round trip.
 fn special_text_element(name : StringView) -> Bool {
-  match name {
-    "iframe"
-    | "noembed"
-    | "noframes"
-    | "noscript"
-    | "plaintext"
-    | "script"
-    | "style"
-    | "textarea"
-    | "title"
-    | "xmp" => true
-    _ => false
+  for
+    candidate in [
+      "iframe", "noembed", "noframes", "plaintext", "script", "style", "textarea",
+      "title", "xmp",
+    ] {
+    if name.compare_ignore_ascii_case(candidate) == 0 {
+      return true
+    }
   }
+  false
 }
 
 ///|
