@@ -45,4 +45,3 @@ pub fn CliResult::to_repr(Self) -> @debug.Repr
 // Type aliases
 
 // Traits
-

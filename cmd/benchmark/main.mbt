@@ -142,9 +142,9 @@ fn run_benchmarks(html : String, json_output~ : Bool, quick~ : Bool) -> Unit {
   for workload in workloads {
     let summary = @bench.single_bench(name=workload.name, workload.run)
     if json_output {
-      println(summary.to_json().stringify())
+      println(@json.to_json(summary).stringify())
     } else {
-      let stats = summary.to_json()
+      let stats = @json.to_json(summary)
       let mean_us = json_number(stats, "mean")
       let median_us = json_number(stats, "median")
       let throughput = if mean_us > 0.0 {

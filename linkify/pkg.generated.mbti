@@ -43,4 +43,3 @@ pub fn LinkifyConfig::with_extra_tlds(Array[String]) -> Self
 // Type aliases
 
 // Traits
-

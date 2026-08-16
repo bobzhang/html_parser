@@ -46,4 +46,3 @@ pub fn ParsedHtml::to_text(Self, separator? : String, strip? : Bool, separator_b
 // Type aliases
 
 // Traits
-

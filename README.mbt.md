@@ -49,8 +49,9 @@ moon add bobzhang/html_parser
 Then import the package from the `moon.pkg` that uses it:
 
 ```moonbit nocheck
+///|
 import {
-  "bobzhang/html_parser"
+  "bobzhang/html_parser",
 }
 ```
 

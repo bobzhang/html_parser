@@ -238,7 +238,7 @@ fn apply_transform(
 
 ///|
 fn transform_skip_tag_set(tags : Array[String]) -> Set[String] {
-  let out : Set[String] = Set::default()
+  let out : Set[String] = Default::default()
   for tag in tags {
     let normalized = @syn.lower_ascii(tag.trim())
     if normalized != "" {
