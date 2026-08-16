@@ -24,7 +24,7 @@ fn node_to_html_compact(
     }
     Text =>
       match node.parent {
-        Some(parent) if parent.name == "script" || parent.name == "style" =>
+        Some(parent) if raw_text_element(parent.name) =>
           neutralize_rawtext_end_tag_sequences(node.data, parent.name)
         _ => escape_text(node.data)
       }

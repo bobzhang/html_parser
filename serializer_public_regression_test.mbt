@@ -730,3 +730,38 @@ test "serializer handles pretty output quote contexts and comment guards" {
     "<div title='a&gt;b&#39;c'>\n  x&gt;y\n  <br>\n</div>\n<!-- >x- -->\n<!-- ->x<!- -->",
   )
 }
+
+///|
+test "serializer emits raw text element content literally" {
+  // The tokenizer never decodes character references inside a raw-text
+  // element, so escaping its content on the way out would add an escape
+  // level on every round trip.
+  for
+    markup in [
+      "<xmp>a<b &amp; c</xmp>", "<iframe>a<b &amp; c</iframe>", "<noembed>a<b &amp; c</noembed>",
+      "<script>a<b &amp; c</script>", "<style>a<b &amp; c</style>",
+    ] {
+    let once = @html_parser.parse(markup).to_html(pretty=false)
+    assert_true(once.contains("a<b &amp; c"))
+    assert_eq(@html_parser.parse(once).to_html(pretty=false), once)
+    let pretty = @html_parser.parse(markup).to_html(pretty=true)
+    assert_eq(@html_parser.parse(pretty).to_html(pretty=true), pretty)
+  }
+  // A programmatic node whose text would close the element early still has
+  // that `<` escaped, exactly as `script` and `style` already did.
+  let guarded = @html_parser.element("xmp", children=[
+    @html_parser.text("a</xmp>b"),
+  ])
+  assert_eq(
+    @html_parser.to_html(guarded, pretty=false),
+    "<xmp>a&lt;/xmp>b</xmp>",
+  )
+  // `noframes` behaves the same, and `textarea` and `title` are RCDATA rather
+  // than raw text, so their content stays escaped.
+  let noframes = @html_parser.parse_fragment("<noframes>a<b</noframes>")
+  assert_eq(noframes.to_html(pretty=false), "<noframes>a<b</noframes>")
+  let textarea = @html_parser.parse_fragment("<textarea>a<b</textarea>")
+  assert_eq(textarea.to_html(pretty=false), "<textarea>a&lt;b</textarea>")
+  let title = @html_parser.parse_fragment("<title>a<b</title>")
+  assert_eq(title.to_html(pretty=false), "<title>a&lt;b</title>")
+}

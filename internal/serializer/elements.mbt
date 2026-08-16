@@ -23,12 +23,29 @@ pub fn is_void_element(name : StringView) -> Bool {
 }
 
 ///|
-fn pretty_text_preserves_whitespace(name : StringView) -> Bool {
+/// Return whether an element's text children serialize literally.
+///
+/// These are HTML's raw-text elements: the tokenizer scans their content
+/// without decoding character references, so the serializer must emit that
+/// content verbatim. Escaping it would turn `&` into `&amp;` on every
+/// round trip. `noscript` is deliberately absent: it is only raw text when
+/// scripting is enabled, and the serializer does not know the parse mode.
+fn raw_text_element(name : StringView) -> Bool {
   match name {
-    "script" | "style" | "pre" | "textarea" | "listing" | "xmp" | "plaintext" =>
-      true
+    "iframe"
+    | "noembed"
+    | "noframes"
+    | "plaintext"
+    | "script"
+    | "style"
+    | "xmp" => true
     _ => false
   }
+}
+
+///|
+fn pretty_text_preserves_whitespace(name : StringView) -> Bool {
+  raw_text_element(name) || name is ("pre" | "textarea" | "listing")
 }
 
 ///|
