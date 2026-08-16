@@ -55,22 +55,25 @@ fn raw_text_element(node : @dom.Node) -> Bool {
 ///|
 /// Return whether a node would be reparsed as foreign content.
 ///
-/// The node's own namespace decides first. Otherwise the context is its
-/// parent's, which matters for a node attached programmatically: an HTML `xmp`
-/// placed under an `svg` is read as foreign on the next parse. A foreign parent
-/// that is an integration point does not count, because the tree builder
-/// switches back to HTML rules inside one.
+/// The node's own namespace decides first. Otherwise the answer comes from the
+/// nearest foreign ancestor, which matters for nodes attached programmatically:
+/// an HTML `xmp` under an `svg` is read as foreign on the next parse, and so is
+/// one under an HTML wrapper that is itself under an `svg`. HTML ancestors are
+/// transparent, so the walk continues through them; it stops at the first
+/// foreign element, which parses its children as HTML only if it is an
+/// integration point.
 fn node_in_foreign_context(node : @dom.Node) -> Bool {
   if !(node.ns is (None | Some("html"))) {
     return true
   }
-  match node.parent {
-    Some(parent) =>
-      parent.kind is Element &&
-      !(parent.ns is (None | Some("html"))) &&
-      !foreign_element_parses_html_children(parent)
-    None => false
+  let mut current = node.parent
+  while current is Some(ancestor) {
+    if ancestor.kind is Element && !(ancestor.ns is (None | Some("html"))) {
+      return !foreign_element_parses_html_children(ancestor)
+    }
+    current = ancestor.parent
   }
+  false
 }
 
 ///|

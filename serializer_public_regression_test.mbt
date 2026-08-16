@@ -810,6 +810,34 @@ test "serializer emits raw text element content literally" {
     assert_true(once.contains("<script>a<b &amp; c</script>"))
     assert_eq(@html_parser.parse_fragment(once).to_html(pretty=false), once)
   }
+  // HTML ancestors are transparent to the context walk, so an HTML wrapper
+  // between the foreign element and the raw-text node does not restore
+  // literal emission.
+  let wrapped_foreign = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("foo", children=[
+      @html_parser.element("xmp", children=[
+        @html_parser.text("<img src=x onerror=1>"),
+      ]),
+    ]),
+  ])
+  let wrapped_html = @html_parser.to_html(wrapped_foreign, pretty=false)
+  assert_eq(
+    wrapped_html, "<svg><foo><xmp>&lt;img src=x onerror=1&gt;</xmp></foo></svg>",
+  )
+  assert_eq(@html_parser.parse_fragment(wrapped_html).query("img").length(), 0)
+  // The same walk keeps an integration point's nested content in HTML context.
+  let nested_integration = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("foreignObject", ns="svg", children=[
+      @html_parser.element("div", children=[
+        @html_parser.element("script", children=[@html_parser.text("a<b & c")]),
+      ]),
+    ]),
+  ])
+  assert_true(
+    @html_parser.to_html(nested_integration, pretty=false).contains(
+      "<script>a<b & c</script>",
+    ),
+  )
   // Whitespace significance is a separate question from literal emission, so
   // a foreign style keeps its runs even though its text is escaped.
   let foreign_style = @html_parser.element("svg", ns="svg", children=[
