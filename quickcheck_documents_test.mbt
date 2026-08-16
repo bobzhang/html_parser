@@ -11,7 +11,7 @@ enum HtmlNode {
   DocText(String)
   /// A comment whose data cannot close the comment early.
   DocComment(String)
-  /// A raw-text element (`script`, `style`) whose content is emitted verbatim.
+  /// A raw-text element whose content is emitted verbatim.
   DocRawText(String, String)
   /// An element with an optional attribute and well-nested children.
   DocElement(String, String?, Array[HtmlNode])
@@ -50,11 +50,11 @@ let doc_attr_values : Array[String] = [
 ///|
 /// Raw-text elements whose serialized content must survive verbatim.
 ///
-/// Only `script` and `style` appear here. HTML's other raw-text elements —
-/// `xmp`, `iframe`, `noembed`, `noframes` — are currently escaped on output,
-/// so a round trip through them adds an escape level; add them here once
-/// issue #111 is fixed.
-let doc_raw_text_elements : Array[String] = ["script", "style"]
+/// `plaintext` is the one raw-text element left out, and permanently: no end
+/// tag can close it, so nothing containing it round-trips.
+let doc_raw_text_elements : Array[String] = [
+  "script", "style", "xmp", "iframe", "noembed", "noframes",
+]
 
 ///|
 /// Raw-text content that cannot close its own element.
