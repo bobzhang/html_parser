@@ -17,7 +17,9 @@ fn compact_pretty_text_children(
   quote : Char,
 ) -> String raise @core.HtmlError {
   let out = StringBuilder()
-  if pretty_text_preserves_whitespace(node.name) {
+  if raw_text_element(node) {
+    out.write_string(raw_text_children_html(node, quote))
+  } else if pretty_text_preserves_whitespace(node) {
     for child in serialized_children(node) {
       out.write_string(node_to_html_compact(child, quote))
     }
@@ -276,7 +278,7 @@ fn node_to_html_pretty(
     Element =>
       if serialized_children(node).is_empty() || is_void_element(node.name) {
         " ".repeat(indent) + node_to_html_compact(node, quote)
-      } else if pretty_text_preserves_whitespace(node.name) {
+      } else if pretty_text_preserves_whitespace(node) {
         " ".repeat(indent) + node_to_html_compact(node, quote)
       } else if element_has_only_text_children(node) {
         let out = StringBuilder()

@@ -756,6 +756,30 @@ test "serializer emits raw text element content literally" {
     @html_parser.to_html(guarded, pretty=false),
     "<xmp>a&lt;/xmp>b</xmp>",
   )
+  // The guard runs over the joined children, so a closing sequence split
+  // across adjacent text nodes cannot break out either.
+  for name in ["xmp", "script", "style", "iframe", "noembed", "noframes"] {
+    let split = @html_parser.element(name, children=[
+      @html_parser.text("</" + name[0:2].to_owned()),
+      @html_parser.text(name[2:].to_owned() + "><img src=x onerror=1>"),
+    ])
+    let serialized = @html_parser.to_html(split, pretty=false)
+    assert_true(serialized.contains("&lt;/\{name}>"))
+    let reparsed = @html_parser.parse_fragment(serialized)
+    assert_eq(reparsed.query("img").length(), 0)
+    assert_eq(
+      @html_parser.to_html(split, pretty=true).contains("&lt;/\{name}>"),
+      true,
+    )
+  }
+  // Raw-text handling is namespace sensitive: a foreign element sharing the
+  // local name holds ordinary parsed content, so its text stays escaped.
+  let foreign = @html_parser.parse(
+    "<svg><xmp><![CDATA[<img src=x onerror=1>]]></xmp></svg>",
+  )
+  let foreign_html = foreign.to_html(pretty=false)
+  assert_true(foreign_html.contains("<xmp>&lt;img src=x onerror=1&gt;</xmp>"))
+  assert_eq(@html_parser.parse(foreign_html).query("img").length(), 0)
   // `noframes` behaves the same, and `textarea` and `title` are RCDATA rather
   // than raw text, so their content stays escaped.
   let noframes = @html_parser.parse_fragment("<noframes>a<b</noframes>")

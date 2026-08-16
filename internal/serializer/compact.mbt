@@ -24,7 +24,7 @@ fn node_to_html_compact(
     }
     Text =>
       match node.parent {
-        Some(parent) if raw_text_element(parent.name) =>
+        Some(parent) if raw_text_element(parent) =>
           neutralize_rawtext_end_tag_sequences(node.data, parent.name)
         _ => escape_text(node.data)
       }
@@ -60,8 +60,12 @@ fn node_to_html_compact(
       let out = StringBuilder()
       out.write_string(serialize_start_tag(node, quote))
       if !is_void_element(node.name) {
-        for child in serialized_children(node) {
-          out.write_string(node_to_html_compact(child, quote))
+        if raw_text_element(node) {
+          out.write_string(raw_text_children_html(node, quote))
+        } else {
+          for child in serialized_children(node) {
+            out.write_string(node_to_html_compact(child, quote))
+          }
         }
         out <+ "</\{node.name}>"
       }

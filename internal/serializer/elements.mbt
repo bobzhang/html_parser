@@ -30,8 +30,16 @@ pub fn is_void_element(name : StringView) -> Bool {
 /// content verbatim. Escaping it would turn `&` into `&amp;` on every
 /// round trip. `noscript` is deliberately absent: it is only raw text when
 /// scripting is enabled, and the serializer does not know the parse mode.
-fn raw_text_element(name : StringView) -> Bool {
-  match name {
+///
+/// The check is namespace-sensitive. A foreign element that merely shares a
+/// local name — an SVG `xmp`, say — holds ordinary parsed content, so emitting
+/// its text literally would turn `<img src=x onerror=1>` back into a live
+/// element under foreign-content breakout rules on the next parse.
+fn raw_text_element(node : @dom.Node) -> Bool {
+  if !(node.kind is Element) || !(node.ns is (None | Some("html"))) {
+    return false
+  }
+  match node.name {
     "iframe"
     | "noembed"
     | "noframes"
@@ -44,8 +52,29 @@ fn raw_text_element(name : StringView) -> Bool {
 }
 
 ///|
-fn pretty_text_preserves_whitespace(name : StringView) -> Bool {
-  raw_text_element(name) || name is ("pre" | "textarea" | "listing")
+/// Serialize a raw-text element's children as a single literal payload.
+///
+/// The end-tag guard runs over the joined content rather than over each child
+/// separately, so a closing sequence split across adjacent text nodes — say
+/// `"</x"` followed by `"mp><img src=x onerror=1>"` inside an `xmp` — cannot
+/// slip past it and break out of the element.
+fn raw_text_children_html(
+  node : @dom.Node,
+  quote : Char,
+) -> String raise @core.HtmlError {
+  let raw = StringBuilder()
+  for child in serialized_children(node) {
+    match child.kind {
+      Text => if !child.sanitize_escape_only { raw.write_string(child.data) }
+      _ => raw.write_string(node_to_html_compact(child, quote))
+    }
+  }
+  neutralize_rawtext_end_tag_sequences(raw.to_string(), node.name)
+}
+
+///|
+fn pretty_text_preserves_whitespace(node : @dom.Node) -> Bool {
+  raw_text_element(node) || node.name is ("pre" | "textarea" | "listing")
 }
 
 ///|
