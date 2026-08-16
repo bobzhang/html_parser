@@ -69,7 +69,22 @@ fn raw_text_children_html(
       _ => raw.write_string(node_to_html_compact(child, quote))
     }
   }
-  neutralize_rawtext_end_tag_sequences(raw.to_string(), node.name)
+  raw_text_payload(raw.to_string(), node.name)
+}
+
+///|
+/// Apply the end-tag guard appropriate to a raw-text element.
+///
+/// `plaintext` is exempt: it consumes to end of file and never recognizes an
+/// end tag, so there is no boundary to protect and rewriting the `<` would only
+/// corrupt content that is already there legitimately — `<plaintext>a</plaintext>b`
+/// parses to the text `a</plaintext>b`.
+fn raw_text_payload(value : StringView, name : StringView) -> String {
+  if name == "plaintext" {
+    value.to_owned()
+  } else {
+    neutralize_rawtext_end_tag_sequences(value, name)
+  }
 }
 
 ///|

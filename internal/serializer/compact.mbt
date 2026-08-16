@@ -25,7 +25,7 @@ fn node_to_html_compact(
     Text =>
       match node.parent {
         Some(parent) if raw_text_element(parent) =>
-          neutralize_rawtext_end_tag_sequences(node.data, parent.name)
+          raw_text_payload(node.data, parent.name)
         _ => escape_text(node.data)
       }
     Comment => "<!--\{serialize_comment_data(node.data)}-->"

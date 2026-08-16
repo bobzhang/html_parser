@@ -6,11 +6,12 @@ test "parser closes open paragraphs before plaintext and xmp starts" {
     "<p>a<plaintext>b</plaintext>c",
     collect_errors=true,
   )
-  // Raw-text content serializes literally, so only the `<` of a sequence
-  // that would close the element early is neutralized.
+  // Raw-text content serializes literally. `plaintext` consumes to end of
+  // file and never recognizes an end tag, so unlike the other raw-text
+  // elements its content needs no end-tag guard either.
   assert_eq(
     plaintext.to_html(pretty=false),
-    "<p>a</p><plaintext>b&lt;/plaintext>c</plaintext>",
+    "<p>a</p><plaintext>b</plaintext>c</plaintext>",
   )
   assert_eq(plaintext.errors.length(), 1)
   assert_eq(plaintext.errors[0].code, "expected-closing-tag-but-got-eof")
@@ -109,7 +110,7 @@ test "parser treats xmp and plaintext content as text" {
   )
   assert_eq(
     plaintext.to_html(pretty=false),
-    "<plaintext><b>x</b>&lt;/plaintext>after</plaintext>",
+    "<plaintext><b>x</b></plaintext>after</plaintext>",
   )
   assert_eq(plaintext.errors[0].code, "expected-closing-tag-but-got-eof")
 }

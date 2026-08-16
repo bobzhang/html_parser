@@ -772,6 +772,14 @@ test "serializer emits raw text element content literally" {
       true,
     )
   }
+  // `plaintext` is exempt from the guard: it consumes to end of file and never
+  // recognizes an end tag, so there is no boundary to protect and rewriting
+  // the `<` would only corrupt text that is legitimately there.
+  let plaintext = @html_parser.parse_fragment("<plaintext>a</plaintext>b")
+  assert_eq(
+    plaintext.to_html(pretty=false),
+    "<plaintext>a</plaintext>b</plaintext>",
+  )
   // Raw-text handling is namespace sensitive: a foreign element sharing the
   // local name holds ordinary parsed content, so its text stays escaped.
   let foreign = @html_parser.parse(
