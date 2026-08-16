@@ -31,16 +31,18 @@ pub fn is_void_element(name : StringView) -> Bool {
 /// round trip. `noscript` is deliberately absent: it is only raw text when
 /// scripting is enabled, and the serializer does not know the parse mode.
 ///
-/// The check is context-sensitive, not just name-based. A foreign element that
-/// merely shares a local name — an SVG `xmp`, say — holds ordinary parsed
-/// content, and so does an HTML-namespace one placed under a foreign parent
-/// programmatically: a reparse reads both as foreign content, where
-/// `<img src=x onerror=1>` breaks out into a live element.
+/// Literal emission is only correct in HTML content, so the check is
+/// context-sensitive rather than name-based. An SVG `xmp` holds ordinary parsed
+/// content, and so does anything under one: a reparse reads it as foreign
+/// content, where `<img src=x onerror=1>` breaks out into a live element.
+///
+/// The name is matched first so that ordinary elements never pay for the
+/// context walk.
 fn raw_text_element(node : @dom.Node) -> Bool {
-  if !(node.kind is Element) || node_in_foreign_context(node) {
+  if !(node.kind is Element) {
     return false
   }
-  match node.name {
+  let candidate = match node.name {
     "iframe"
     | "noembed"
     | "noframes"
@@ -50,44 +52,132 @@ fn raw_text_element(node : @dom.Node) -> Bool {
     | "xmp" => true
     _ => false
   }
+  candidate && !node_in_foreign_context(node)
 }
 
 ///|
-/// Return whether a node would be reparsed as foreign content.
+/// The content mode a reparse would be in at some point in the tree.
+priv enum SerializedContext {
+  HtmlContent
+  SvgContent
+  MathContent
+}
+
+///|
+/// Return whether a node's text would be reparsed as foreign content.
 ///
-/// The node's own namespace decides first. Otherwise the answer comes from the
-/// nearest foreign ancestor, which matters for nodes attached programmatically:
-/// an HTML `xmp` under an `svg` is read as foreign on the next parse, and so is
-/// one under an HTML wrapper that is itself under an `svg`. HTML ancestors are
-/// transparent, so the walk continues through them; it stops at the first
-/// foreign element, which parses its children as HTML only if it is an
-/// integration point.
+/// The question is what a parser does with the markup about to be emitted, so
+/// this replays the tree builder's namespace transitions over the ancestor tag
+/// *names* rather than trusting the stored namespaces. Those two disagree
+/// exactly where it matters: `element("svg", …)` defaults to the HTML namespace
+/// but still emits `<svg>`, which enters SVG content on the next parse.
+///
+/// Only raw-text candidates reach this, so walking the ancestor chain is rare.
 fn node_in_foreign_context(node : @dom.Node) -> Bool {
-  if !(node.ns is (None | Some("html"))) {
-    return true
-  }
+  let ancestors = []
   let mut current = node.parent
   while current is Some(ancestor) {
-    if ancestor.kind is Element && !(ancestor.ns is (None | Some("html"))) {
-      return !foreign_element_parses_html_children(ancestor)
+    if ancestor.kind is Element {
+      ancestors.push(ancestor)
     }
     current = ancestor.parent
   }
-  false
+  // `ancestors` runs upwards; the transitions have to be replayed downwards.
+  let mut context = HtmlContent
+  for index = ancestors.length() - 1; index >= 0; index = index - 1 {
+    context = context_within(context, ancestors[index])
+  }
+  !(context is HtmlContent)
 }
 
 ///|
-/// Return whether a foreign element parses its children with HTML rules.
+/// Return the content mode inside `element`, entered from `outer`.
 ///
-/// These are the tree builder's HTML integration points plus the MathML text
-/// integration points. `parser` carries the same predicates, but it depends on
-/// this package, so they cannot be shared.
-fn foreign_element_parses_html_children(node : @dom.Node) -> Bool {
-  match node.ns {
-    Some("svg") => node.name is ("foreignObject" | "desc" | "title")
-    Some("math") =>
-      node.name is ("mi" | "mo" | "mn" | "ms" | "mtext") ||
-      (node.name == "annotation-xml" && annotation_xml_holds_html(node))
+/// From HTML content an `svg` or `math` tag opens foreign content. Within it,
+/// an integration point returns to HTML content, and so does a breakout tag:
+/// the tree builder pops out of foreign content before handling one.
+fn context_within(
+  outer : SerializedContext,
+  element : @dom.Node,
+) -> SerializedContext {
+  match outer {
+    HtmlContent =>
+      match element.name {
+        "svg" => SvgContent
+        "math" => MathContent
+        _ => HtmlContent
+      }
+    SvgContent =>
+      if element.name is ("foreignObject" | "desc" | "title") ||
+        foreign_breakout_name(element.name) {
+        HtmlContent
+      } else {
+        SvgContent
+      }
+    MathContent =>
+      if element.name is ("mi" | "mo" | "mn" | "ms" | "mtext") ||
+        (element.name == "annotation-xml" && annotation_xml_holds_html(element)) ||
+        foreign_breakout_name(element.name) {
+        HtmlContent
+      } else {
+        MathContent
+      }
+  }
+}
+
+///|
+/// Return whether a start tag pops the tree builder out of foreign content.
+///
+/// Mirrors `parser`'s list, which cannot be shared because `parser` depends on
+/// this package. `font` is deliberately absent: it only breaks out when it
+/// carries `color`, `face` or `size`, and treating it as staying foreign errs
+/// towards escaping.
+fn foreign_breakout_name(name : StringView) -> Bool {
+  match name {
+    "b"
+    | "big"
+    | "blockquote"
+    | "body"
+    | "br"
+    | "center"
+    | "code"
+    | "dd"
+    | "div"
+    | "dl"
+    | "dt"
+    | "em"
+    | "embed"
+    | "h1"
+    | "h2"
+    | "h3"
+    | "h4"
+    | "h5"
+    | "h6"
+    | "head"
+    | "hr"
+    | "i"
+    | "img"
+    | "li"
+    | "listing"
+    | "menu"
+    | "meta"
+    | "nobr"
+    | "ol"
+    | "p"
+    | "pre"
+    | "ruby"
+    | "s"
+    | "small"
+    | "span"
+    | "strong"
+    | "strike"
+    | "sub"
+    | "sup"
+    | "table"
+    | "tt"
+    | "u"
+    | "ul"
+    | "var" => true
     _ => false
   }
 }

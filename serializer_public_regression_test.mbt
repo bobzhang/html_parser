@@ -810,9 +810,36 @@ test "serializer emits raw text element content literally" {
     assert_true(once.contains("<script>a<b &amp; c</script>"))
     assert_eq(@html_parser.parse_fragment(once).to_html(pretty=false), once)
   }
-  // HTML ancestors are transparent to the context walk, so an HTML wrapper
-  // between the foreign element and the raw-text node does not restore
-  // literal emission.
+  // The context is replayed from ancestor tag names, so a builder-default
+  // `svg` — stored in the HTML namespace, but still emitted as `<svg>` — opens
+  // foreign content just as a namespaced one does.
+  for root in ["svg", "math"] {
+    let defaulted = @html_parser.element(root, children=[
+      @html_parser.element("xmp", children=[
+        @html_parser.text("<img src=x onerror=1>"),
+      ]),
+    ])
+    let defaulted_html = @html_parser.to_html(defaulted, pretty=false)
+    assert_true(defaulted_html.contains("&lt;img src=x onerror=1&gt;"))
+    assert_eq(
+      @html_parser.parse_fragment(defaulted_html).query("img").length(),
+      0,
+    )
+  }
+  // A breakout tag pops the tree builder out of foreign content, so raw text
+  // under one is genuinely raw text again.
+  let broken_out = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("div", children=[
+      @html_parser.element("script", children=[@html_parser.text("a<b & c")]),
+    ]),
+  ])
+  assert_true(
+    @html_parser.to_html(broken_out, pretty=false).contains(
+      "<script>a<b & c</script>",
+    ),
+  )
+  // An intermediate HTML wrapper that is not a breakout tag keeps the foreign
+  // context, so literal emission stays off.
   let wrapped_foreign = @html_parser.element("svg", ns="svg", children=[
     @html_parser.element("foo", children=[
       @html_parser.element("xmp", children=[
