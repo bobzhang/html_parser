@@ -780,14 +780,34 @@ test "serializer emits raw text element content literally" {
     plaintext.to_html(pretty=false),
     "<plaintext>a</plaintext>b</plaintext>",
   )
-  // Raw-text handling is namespace sensitive: a foreign element sharing the
-  // local name holds ordinary parsed content, so its text stays escaped.
+  // Raw-text handling follows the parsing context, not just the local name: a
+  // foreign element holds ordinary parsed content, so its text stays escaped.
   let foreign = @html_parser.parse(
     "<svg><xmp><![CDATA[<img src=x onerror=1>]]></xmp></svg>",
   )
   let foreign_html = foreign.to_html(pretty=false)
   assert_true(foreign_html.contains("<xmp>&lt;img src=x onerror=1&gt;</xmp>"))
   assert_eq(@html_parser.parse(foreign_html).query("img").length(), 0)
+  // The same holds for an HTML-namespace raw-text element placed under a
+  // foreign parent: a reparse still reads it as foreign content.
+  let nested_foreign = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("xmp", children=[
+      @html_parser.text("<img src=x onerror=1>"),
+    ]),
+  ])
+  let nested_html = @html_parser.to_html(nested_foreign, pretty=false)
+  assert_eq(nested_html, "<svg><xmp>&lt;img src=x onerror=1&gt;</xmp></svg>")
+  assert_eq(@html_parser.parse_fragment(nested_html).query("img").length(), 0)
+  // Whitespace significance is a separate question from literal emission, so
+  // a foreign style keeps its runs even though its text is escaped.
+  let foreign_style = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("style", ns="svg", children=[
+      @html_parser.text(".x::before { content: 'a  b'; }"),
+    ]),
+  ])
+  assert_true(
+    @html_parser.to_html(foreign_style, pretty=true).contains("'a  b'"),
+  )
   // `noframes` behaves the same, and `textarea` and `title` are RCDATA rather
   // than raw text, so their content stays escaped.
   let noframes = @html_parser.parse_fragment("<noframes>a<b</noframes>")

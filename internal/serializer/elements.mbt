@@ -31,12 +31,13 @@ pub fn is_void_element(name : StringView) -> Bool {
 /// round trip. `noscript` is deliberately absent: it is only raw text when
 /// scripting is enabled, and the serializer does not know the parse mode.
 ///
-/// The check is namespace-sensitive. A foreign element that merely shares a
-/// local name — an SVG `xmp`, say — holds ordinary parsed content, so emitting
-/// its text literally would turn `<img src=x onerror=1>` back into a live
-/// element under foreign-content breakout rules on the next parse.
+/// The check is context-sensitive, not just name-based. A foreign element that
+/// merely shares a local name — an SVG `xmp`, say — holds ordinary parsed
+/// content, and so does an HTML-namespace one placed under a foreign parent
+/// programmatically: a reparse reads both as foreign content, where
+/// `<img src=x onerror=1>` breaks out into a live element.
 fn raw_text_element(node : @dom.Node) -> Bool {
-  if !(node.kind is Element) || !(node.ns is (None | Some("html"))) {
+  if !(node.kind is Element) || node_in_foreign_context(node) {
     return false
   }
   match node.name {
@@ -49,6 +50,22 @@ fn raw_text_element(node : @dom.Node) -> Bool {
     | "xmp" => true
     _ => false
   }
+}
+
+///|
+/// Return whether a node would be reparsed as foreign content.
+///
+/// True when the node itself or any ancestor is outside the HTML namespace.
+/// Only raw-text candidates reach this, so the ancestor walk is rare.
+fn node_in_foreign_context(node : @dom.Node) -> Bool {
+  let mut current = Some(node)
+  while current is Some(element) {
+    if element.kind is Element && !(element.ns is (None | Some("html"))) {
+      return true
+    }
+    current = element.parent
+  }
+  false
 }
 
 ///|
@@ -88,8 +105,25 @@ fn raw_text_payload(value : StringView, name : StringView) -> String {
 }
 
 ///|
+/// Return whether pretty printing must keep an element's text as written.
+///
+/// This is deliberately name-based and independent of `raw_text_element`.
+/// Whether content is emitted literally is a parsing-context question; whether
+/// its whitespace is significant is not. A foreign `style` or `script` still
+/// has its text escaped, but collapsing the runs inside a CSS `content` value
+/// or a JavaScript string literal would change what it means.
 fn pretty_text_preserves_whitespace(node : @dom.Node) -> Bool {
-  raw_text_element(node) || node.name is ("pre" | "textarea" | "listing")
+  node.name
+  is ("iframe"
+  | "listing"
+  | "noembed"
+  | "noframes"
+  | "plaintext"
+  | "pre"
+  | "script"
+  | "style"
+  | "textarea"
+  | "xmp")
 }
 
 ///|
