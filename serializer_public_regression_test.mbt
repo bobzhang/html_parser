@@ -798,17 +798,27 @@ test "serializer emits raw text element content literally" {
   let nested_html = @html_parser.to_html(nested_foreign, pretty=false)
   assert_eq(nested_html, "<svg><xmp>&lt;img src=x onerror=1&gt;</xmp></svg>")
   assert_eq(@html_parser.parse_fragment(nested_html).query("img").length(), 0)
-  // An HTML integration point switches back to HTML parsing, so raw text
-  // directly inside one is still raw text and must survive a round trip.
+  // Raw text inside an HTML integration point stays escaped. Literal emission
+  // would have to rely on the enclosing `svg` or `math` being present, and
+  // `to_html` can be called on any subtree: serializing just the SVG `title`
+  // of `<svg><title><xmp></title>…</xmp></title></svg>` reparses as HTML
+  // RCDATA, where the text closes the `title` and what follows goes live.
   for
     wrapper in [
       "<svg><foreignObject>{}</foreignObject></svg>", "<svg><desc>{}</desc></svg>",
       "<svg><title>{}</title></svg>", "<math><mi>{}</mi></math>", "<math><annotation-xml encoding=\"text/html\">{}</annotation-xml></math>",
     ] {
-    let markup = wrapper.replace(old="{}", new="<script>a<b &amp; c</script>")
+    let markup = wrapper.replace(old="{}", new="<script>a<b</script>")
     let once = @html_parser.parse_fragment(markup).to_html(pretty=false)
-    assert_true(once.contains("<script>a<b &amp; c</script>"))
-    assert_eq(@html_parser.parse_fragment(once).to_html(pretty=false), once)
+    assert_true(once.contains("<script>a&lt;b</script>"))
+  }
+  // Serializing a subtree cannot rely on ancestors that will not be emitted.
+  let subtree_root = @html_parser.parse_fragment(
+    "<svg><title><xmp></title><img src=x onerror=1></xmp></title></svg>",
+  )
+  for selected in subtree_root.query("title") {
+    let rendered = @html_parser.to_html(selected, pretty=false)
+    assert_eq(@html_parser.parse_fragment(rendered).query("img").length(), 0)
   }
   // The context is replayed from ancestor tag names, so a builder-default
   // `svg` — stored in the HTML namespace, but still emitted as `<svg>` — opens
@@ -878,17 +888,17 @@ test "serializer emits raw text element content literally" {
     ),
     unscripted_html,
   )
-  // Inside foreign content a nested `math` legitimately keeps the enclosing
-  // namespace, because the tree builder only switches namespace from HTML.
-  // Its `foreignObject` is still a real SVG integration point.
+  // A nested `math` inside an `svg` legitimately keeps the enclosing namespace,
+  // because the tree builder only switches namespace from HTML — so it is not
+  // flagged as contradicting its name. Its content is still foreign, and stays
+  // escaped like any other foreign subtree.
   let nested_foreign_names = @html_parser.parse_fragment(
-    "<svg><math><foreignObject><script>a<b &amp; c</script></foreignObject></math></svg>",
+    "<svg><math><foreignObject><script>a<b</script></foreignObject></math></svg>",
   )
-  let nested_names_html = nested_foreign_names.to_html(pretty=false)
-  assert_true(nested_names_html.contains("<script>a<b &amp; c</script>"))
-  assert_eq(
-    @html_parser.parse_fragment(nested_names_html).to_html(pretty=false),
-    nested_names_html,
+  assert_true(
+    nested_foreign_names
+    .to_html(pretty=false)
+    .contains("<script>a&lt;b</script>"),
   )
   // An integration point whose namespace its position cannot produce — a
   // MathML `mtext` directly inside an `svg` — is not trusted.
@@ -932,7 +942,8 @@ test "serializer emits raw text element content literally" {
     wrapped_html, "<svg><foo><xmp>&lt;img src=x onerror=1&gt;</xmp></foo></svg>",
   )
   assert_eq(@html_parser.parse_fragment(wrapped_html).query("img").length(), 0)
-  // The same walk keeps an integration point's nested content in HTML context.
+  // Content below an integration point is escaped for the same reason: the
+  // `svg` that makes it HTML context need not survive into the emitted markup.
   let nested_integration = @html_parser.element("svg", ns="svg", children=[
     @html_parser.element("foreignObject", ns="svg", children=[
       @html_parser.element("div", children=[
@@ -942,7 +953,7 @@ test "serializer emits raw text element content literally" {
   ])
   assert_true(
     @html_parser.to_html(nested_integration, pretty=false).contains(
-      "<script>a<b & c</script>",
+      "<script>a&lt;b &amp; c</script>",
     ),
   )
   // Whitespace significance is a separate question from literal emission, so

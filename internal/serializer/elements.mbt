@@ -107,9 +107,17 @@ fn special_text_element(name : StringView) -> Bool {
 /// Return whether a node's text would be reparsed as foreign content.
 ///
 /// The parser is the authority on namespaces, so this trusts `ns` rather than
-/// re-deriving the tree builder's foreign-content rules: the node must be HTML,
-/// and the nearest foreign ancestor — if there is one — must be an integration
-/// point, which is where the tree builder hands parsing back to HTML.
+/// re-deriving the tree builder's foreign-content rules: the node and every
+/// ancestor must be HTML.
+///
+/// Foreign ancestors are rejected outright rather than excepting integration
+/// points. `to_html` can be called on any subtree, and an ancestor that
+/// justifies literal emission may not appear in the emitted markup: serializing
+/// the SVG `title` of `<svg><title><xmp></title>…</xmp></title></svg>` on its
+/// own reparses as HTML RCDATA, where the text closes the `title` and what
+/// follows becomes live markup. Every ancestor consulted here now only ever
+/// makes the decision more conservative, which holds for any serialization
+/// root. The cost is that raw text inside an integration point stays escaped.
 ///
 /// A tree can also be built by hand, where `ns` need not agree with the tag
 /// name: `element("svg", …)` defaults to the HTML namespace but still emits
@@ -126,11 +134,7 @@ fn node_in_foreign_context(node : @dom.Node) -> Bool {
   while current is Some(ancestor) {
     if ancestor.kind is Element {
       if !(ancestor.ns is (None | Some("html"))) {
-        // The nearest foreign ancestor decides: only an integration point
-        // hands parsing back to HTML, and only if its own namespace agrees
-        // with the foreign content it sits in.
-        return !(foreign_element_parses_html_children(ancestor) &&
-          foreign_ancestry_agrees(ancestor))
+        return true
       }
       if namespace_contradicts_name(ancestor) {
         return true
@@ -139,26 +143,6 @@ fn node_in_foreign_context(node : @dom.Node) -> Bool {
     current = ancestor.parent
   }
   false
-}
-
-///|
-/// Return whether a foreign element's namespace agrees with the foreign
-/// content enclosing it.
-///
-/// A hand-built tree can claim a namespace its position cannot produce — a
-/// MathML `mtext` directly inside an `svg`, say — and accepting it as an
-/// integration point would emit raw text that reparses as SVG content, where
-/// markup breaks out into live elements. An element with no foreign ancestor
-/// has nothing to disagree with.
-fn foreign_ancestry_agrees(node : @dom.Node) -> Bool {
-  let mut current = node.parent
-  while current is Some(ancestor) {
-    if ancestor.kind is Element && !(ancestor.ns is (None | Some("html"))) {
-      return ancestor.ns == node.ns
-    }
-    current = ancestor.parent
-  }
-  true
 }
 
 ///|
@@ -176,34 +160,6 @@ fn namespace_contradicts_name(node : @dom.Node) -> Bool {
   }
   if node.name.compare_ignore_ascii_case("math") == 0 {
     return !(node.ns is Some("math"))
-  }
-  false
-}
-
-///|
-/// Return whether a foreign element parses its children with HTML rules.
-///
-/// These are the tree builder's HTML integration points plus the MathML text
-/// integration points. `parser` carries the same predicates, but it depends on
-/// this package, so they cannot be shared.
-fn foreign_element_parses_html_children(node : @dom.Node) -> Bool {
-  match node.ns {
-    Some("svg") => node.name is ("foreignObject" | "desc" | "title")
-    Some("math") =>
-      node.name is ("mi" | "mo" | "mn" | "ms" | "mtext") ||
-      (node.name == "annotation-xml" && annotation_xml_holds_html(node))
-    _ => false
-  }
-}
-
-///|
-/// Return whether an `annotation-xml` declares an HTML encoding.
-fn annotation_xml_holds_html(node : @dom.Node) -> Bool {
-  for name, value in node.attrs {
-    if name.to_lower() == "encoding" && value is Some(encoding) {
-      let lowered = encoding.to_lower()
-      return lowered == "text/html" || lowered == "application/xhtml+xml"
-    }
   }
   false
 }
