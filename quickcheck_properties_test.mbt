@@ -24,7 +24,6 @@ test "property: serializing a well-nested document preserves its tree" {
       @html_parser.to_test_format(parsed.root) ==
       @html_parser.to_test_format(reparsed.root)
     },
-    counterexample_context=input => input.source(),
     count=2000,
     seed=20260816,
   )
@@ -38,7 +37,6 @@ test "property: reserializing a well-nested document is a fixpoint" {
       let twice = @html_parser.parse(once).to_html(pretty=false)
       once == twice
     },
-    counterexample_context=input => input.source(),
     count=2000,
     seed=20260817,
   )
@@ -56,7 +54,6 @@ test "property: pretty reserialization settles after one reparse" {
       let third = @html_parser.parse(second).to_html(pretty=true)
       second == third
     },
-    counterexample_context=input => input.source(),
     count=2000,
     seed=20260823,
   )
@@ -75,7 +72,6 @@ test "property: parse_bytes on utf-8 agrees with parse" {
       @html_parser.to_test_format(direct.root) ==
       @html_parser.to_test_format(via_bytes.root)
     },
-    counterexample_context=input => input.source(),
     count=1000,
     seed=20260818,
   )
@@ -95,7 +91,6 @@ test "property: every queried node matches the selector that found it" {
       }
       true
     },
-    counterexample_context=input => input.source(),
     count=1000,
     seed=20260819,
   )
@@ -116,7 +111,6 @@ test "property: text, stream and fragment entry points never raise" {
       ignore(@html_parser.find_links(src))
       true
     },
-    counterexample_context=input => input.source(),
     count=1000,
     seed=20260820,
   )
@@ -147,7 +141,6 @@ test "property: sanitized output serializes and drops unsafe constructs" {
       }
       true
     },
-    counterexample_context=input => input.source(),
     count=2000,
     seed=20260821,
   )
@@ -162,7 +155,6 @@ test "property: escaped text survives a fragment round trip" {
       @html_parser.parse_fragment(html).to_text(separator="", strip=false) ==
       text
     },
-    counterexample_context=input => input.text(),
     count=2000,
     seed=20260822,
   )
