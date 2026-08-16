@@ -39,4 +39,3 @@ pub fn write_normalized_char(StringView, Int, StringBuilder) -> Int
 // Type aliases
 
 // Traits
-

@@ -51,7 +51,7 @@ pub fn linkify_default_dom_skip_tags() -> Array[String] {
 
 ///|
 fn linkify_dom_skip_tag_set(tags : Array[String]) -> Set[String] {
-  let out : Set[String] = Set::default()
+  let out : Set[String] = Default::default()
   for tag in tags {
     let normalized = @syn.lower_ascii(tag.trim())
     if normalized != "" {

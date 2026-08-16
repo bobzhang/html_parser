@@ -38,4 +38,3 @@ pub fn write_percent_encoded_byte(StringBuilder, Byte) -> Unit
 // Type aliases
 
 // Traits
-

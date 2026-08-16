@@ -20,8 +20,13 @@ pub(all) struct HtmlFmtResult {
   stdout : String
   stderr : String
 } derive(Eq, @debug.Debug)
+#deprecated
+pub fn HtmlFmtResult::equal(Self, Self) -> Bool
+#deprecated
+pub fn HtmlFmtResult::not_equal(Self, Self) -> Bool
+#deprecated
+pub fn HtmlFmtResult::to_repr(Self) -> @debug.Repr
 
 // Type aliases
 
 // Traits
-

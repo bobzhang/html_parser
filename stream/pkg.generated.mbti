@@ -61,4 +61,3 @@ pub fn StreamStartEvent::to_repr(Self) -> @debug.Repr
 // Type aliases
 
 // Traits
-

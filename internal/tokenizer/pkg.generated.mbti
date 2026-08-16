@@ -119,4 +119,3 @@ pub(all) struct SpecialTextError {
 // Type aliases
 
 // Traits
-

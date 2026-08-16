@@ -59,4 +59,3 @@ pub fn TransformSpec::unwrap(StringView, enabled? : Bool, hook? : (@dom.Node) ->
 // Type aliases
 
 // Traits
-

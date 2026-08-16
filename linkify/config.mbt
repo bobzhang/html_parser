@@ -40,7 +40,7 @@ pub fn LinkifyConfig::with_extra_tlds(
 
 ///|
 fn linkify_tld_set(values : Array[String]) -> Set[String] {
-  let out : Set[String] = Set::default()
+  let out : Set[String] = Default::default()
   for value in values {
     let tld = value[:].trim().to_lower().to_owned()
     if tld != "" {

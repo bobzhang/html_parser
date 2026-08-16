@@ -1,6 +1,6 @@
 ///|
 fn sanitized_string_set(values : Array[String]) -> Set[String] {
-  let set : Set[String] = Set::default()
+  let set : Set[String] = Default::default()
   for value in values {
     let normalized = @syn.lower_ascii(value[:].trim())
     if normalized != "" {

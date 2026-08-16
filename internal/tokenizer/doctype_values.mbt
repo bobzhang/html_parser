@@ -11,8 +11,7 @@ pub fn parse_quoted_doctype_value_at(
   errors : Array[DoctypeExternalError],
 ) -> (String?, Int, Bool) {
   match input.get_char(start) {
-    Some('"') | Some('\'') as quote_opt => {
-      guard quote_opt is Some(quote)
+    Some('"' | '\'' as quote) => {
       let mut pos = start + quote.utf16_len()
       let value_start = pos
       while input.get_char(pos) is Some(ch) && ch != quote {
