@@ -634,11 +634,11 @@ async fn run_check_test_inventory() -> Int {
   sort_strings(inventory)
   let observed_count = inventory.length()
   let mut ok = true
-  if observed_count < minimum_count {
+  if observed_count != expected_count {
     eprintln(
-      "MoonBit test inventory shrank: at least \{minimum_count} expected, observed \{observed_count}",
+      "MoonBit test inventory count changed: expected \{expected_count}, observed \{observed_count}",
     )
-    eprintln("Raise the floor deliberately if tests were removed on purpose.")
+    eprintln("Update the count once you have reviewed the test changes.")
     ok = false
   }
   let duplicates = duplicate_items(inventory)
