@@ -798,6 +798,18 @@ test "serializer emits raw text element content literally" {
   let nested_html = @html_parser.to_html(nested_foreign, pretty=false)
   assert_eq(nested_html, "<svg><xmp>&lt;img src=x onerror=1&gt;</xmp></svg>")
   assert_eq(@html_parser.parse_fragment(nested_html).query("img").length(), 0)
+  // An HTML integration point switches back to HTML parsing, so raw text
+  // directly inside one is still raw text and must survive a round trip.
+  for
+    wrapper in [
+      "<svg><foreignObject>{}</foreignObject></svg>", "<svg><desc>{}</desc></svg>",
+      "<svg><title>{}</title></svg>", "<math><mi>{}</mi></math>", "<math><annotation-xml encoding=\"text/html\">{}</annotation-xml></math>",
+    ] {
+    let markup = wrapper.replace(old="{}", new="<script>a<b &amp; c</script>")
+    let once = @html_parser.parse_fragment(markup).to_html(pretty=false)
+    assert_true(once.contains("<script>a<b &amp; c</script>"))
+    assert_eq(@html_parser.parse_fragment(once).to_html(pretty=false), once)
+  }
   // Whitespace significance is a separate question from literal emission, so
   // a foreign style keeps its runs even though its text is escaped.
   let foreign_style = @html_parser.element("svg", ns="svg", children=[

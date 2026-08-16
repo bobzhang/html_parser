@@ -55,15 +55,48 @@ fn raw_text_element(node : @dom.Node) -> Bool {
 ///|
 /// Return whether a node would be reparsed as foreign content.
 ///
-/// True when the node itself or any ancestor is outside the HTML namespace.
-/// Only raw-text candidates reach this, so the ancestor walk is rare.
+/// The node's own namespace decides first. Otherwise the context is its
+/// parent's, which matters for a node attached programmatically: an HTML `xmp`
+/// placed under an `svg` is read as foreign on the next parse. A foreign parent
+/// that is an integration point does not count, because the tree builder
+/// switches back to HTML rules inside one.
 fn node_in_foreign_context(node : @dom.Node) -> Bool {
-  let mut current = Some(node)
-  while current is Some(element) {
-    if element.kind is Element && !(element.ns is (None | Some("html"))) {
-      return true
+  if !(node.ns is (None | Some("html"))) {
+    return true
+  }
+  match node.parent {
+    Some(parent) =>
+      parent.kind is Element &&
+      !(parent.ns is (None | Some("html"))) &&
+      !foreign_element_parses_html_children(parent)
+    None => false
+  }
+}
+
+///|
+/// Return whether a foreign element parses its children with HTML rules.
+///
+/// These are the tree builder's HTML integration points plus the MathML text
+/// integration points. `parser` carries the same predicates, but it depends on
+/// this package, so they cannot be shared.
+fn foreign_element_parses_html_children(node : @dom.Node) -> Bool {
+  match node.ns {
+    Some("svg") => node.name is ("foreignObject" | "desc" | "title")
+    Some("math") =>
+      node.name is ("mi" | "mo" | "mn" | "ms" | "mtext") ||
+      (node.name == "annotation-xml" && annotation_xml_holds_html(node))
+    _ => false
+  }
+}
+
+///|
+/// Return whether an `annotation-xml` declares an HTML encoding.
+fn annotation_xml_holds_html(node : @dom.Node) -> Bool {
+  for name, value in node.attrs {
+    if name.to_lower() == "encoding" && value is Some(encoding) {
+      let lowered = encoding.to_lower()
+      return lowered == "text/html" || lowered == "application/xhtml+xml"
     }
-    current = element.parent
   }
   false
 }
