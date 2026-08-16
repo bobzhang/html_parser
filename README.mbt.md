@@ -199,6 +199,27 @@ smoke iteration per workload. CI builds and smoke-runs the benchmark on every
 push so the workloads cannot bit-rot; timing numbers are informational and
 never gate CI.
 
+## Property-Based Tests
+
+Alongside the example-based suite, `quickcheck_*_test.mbt` in the root package
+runs `moonbitlang/core/quickcheck` properties over generated input. Two
+generators cover different ground:
+
+- `HtmlSource` produces deliberate token soup — mis-nested tags, unmatched end
+  tags, raw text, foreign content, malformed markup declarations — and drives
+  the properties that must hold for *any* input: entry points never raise,
+  `parse_bytes` agrees with `parse`, every node `query` returns matches its
+  selector, and sanitized output is free of unsafe elements, `on*` attributes
+  and `javascript:` URLs.
+- `HtmlDocument` produces *well-nested* documents that respect HTML's content
+  models, and drives the round-trip properties. That distinction matters:
+  serializing arbitrary soup is legitimately not round-trippable (a `<p>`
+  inside a `<p>`, foster-parented table content, or `<plaintext>` all reparse
+  differently), so a fixpoint assertion only makes sense on well-nested input.
+
+Seeds are fixed, so failures reproduce exactly. Counterexamples are shrunk
+against the generator's structure and reported as HTML source.
+
 ## Development Checks
 
 Run the same validation entrypoint used by CI:

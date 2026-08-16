@@ -15,5 +15,8 @@ import {
 
 import {
   "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/quickcheck" @qc,
+  "moonbitlang/core/quickcheck/shrink",
+  "moonbitlang/core/quickcheck/splitmix",
   "moonbitlang/core/test",
 } for "test"
