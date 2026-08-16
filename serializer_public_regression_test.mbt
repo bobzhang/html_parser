@@ -818,6 +818,22 @@ test "serializer emits raw text element content literally" {
     let once = @html_parser.parse_fragment(markup).to_html(pretty=false)
     assert_true(once.contains("<script>a&lt;b</script>"))
   }
+  // A text node serialized on its own is escaped: its raw-text parent is not
+  // in the output, so nothing would keep the text inert on a reparse.
+  for name in ["xmp", "script", "iframe", "noembed"] {
+    let holder = @html_parser.parse_fragment(
+      "<\{name}><img src=x onerror=1></\{name}>",
+    )
+    for element in holder.query(name) {
+      for child in element.children() {
+        let rendered = @html_parser.to_html(child, pretty=false)
+        assert_eq(
+          @html_parser.parse_fragment(rendered).query("img").length(),
+          0,
+        )
+      }
+    }
+  }
   // Serializing a subtree cannot rely on ancestors that will not be emitted.
   let subtree_root = @html_parser.parse_fragment(
     "<svg><title><xmp></title><img src=x onerror=1></xmp></title></svg>",

@@ -22,12 +22,11 @@ fn node_to_html_compact(
       }
       out.to_string()
     }
-    Text =>
-      match node.parent {
-        Some(parent) if raw_text_element(parent) =>
-          raw_text_payload(node.data, parent.name)
-        _ => escape_text(node.data)
-      }
+    // A text node reached on its own is always escaped. Raw-text content is
+    // emitted by its parent element, which joins and guards all the children
+    // at once; reaching a text node here means the parent is not part of the
+    // output, so nothing would keep the text inert once it is reparsed.
+    Text => escape_text(node.data)
     Comment => "<!--\{serialize_comment_data(node.data)}-->"
     Doctype => {
       let out = StringBuilder()
