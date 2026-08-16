@@ -850,6 +850,20 @@ test "serializer emits raw text element content literally" {
     @html_parser.parse_fragment(breakout_html).to_html(pretty=false),
     breakout_html,
   )
+  // An element nested inside one whose content the tokenizer scans as text is
+  // another shape the parser cannot produce. Emitting literally there would
+  // let the inner text close the outer element and break out.
+  for outer in ["textarea", "title", "xmp", "script"] {
+    for inner in ["xmp", "script"] {
+      let nested = @html_parser.element(outer, children=[
+        @html_parser.element(inner, children=[
+          @html_parser.text("</\{outer}><img src=x onerror=1>"),
+        ]),
+      ])
+      let rendered = @html_parser.to_html(nested, pretty=false)
+      assert_eq(@html_parser.parse_fragment(rendered).query("img").length(), 0)
+    }
+  }
   // Inside foreign content a nested `math` legitimately keeps the enclosing
   // namespace, because the tree builder only switches namespace from HTML.
   // Its `foreignObject` is still a real SVG integration point.

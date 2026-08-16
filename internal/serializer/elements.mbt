@@ -52,7 +52,49 @@ fn raw_text_element(node : @dom.Node) -> Bool {
     | "xmp" => true
     _ => false
   }
-  candidate && !node_in_foreign_context(node)
+  candidate && !node_in_foreign_context(node) && !node_under_special_text(node)
+}
+
+///|
+/// Return whether any ancestor has its content tokenized as text.
+///
+/// Only HTML elements count: an SVG `title` is an integration point whose
+/// content really is parsed as markup, not the RCDATA element of the same name.
+///
+/// The parser never nests an element inside `textarea`, `title` or a raw-text
+/// element — their content is already text by the time the tree builder sees
+/// it — so such a tree was built by hand. Emitting a descendant's text
+/// literally there would let it close the ancestor: an `xmp` inside a
+/// `textarea` whose text opens with `</textarea>` breaks out into live markup.
+fn node_under_special_text(node : @dom.Node) -> Bool {
+  let mut current = node.parent
+  while current is Some(ancestor) {
+    if ancestor.kind is Element &&
+      ancestor.ns is (None | Some("html")) &&
+      special_text_element(ancestor.name) {
+      return true
+    }
+    current = ancestor.parent
+  }
+  false
+}
+
+///|
+/// Element names whose content the tokenizer scans as text rather than markup.
+fn special_text_element(name : StringView) -> Bool {
+  match name {
+    "iframe"
+    | "noembed"
+    | "noframes"
+    | "noscript"
+    | "plaintext"
+    | "script"
+    | "style"
+    | "textarea"
+    | "title"
+    | "xmp" => true
+    _ => false
+  }
 }
 
 ///|
