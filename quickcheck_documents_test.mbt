@@ -237,8 +237,16 @@ impl @shrink.Shrink for HtmlDocument with fn shrink(self) {
     }
   }
   // Replacing a node by its children peels one nesting level at a time.
+  //
+  // Elements whose children are only valid inside them are never peeled: a
+  // `<ul>` would leave a bare `<li>` at body level, and a `<table>` a bare
+  // `<tbody>`, which the tree builder relocates. That breaks the well-nested
+  // invariant this generator exists to maintain, and QuickCheck would then
+  // report a counterexample from outside the property's domain.
   for index in 0..<length {
-    if self.nodes[index] is DocElement(_, _, children) && !children.is_empty() {
+    if self.nodes[index] is DocElement(name, _, children) &&
+      !children.is_empty() &&
+      !(name is ("ul" | "table" | "tbody" | "tr")) {
       let peeled = Array::new(capacity=length)
       for other in 0..<length {
         if other == index {

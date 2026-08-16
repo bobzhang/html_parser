@@ -40,10 +40,16 @@ let html_chunks : Array[String] = [
   // Unmatched end tags for elements that were never opened.
    "</div>", "</table>", "</span>", "</b>", "</svg>", "</template>",
   // Constructs the sanitizer must remove. Without these the sanitizer
-  // property's `on*` and `javascript:` assertions would be unreachable, and so
-  // vacuously true.
-   "<p onclick=\"alert(1)\">", "<img src=x onerror=alert(1)>", "<a href=\"javascript:alert(1)\">",
-  "<a href=\" JavaScript:alert(1)\">", "<form action=javascript:alert(1)>", "<div ONMOUSEOVER=alert(1)>",
+  // property's rejection branches would be unreachable, and so vacuously true.
+  // Every branch it asserts needs a chunk that can reach it.
+   "<p onclick=\"alert(1)\">", "<img src=x onerror=alert(1)>", "<div ONMOUSEOVER=alert(1)>",
+  "<a href=\"javascript:alert(1)\">", "<a href=\" JavaScript:alert(1)\">", "<form action=javascript:alert(1)>",
+  // Schemes obfuscated with the control characters browsers ignore when they
+  // resolve a URL, which a naive prefix test would read as safe.
+   "<a href=\"java&#x09;script:alert(1)\">", "<a href=\"java&#x0A;script:alert(1)\">",
+  "<a href=\"&#x01;JavaScript:alert(1)\">",
+  // Active embedding elements.
+   "<object data=x>", "</object>", "<embed src=x>",
 ]
 
 ///|

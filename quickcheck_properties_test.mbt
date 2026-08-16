@@ -123,6 +123,24 @@ test "property: text, stream and fragment entry points never raise" {
 }
 
 ///|
+/// Return whether an attribute value resolves to the `javascript:` scheme.
+///
+/// A plain `trim()` is not enough. Browsers strip every C0 control and space
+/// while resolving a URL, so `java<tab>script:alert(1)` — which an author can
+/// write as `java&#x09;script:` — runs as script even though it does not start
+/// with the literal scheme. Dropping those characters first keeps the check
+/// from reading an obfuscated payload as safe.
+fn url_scheme_is_script(value : String) -> Bool {
+  let stripped = StringBuilder::new()
+  for ch in value {
+    if ch > ' ' {
+      stripped.write_char(ch)
+    }
+  }
+  stripped.to_string().to_lower().has_prefix("javascript:")
+}
+
+///|
 test "property: sanitized output serializes and drops unsafe constructs" {
   @qc.check(
     (input : HtmlSource) => {
@@ -139,8 +157,7 @@ test "property: sanitized output serializes and drops unsafe constructs" {
           if name.has_prefix("on") {
             return false
           }
-          if value is Some(text) &&
-            text[:].trim().to_lower().has_prefix("javascript:") {
+          if value is Some(text) && url_scheme_is_script(text) {
             return false
           }
         }
