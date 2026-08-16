@@ -11,6 +11,12 @@ jobs:
   test:
     name: MoonBit nightly checks
     runs-on: ubuntu-latest
+    # Advisory, not a gate. MoonBit moves fast enough that nightly can break on
+    # toolchain drift alone, which says nothing about the change under review.
+    # Stable is the release this package is published against, so `ci.yml` is
+    # the job that decides; this one is an early warning. Read its log when it
+    # goes red — a real regression usually shows up in both.
+    continue-on-error: true
     permissions:
       contents: read
 
