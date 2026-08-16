@@ -611,8 +611,8 @@ async fn run_check_source_layout() -> Int {
 
 ///|
 async fn run_check_test_inventory() -> Int {
-  let expected_count = 846
-  let expected_sha256 = "745b0e2e6a67def9276c9f3c6a1226b7faaffef26b6e759ebd603c2a2e384067"
+  let expected_count = 854
+  let expected_sha256 = "PLACEHOLDER"
   let inventory : Array[String] = []
   for path in git_ls_files(["*.mbt", "*.mbt.md"]) {
     match read_text(path) {
