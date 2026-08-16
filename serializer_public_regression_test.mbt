@@ -826,20 +826,45 @@ test "serializer emits raw text element content literally" {
       0,
     )
   }
-  // A breakout tag pops the tree builder out of foreign content, so raw text
-  // under one is genuinely raw text again.
-  let broken_out = @html_parser.element("svg", ns="svg", children=[
+  // A hand-built HTML element directly under a foreign one is a shape the
+  // parser never produces — a breakout tag ends up a sibling of the `svg`, not
+  // a child — so it is treated as foreign and escaped rather than guessed at.
+  let hand_built = @html_parser.element("svg", ns="svg", children=[
     @html_parser.element("div", children=[
       @html_parser.element("script", children=[@html_parser.text("a<b & c")]),
     ]),
   ])
   assert_true(
-    @html_parser.to_html(broken_out, pretty=false).contains(
-      "<script>a<b & c</script>",
+    @html_parser.to_html(hand_built, pretty=false).contains(
+      "<script>a&lt;b &amp; c</script>",
     ),
   )
-  // An intermediate HTML wrapper that is not a breakout tag keeps the foreign
-  // context, so literal emission stays off.
+  // What the parser actually produces for a breakout keeps raw text literal,
+  // because the element lands outside the foreign subtree.
+  let parsed_breakout = @html_parser.parse_fragment(
+    "<svg><div><script>a<b &amp; c</script></div></svg>",
+  )
+  let breakout_html = parsed_breakout.to_html(pretty=false)
+  assert_true(breakout_html.contains("<script>a<b &amp; c</script>"))
+  assert_eq(
+    @html_parser.parse_fragment(breakout_html).to_html(pretty=false),
+    breakout_html,
+  )
+  // A tag name that opens foreign content while claiming the HTML namespace
+  // contradicts itself, whatever its case, so the tree is not taken at face
+  // value. These shapes only arise from hand-built DOMs.
+  for root in ["svg", "SVG", "math", "MATH"] {
+    let contradictory = @html_parser.element(root, children=[
+      @html_parser.element("xmp", children=[
+        @html_parser.text("<img src=x onerror=1>"),
+      ]),
+    ])
+    let rendered = @html_parser.to_html(contradictory, pretty=false)
+    assert_true(rendered.contains("&lt;img src=x onerror=1&gt;"))
+    assert_eq(@html_parser.parse_fragment(rendered).query("img").length(), 0)
+  }
+  // An intermediate HTML wrapper under a foreign element is likewise not
+  // something the parser emits, so literal emission stays off.
   let wrapped_foreign = @html_parser.element("svg", ns="svg", children=[
     @html_parser.element("foo", children=[
       @html_parser.element("xmp", children=[

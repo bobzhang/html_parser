@@ -56,128 +56,70 @@ fn raw_text_element(node : @dom.Node) -> Bool {
 }
 
 ///|
-/// The content mode a reparse would be in at some point in the tree.
-priv enum SerializedContext {
-  HtmlContent
-  SvgContent
-  MathContent
-}
-
-///|
 /// Return whether a node's text would be reparsed as foreign content.
 ///
-/// The question is what a parser does with the markup about to be emitted, so
-/// this replays the tree builder's namespace transitions over the ancestor tag
-/// *names* rather than trusting the stored namespaces. Those two disagree
-/// exactly where it matters: `element("svg", …)` defaults to the HTML namespace
-/// but still emits `<svg>`, which enters SVG content on the next parse.
+/// The parser is the authority on namespaces, so this trusts `ns` rather than
+/// re-deriving the tree builder's foreign-content rules: the node must be HTML,
+/// and the nearest foreign ancestor — if there is one — must be an integration
+/// point, which is where the tree builder hands parsing back to HTML.
 ///
-/// Only raw-text candidates reach this, so walking the ancestor chain is rare.
+/// A tree can also be built by hand, where `ns` need not agree with the tag
+/// name: `element("svg", …)` defaults to the HTML namespace but still emits
+/// `<svg>`, which opens SVG content on the next parse. Reconstructing what such
+/// a tree reparses to means reimplementing the tree builder, and getting it
+/// subtly wrong turns escaped text into live markup — so a tree that
+/// contradicts itself is treated as foreign instead, which is the safe
+/// direction. Every shape this gives up on is one the parser cannot produce.
 fn node_in_foreign_context(node : @dom.Node) -> Bool {
-  let ancestors = []
+  if !(node.ns is (None | Some("html"))) {
+    return true
+  }
+  let mut foreign = false
+  let mut nearest_found = false
   let mut current = node.parent
   while current is Some(ancestor) {
     if ancestor.kind is Element {
-      ancestors.push(ancestor)
+      if namespace_contradicts_name(ancestor) {
+        return true
+      }
+      if !nearest_found && !(ancestor.ns is (None | Some("html"))) {
+        foreign = !foreign_element_parses_html_children(ancestor)
+        nearest_found = true
+      }
     }
     current = ancestor.parent
   }
-  // `ancestors` runs upwards; the transitions have to be replayed downwards.
-  let mut context = HtmlContent
-  for index = ancestors.length() - 1; index >= 0; index = index - 1 {
-    context = context_within(context, ancestors[index])
-  }
-  !(context is HtmlContent)
+  foreign
 }
 
 ///|
-/// Return the content mode inside `element`, entered from `outer`.
+/// Return whether an element's namespace contradicts its tag name.
 ///
-/// From HTML content an `svg` or `math` tag opens foreign content. Within it,
-/// an integration point returns to HTML content, and so does a breakout tag:
-/// the tree builder pops out of foreign content before handling one.
-fn context_within(
-  outer : SerializedContext,
-  element : @dom.Node,
-) -> SerializedContext {
-  match outer {
-    HtmlContent =>
-      match element.name {
-        "svg" => SvgContent
-        "math" => MathContent
-        _ => HtmlContent
-      }
-    SvgContent =>
-      if element.name is ("foreignObject" | "desc" | "title") ||
-        foreign_breakout_name(element.name) {
-        HtmlContent
-      } else {
-        SvgContent
-      }
-    MathContent =>
-      if element.name is ("mi" | "mo" | "mn" | "ms" | "mtext") ||
-        (element.name == "annotation-xml" && annotation_xml_holds_html(element)) ||
-        foreign_breakout_name(element.name) {
-        HtmlContent
-      } else {
-        MathContent
-      }
+/// `svg` and `math` open foreign content on a reparse whatever namespace the
+/// node claims, so an element carrying one of those names outside the matching
+/// namespace means the tree cannot be taken at face value.
+fn namespace_contradicts_name(node : @dom.Node) -> Bool {
+  if node.name.compare_ignore_ascii_case("svg") == 0 {
+    return !(node.ns is Some("svg"))
   }
+  if node.name.compare_ignore_ascii_case("math") == 0 {
+    return !(node.ns is Some("math"))
+  }
+  false
 }
 
 ///|
-/// Return whether a start tag pops the tree builder out of foreign content.
+/// Return whether a foreign element parses its children with HTML rules.
 ///
-/// Mirrors `parser`'s list, which cannot be shared because `parser` depends on
-/// this package. `font` is deliberately absent: it only breaks out when it
-/// carries `color`, `face` or `size`, and treating it as staying foreign errs
-/// towards escaping.
-fn foreign_breakout_name(name : StringView) -> Bool {
-  match name {
-    "b"
-    | "big"
-    | "blockquote"
-    | "body"
-    | "br"
-    | "center"
-    | "code"
-    | "dd"
-    | "div"
-    | "dl"
-    | "dt"
-    | "em"
-    | "embed"
-    | "h1"
-    | "h2"
-    | "h3"
-    | "h4"
-    | "h5"
-    | "h6"
-    | "head"
-    | "hr"
-    | "i"
-    | "img"
-    | "li"
-    | "listing"
-    | "menu"
-    | "meta"
-    | "nobr"
-    | "ol"
-    | "p"
-    | "pre"
-    | "ruby"
-    | "s"
-    | "small"
-    | "span"
-    | "strong"
-    | "strike"
-    | "sub"
-    | "sup"
-    | "table"
-    | "tt"
-    | "u"
-    | "ul"
-    | "var" => true
+/// These are the tree builder's HTML integration points plus the MathML text
+/// integration points. `parser` carries the same predicates, but it depends on
+/// this package, so they cannot be shared.
+fn foreign_element_parses_html_children(node : @dom.Node) -> Bool {
+  match node.ns {
+    Some("svg") => node.name is ("foreignObject" | "desc" | "title")
+    Some("math") =>
+      node.name is ("mi" | "mo" | "mn" | "ms" | "mtext") ||
+      (node.name == "annotation-xml" && annotation_xml_holds_html(node))
     _ => false
   }
 }
