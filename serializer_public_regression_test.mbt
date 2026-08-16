@@ -747,6 +747,12 @@ test "serializer emits raw text element content literally" {
     let pretty = @html_parser.parse(markup).to_html(pretty=true)
     assert_eq(@html_parser.parse(pretty).to_html(pretty=true), pretty)
   }
+  // The builder keeps the case the caller wrote, but the parser folds tag
+  // names, so an upper-case raw-text element is still raw text.
+  let upper = @html_parser.element("XMP", children=[
+    @html_parser.text("a<b &amp; c"),
+  ])
+  assert_eq(@html_parser.to_html(upper, pretty=false), "<XMP>a<b &amp; c</XMP>")
   // A programmatic node whose text would close the element early still has
   // that `<` escaped, exactly as `script` and `style` already did.
   let guarded = @html_parser.element("xmp", children=[
@@ -874,19 +880,18 @@ test "serializer emits raw text element content literally" {
       assert_eq(@html_parser.parse_fragment(rendered).query("img").length(), 0)
     }
   }
-  // `noscript` is not treated as text-tokenized: with scripting disabled it
-  // holds ordinary parsed markup, and a `<script>` inside it is real raw text.
+  // `noscript` counts as text-tokenized even though that is only true with
+  // scripting enabled, because output crosses modes: this tree comes from a
+  // scripting-disabled parse, and emitting the `xmp` text literally would go
+  // live as soon as anything reparsed it with scripting on.
   let unscripted = @html_parser.parse_fragment(
-    "<noscript><script>a<b &amp; c</script></noscript>",
+    "<noscript><xmp></noscript><img src=x onerror=1></xmp></noscript>",
     scripting_enabled=false,
   )
   let unscripted_html = unscripted.to_html(pretty=false)
-  assert_true(unscripted_html.contains("<script>a<b &amp; c</script>"))
   assert_eq(
-    @html_parser.parse_fragment(unscripted_html, scripting_enabled=false).to_html(
-      pretty=false,
-    ),
-    unscripted_html,
+    @html_parser.parse_fragment(unscripted_html).query("img").length(),
+    0,
   )
   // A nested `math` inside an `svg` legitimately keeps the enclosing namespace,
   // because the tree builder only switches namespace from HTML — so it is not

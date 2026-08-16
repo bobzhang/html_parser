@@ -42,17 +42,27 @@ fn raw_text_element(node : @dom.Node) -> Bool {
   if !(node.kind is Element) {
     return false
   }
-  let candidate = match node.name {
-    "iframe"
-    | "noembed"
-    | "noframes"
-    | "plaintext"
-    | "script"
-    | "style"
-    | "xmp" => true
-    _ => false
+  raw_text_element_name(node.name) &&
+  !node_in_foreign_context(node) &&
+  !node_under_special_text(node)
+}
+
+///|
+/// Return whether `name` is a raw-text element name.
+///
+/// Matched case-insensitively: the tokenizer folds tag names, while the public
+/// builder keeps whatever case the caller wrote, and `element("XMP", …)` still
+/// emits a tag the parser reads as raw text.
+fn raw_text_element_name(name : StringView) -> Bool {
+  for
+    candidate in [
+      "iframe", "noembed", "noframes", "plaintext", "script", "style", "xmp",
+    ] {
+    if name.compare_ignore_ascii_case(candidate) == 0 {
+      return true
+    }
   }
-  candidate && !node_in_foreign_context(node) && !node_under_special_text(node)
+  false
 }
 
 ///|
@@ -85,16 +95,20 @@ fn node_under_special_text(node : @dom.Node) -> Bool {
 /// Matched case-insensitively, because the tokenizer folds tag names while the
 /// public builder preserves whatever case the caller wrote.
 ///
-/// `noscript` is absent on purpose. It is only text when scripting is enabled,
-/// and in that mode it holds a single text node, so it can have no element
-/// descendant for this check to protect. With scripting disabled it holds
-/// ordinary parsed markup, and treating it as text would escape a legitimate
-/// `<script>` inside it on every round trip.
+/// `noscript` is included even though it is only text when scripting is
+/// enabled. The serializer cannot know the parse mode, and output normally
+/// crosses modes: a tree parsed with `scripting_enabled=false` can hold
+/// `<noscript><xmp></noscript>…</xmp></noscript>`, and emitting that literally
+/// goes live the moment anything reparses it with scripting on — which is the
+/// default here and always true in a browser. The cost is that a `<script>`
+/// inside a `<noscript>` parsed with scripting disabled stays escaped. That
+/// matches how this serializer already treats `noscript`'s own content, and
+/// trades an escape level for an injection.
 fn special_text_element(name : StringView) -> Bool {
   for
     candidate in [
-      "iframe", "noembed", "noframes", "plaintext", "script", "style", "textarea",
-      "title", "xmp",
+      "iframe", "noembed", "noframes", "noscript", "plaintext", "script", "style",
+      "textarea", "title", "xmp",
     ] {
     if name.compare_ignore_ascii_case(candidate) == 0 {
       return true
@@ -193,7 +207,7 @@ fn raw_text_children_html(
 /// corrupt content that is already there legitimately — `<plaintext>a</plaintext>b`
 /// parses to the text `a</plaintext>b`.
 fn raw_text_payload(value : StringView, name : StringView) -> String {
-  if name == "plaintext" {
+  if name.compare_ignore_ascii_case("plaintext") == 0 {
     value.to_owned()
   } else {
     neutralize_rawtext_end_tag_sequences(value, name)
@@ -209,17 +223,16 @@ fn raw_text_payload(value : StringView, name : StringView) -> String {
 /// has its text escaped, but collapsing the runs inside a CSS `content` value
 /// or a JavaScript string literal would change what it means.
 fn pretty_text_preserves_whitespace(node : @dom.Node) -> Bool {
-  node.name
-  is ("iframe"
-  | "listing"
-  | "noembed"
-  | "noframes"
-  | "plaintext"
-  | "pre"
-  | "script"
-  | "style"
-  | "textarea"
-  | "xmp")
+  for
+    candidate in [
+      "iframe", "listing", "noembed", "noframes", "plaintext", "pre", "script", "style",
+      "textarea", "xmp",
+    ] {
+    if node.name.compare_ignore_ascii_case(candidate) == 0 {
+      return true
+    }
+  }
+  false
 }
 
 ///|
