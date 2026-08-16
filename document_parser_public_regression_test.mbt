@@ -128,6 +128,46 @@ test "document parser promotes explicit root head and body elements" {
 }
 
 ///|
+test "document parser ignores head start tags inside body and frameset content" {
+  // The in-body rules ignore a `head` start tag, so it must never appear as a
+  // nested element; a nested one would also be dropped on reparse.
+  let in_paragraph = @html_parser.parse("<p><head><title>T</title>")
+  assert_eq(
+    in_paragraph.to_html(pretty=false),
+    "<html><head></head><body><p><title>T</title></p></body></html>",
+  )
+  let in_formatting = @html_parser.parse(
+    "<nobr><head><a href=\"/x\">",
+    collect_errors=true,
+  )
+  assert_eq(
+    in_formatting.to_html(pretty=false),
+    "<html><head></head><body><nobr><a href=\"/x\"></a></nobr></body></html>",
+  )
+  assert_true(
+    in_formatting.errors.any(error => error.code == "unexpected-start-tag"),
+  )
+  let after_body_start = @html_parser.parse("<body><head>")
+  assert_eq(
+    after_body_start.to_html(pretty=false),
+    "<html><head></head><body></body></html>",
+  )
+  // The in-frameset and after-frameset rules ignore it too.
+  let in_frameset = @html_parser.parse("<frameset><head>")
+  assert_eq(
+    in_frameset.to_html(pretty=false),
+    "<html><head></head><frameset></frameset></html>",
+  )
+  // A late head outside body content still reroutes head-only content to the
+  // body, which is the behavior the duplicate-head path exists for.
+  let late_head = @html_parser.parse("<head></head><head><title>T</title>")
+  assert_eq(
+    late_head.to_html(pretty=false),
+    "<html><head></head><body><title>T</title></body></html>",
+  )
+}
+
+///|
 test "document parser merges repeated body tags" {
   let repeated = @html_parser.parse(
     "<body class=a><p>one</p><body id=b><p>two</p>",
