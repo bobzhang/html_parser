@@ -730,3 +730,269 @@ test "serializer handles pretty output quote contexts and comment guards" {
     "<div title='a&gt;b&#39;c'>\n  x&gt;y\n  <br>\n</div>\n<!-- >x- -->\n<!-- ->x<!- -->",
   )
 }
+
+///|
+test "serializer emits raw text element content literally" {
+  // The tokenizer never decodes character references inside a raw-text
+  // element, so escaping its content on the way out would add an escape
+  // level on every round trip.
+  for
+    markup in [
+      "<xmp>a<b &amp; c</xmp>", "<iframe>a<b &amp; c</iframe>", "<noembed>a<b &amp; c</noembed>",
+      "<script>a<b &amp; c</script>", "<style>a<b &amp; c</style>",
+    ] {
+    let once = @html_parser.parse(markup).to_html(pretty=false)
+    assert_true(once.contains("a<b &amp; c"))
+    assert_eq(@html_parser.parse(once).to_html(pretty=false), once)
+    let pretty = @html_parser.parse(markup).to_html(pretty=true)
+    assert_eq(@html_parser.parse(pretty).to_html(pretty=true), pretty)
+  }
+  // The builder keeps the case the caller wrote, but the parser folds tag
+  // names, so an upper-case raw-text element is still raw text.
+  let upper = @html_parser.element("XMP", children=[
+    @html_parser.text("a<b &amp; c"),
+  ])
+  assert_eq(@html_parser.to_html(upper, pretty=false), "<XMP>a<b &amp; c</XMP>")
+  // A programmatic node whose text would close the element early still has
+  // that `<` escaped, exactly as `script` and `style` already did.
+  let guarded = @html_parser.element("xmp", children=[
+    @html_parser.text("a</xmp>b"),
+  ])
+  assert_eq(
+    @html_parser.to_html(guarded, pretty=false),
+    "<xmp>a&lt;/xmp>b</xmp>",
+  )
+  // The guard runs over the joined children, so a closing sequence split
+  // across adjacent text nodes cannot break out either.
+  for name in ["xmp", "script", "style", "iframe", "noembed", "noframes"] {
+    let split = @html_parser.element(name, children=[
+      @html_parser.text("</" + name[0:2].to_owned()),
+      @html_parser.text(name[2:].to_owned() + "><img src=x onerror=1>"),
+    ])
+    let serialized = @html_parser.to_html(split, pretty=false)
+    assert_true(serialized.contains("&lt;/\{name}>"))
+    let reparsed = @html_parser.parse_fragment(serialized)
+    assert_eq(reparsed.query("img").length(), 0)
+    assert_eq(
+      @html_parser.to_html(split, pretty=true).contains("&lt;/\{name}>"),
+      true,
+    )
+  }
+  // `plaintext` is exempt from the guard: it consumes to end of file and never
+  // recognizes an end tag, so there is no boundary to protect and rewriting
+  // the `<` would only corrupt text that is legitimately there.
+  let plaintext = @html_parser.parse_fragment("<plaintext>a</plaintext>b")
+  assert_eq(
+    plaintext.to_html(pretty=false),
+    "<plaintext>a</plaintext>b</plaintext>",
+  )
+  // Raw-text handling follows the parsing context, not just the local name: a
+  // foreign element holds ordinary parsed content, so its text stays escaped.
+  let foreign = @html_parser.parse(
+    "<svg><xmp><![CDATA[<img src=x onerror=1>]]></xmp></svg>",
+  )
+  let foreign_html = foreign.to_html(pretty=false)
+  assert_true(foreign_html.contains("<xmp>&lt;img src=x onerror=1&gt;</xmp>"))
+  assert_eq(@html_parser.parse(foreign_html).query("img").length(), 0)
+  // The same holds for an HTML-namespace raw-text element placed under a
+  // foreign parent: a reparse still reads it as foreign content.
+  let nested_foreign = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("xmp", children=[
+      @html_parser.text("<img src=x onerror=1>"),
+    ]),
+  ])
+  let nested_html = @html_parser.to_html(nested_foreign, pretty=false)
+  assert_eq(nested_html, "<svg><xmp>&lt;img src=x onerror=1&gt;</xmp></svg>")
+  assert_eq(@html_parser.parse_fragment(nested_html).query("img").length(), 0)
+  // Raw text inside an HTML integration point stays escaped. Literal emission
+  // would have to rely on the enclosing `svg` or `math` being present, and
+  // `to_html` can be called on any subtree: serializing just the SVG `title`
+  // of `<svg><title><xmp></title>…</xmp></title></svg>` reparses as HTML
+  // RCDATA, where the text closes the `title` and what follows goes live.
+  for
+    wrapper in [
+      "<svg><foreignObject>{}</foreignObject></svg>", "<svg><desc>{}</desc></svg>",
+      "<svg><title>{}</title></svg>", "<math><mi>{}</mi></math>", "<math><annotation-xml encoding=\"text/html\">{}</annotation-xml></math>",
+    ] {
+    let markup = wrapper.replace(old="{}", new="<script>a<b</script>")
+    let once = @html_parser.parse_fragment(markup).to_html(pretty=false)
+    assert_true(once.contains("<script>a&lt;b</script>"))
+  }
+  // A text node serialized on its own is escaped: its raw-text parent is not
+  // in the output, so nothing would keep the text inert on a reparse.
+  for name in ["xmp", "script", "iframe", "noembed"] {
+    let holder = @html_parser.parse_fragment(
+      "<\{name}><img src=x onerror=1></\{name}>",
+    )
+    for element in holder.query(name) {
+      for child in element.children() {
+        let rendered = @html_parser.to_html(child, pretty=false)
+        assert_eq(
+          @html_parser.parse_fragment(rendered).query("img").length(),
+          0,
+        )
+      }
+    }
+  }
+  // Serializing a subtree cannot rely on ancestors that will not be emitted.
+  let subtree_root = @html_parser.parse_fragment(
+    "<svg><title><xmp></title><img src=x onerror=1></xmp></title></svg>",
+  )
+  for selected in subtree_root.query("title") {
+    let rendered = @html_parser.to_html(selected, pretty=false)
+    assert_eq(@html_parser.parse_fragment(rendered).query("img").length(), 0)
+  }
+  // The context is replayed from ancestor tag names, so a builder-default
+  // `svg` — stored in the HTML namespace, but still emitted as `<svg>` — opens
+  // foreign content just as a namespaced one does.
+  for root in ["svg", "math"] {
+    let defaulted = @html_parser.element(root, children=[
+      @html_parser.element("xmp", children=[
+        @html_parser.text("<img src=x onerror=1>"),
+      ]),
+    ])
+    let defaulted_html = @html_parser.to_html(defaulted, pretty=false)
+    assert_true(defaulted_html.contains("&lt;img src=x onerror=1&gt;"))
+    assert_eq(
+      @html_parser.parse_fragment(defaulted_html).query("img").length(),
+      0,
+    )
+  }
+  // A hand-built HTML element directly under a foreign one is a shape the
+  // parser never produces — a breakout tag ends up a sibling of the `svg`, not
+  // a child — so it is treated as foreign and escaped rather than guessed at.
+  let hand_built = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("div", children=[
+      @html_parser.element("script", children=[@html_parser.text("a<b & c")]),
+    ]),
+  ])
+  assert_true(
+    @html_parser.to_html(hand_built, pretty=false).contains(
+      "<script>a&lt;b &amp; c</script>",
+    ),
+  )
+  // What the parser actually produces for a breakout keeps raw text literal,
+  // because the element lands outside the foreign subtree.
+  let parsed_breakout = @html_parser.parse_fragment(
+    "<svg><div><script>a<b &amp; c</script></div></svg>",
+  )
+  let breakout_html = parsed_breakout.to_html(pretty=false)
+  assert_true(breakout_html.contains("<script>a<b &amp; c</script>"))
+  assert_eq(
+    @html_parser.parse_fragment(breakout_html).to_html(pretty=false),
+    breakout_html,
+  )
+  // An element nested inside one whose content the tokenizer scans as text is
+  // another shape the parser cannot produce. Emitting literally there would
+  // let the inner text close the outer element and break out.
+  for outer in ["textarea", "TEXTAREA", "title", "xmp", "Script"] {
+    for inner in ["xmp", "script"] {
+      let nested = @html_parser.element(outer, children=[
+        @html_parser.element(inner, children=[
+          @html_parser.text("</\{outer.to_lower()}><img src=x onerror=1>"),
+        ]),
+      ])
+      let rendered = @html_parser.to_html(nested, pretty=false)
+      assert_eq(@html_parser.parse_fragment(rendered).query("img").length(), 0)
+    }
+  }
+  // `noscript` counts as text-tokenized even though that is only true with
+  // scripting enabled, because output crosses modes: this tree comes from a
+  // scripting-disabled parse, and emitting the `xmp` text literally would go
+  // live as soon as anything reparsed it with scripting on.
+  let unscripted = @html_parser.parse_fragment(
+    "<noscript><xmp></noscript><img src=x onerror=1></xmp></noscript>",
+    scripting_enabled=false,
+  )
+  let unscripted_html = unscripted.to_html(pretty=false)
+  assert_eq(
+    @html_parser.parse_fragment(unscripted_html).query("img").length(),
+    0,
+  )
+  // A nested `math` inside an `svg` legitimately keeps the enclosing namespace,
+  // because the tree builder only switches namespace from HTML — so it is not
+  // flagged as contradicting its name. Its content is still foreign, and stays
+  // escaped like any other foreign subtree.
+  let nested_foreign_names = @html_parser.parse_fragment(
+    "<svg><math><foreignObject><script>a<b</script></foreignObject></math></svg>",
+  )
+  assert_true(
+    nested_foreign_names
+    .to_html(pretty=false)
+    .contains("<script>a&lt;b</script>"),
+  )
+  // An integration point whose namespace its position cannot produce — a
+  // MathML `mtext` directly inside an `svg` — is not trusted.
+  let impossible = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("mtext", ns="math", children=[
+      @html_parser.element("xmp", children=[
+        @html_parser.text("<img src=x onerror=1>"),
+      ]),
+    ]),
+  ])
+  let impossible_html = @html_parser.to_html(impossible, pretty=false)
+  assert_true(impossible_html.contains("&lt;img src=x onerror=1&gt;"))
+  assert_eq(
+    @html_parser.parse_fragment(impossible_html).query("img").length(),
+    0,
+  )
+  // A tag name that opens foreign content while claiming the HTML namespace
+  // contradicts itself, whatever its case, so the tree is not taken at face
+  // value. These shapes only arise from hand-built DOMs.
+  for root in ["svg", "SVG", "math", "MATH"] {
+    let contradictory = @html_parser.element(root, children=[
+      @html_parser.element("xmp", children=[
+        @html_parser.text("<img src=x onerror=1>"),
+      ]),
+    ])
+    let rendered = @html_parser.to_html(contradictory, pretty=false)
+    assert_true(rendered.contains("&lt;img src=x onerror=1&gt;"))
+    assert_eq(@html_parser.parse_fragment(rendered).query("img").length(), 0)
+  }
+  // An intermediate HTML wrapper under a foreign element is likewise not
+  // something the parser emits, so literal emission stays off.
+  let wrapped_foreign = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("foo", children=[
+      @html_parser.element("xmp", children=[
+        @html_parser.text("<img src=x onerror=1>"),
+      ]),
+    ]),
+  ])
+  let wrapped_html = @html_parser.to_html(wrapped_foreign, pretty=false)
+  assert_eq(
+    wrapped_html, "<svg><foo><xmp>&lt;img src=x onerror=1&gt;</xmp></foo></svg>",
+  )
+  assert_eq(@html_parser.parse_fragment(wrapped_html).query("img").length(), 0)
+  // Content below an integration point is escaped for the same reason: the
+  // `svg` that makes it HTML context need not survive into the emitted markup.
+  let nested_integration = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("foreignObject", ns="svg", children=[
+      @html_parser.element("div", children=[
+        @html_parser.element("script", children=[@html_parser.text("a<b & c")]),
+      ]),
+    ]),
+  ])
+  assert_true(
+    @html_parser.to_html(nested_integration, pretty=false).contains(
+      "<script>a&lt;b &amp; c</script>",
+    ),
+  )
+  // Whitespace significance is a separate question from literal emission, so
+  // a foreign style keeps its runs even though its text is escaped.
+  let foreign_style = @html_parser.element("svg", ns="svg", children=[
+    @html_parser.element("style", ns="svg", children=[
+      @html_parser.text(".x::before { content: 'a  b'; }"),
+    ]),
+  ])
+  assert_true(
+    @html_parser.to_html(foreign_style, pretty=true).contains("'a  b'"),
+  )
+  // `noframes` behaves the same, and `textarea` and `title` are RCDATA rather
+  // than raw text, so their content stays escaped.
+  let noframes = @html_parser.parse_fragment("<noframes>a<b</noframes>")
+  assert_eq(noframes.to_html(pretty=false), "<noframes>a<b</noframes>")
+  let textarea = @html_parser.parse_fragment("<textarea>a<b</textarea>")
+  assert_eq(textarea.to_html(pretty=false), "<textarea>a&lt;b</textarea>")
+  let title = @html_parser.parse_fragment("<title>a<b</title>")
+  assert_eq(title.to_html(pretty=false), "<title>a&lt;b</title>")
+}

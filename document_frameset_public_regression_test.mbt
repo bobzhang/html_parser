@@ -95,7 +95,7 @@ test "document parser scaffolds framesets outside body" {
   )
   assert_eq(
     noframes.to_html(pretty=false),
-    "<!DOCTYPE html><html><head></head><frameset><noframes>&lt;p&gt;x&lt;/p&gt;</noframes></frameset></html>",
+    "<!DOCTYPE html><html><head></head><frameset><noframes><p>x</p></noframes></frameset></html>",
   )
   assert_eq(noframes.errors.length(), 0)
 }

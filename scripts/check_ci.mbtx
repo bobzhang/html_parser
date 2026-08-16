@@ -616,7 +616,7 @@ async fn run_check_test_inventory() -> Int {
   // conflict here. The count stays an exact pin rather than a floor, because a
   // floor accumulates slack — once a PR raises the total, a later one can
   // delete the tests it added and still clear the old bound.
-  let expected_count = 854
+  let expected_count = 855
   let inventory : Array[String] = []
   for path in git_ls_files(["*.mbt", "*.mbt.md"]) {
     match read_text(path) {

@@ -138,7 +138,7 @@ test "parser reports select plaintext start and keeps current container" {
   )
   assert_eq(
     plain.to_html(pretty=false),
-    "<select><plaintext>x&lt;/select&gt;y</plaintext></select>",
+    "<select><plaintext>x</select>y</plaintext></select>",
   )
   assert_eq(plain.errors.length(), 2)
   assert_eq(plain.errors[0].code, "unexpected-start-tag-in-select")
@@ -149,7 +149,7 @@ test "parser reports select plaintext start and keeps current container" {
   )
   assert_eq(
     in_p.to_html(pretty=false),
-    "<select><p>x<plaintext>y&lt;/select&gt;z</plaintext></p></select>",
+    "<select><p>x<plaintext>y</select>z</plaintext></p></select>",
   )
   assert_eq(in_p.errors.length(), 3)
   assert_eq(in_p.errors[0].code, "unexpected-start-tag-in-select")

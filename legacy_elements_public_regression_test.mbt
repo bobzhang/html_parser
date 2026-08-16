@@ -73,9 +73,12 @@ test "parser treats legacy raw text elements as text" {
   let doc = @html_parser.parse_fragment(
     "<iframe><b>x</b></iframe><noembed><i>y</i></noembed><noscript><em>z</em></noscript>",
   )
+  // `iframe` and `noembed` are raw-text elements, so their content
+  // serializes verbatim. `noscript` stays escaped: it is only raw text when
+  // scripting is enabled, which the serializer cannot know.
   assert_eq(
     doc.to_html(pretty=false),
-    "<iframe>&lt;b&gt;x&lt;/b&gt;</iframe><noembed>&lt;i&gt;y&lt;/i&gt;</noembed><noscript>&lt;em&gt;z&lt;/em&gt;</noscript>",
+    "<iframe><b>x</b></iframe><noembed><i>y</i></noembed><noscript>&lt;em&gt;z&lt;/em&gt;</noscript>",
   )
   assert_eq(doc.query("b").length(), 0)
   assert_eq(doc.query("i").length(), 0)

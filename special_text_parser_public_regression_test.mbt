@@ -6,9 +6,12 @@ test "parser closes open paragraphs before plaintext and xmp starts" {
     "<p>a<plaintext>b</plaintext>c",
     collect_errors=true,
   )
+  // Raw-text content serializes literally. `plaintext` consumes to end of
+  // file and never recognizes an end tag, so unlike the other raw-text
+  // elements its content needs no end-tag guard either.
   assert_eq(
     plaintext.to_html(pretty=false),
-    "<p>a</p><plaintext>b&lt;/plaintext&gt;c</plaintext>",
+    "<p>a</p><plaintext>b</plaintext>c</plaintext>",
   )
   assert_eq(plaintext.errors.length(), 1)
   assert_eq(plaintext.errors[0].code, "expected-closing-tag-but-got-eof")
@@ -97,7 +100,9 @@ test "parser ignores one initial newline in pre listing and textarea" {
 ///|
 test "parser treats xmp and plaintext content as text" {
   let xmp = @html_parser.parse_fragment("<xmp><b>x</b></xmp>after")
-  assert_eq(xmp.to_html(pretty=false), "<xmp>&lt;b&gt;x&lt;/b&gt;</xmp>after")
+  // The markup inside `xmp` is text, and raw-text content serializes back
+  // verbatim rather than escaped.
+  assert_eq(xmp.to_html(pretty=false), "<xmp><b>x</b></xmp>after")
   assert_eq(xmp.query("b").length(), 0)
   let plaintext = @html_parser.parse_fragment(
     "<plaintext><b>x</b></plaintext>after",
@@ -105,7 +110,7 @@ test "parser treats xmp and plaintext content as text" {
   )
   assert_eq(
     plaintext.to_html(pretty=false),
-    "<plaintext>&lt;b&gt;x&lt;/b&gt;&lt;/plaintext&gt;after</plaintext>",
+    "<plaintext><b>x</b></plaintext>after</plaintext>",
   )
   assert_eq(plaintext.errors[0].code, "expected-closing-tag-but-got-eof")
 }
@@ -331,9 +336,11 @@ test "parser treats similarly named special end tags as text" {
   assert_eq(textarea.errors.length(), 1)
   assert_eq(textarea.errors[0].code, "expected-doctype-but-got-start-tag")
   let xmp = @html_parser.parse("<xmp>a</xmpx></xmp><p>b", collect_errors=true)
+  // `xmp` is raw text rather than RCDATA, so its content is not escaped on
+  // the way out; `</xmpx` cannot close the element, so it stays as written.
   assert_eq(
     xmp.to_html(pretty=false),
-    "<html><head></head><body><xmp>a&lt;/xmpx&gt;</xmp><p>b</p></body></html>",
+    "<html><head></head><body><xmp>a</xmpx></xmp><p>b</p></body></html>",
   )
   assert_eq(xmp.errors.length(), 1)
   assert_eq(xmp.errors[0].code, "expected-doctype-but-got-start-tag")
