@@ -74,6 +74,14 @@ fn Parser::handle_late_document_head_start_tag(
   if self.is_fragment_parser() || name != "head" {
     return false
   }
+  if self.document_entered_body ||
+    self.has_open_element("frameset") ||
+    self.after_frameset {
+    // The in-body, in-frameset and after-frameset rules all ignore a head
+    // start tag outright.
+    self.error_at("unexpected-start-tag", start)
+    return true
+  }
   if !self.document_head_start_is_late() {
     return false
   }
