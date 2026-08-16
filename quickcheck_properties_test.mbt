@@ -1,5 +1,8 @@
 ///|
 /// Collect every element in a tree, including the root when it is an element.
+///
+/// A template's descendants live in its content fragment rather than in
+/// `children()`, but the serializer still emits them, so they are walked too.
 fn collect_elements(root : @dom.Node) -> Array[@dom.Node] {
   let out = []
   fn walk(node : @dom.Node) -> Unit {
@@ -8,6 +11,9 @@ fn collect_elements(root : @dom.Node) -> Array[@dom.Node] {
     }
     for child in node.children() {
       walk(child)
+    }
+    if node.template_content() is Some(content) {
+      walk(content)
     }
   }
 
@@ -126,7 +132,7 @@ test "property: sanitized output serializes and drops unsafe constructs" {
       ignore(@html_parser.to_html(root, pretty=false))
       for element in collect_elements(root) {
         if element.name()
-          is ("script" | "iframe" | "object" | "embed" | "noscript") {
+          is ("script" | "style" | "iframe" | "object" | "embed" | "noscript") {
           return false
         }
         for name, value in element.attrs() {

@@ -39,6 +39,11 @@ let html_chunks : Array[String] = [
   "<p =v>", "<p a=>", "<p a=\"unclosed>", "<//>",
   // Unmatched end tags for elements that were never opened.
    "</div>", "</table>", "</span>", "</b>", "</svg>", "</template>",
+  // Constructs the sanitizer must remove. Without these the sanitizer
+  // property's `on*` and `javascript:` assertions would be unreachable, and so
+  // vacuously true.
+   "<p onclick=\"alert(1)\">", "<img src=x onerror=alert(1)>", "<a href=\"javascript:alert(1)\">",
+  "<a href=\" JavaScript:alert(1)\">", "<form action=javascript:alert(1)>", "<div ONMOUSEOVER=alert(1)>",
 ]
 
 ///|
