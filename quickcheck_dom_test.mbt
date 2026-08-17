@@ -2,15 +2,21 @@
 /// The attribute marking the injected payload.
 ///
 /// Every property below asks the same question: can this text stop being text?
-/// Counting *all* `img` elements would not answer it — a pre-existing image can
-/// turn into text in the same step that the payload turns into an element,
-/// leaving the total unchanged. Only marked elements are counted, so what is
-/// tracked is the payload rather than the net.
+/// Counting `img` elements would not answer it — a pre-existing image can turn
+/// into text in the same step that the payload turns into an element, leaving
+/// the total unchanged. Nor would counting marked elements: with several
+/// payloads in one tree, one going inert cancels another going live. Each
+/// occurrence is numbered, and the property compares the *set* of ids that are
+/// elements, so an id that was text and became markup is always visible.
 const DOM_PAYLOAD_ATTR : String = "data-qc-payload"
 
 ///|
+/// The placeholder every injected payload carries until it is numbered.
+const DOM_PAYLOAD_PLACEHOLDER : String = "data-qc-payload=?"
+
+///|
 /// The markup a generated tree carries in its text nodes.
-const DOM_PAYLOAD : String = "<img data-qc-payload=1 src=x onerror=1>"
+const DOM_PAYLOAD : String = "<img data-qc-payload=? src=x onerror=1>"
 
 ///|
 /// A node in a generated hand-built DOM.
@@ -84,13 +90,25 @@ let dom_text_payloads : Array[String] = [
 
 ///|
 /// Build the generated tree through the public DOM constructors.
-fn DomNode::build(self : DomNode) -> @dom.Node {
+fn DomNode::build(self : DomNode, next_id : Ref[Int]) -> @dom.Node {
   match self {
-    DomText(value) => @html_parser.text(value)
+    DomText(value) =>
+      // Number each payload as it is placed, so one going inert cannot cancel
+      // another going live.
+      if value.contains(DOM_PAYLOAD_PLACEHOLDER) {
+        let numbered = value.replace_all(
+          old=DOM_PAYLOAD_PLACEHOLDER,
+          new="\{DOM_PAYLOAD_ATTR}=\{next_id.val}",
+        )
+        next_id.val += 1
+        @html_parser.text(numbered)
+      } else {
+        @html_parser.text(value)
+      }
     DomElement(name, ns, children) => {
       let built = Array::new(capacity=children.length())
       for child in children {
-        built.push(child.build())
+        built.push(child.build(next_id))
       }
       @html_parser.element(name, ns~, children=built)
     }
@@ -100,7 +118,7 @@ fn DomNode::build(self : DomNode) -> @dom.Node {
 ///|
 /// Build the whole tree.
 fn HandBuiltDom::build(self : HandBuiltDom) -> @dom.Node {
-  self.root.build()
+  self.root.build(Ref(0))
 }
 
 ///|
@@ -205,18 +223,19 @@ fn collect_all_nodes(root : @dom.Node) -> Array[@dom.Node] {
 }
 
 ///|
-/// Count the injected payload elements in a tree.
+/// Collect the ids of payloads that exist as elements in a tree.
 ///
-/// Marked elements only: an unmarked image appearing or disappearing is
-/// ordinary parsing, while a marked one appearing means text became markup.
-fn count_payload(root : @dom.Node) -> Int {
-  let mut total = 0
+/// An unmarked image appearing or disappearing is ordinary parsing. A payload
+/// id that was not an element before and is one afterwards means text became
+/// markup, which is the failure these properties look for.
+fn payload_element_ids(root : @dom.Node) -> Array[String] {
+  let ids = []
   for element in collect_elements(root) {
-    if element.attrs().contains(DOM_PAYLOAD_ATTR) {
-      total += 1
+    if element.attrs().get(DOM_PAYLOAD_ATTR) is Some(Some(id)) {
+      ids.push(id)
     }
   }
-  total
+  ids
 }
 
 ///|
@@ -238,14 +257,14 @@ fn serialize_or_skip(
 ///|
 /// Check that serializing `node` cannot turn text into a live element.
 ///
-/// The tree carries a marked `<img …>` inside text nodes. If serializing and
-/// reparsing yields more marked elements than the tree already had, some text
+/// The tree carries numbered `<img …>` payloads inside text nodes. If any
+/// payload that was text before serializing comes back as an element, it
 /// escaped its container — the shape every raw-text serialization bug took.
 fn text_stays_inert(
   node : @dom.Node,
   pretty~ : Bool,
 ) -> Bool raise @core.HtmlError {
-  let before = count_payload(node)
+  let before = payload_element_ids(node)
   guard serialize_or_skip(node, pretty~) is Some(html) else { return true }
   // Both scripting modes: a document parsed one way is routinely reparsed the
   // other, and `noscript` is only text when scripting is enabled.
@@ -254,8 +273,10 @@ fn text_stays_inert(
       html,
       scripting_enabled=scripting,
     )
-    if count_payload(reparsed.root) > before {
-      return false
+    for id in payload_element_ids(reparsed.root) {
+      if !before.contains(id) {
+        return false
+      }
     }
   }
   true

@@ -51,15 +51,15 @@ let html_chunks : Array[String] = [
   // Markup carried *inside* text-tokenized elements. Without these the
   // properties that serialize individual nodes have no inert payload to watch,
   // since the payload has to start life as text rather than as an element.
-   "<xmp><img data-qc-payload=1 src=x onerror=1></xmp>", "<textarea><img data-qc-payload=1 src=x onerror=1></textarea>",
-  "<title><img data-qc-payload=1 src=x onerror=1></title>", "<iframe><img data-qc-payload=1 src=x onerror=1></iframe>",
-  "<noscript><img data-qc-payload=1 src=x onerror=1></noscript>", "<script><img data-qc-payload=1 src=x onerror=1></script>",
-  "<noembed><img data-qc-payload=1 src=x onerror=1></noembed>",
+   "<xmp><img data-qc-payload=? src=x onerror=1></xmp>", "<textarea><img data-qc-payload=? src=x onerror=1></textarea>",
+  "<title><img data-qc-payload=? src=x onerror=1></title>", "<iframe><img data-qc-payload=? src=x onerror=1></iframe>",
+  "<noscript><img data-qc-payload=? src=x onerror=1></noscript>", "<script><img data-qc-payload=? src=x onerror=1></script>",
+  "<noembed><img data-qc-payload=? src=x onerror=1></noembed>",
   // A raw-text element inside a `noscript`, which only exists when scripting is
   // disabled. Its text carries a `</noscript>`, so serializing it literally
   // would go live as soon as anything reparsed with scripting enabled.
-   "<noscript><xmp></noscript><img data-qc-payload=1 src=x onerror=1></xmp></noscript>",
-  "<noscript><textarea></noscript><img data-qc-payload=1 src=x onerror=1></textarea></noscript>",
+   "<noscript><xmp></noscript><img data-qc-payload=? src=x onerror=1></xmp></noscript>",
+  "<noscript><textarea></noscript><img data-qc-payload=? src=x onerror=1></textarea></noscript>",
   // Active embedding elements.
    "<object data=x>", "</object>", "<embed src=x>",
 ]
@@ -78,8 +78,22 @@ struct HtmlSource {
 /// Assemble the generated chunks into an HTML source string.
 fn HtmlSource::source(self : HtmlSource) -> String {
   let out = StringBuilder::new()
+  let mut next_id = 0
   for chunk in self.chunks {
-    out.write_string(chunk)
+    // Each injected payload gets its own id, so a property can tell one
+    // occurrence going live from another going inert rather than netting them
+    // against each other.
+    if chunk.contains(DOM_PAYLOAD_PLACEHOLDER) {
+      out.write_string(
+        chunk.replace_all(
+          old=DOM_PAYLOAD_PLACEHOLDER,
+          new="\{DOM_PAYLOAD_ATTR}=\{next_id}",
+        ),
+      )
+      next_id += 1
+    } else {
+      out.write_string(chunk)
+    }
   }
   out.to_string()
 }
