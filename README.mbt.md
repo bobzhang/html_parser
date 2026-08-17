@@ -216,6 +216,19 @@ generators cover different ground:
   serializing arbitrary soup is legitimately not round-trippable (a `<p>`
   inside a `<p>`, foster-parented table content, or `<plaintext>` all reparse
   differently), so a fixpoint assertion only makes sense on well-nested input.
+- `HandBuiltDom` builds trees through the public `@dom` constructors rather
+  than through `parse`, so it can produce what the tree builder never would: a
+  foreign ancestor over an HTML element, a name that contradicts its namespace,
+  an element nested inside a `textarea`. Those shapes are where serialization
+  has historically gone wrong, and the properties over them assert one thing —
+  text carrying `<img src=x onerror=1>` must not come back as an element,
+  whichever node is serialized, at either pretty setting, reparsed in either
+  scripting mode.
+
+The generator is the bug-finding surface, so each of these properties is
+checked by mutation: reverting the serializer to an earlier, known-wrong rule
+must falsify it. A property that cannot fail looks exactly like one that
+passes.
 
 Seeds are fixed, so failures reproduce exactly. Counterexamples are shrunk
 against the generator's structure and reported as HTML source.
