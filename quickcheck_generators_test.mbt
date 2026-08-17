@@ -51,14 +51,15 @@ let html_chunks : Array[String] = [
   // Markup carried *inside* text-tokenized elements. Without these the
   // properties that serialize individual nodes have no inert payload to watch,
   // since the payload has to start life as text rather than as an element.
-   "<xmp><img src=x onerror=1></xmp>", "<textarea><img src=x onerror=1></textarea>",
-  "<title><img src=x onerror=1></title>", "<iframe><img src=x onerror=1></iframe>",
-  "<noscript><img src=x onerror=1></noscript>", "<script><img src=x onerror=1></script>",
-  "<noembed><img src=x onerror=1></noembed>",
+   "<xmp><img data-qc-payload=1 src=x onerror=1></xmp>", "<textarea><img data-qc-payload=1 src=x onerror=1></textarea>",
+  "<title><img data-qc-payload=1 src=x onerror=1></title>", "<iframe><img data-qc-payload=1 src=x onerror=1></iframe>",
+  "<noscript><img data-qc-payload=1 src=x onerror=1></noscript>", "<script><img data-qc-payload=1 src=x onerror=1></script>",
+  "<noembed><img data-qc-payload=1 src=x onerror=1></noembed>",
   // A raw-text element inside a `noscript`, which only exists when scripting is
   // disabled. Its text carries a `</noscript>`, so serializing it literally
   // would go live as soon as anything reparsed with scripting enabled.
-   "<noscript><xmp></noscript><img src=x onerror=1></xmp></noscript>", "<noscript><textarea></noscript><img src=x onerror=1></textarea></noscript>",
+   "<noscript><xmp></noscript><img data-qc-payload=1 src=x onerror=1></xmp></noscript>",
+  "<noscript><textarea></noscript><img data-qc-payload=1 src=x onerror=1></textarea></noscript>",
   // Active embedding elements.
    "<object data=x>", "</object>", "<embed src=x>",
 ]

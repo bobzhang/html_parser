@@ -1,9 +1,16 @@
 ///|
-/// The markup a generated tree carries in its text nodes.
+/// The attribute marking the injected payload.
 ///
-/// Every property over `HandBuiltDom` asks the same question: can this text
-/// stop being text? Using one payload keeps the answer a simple element count.
-const DOM_PAYLOAD_TAG : String = "img"
+/// Every property below asks the same question: can this text stop being text?
+/// Counting *all* `img` elements would not answer it — a pre-existing image can
+/// turn into text in the same step that the payload turns into an element,
+/// leaving the total unchanged. Only marked elements are counted, so what is
+/// tracked is the payload rather than the net.
+const DOM_PAYLOAD_ATTR : String = "data-qc-payload"
+
+///|
+/// The markup a generated tree carries in its text nodes.
+const DOM_PAYLOAD : String = "<img data-qc-payload=1 src=x onerror=1>"
 
 ///|
 /// A node in a generated hand-built DOM.
@@ -57,10 +64,22 @@ let dom_namespaces : Array[String] = ["html", "svg", "math"]
 /// The closing sequences are split across the corpus rather than spelled out
 /// once, so a tree can also assemble one from adjacent text nodes.
 let dom_text_payloads : Array[String] = [
-  "plain text", "a<b &amp; c", "&", "<", "", "<img src=x onerror=1>", "</xmp><img src=x onerror=1>",
-  "</textarea><img src=x onerror=1>", "</title><img src=x onerror=1>", "</noscript><img src=x onerror=1>",
-  "</script><img src=x onerror=1>", "</iframe><img src=x onerror=1>", "</style><img src=x onerror=1>",
-  "</x", "mp><img src=x onerror=1>", "]]><img src=x onerror=1>",
+  "plain text",
+  "a<b &amp; c",
+  "&",
+  "<",
+  "",
+  DOM_PAYLOAD,
+  "</xmp>" + DOM_PAYLOAD,
+  "</textarea>" + DOM_PAYLOAD,
+  "</title>" + DOM_PAYLOAD,
+  "</noscript>" + DOM_PAYLOAD,
+  "</script>" + DOM_PAYLOAD,
+  "</iframe>" + DOM_PAYLOAD,
+  "</style>" + DOM_PAYLOAD,
+  "</x",
+  "mp>" + DOM_PAYLOAD,
+  "]]>" + DOM_PAYLOAD,
 ]
 
 ///|
@@ -186,11 +205,14 @@ fn collect_all_nodes(root : @dom.Node) -> Array[@dom.Node] {
 }
 
 ///|
-/// Count elements of `name` in a tree.
-fn count_elements(root : @dom.Node, name : String) -> Int {
+/// Count the injected payload elements in a tree.
+///
+/// Marked elements only: an unmarked image appearing or disappearing is
+/// ordinary parsing, while a marked one appearing means text became markup.
+fn count_payload(root : @dom.Node) -> Int {
   let mut total = 0
   for element in collect_elements(root) {
-    if element.name() == name {
+    if element.attrs().contains(DOM_PAYLOAD_ATTR) {
       total += 1
     }
   }
@@ -216,14 +238,14 @@ fn serialize_or_skip(
 ///|
 /// Check that serializing `node` cannot turn text into a live element.
 ///
-/// The tree carries `<img …>` inside text nodes. If serializing and reparsing
-/// yields more `img` elements than the tree already had, some text escaped its
-/// container — which is the shape every raw-text serialization bug has taken.
+/// The tree carries a marked `<img …>` inside text nodes. If serializing and
+/// reparsing yields more marked elements than the tree already had, some text
+/// escaped its container — the shape every raw-text serialization bug took.
 fn text_stays_inert(
   node : @dom.Node,
   pretty~ : Bool,
 ) -> Bool raise @core.HtmlError {
-  let before = count_elements(node, DOM_PAYLOAD_TAG)
+  let before = count_payload(node)
   guard serialize_or_skip(node, pretty~) is Some(html) else { return true }
   // Both scripting modes: a document parsed one way is routinely reparsed the
   // other, and `noscript` is only text when scripting is enabled.
@@ -232,7 +254,7 @@ fn text_stays_inert(
       html,
       scripting_enabled=scripting,
     )
-    if count_elements(reparsed.root, DOM_PAYLOAD_TAG) > before {
+    if count_payload(reparsed.root) > before {
       return false
     }
   }
@@ -240,13 +262,15 @@ fn text_stays_inert(
 }
 
 ///|
+/// Check both serializers, since a regression can be specific to one.
+fn text_stays_inert_either_mode(node : @dom.Node) -> Bool raise @core.HtmlError {
+  text_stays_inert(node, pretty=false) && text_stays_inert(node, pretty=true)
+}
+
+///|
 test "property: serializing a hand-built DOM keeps its text inert" {
   @qc.check(
-    (input : HandBuiltDom) => {
-      let tree = input.build()
-      text_stays_inert(tree, pretty=false) &&
-      text_stays_inert(tree, pretty=true)
-    },
+    (input : HandBuiltDom) => text_stays_inert_either_mode(input.build()),
     count=4000,
     seed=20260817,
   )
@@ -260,7 +284,7 @@ test "property: serializing any node of a hand-built DOM keeps its text inert" {
     (input : HandBuiltDom) => {
       let tree = input.build()
       for node in collect_all_nodes(tree) {
-        if !text_stays_inert(node, pretty=false) {
+        if !text_stays_inert_either_mode(node) {
           return false
         }
       }
@@ -277,7 +301,7 @@ test "property: serializing any node of a parsed document keeps its text inert" 
     (input : HtmlSource) => {
       let parsed = @html_parser.parse(input.source())
       for node in collect_all_nodes(parsed.root) {
-        if !text_stays_inert(node, pretty=false) {
+        if !text_stays_inert_either_mode(node) {
           return false
         }
       }
@@ -298,7 +322,7 @@ test "property: a scripting-disabled parse survives a scripting-enabled reparse"
       let src = input.source()
       for scripting in [true, false] {
         let parsed = @html_parser.parse(src, scripting_enabled=scripting)
-        if !text_stays_inert(parsed.root, pretty=false) {
+        if !text_stays_inert_either_mode(parsed.root) {
           return false
         }
       }
