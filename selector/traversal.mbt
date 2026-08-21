@@ -40,10 +40,21 @@ fn previous_matching_sibling(
 }
 
 ///|
+#warnings("-unused_value")
 fn matches_complex_selector(node : @dom.Node, selector : StringView) -> Bool {
   guard split_complex_selector(selector) is Some((parts, combinators)) else {
     return false
   }
+  matches_prepared_complex_selector(node, { parts, combinators })
+}
+
+///|
+fn matches_prepared_complex_selector(
+  node : @dom.Node,
+  selector : PreparedComplexSelector,
+) -> Bool {
+  let parts = selector.parts
+  let combinators = selector.combinators
   let last_index = parts.length() - 1
   if !matches_simple_selector(node, parts[last_index]) {
     return false
@@ -126,17 +137,40 @@ fn complex_selector_is_valid(selector : StringView) -> Bool {
 }
 
 ///|
-fn matches_selector_list(node : @dom.Node, selector : StringView) -> Bool {
-  guard selector_list_parts(selector) is Some(parts) else { return false }
+fn prepare_selector_list(
+  selector : StringView,
+) -> Array[PreparedComplexSelector]? {
+  guard selector_list_parts(selector) is Some(parts) else { return None }
+  let selectors : Array[PreparedComplexSelector] = []
   for part in parts {
-    if !complex_selector_is_valid(part) {
-      return false
+    guard split_complex_selector(part) is Some((parts, combinators)) else {
+      return None
     }
+    for simple in parts {
+      if !simple_selector_is_valid(simple) {
+        return None
+      }
+    }
+    selectors.push({ parts, combinators })
   }
-  for part in parts {
-    if matches_complex_selector(node, part) {
+  Some(selectors)
+}
+
+///|
+fn matches_prepared_selector_list(
+  node : @dom.Node,
+  selectors : Array[PreparedComplexSelector],
+) -> Bool {
+  for selector in selectors {
+    if matches_prepared_complex_selector(node, selector) {
       return true
     }
   }
   false
+}
+
+///|
+fn matches_selector_list(node : @dom.Node, selector : StringView) -> Bool {
+  guard prepare_selector_list(selector) is Some(selectors) else { return false }
+  matches_prepared_selector_list(node, selectors)
 }
