@@ -181,3 +181,12 @@ fn Parser::has_open_element(self : Parser, name : String) -> Bool {
 fn Parser::has_open_table(self : Parser) -> Bool {
   self.open_table_count > 0
 }
+
+///|
+/// True when a "table" element is open anywhere on the stack. The
+/// open-table counter (#85) tracks table elements by name in any
+/// namespace, which is exactly the match has_open_element("table")
+/// performs, so this is an O(1) stand-in for that walk.
+fn Parser::has_open_table(self : Parser) -> Bool {
+  self.open_table_count > 0
+}
