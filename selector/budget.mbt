@@ -49,7 +49,7 @@ priv struct SelectorMatchContext {
 fn SelectorMatchContext::SelectorMatchContext(
   limits : SelectorLimits,
 ) -> SelectorMatchContext {
-  { limits, remaining_steps: limits.max_match_steps }
+  { limits, remaining_steps: limits.max_match_steps, }
 }
 
 ///|

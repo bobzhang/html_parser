@@ -59,5 +59,5 @@ fn SourceTokenizer::parse_doctype(self : SourceTokenizer) -> Unit {
     self.pos += 1
   }
   let force_quirks = name == "" || external.force_quirks || eof_doctype
-  self.tokens.push(DoctypeToken({ name, public_id, system_id, force_quirks }))
+  self.tokens.push(DoctypeToken({ name, public_id, system_id, force_quirks, }))
 }

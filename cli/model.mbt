@@ -87,7 +87,7 @@ fn cli_success(
   file_output_path? : String,
   file_output_content? : String,
 ) -> CliResult {
-  { exit_code: 0, stdout, stderr: "", file_output_path, file_output_content }
+  { exit_code: 0, stdout, stderr: "", file_output_path, file_output_content, }
 }
 
 ///|
@@ -136,5 +136,5 @@ fn cli_default_options() -> CliOptions {
 
 ///|
 fn cli_version() -> String {
-  "0.1.7"
+  "0.1.8"
 }

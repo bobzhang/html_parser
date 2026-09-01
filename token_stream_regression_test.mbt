@@ -96,10 +96,10 @@ test "public stream corpus keeps incremental events stable" {
   assert_true(
     events ==
     [
-      StreamDoctype({ name: "html", public_id: None, system_id: None }),
-      StreamStart({ name: "p", attrs: Map([]) }),
+      StreamDoctype({ name: "html", public_id: None, system_id: None, }),
+      StreamStart({ name: "p", attrs: Map([]), }),
       StreamText("A"),
-      StreamStart({ name: "script", attrs: Map([]) }),
+      StreamStart({ name: "script", attrs: Map([]), }),
       StreamText("B < C"),
       StreamEnd("script"),
       StreamComment("x"),

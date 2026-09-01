@@ -83,7 +83,7 @@ fn linkify_match_candidate(
   }
   let match_text = candidate.to_owned()
   let (href, kind) = linkify_href_for(candidate)
-  Some({ start, end, text: match_text, href, kind })
+  Some({ start, end, text: match_text, href, kind, })
 }
 
 ///|

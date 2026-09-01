@@ -47,5 +47,5 @@ pub fn parse_doctype_external(
     }
     _ => ()
   }
-  { public_id, system_id, errors, force_quirks }
+  { public_id, system_id, errors, force_quirks, }
 }

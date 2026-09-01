@@ -22,7 +22,7 @@ pub fn decode_entities_with_errors(
   // The common case has no character references and no carriage returns:
   // the decode is the identity and the input view passes through unchanged.
   if !input.any(ch => ch is ('&' | '\r')) {
-    return { data: input, errors: [] }
+    return { data: input, errors: [], }
   }
   let out = StringBuilder(size_hint=input.length())
   let errors : Array[EntityDecodeError] = []
@@ -47,7 +47,7 @@ pub fn decode_entities_with_errors(
       _ => pos = @syn.write_normalized_char(input, pos, out)
     }
   }
-  { data: out.to_string(), errors }
+  { data: out.to_string(), errors, }
 }
 
 ///|

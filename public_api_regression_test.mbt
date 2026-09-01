@@ -66,8 +66,8 @@ test "public bytes parse stream workflow stays stable" {
   assert_true(
     @html_parser.stream_bytes(source) ==
     [
-      StreamStart({ name: "meta", attrs: { "charset": Some("utf-8") } }),
-      StreamStart({ name: "p", attrs: Map([]) }),
+      StreamStart({ name: "meta", attrs: { "charset": Some("utf-8") }, }),
+      StreamStart({ name: "p", attrs: Map([]), }),
       StreamText("€ & tea"),
       StreamEnd("p"),
     ],

@@ -48,7 +48,7 @@ pub fn parse(
   if sanitize {
     ignore(@san.sanitize_dom(root))
   }
-  { root, errors, encoding: None }
+  { root, errors, encoding: None, }
 }
 
 ///|
@@ -95,7 +95,7 @@ pub fn parse_fragment(
   if sanitize {
     ignore(@san.sanitize_dom(root))
   }
-  { root, errors, encoding: None }
+  { root, errors, encoding: None, }
 }
 
 ///|

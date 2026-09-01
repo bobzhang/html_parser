@@ -6,7 +6,7 @@ fn skip_script_text_char(
 ) -> Int {
   match input.get_char(pos) {
     Some('\u{0000}') => {
-      errors.push({ code: "unexpected-null-character", offset: pos })
+      errors.push({ code: "unexpected-null-character", offset: pos, })
       pos + 1
     }
     Some(ch) => pos + ch.utf16_len()
@@ -23,7 +23,7 @@ fn write_script_text_char(
 ) -> Int {
   match input.get_char(pos) {
     Some('\u{0000}') => {
-      errors.push({ code: "unexpected-null-character", offset: pos })
+      errors.push({ code: "unexpected-null-character", offset: pos, })
       out.write_char('\u{FFFD}')
       pos + 1
     }

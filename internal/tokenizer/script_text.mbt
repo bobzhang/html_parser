@@ -26,7 +26,7 @@ pub fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
     }
     pos = skip_script_text_char(input, pos, errors)
   }
-  { data: scanned_data_slice(input, start, pos), end_start: None, errors }
+  { data: scanned_data_slice(input, start, pos), end_start: None, errors, }
 }
 
 ///|
@@ -50,7 +50,7 @@ fn scan_escaped_script_text(
     match state {
       ScriptRawText =>
         if script_end_tag_at(input, pos) {
-          return { data: out.to_string(), end_start: Some(pos), errors }
+          return { data: out.to_string(), end_start: Some(pos), errors, }
         } else if @syn.view_starts_with_at(input, pos, "<!--") {
           out.write_string("<!--")
           pos += 4
@@ -112,7 +112,11 @@ fn scan_escaped_script_text(
         match input.get_char(pos) {
           Some('/') =>
             if script_end_tag_at(input, pos - 1) {
-              return { data: out.to_string(), end_start: Some(pos - 1), errors }
+              return {
+                data: out.to_string(),
+                end_start: Some(pos - 1),
+                errors,
+              }
             } else {
               out.write_string("</")
               pos += 1
@@ -233,5 +237,5 @@ fn scan_escaped_script_text(
   if state is ScriptEscapedLessThan {
     out.write_char('<')
   }
-  { data: out.to_string(), end_start: None, errors }
+  { data: out.to_string(), end_start: None, errors, }
 }

@@ -7,7 +7,7 @@ priv struct MarkdownBuilder {
 
 ///|
 fn MarkdownBuilder::MarkdownBuilder() -> MarkdownBuilder {
-  { parts: [], newline_count: 0, pending_space: false }
+  { parts: [], newline_count: 0, pending_space: false, }
 }
 
 ///|

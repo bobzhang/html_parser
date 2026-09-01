@@ -30,7 +30,7 @@ test "linkify text replacement helper tolerates degenerate matches" {
 
   let prefix_parent = @dom.element("p", children=[@dom.text("😀x")])
   let prefix_matches : Array[LinkMatch] = [
-    { start: 1, end: 3, text: "x", href: "#x", kind: "url" },
+    { start: 1, end: 3, text: "x", href: "#x", kind: "url", },
   ]
   ignore(
     linkify_text_child_at_matches(
@@ -44,7 +44,7 @@ test "linkify text replacement helper tolerates degenerate matches" {
 
   let tail_parent = @dom.element("p", children=[@dom.text("😀x")])
   let tail_matches : Array[LinkMatch] = [
-    { start: 0, end: 1, text: "x", href: "#x", kind: "url" },
+    { start: 0, end: 1, text: "x", href: "#x", kind: "url", },
   ]
   ignore(
     linkify_text_child_at_matches(

@@ -131,7 +131,7 @@ test "property: text, stream and fragment entry points never raise" {
 /// with the literal scheme. Dropping those characters first keeps the check
 /// from reading an obfuscated payload as safe.
 fn url_scheme_is_script(value : String) -> Bool {
-  let stripped = StringBuilder::new()
+  let stripped = StringBuilder()
   for ch in value {
     if ch > ' ' {
       stripped.write_char(ch)

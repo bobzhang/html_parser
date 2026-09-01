@@ -13,11 +13,11 @@ pub fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
   let errors : Array[CommentScanError] = []
   if start >= input.length() {
     push_comment_scan_error(errors, "eof-in-comment", @syn.eof_error_pos(input))
-    return { data: "", end: input.length(), eof: true, errors }
+    return { data: "", end: input.length(), eof: true, errors, }
   }
   if input.get_char(start) is Some('>') {
     push_comment_scan_error(errors, "abrupt-closing-of-empty-comment", start)
-    return { data: "", end: start + 1, eof: false, errors }
+    return { data: "", end: start + 1, eof: false, errors, }
   }
   if @syn.view_starts_with_at(input, start, "->") {
     push_comment_scan_error(
@@ -25,7 +25,7 @@ pub fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
       "abrupt-closing-of-empty-comment",
       start + 1,
     )
-    return { data: "", end: start + 2, eof: false, errors }
+    return { data: "", end: start + 2, eof: false, errors, }
   }
   let mut pos = start
   while pos < input.length() {

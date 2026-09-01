@@ -58,7 +58,7 @@ pub fn UrlProxy::UrlProxy(
   url : StringView,
   param? : String = "url",
 ) -> UrlProxy {
-  { url: url.to_owned(), param }
+  { url: url.to_owned(), param, }
 }
 
 ///|

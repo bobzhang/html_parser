@@ -15,7 +15,7 @@ fn SourceTokenizer::SourceTokenizer(
   xml_coercion~ : Bool,
 ) -> SourceTokenizer {
   let input = @syn.strip_leading_bom(input)
-  { input, collect_errors, xml_coercion, pos: 0, tokens: [], errors: [] }
+  { input, collect_errors, xml_coercion, pos: 0, tokens: [], errors: [], }
 }
 
 ///|

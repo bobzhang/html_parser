@@ -19,7 +19,7 @@ pub fn SanitizeTransformObserver::SanitizeTransformObserver(
   hook : ((@dom.Node) -> Unit)?,
   report_callback : ((String, @dom.Node?) -> Unit)?,
 ) -> SanitizeTransformObserver {
-  { hook, report_callback }
+  { hook, report_callback, }
 }
 
 ///|

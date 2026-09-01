@@ -27,7 +27,7 @@ pub fn LinkifyConfig::LinkifyConfig(
   fuzzy_ip? : Bool = false,
   extra_tlds? : Array[String] = [],
 ) -> LinkifyConfig {
-  { fuzzy_ip, extra_tlds: linkify_tld_set(extra_tlds) }
+  { fuzzy_ip, extra_tlds: linkify_tld_set(extra_tlds), }
 }
 
 ///|
