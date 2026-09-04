@@ -34,7 +34,7 @@ pub fn run_htmlfmt(args : ArrayView[String]) -> HtmlFmtResult raise {
   } else {
     pretty_fragment(input)
   }
-  { exit_code: 0, stdout: output, stderr: "" }
+  { exit_code: 0, stdout: output, stderr: "", }
 }
 
 ///|

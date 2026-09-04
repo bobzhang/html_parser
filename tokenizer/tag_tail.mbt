@@ -35,5 +35,5 @@ fn SourceTokenizer::parse_tag_tail(self : SourceTokenizer) -> TagTailScan {
       _ => self.parse_attribute(attrs)
     }
   }
-  { attrs, self_closing, closed }
+  { attrs, self_closing, closed, }
 }

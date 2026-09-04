@@ -41,7 +41,7 @@ fn consume_numeric_entity(
   }
   if numeric_reference_can_report_character_error(value) {
     if is_character_reference_control(value) {
-      errors.push({ code: "control-character-reference", offset: error_offset })
+      errors.push({ code: "control-character-reference", offset: error_offset, })
     }
     if @syn.is_xml_noncharacter_code(value) {
       errors.push({
@@ -51,8 +51,8 @@ fn consume_numeric_entity(
     }
   }
   match html_numeric_entity_replacement(value).to_char() {
-    Some(ch) => Some({ value: ch.to_string(), next: pos, errors })
-    None => Some({ value: "\u{FFFD}", next: pos, errors })
+    Some(ch) => Some({ value: ch.to_string(), next: pos, errors, })
+    None => Some({ value: "\u{FFFD}", next: pos, errors, })
   }
 }
 

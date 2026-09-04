@@ -77,7 +77,7 @@ struct HtmlSource {
 ///|
 /// Assemble the generated chunks into an HTML source string.
 fn HtmlSource::source(self : HtmlSource) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   let mut next_id = 0
   for chunk in self.chunks {
     // Each injected payload gets its own id, so a property can tell one
@@ -123,8 +123,8 @@ impl @shrink.Shrink for HtmlSource with fn shrink(self) {
   // Halving converges quickly on long inputs; dropping single chunks then
   // removes whatever the halves could not.
   let candidates = [
-    { chunks: self.chunks[:length / 2].to_owned() },
-    { chunks: self.chunks[length / 2:].to_owned() },
+    { chunks: self.chunks[:length / 2].to_owned(), },
+    { chunks: self.chunks[length / 2:].to_owned(), },
   ]
   for skip in 0..<length {
     let rest = Array::new(capacity=length - 1)
@@ -133,7 +133,7 @@ impl @shrink.Shrink for HtmlSource with fn shrink(self) {
         rest.push(self.chunks[index])
       }
     }
-    candidates.push({ chunks: rest })
+    candidates.push({ chunks: rest, })
   }
   candidates.iter()
 }
@@ -163,7 +163,7 @@ struct PlainText {
 ///|
 /// Assemble the generated runs into a plain-text string.
 fn PlainText::text(self : PlainText) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   for run in self.runs {
     out.write_string(run)
   }
@@ -199,7 +199,7 @@ impl @shrink.Shrink for PlainText with fn shrink(self) {
         rest.push(self.runs[index])
       }
     }
-    candidates.push({ runs: rest })
+    candidates.push({ runs: rest, })
   }
   candidates.iter()
 }

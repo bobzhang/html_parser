@@ -8,7 +8,7 @@ stdin, file IO, stdout, stderr, and process exit codes.
 
 ```mooncram
 $ justhtml.exe --version
-justhtml 0.1.7
+justhtml 0.1.8
 ```
 
 ## Help

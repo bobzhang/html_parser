@@ -87,7 +87,7 @@ struct StreamSink {
 ///|
 /// Create an empty stream sink.
 fn StreamSink::StreamSink() -> StreamSink {
-  { events: [], text_parts: [] }
+  { events: [], text_parts: [], }
 }
 
 ///|
@@ -117,7 +117,7 @@ fn StreamSink::process_token(self : StreamSink, token : @tok.HtmlToken) -> Unit 
       match tag.kind {
         StartTag =>
           self.events.push(
-            StreamStart({ name: tag.name, attrs: tag.attrs.copy() }),
+            StreamStart({ name: tag.name, attrs: tag.attrs.copy(), }),
           )
         EndTag => self.events.push(StreamEnd(tag.name))
       }

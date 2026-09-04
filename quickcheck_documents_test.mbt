@@ -69,7 +69,7 @@ let doc_raw_text_bodies : Array[String] = [
 /// would be vacuous if the generator escaped text by calling the serializer it
 /// is meant to check.
 fn escape_document_text(value : String) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   for ch in value {
     match ch {
       '&' => out.write_string("&amp;")
@@ -105,7 +105,7 @@ fn HtmlNode::render(self : HtmlNode, out : StringBuilder) -> Unit {
 ///|
 /// Escape an attribute value for a double-quoted attribute.
 fn escape_document_attr(value : String) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   for ch in value {
     match ch {
       '&' => out.write_string("&amp;")
@@ -119,7 +119,7 @@ fn escape_document_attr(value : String) -> String {
 ///|
 /// Render the whole document as HTML source.
 fn HtmlDocument::source(self : HtmlDocument) -> String {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   out.write_string("<!DOCTYPE html><html><head></head><body>")
   for node in self.nodes {
     node.render(out)
@@ -233,7 +233,7 @@ impl @shrink.Shrink for HtmlDocument with fn shrink(self) {
           rest.push(self.nodes[index])
         }
       }
-      candidates.push({ nodes: rest })
+      candidates.push({ nodes: rest, })
     }
   }
   // Replacing a node by its children peels one nesting level at a time.
@@ -257,7 +257,7 @@ impl @shrink.Shrink for HtmlDocument with fn shrink(self) {
           peeled.push(self.nodes[other])
         }
       }
-      candidates.push({ nodes: peeled })
+      candidates.push({ nodes: peeled, })
     }
   }
   candidates.iter()

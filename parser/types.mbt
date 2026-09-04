@@ -14,7 +14,7 @@ pub fn FragmentContext::FragmentContext(
   tag_name : StringView,
   ns? : String,
 ) -> FragmentContext {
-  { tag_name: tag_name.to_lower().to_owned(), ns }
+  { tag_name: tag_name.to_lower().to_owned(), ns, }
 }
 
 ///|

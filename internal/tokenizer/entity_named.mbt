@@ -82,7 +82,7 @@ pub fn consume_named_entity_with_errors(
   let name = input[name_start:name_end]
   if has_semicolon {
     match semicolon_named_entity_value(name) {
-      Some(value) => return Some({ value, next: name_end + 1, errors: [] })
+      Some(value) => return Some({ value, next: name_end + 1, errors: [], })
       None => ()
     }
     if !in_attribute {

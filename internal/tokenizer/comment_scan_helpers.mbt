@@ -4,5 +4,5 @@ fn push_comment_scan_error(
   code : String,
   offset : Int,
 ) -> Unit {
-  errors.push({ code, offset })
+  errors.push({ code, offset, })
 }

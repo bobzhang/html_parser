@@ -12,7 +12,7 @@ pub fn tokenize(
   let tokenizer = SourceTokenizer(html, collect_errors~, xml_coercion~)
   tokenizer.run()
   tokenizer.tokens.push(Eof)
-  { tokens: tokenizer.tokens, errors: tokenizer.errors }
+  { tokens: tokenizer.tokens, errors: tokenizer.errors, }
 }
 
 ///|

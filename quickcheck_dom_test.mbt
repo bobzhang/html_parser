@@ -141,7 +141,7 @@ fn DomNode::describe(self : DomNode, out : StringBuilder) -> Unit {
 
 ///|
 impl Debug for HandBuiltDom with fn to_repr(self) {
-  let out = StringBuilder::new()
+  let out = StringBuilder()
   self.root.describe(out)
   Repr(out.to_string())
 }
@@ -166,7 +166,7 @@ fn generate_dom_node(budget : Int, state : @splitmix.RandomState) -> DomNode {
 
 ///|
 impl @qc.Arbitrary for HandBuiltDom with fn arbitrary(size, state) {
-  { root: generate_dom_node(1 + size % 5, state) }
+  { root: generate_dom_node(1 + size % 5, state), }
 }
 
 ///|
@@ -178,7 +178,7 @@ impl @shrink.Shrink for HandBuiltDom with fn shrink(self) {
       // Promoting a child drops one level of nesting at a time, which is what
       // matters here: these counterexamples are about ancestor chains.
       for child in children {
-        candidates.push({ root: child })
+        candidates.push({ root: child, })
       }
       if children.length() > 1 {
         for skip in 0..<children.length() {
@@ -190,7 +190,7 @@ impl @shrink.Shrink for HandBuiltDom with fn shrink(self) {
           }
           match self.root {
             DomElement(name, ns, _) =>
-              candidates.push({ root: DomElement(name, ns, rest) })
+              candidates.push({ root: DomElement(name, ns, rest), })
             DomText(_) => ()
           }
         }

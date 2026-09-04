@@ -42,5 +42,5 @@ fn push_doctype_external_error(
   code : String,
   offset : Int,
 ) -> Unit {
-  errors.push({ code, offset })
+  errors.push({ code, offset, })
 }

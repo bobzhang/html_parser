@@ -20,7 +20,7 @@ pub fn ParseError::ParseError(
   category? : String = "parse",
   message? : String,
 ) -> ParseError {
-  { code, line, column, category, message: message.unwrap_or(code) }
+  { code, line, column, category, message: message.unwrap_or(code), }
 }
 
 ///|
