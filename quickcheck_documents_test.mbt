@@ -150,7 +150,7 @@ fn generate_inline(budget : Int, state : @splitmix.RandomState) -> HtmlNode {
     None
   }
   let count = state.next_positive_int() % 3
-  let children = Array::new(capacity=count)
+  let children = Array(capacity=count)
   for _ in 0..<count {
     children.push(generate_inline(budget - 1, state))
   }
@@ -168,7 +168,7 @@ fn generate_flow(budget : Int, state : @splitmix.RandomState) -> HtmlNode {
     0 => {
       // A paragraph accepts inline content only; a block child would close it.
       let count = state.next_positive_int() % 3 + 1
-      let children = Array::new(capacity=count)
+      let children = Array(capacity=count)
       for _ in 0..<count {
         children.push(generate_inline(budget - 1, state))
       }
@@ -176,7 +176,7 @@ fn generate_flow(budget : Int, state : @splitmix.RandomState) -> HtmlNode {
     }
     1 => {
       let count = state.next_positive_int() % 3 + 1
-      let children = Array::new(capacity=count)
+      let children = Array(capacity=count)
       for _ in 0..<count {
         children.push(generate_flow(budget - 1, state))
       }
@@ -184,7 +184,7 @@ fn generate_flow(budget : Int, state : @splitmix.RandomState) -> HtmlNode {
     }
     2 => {
       let count = state.next_positive_int() % 3 + 1
-      let items = Array::new(capacity=count)
+      let items = Array(capacity=count)
       for _ in 0..<count {
         items.push(DocElement("li", None, [generate_flow(budget - 1, state)]))
       }
@@ -214,7 +214,7 @@ fn generate_flow(budget : Int, state : @splitmix.RandomState) -> HtmlNode {
 impl @qc.Arbitrary for HtmlDocument with fn arbitrary(size, state) {
   let count = if size <= 0 { 1 } else { size % 6 + 1 }
   let budget = 1 + size % 4
-  let nodes = Array::new(capacity=count)
+  let nodes = Array(capacity=count)
   for _ in 0..<count {
     nodes.push(generate_flow(budget, state))
   }
@@ -227,7 +227,7 @@ impl @shrink.Shrink for HtmlDocument with fn shrink(self) {
   let candidates = []
   if length > 1 {
     for skip in 0..<length {
-      let rest = Array::new(capacity=length - 1)
+      let rest = Array(capacity=length - 1)
       for index in 0..<length {
         if index != skip {
           rest.push(self.nodes[index])
@@ -247,7 +247,7 @@ impl @shrink.Shrink for HtmlDocument with fn shrink(self) {
     if self.nodes[index] is DocElement(name, _, children) &&
       !children.is_empty() &&
       !(name is ("ul" | "table" | "tbody" | "tr")) {
-      let peeled = Array::new(capacity=length)
+      let peeled = Array(capacity=length)
       for other in 0..<length {
         if other == index {
           for child in children {

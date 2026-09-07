@@ -106,7 +106,7 @@ fn DomNode::build(self : DomNode, next_id : Ref[Int]) -> @dom.Node {
         @html_parser.text(value)
       }
     DomElement(name, ns, children) => {
-      let built = Array::new(capacity=children.length())
+      let built = Array(capacity=children.length())
       for child in children {
         built.push(child.build(next_id))
       }
@@ -153,7 +153,7 @@ fn generate_dom_node(budget : Int, state : @splitmix.RandomState) -> DomNode {
     return DomText(pick(dom_text_payloads, state))
   }
   let count = state.next_positive_int() % 3 + 1
-  let children = Array::new(capacity=count)
+  let children = Array(capacity=count)
   for _ in 0..<count {
     children.push(generate_dom_node(budget - 1, state))
   }
@@ -182,7 +182,7 @@ impl @shrink.Shrink for HandBuiltDom with fn shrink(self) {
       }
       if children.length() > 1 {
         for skip in 0..<children.length() {
-          let rest = Array::new(capacity=children.length() - 1)
+          let rest = Array(capacity=children.length() - 1)
           for index in 0..<children.length() {
             if index != skip {
               rest.push(children[index])
