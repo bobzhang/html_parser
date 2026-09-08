@@ -107,7 +107,7 @@ impl Debug for HtmlSource with fn to_repr(self) {
 ///|
 impl @qc.Arbitrary for HtmlSource with fn arbitrary(size, state) {
   let count = if size <= 0 { 1 } else { size % 24 + 1 }
-  let chunks = Array(capacity=count)
+  let chunks = Array::new(capacity=count)
   for _ in 0..<count {
     chunks.push(html_chunks[state.next_positive_int() % html_chunks.length()])
   }
@@ -127,7 +127,7 @@ impl @shrink.Shrink for HtmlSource with fn shrink(self) {
     { chunks: self.chunks[length / 2:].to_owned(), },
   ]
   for skip in 0..<length {
-    let rest = Array(capacity=length - 1)
+    let rest = Array::new(capacity=length - 1)
     for index in 0..<length {
       if index != skip {
         rest.push(self.chunks[index])
@@ -178,7 +178,7 @@ impl Debug for PlainText with fn to_repr(self) {
 ///|
 impl @qc.Arbitrary for PlainText with fn arbitrary(size, state) {
   let count = if size <= 0 { 1 } else { size % 12 + 1 }
-  let runs = Array(capacity=count)
+  let runs = Array::new(capacity=count)
   for _ in 0..<count {
     runs.push(text_runs[state.next_positive_int() % text_runs.length()])
   }
@@ -193,7 +193,7 @@ impl @shrink.Shrink for PlainText with fn shrink(self) {
   }
   let candidates = []
   for skip in 0..<length {
-    let rest = Array(capacity=length - 1)
+    let rest = Array::new(capacity=length - 1)
     for index in 0..<length {
       if index != skip {
         rest.push(self.runs[index])
