@@ -89,14 +89,9 @@ fn attribute_value_by_name(node : @dom.Node, attr_name : StringView) -> String? 
 }
 
 ///|
-fn markdown_walk_link(
-  node : @dom.Node,
-  builder : MarkdownBuilder,
-  html_passthrough : Bool,
-) -> Unit raise @core.HtmlError {
-  let inner = markdown_render_link_children_to_string(node, html_passthrough)
-  builder.raw("[")
-  builder.raw(inner)
+/// Close a link whose `[` and text have already been written: emit `]` and
+/// the destination, if any.
+fn markdown_emit_link_tail(node : @dom.Node, builder : MarkdownBuilder) -> Unit {
   builder.raw("]")
   match attribute_value_by_name(node, "href") {
     Some(href) => {
@@ -112,114 +107,65 @@ fn markdown_walk_link(
 }
 
 ///|
-fn markdown_render_link_children_to_string(
+/// Visit `node` inside link text. Block structure is flattened to spaces;
+/// children are scheduled on the work stack rather than rendered recursively.
+fn MarkdownWalker::walk_link_text(
+  self : MarkdownWalker,
   node : @dom.Node,
-  html_passthrough : Bool,
-) -> String raise @core.HtmlError {
-  let builder = MarkdownBuilder()
-  for child in markdown_children(node) {
-    markdown_walk_link_text(child, builder, html_passthrough)
-  }
-  builder.finish()
-}
-
-///|
-fn markdown_link_text_marker(
-  node : @dom.Node,
-  builder : MarkdownBuilder,
-  marker : String,
-  html_passthrough : Bool,
 ) -> Unit raise @core.HtmlError {
-  let inner = MarkdownBuilder()
-  for child in markdown_children(node) {
-    markdown_walk_link_text(child, inner, html_passthrough)
-  }
-  let content = inner.finish()
-  if content != "" {
-    builder.raw(marker)
-    builder.raw(content)
-    builder.raw(marker)
-  }
-}
-
-///|
-fn markdown_walk_link_list(
-  node : @dom.Node,
-  builder : MarkdownBuilder,
-  html_passthrough : Bool,
-) -> Unit raise @core.HtmlError {
-  for child in markdown_children(node) {
-    if child.kind == Element && child.name.to_lower() == "li" {
-      builder.raw(" ")
-      for grandchild in child.children {
-        markdown_walk_link_text(grandchild, builder, html_passthrough)
-      }
-    }
-  }
-}
-
-///|
-fn markdown_walk_link_text(
-  node : @dom.Node,
-  builder : MarkdownBuilder,
-  html_passthrough : Bool,
-) -> Unit raise @core.HtmlError {
+  let builder = self.current()
   match node.kind {
     Text =>
       if !node.sanitize_escape_only {
         builder.text(markdown_escape_text(node.data))
       }
     Comment | Doctype => ()
-    Document | Fragment =>
-      for child in markdown_children(node) {
-        markdown_walk_link_text(child, builder, html_passthrough)
-      }
+    Document | Fragment => self.push_link_children(markdown_children(node))
     Element => {
       let tag = node.name.to_lower()
       if markdown_should_skip_head_or_title(node, tag) || tag == "hr" {
         ()
       } else if markdown_heading_level(tag) > 0 {
-        for child in markdown_children(node) {
-          markdown_walk_link_text(child, builder, html_passthrough)
-        }
+        self.push_link_children(markdown_children(node))
       } else {
         match tag {
           "br" => builder.text(" ")
           "html" | "body" | "span" | "blockquote" =>
-            for child in markdown_children(node) {
-              markdown_walk_link_text(child, builder, html_passthrough)
-            }
+            self.push_link_children(markdown_children(node))
           "p" => {
-            for child in markdown_children(node) {
-              markdown_walk_link_text(child, builder, html_passthrough)
-            }
-            builder.text(" ")
+            self.tasks.push(SpaceText)
+            self.push_link_children(markdown_children(node))
           }
-          "b" | "strong" =>
-            markdown_link_text_marker(node, builder, "**", html_passthrough)
-          "i" | "em" =>
-            markdown_link_text_marker(node, builder, "*", html_passthrough)
+          "b" | "strong" => {
+            self.open_wrapped("**")
+            self.push_link_children(markdown_children(node))
+          }
+          "i" | "em" => {
+            self.open_wrapped("*")
+            self.push_link_children(markdown_children(node))
+          }
           "code" | "pre" =>
             builder.raw(markdown_code_span(markdown_collect_text(node)))
-          "ul" | "ol" =>
-            markdown_walk_link_list(node, builder, html_passthrough)
+          "ul" | "ol" => {
+            let items = markdown_children(node).filter(child => {
+              child.kind == Element && child.name.to_lower() == "li"
+            })
+            for index = items.length() - 1; index >= 0; index = index - 1 {
+              self.tasks.push(LinkListItem(items[index]))
+            }
+          }
           "table" => builder.raw(@ser.to_html(node, pretty=false))
           "script" | "style" | "textarea" =>
-            if html_passthrough {
+            if self.html_passthrough {
               builder.raw(@ser.to_html(node, pretty=false))
             }
           "img" => builder.raw(@ser.to_html(node, pretty=false))
-          _ =>
+          _ => {
             if markdown_block_container_name(tag) {
-              for child in markdown_children(node) {
-                markdown_walk_link_text(child, builder, html_passthrough)
-              }
-              builder.text(" ")
-            } else {
-              for child in markdown_children(node) {
-                markdown_walk_link_text(child, builder, html_passthrough)
-              }
+              self.tasks.push(SpaceText)
             }
+            self.push_link_children(markdown_children(node))
+          }
         }
       }
     }
