@@ -242,8 +242,24 @@ fn sanitize_element_attributes(
   policy : SanitizationPolicy,
   observer : SanitizeTransformObserver?,
 ) -> Unit raise @core.HtmlError {
+  sanitize_element_attributes_with_foreign(
+    node,
+    policy,
+    observer,
+    node_is_effectively_foreign(node),
+  )
+}
+
+///|
+/// `sanitize_element_attributes` with a precomputed
+/// `node_is_effectively_foreign(node)` result.
+fn sanitize_element_attributes_with_foreign(
+  node : @dom.Node,
+  policy : SanitizationPolicy,
+  observer : SanitizeTransformObserver?,
+  effectively_foreign : Bool,
+) -> Unit raise @core.HtmlError {
   let tag_name = sanitize_node_name(node)
-  let effectively_foreign = node_is_effectively_foreign(node)
   if policy.strip_invisible_unicode {
     let stripped_attr_names : Array[String] = []
     for key in node.attrs.keys() {
