@@ -3,7 +3,7 @@ name = "bobzhang/html_parser"
 version = "0.1.8"
 
 import {
-  "moonbitlang/async@0.19.0",
+  "moonbitlang/async@0.22.4",
 }
 
 readme = "README.mbt.md"
