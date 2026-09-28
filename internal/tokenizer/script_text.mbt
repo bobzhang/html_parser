@@ -43,7 +43,10 @@ fn scan_escaped_script_text(
   let out = StringBuilder()
   out.write_string(scanned_data_slice(input, start, escape_start))
   out.write_string("<!--")
-  let mut state = ScriptEscaped
+  // `<!--` passes through the escape start and escape start dash states and
+  // lands in escaped *dash dash*, so an immediate `>` (as in `<!-->`) returns
+  // to plain script data rather than staying escaped.
+  let mut state = ScriptEscapedDashDash
   let mut temp = ""
   let mut pos = escape_start + 4
   while pos < input.length() {
@@ -54,7 +57,7 @@ fn scan_escaped_script_text(
         } else if @syn.view_starts_with_at(input, pos, "<!--") {
           out.write_string("<!--")
           pos += 4
-          state = ScriptEscaped
+          state = ScriptEscapedDashDash
         } else {
           pos = write_script_text_char(input, pos, out, errors)
         }

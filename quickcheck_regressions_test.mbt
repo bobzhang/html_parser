@@ -58,3 +58,17 @@ test "regression: a less-than sign after an escaped dash dash is kept once" {
   let doc = @html_parser.parse_fragment("<script><!--a--</script>x")
   assert_eq(doc.to_html(pretty=false), "<script><!--a--</script>x")
 }
+
+///|
+test "regression: a comment opener closed at once returns to script data" {
+  // `<!--` in script data ends in the escaped *dash dash* state, so `<!-->`
+  // is closed immediately and a following `<script>` is plain text, not the
+  // start of a double escape that swallows the next `</script>`. Found while
+  // minimizing the counterexample above; expected values match browsers.
+  let doc = @html_parser.parse("<script><!--><script></script>x</script>y")
+  assert_eq(
+    script_text_of("<script><!--><script></script>x</script>y"),
+    "<!--><script>",
+  )
+  assert_eq(doc.to_text(separator="", strip=false), "<!--><script>xy")
+}
