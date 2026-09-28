@@ -167,23 +167,25 @@ fn parse_signed_int_view(expr : StringView) -> Int? {
   if pos >= expr.length() {
     return None
   }
-  let mut value = 0
+  // A number past the range of `Int` is rejected rather than allowed to wrap
+  // around to a small one, so it matches nothing, as in browsers. The bound
+  // is one larger for negative numbers, which reach -2147483648.
+  let limit = if sign < 0 { 2147483648L } else { 2147483647L }
+  let mut value = 0L
   while pos < expr.length() {
     match expr.get_char(pos) {
       Some(ch) if ch.is_digit(10) => {
-        let digit = ch.to_int() - ('0' : Int)
-        // A number past the range of `Int` is rejected rather than allowed to
-        // wrap around to a small one, so it matches nothing, as in browsers.
-        if value > (2147483647 - digit) / 10 {
+        let digit = (ch.to_int() - ('0' : Int)).to_int64()
+        if value > (limit - digit) / 10L {
           return None
         }
-        value = value * 10 + digit
+        value = value * 10L + digit
         pos += ch.utf16_len()
       }
       _ => return None
     }
   }
-  Some(sign * value)
+  Some((sign.to_int64() * value).to_int())
 }
 
 ///|

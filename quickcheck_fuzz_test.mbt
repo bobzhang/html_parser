@@ -605,8 +605,18 @@ fn nth_coefficient(state : @splitmix.RandomState) -> Int64 {
     0 => (1L << 32) + (state.next_positive_int() % 5).to_int64()
     1 => -((1L << 32) + (state.next_positive_int() % 5).to_int64())
     2 => 99999999999L
+    // the edges of `Int`: -2147483648 is in range, 2147483648 is not
+    3 =>
+      [-2147483649L, -2147483648L, 2147483647L, 2147483648L][state.next_positive_int() %
+      4]
     _ => (state.next_positive_int() % 13 - 6).to_int64()
   }
+}
+
+///|
+/// Whether a coefficient fits in `Int`.
+fn nth_in_int_range(x : Int64) -> Bool {
+  x >= -2147483648L && x <= 2147483647L
 }
 
 ///|
@@ -637,9 +647,8 @@ test "property: nth-child agrees with the an+b formula" {
       let root = @html_parser.parse_fragment("<ul>\{items}</ul>").root
       let selector = "li:nth-child(\{nth_argument(input.a, input.b)})"
       let actual = @html_parser.query(root, selector).map(node => node.text())
-      let limit = 2147483647L
       let expected = []
-      if input.a.abs() <= limit && input.b.abs() <= limit {
+      if nth_in_int_range(input.a) && nth_in_int_range(input.b) {
         for index in 1..<=input.count {
           let diff = index.to_int64() - input.b
           let matched = if input.a == 0L {
@@ -659,8 +668,12 @@ test "property: nth-child agrees with the an+b formula" {
     observe=input => {
       [
         @qc.classify(
-          input.a.abs() > 2147483647L || input.b.abs() > 2147483647L,
+          !(nth_in_int_range(input.a) && nth_in_int_range(input.b)),
           "out of range",
+        ),
+        @qc.classify(
+          input.a == -2147483648L || input.b == -2147483648L,
+          "Int.MIN_VALUE",
         ),
         @qc.classify(input.a < 0L, "negative a"),
       ]

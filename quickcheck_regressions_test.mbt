@@ -148,6 +148,13 @@ test "regression: an nth-child argument past the range of Int matches nothing" {
   assert_eq(texts("li:nth-child(2)"), ["2"])
   assert_eq(texts("li:nth-child(n-2147483647)"), ["1", "2", "3"])
   assert_eq(texts("li:nth-child(-n+2147483647)"), ["1", "2", "3"])
+  // -2147483648 is still an `Int`; 2147483648 is not
+  assert_eq(texts("li:nth-child(-2147483648n+1)"), ["1"])
+  assert_eq(texts("li:nth-child(n-2147483648)"), ["1", "2", "3"])
+  assert_eq(texts("li:nth-child(2147483647n+2)"), ["2"])
+  assert_eq(texts("li:nth-child(2147483648n+1)"), [])
+  assert_eq(texts("li:nth-child(n+2147483648)"), [])
+  assert_eq(texts("li:nth-child(n-2147483649)"), [])
 }
 
 ///|
