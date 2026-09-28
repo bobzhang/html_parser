@@ -149,3 +149,17 @@ test "regression: an nth-child argument past the range of Int matches nothing" {
   assert_eq(texts("li:nth-child(n-2147483647)"), ["1", "2", "3"])
   assert_eq(texts("li:nth-child(-n+2147483647)"), ["1", "2", "3"])
 }
+
+///|
+test "regression: a link port past the range of Int is rejected" {
+  // Found by "linkify accepts exactly the valid port numbers". 2^32 + 80
+  // wrapped around to port 80 and was linkified.
+  assert_eq(
+    @html_parser.find_links("see http://example.com:4294967376/x now").length(),
+    0,
+  )
+  assert_eq(
+    @html_parser.find_links("see http://example.com:65535/x now").length(),
+    1,
+  )
+}
