@@ -13,7 +13,7 @@ keywords = [ "html", "parser", "formatter", "examples" ]
 description = "Runnable examples and documentation for bobzhang/html_parser."
 
 import {
-  "bobzhang/html_parser@0.1.8",
+  "bobzhang/html_parser@0.2.0",
 }
 
 warnings = "+test_unqualified_package+unnecessary_annotation+missing_doc"
