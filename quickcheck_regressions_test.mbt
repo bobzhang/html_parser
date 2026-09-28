@@ -124,3 +124,28 @@ test "regression: escaped markup has invisible Unicode stripped like other text"
   let clean = @html_parser.sanitize_dom(cut_off.root, policy=keep)
   assert_eq(@html_parser.to_html(clean, pretty=false), "&lt;x title=\"\u{202E}")
 }
+
+///|
+test "regression: an nth-child argument past the range of Int matches nothing" {
+  // Found by "nth-child agrees with the an+b formula". The argument was parsed
+  // into an `Int` without a bound, so 2^32 + 1 wrapped around to 1 and
+  // selected the first item. Browsers match nothing for these.
+  let root = @html_parser.parse_fragment(
+      "<ul><li>1</li><li>2</li><li>3</li></ul>",
+    ).root
+  for
+    selector in [
+      "li:nth-child(4294967297)", "li:nth-child(2n+4294967297)", "li:nth-child(4294967296n+1)",
+      "li:nth-child(-4294967299n+99999999999)", "li:nth-of-type(4294967298)",
+    ] {
+    assert_eq(@html_parser.query(root, selector).length(), 0)
+  }
+  // In-range arguments are unchanged, including a large negative offset,
+  // which used to overflow `index - b`.
+  let texts = (selector : String) => {
+    @html_parser.query(root, selector).map(node => node.text())
+  }
+  assert_eq(texts("li:nth-child(2)"), ["2"])
+  assert_eq(texts("li:nth-child(n-2147483647)"), ["1", "2", "3"])
+  assert_eq(texts("li:nth-child(-n+2147483647)"), ["1", "2", "3"])
+}

@@ -171,7 +171,13 @@ fn parse_signed_int_view(expr : StringView) -> Int? {
   while pos < expr.length() {
     match expr.get_char(pos) {
       Some(ch) if ch.is_digit(10) => {
-        value = value * 10 + ch.to_int() - ('0' : Int)
+        let digit = ch.to_int() - ('0' : Int)
+        // A number past the range of `Int` is rejected rather than allowed to
+        // wrap around to a small one, so it matches nothing, as in browsers.
+        if value > (2147483647 - digit) / 10 {
+          return None
+        }
+        value = value * 10 + digit
         pos += ch.utf16_len()
       }
       _ => return None
@@ -223,11 +229,13 @@ fn nth_formula_matches(index : Int, a : Int, b : Int) -> Bool {
   if a == 0 {
     index == b
   } else {
-    let diff = index - b
-    if a > 0 {
-      diff >= 0 && diff % a == 0
+    // In `Int64`: `index - b` overflows `Int` when `b` is far below zero.
+    let diff = index.to_int64() - b.to_int64()
+    let a = a.to_int64()
+    if a > 0L {
+      diff >= 0L && diff % a == 0L
     } else {
-      diff <= 0 && diff % a == 0
+      diff <= 0L && diff % a == 0L
     }
   }
 }
