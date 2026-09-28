@@ -84,7 +84,110 @@ fn node_text_cache_set(
 }
 
 ///|
+/// Text of `node` for `:contains` and the match byte budget: the trimmed
+/// data of text nodes, joined with single spaces, template contents first.
 fn selector_text_content(node : @dom.Node) -> String {
+  if text_walk_is_regular(node) {
+    regular_text_content(node)
+  } else {
+    general_text_content(node)
+  }
+}
+
+///|
+/// Whether the walk of `general_text_content` from `start` only follows
+/// regular tree edges: into a child whose `parent` is the node being expanded,
+/// that is its first occurrence in `children` and not also the node's
+/// template contents, or into template contents whose `parent` is the host,
+/// and never back into `start`.
+///
+/// Then every node is reached exactly once: if `y` were the first node reached
+/// twice, both edges would come from `y.parent`, expanded only once (it was not
+/// reached twice before `y`), so they would be two occurrences in `children`
+/// or both a child and the contents, which the checks exclude. Without shared
+/// or cyclic nodes, `general_text_content` reduces to `regular_text_content`.
+fn text_walk_is_regular(start : @dom.Node) -> Bool {
+  let stack : Array[@dom.Node] = [start]
+  while stack.pop() is Some(node) {
+    match node.template_contents {
+      Some(contents) => {
+        if physical_equal(contents, start) ||
+          !(contents.parent is Some(host) && physical_equal(host, node)) {
+          return false
+        }
+        stack.push(contents)
+      }
+      None => ()
+    }
+    let children = node.children
+    for index, child in children {
+      if physical_equal(child, start) ||
+        !(child.parent is Some(parent) && physical_equal(parent, node)) ||
+        (
+          node.template_contents is Some(contents) &&
+          physical_equal(contents, child)
+        ) {
+        return false
+      }
+      for earlier in 0..<index {
+        if physical_equal(children[earlier], child) {
+          return false
+        }
+      }
+      stack.push(child)
+    }
+  }
+  true
+}
+
+///|
+priv struct TextFrame {
+  node : @dom.Node
+  parts : Array[String]
+  /// Next part to collect: `-1` for template contents, then child indices.
+  mut next : Int
+}
+
+///|
+/// `general_text_content` for a walk that reaches every node exactly once, in
+/// time linear in the size of the subtree.
+fn regular_text_content(start : @dom.Node) -> String {
+  if start.kind == Text {
+    return start.data[:].trim().to_owned()
+  }
+  let stack : Array[TextFrame] = [{ node: start, parts: [], next: -1, }]
+  while stack.last() is Some(frame) {
+    let index = frame.next
+    frame.next = index + 1
+    let child = if index < 0 {
+      frame.node.template_contents
+    } else {
+      frame.node.children.get(index)
+    }
+    match child {
+      Some(child) if child.kind == Text => {
+        let text = child.data[:].trim().to_owned()
+        if text != "" {
+          frame.parts.push(text)
+        }
+      }
+      Some(child) => stack.push({ node: child, parts: [], next: -1, })
+      None =>
+        if index >= 0 {
+          ignore(stack.pop())
+          let text = frame.parts.join(" ")
+          match stack.last() {
+            Some(parent) => if text != "" { parent.parts.push(text) }
+            None => return text
+          }
+        }
+    }
+  }
+  ""
+}
+
+///|
+fn general_text_content(node : @dom.Node) -> String {
   let cache_nodes : Array[@dom.Node] = []
   let cache_texts : Array[String] = []
   let visiting : Array[@dom.Node] = []
