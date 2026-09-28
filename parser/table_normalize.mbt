@@ -24,15 +24,7 @@ fn table_normalize_target_is_plain(node : @dom.Node) -> Bool {
 /// childless wrapper, but skips its ancestor walk (which is O(depth) and made
 /// normalizing deeply nested tables quadratic).
 fn attach_table_wrapper(target : @dom.Node, wrapper : @dom.Node) -> Unit {
-  if wrapper.parent is None &&
-    wrapper.children.is_empty() &&
-    !physical_equal(target, wrapper) &&
-    table_normalize_target_is_plain(target) {
-    wrapper.parent = Some(target)
-    target.children.push(wrapper)
-  } else {
-    target.append_child(wrapper)
-  }
+  append_new_node(target, wrapper)
 }
 
 ///|

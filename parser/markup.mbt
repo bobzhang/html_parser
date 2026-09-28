@@ -19,7 +19,7 @@ fn Parser::parse_comment(self : Parser) -> Unit {
   if self.append_after_body_comment(node) {
     return
   }
-  self.current_node().append_child(node)
+  append_new_node(self.current_node(), node)
   self.mark_entered_body_comment(node)
 }
 
@@ -34,7 +34,7 @@ fn Parser::parse_bogus_comment(self : Parser, origin_start : Int) -> Unit {
   let data = if self.xml_coercion { coerce_comment_for_xml(data) } else { data }
   let node = self.comment_at(data, origin_start)
   if !self.append_after_body_comment(node) {
-    self.current_node().append_child(node)
+    append_new_node(self.current_node(), node)
     self.mark_entered_body_comment(node)
   }
   if self.current() is Some('>') {
@@ -102,7 +102,7 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
     } else {
       cleaned
     }
-    self.current_node().append_child(self.text_at(data, start))
+    append_new_node(self.current_node(), self.text_at(data, start))
   }
   if self.starts_with("]]>") {
     self.pos += 3
