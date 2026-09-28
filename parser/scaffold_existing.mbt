@@ -16,21 +16,50 @@ fn append_children_to(target : @dom.Node, children : Array[@dom.Node]) -> Unit {
 }
 
 ///|
+/// Flatten `source` into `out`: merge its missing attributes into `target`,
+/// detach its children, and push them to `out` in document order, except
+/// that nested elements named `name` are flattened the same way in place.
+///
+/// This is the pre-order walk a recursive implementation would do, driven by
+/// an explicit stack of (child list, next index) frames so deeply nested
+/// same-named elements cannot overflow the call stack.
+fn flatten_same_named_node_contents(
+  target : @dom.Node,
+  source : @dom.Node,
+  name : String,
+  out : Array[@dom.Node],
+) -> Unit {
+  let frames : Array[(Array[@dom.Node], Ref[Int])] = []
+  fn enter(node : @dom.Node) {
+    merge_missing_attrs(target, node)
+    let existing = node.children.copy()
+    node.children.clear()
+    frames.push((existing, Ref(0)))
+  }
+
+  enter(source)
+  while frames.last() is Some((existing, next)) {
+    if next.val >= existing.length() {
+      ignore(frames.pop())
+      continue
+    }
+    let child = existing[next.val]
+    next.val += 1
+    if child.kind == Element && child.name == name {
+      enter(child)
+    } else {
+      out.push(child)
+    }
+  }
+}
+
+///|
 fn append_body_node_contents(
   body_node : @dom.Node,
   source : @dom.Node,
   body_children : Array[@dom.Node],
 ) -> Unit {
-  merge_missing_attrs(body_node, source)
-  let existing = source.children.copy()
-  source.children.clear()
-  for child in existing {
-    if child.kind == Element && child.name == "body" {
-      append_body_node_contents(body_node, child, body_children)
-    } else {
-      body_children.push(child)
-    }
-  }
+  flatten_same_named_node_contents(body_node, source, "body", body_children)
 }
 
 ///|
@@ -39,16 +68,7 @@ fn append_html_node_contents(
   source : @dom.Node,
   html_children : Array[@dom.Node],
 ) -> Unit {
-  merge_missing_attrs(html_node, source)
-  let existing = source.children.copy()
-  source.children.clear()
-  for child in existing {
-    if child.kind == Element && child.name == "html" {
-      append_html_node_contents(html_node, child, html_children)
-    } else {
-      html_children.push(child)
-    }
-  }
+  flatten_same_named_node_contents(html_node, source, "html", html_children)
 }
 
 ///|

@@ -377,20 +377,28 @@ fn Parser::stray_p_end_tag_is_ignored(self : Parser) -> Bool {
 }
 
 ///|
+/// True when `root`'s children (looking through nested `html` elements)
+/// include an element other than head content, or non-whitespace text.
+///
+/// Uses an explicit stack so deeply nested `html` chains cannot overflow the
+/// call stack. The check is side-effect free, so visiting a parent's direct
+/// children before its nested `html` elements gives the same answer as a
+/// recursive walk.
 fn document_children_contain_body_content(root : @dom.Node) -> Bool {
-  for child in root.children {
-    match child.kind {
-      Element =>
-        if child.name == "html" {
-          if document_children_contain_body_content(child) {
+  let pending : Array[@dom.Node] = [root]
+  while pending.pop() is Some(parent) {
+    for child in parent.children {
+      match child.kind {
+        Element =>
+          if child.name == "html" {
+            pending.push(child)
+          } else if child.name != "head" &&
+            !is_document_head_element_name(child.name) {
             return true
           }
-        } else if child.name != "head" &&
-          !is_document_head_element_name(child.name) {
-          return true
-        }
-      Text => if !is_whitespace_text_node(child) { return true }
-      _ => ()
+        Text => if !is_whitespace_text_node(child) { return true }
+        _ => ()
+      }
     }
   }
   false
