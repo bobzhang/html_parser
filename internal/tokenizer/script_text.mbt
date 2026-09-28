@@ -10,8 +10,8 @@ pub fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
   let errors : Array[SpecialTextError] = []
   // Fast path: script text without a `<!--` escape opener is the input
   // verbatim, so this loop only locates the end tag and the data
-  // materializes as one slice copy. The escaped states are not verbatim
-  // (a `<` after `--` is kept twice), so they keep the writing machine.
+  // materializes as one slice copy. The escaped states decide where the
+  // script ends differently, so they keep the writing machine.
   let mut pos = start
   while pos < input.length() {
     if script_end_tag_at(input, pos) {
@@ -43,7 +43,10 @@ fn scan_escaped_script_text(
   let out = StringBuilder()
   out.write_string(scanned_data_slice(input, start, escape_start))
   out.write_string("<!--")
-  let mut state = ScriptEscaped
+  // `<!--` passes through the escape start and escape start dash states and
+  // lands in escaped *dash dash*, so an immediate `>` (as in `<!-->`) returns
+  // to plain script data rather than staying escaped.
+  let mut state = ScriptEscapedDashDash
   let mut temp = ""
   let mut pos = escape_start + 4
   while pos < input.length() {
@@ -54,7 +57,7 @@ fn scan_escaped_script_text(
         } else if @syn.view_starts_with_at(input, pos, "<!--") {
           out.write_string("<!--")
           pos += 4
-          state = ScriptEscaped
+          state = ScriptEscapedDashDash
         } else {
           pos = write_script_text_char(input, pos, out, errors)
         }
@@ -94,7 +97,8 @@ fn scan_escaped_script_text(
             pos += 1
           }
           '<' => {
-            out.write_char('<')
+            // The `<` is emitted by the less-than sign state once it knows
+            // what follows; emitting it here as well doubled it.
             pos += 1
             state = ScriptEscapedLessThan
           }
@@ -209,10 +213,10 @@ fn scan_escaped_script_text(
             temp = ""
             state = ScriptDoubleEscapeEnd
           }
-          Some(ch) if ch.is_ascii_alphabetic() => {
-            temp = ""
-            state = ScriptDoubleEscapeStart
-          }
+          // Anything else, letters included, is reconsumed as double-escaped
+          // data. Only the escaped (not double-escaped) less-than sign state
+          // starts a double escape; starting one here could fall back to the
+          // escaped state and let a later `</script>` end the script early.
           _ => state = ScriptDoubleEscaped
         }
       ScriptDoubleEscapeEnd =>

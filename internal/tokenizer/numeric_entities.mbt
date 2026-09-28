@@ -22,7 +22,12 @@ fn consume_numeric_entity(
     if digit < 0 || digit >= base {
       break
     }
-    value = value * base + digit
+    // Saturate once the value is past the last code point, as the spec's
+    // character reference code does: the digits are still consumed, but a long
+    // run must not overflow `Int` and wrap around to a valid code point.
+    if value <= 0x10FFFF {
+      value = value * base + digit
+    }
     pos += ch.utf16_len()
   }
   if pos == digits_start {

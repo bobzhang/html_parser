@@ -61,7 +61,15 @@ fn insert_sanitized_escape_text(
   parent : @dom.Node,
   index : Int,
   value : String,
+  policy : SanitizationPolicy,
 ) -> Unit {
+  // The escaped tag becomes text the caller skips over, so it is stripped
+  // here like every other text node the policy lets through.
+  let value = if policy.strip_invisible_unicode {
+    strip_invisible_unicode(value)
+  } else {
+    value
+  }
   let escaped = @dom.text(value)
   escaped.parent = Some(parent)
   parent.children.insert(index, escaped)
@@ -84,7 +92,7 @@ fn escape_child_at(
     child.parent = None
   }
   let mut inserted = 0
-  insert_sanitized_escape_text(parent, index + inserted, start_tag)
+  insert_sanitized_escape_text(parent, index + inserted, start_tag, policy)
   inserted += 1
   while !child.children.is_empty() {
     let grandchild = child.children[0]
@@ -95,7 +103,7 @@ fn escape_child_at(
   }
   match end_tag {
     Some(value) => {
-      insert_sanitized_escape_text(parent, index + inserted, value)
+      insert_sanitized_escape_text(parent, index + inserted, value, policy)
       inserted += 1
     }
     None => ()

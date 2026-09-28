@@ -15,8 +15,9 @@ fn sanitize_container_children(
     match child.kind {
       Text if child.sanitize_escape_only =>
         if policy.disallowed_tag_handling == Escape {
+          // Revealed as ordinary text, so it is revisited as one and gets the
+          // same invisible-Unicode stripping as every other text node.
           child.sanitize_escape_only = false
-          index += 1
         } else {
           remove_child_at(parent, index)
         }

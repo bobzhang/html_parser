@@ -28,12 +28,12 @@ test "parser treats script style title textarea content as text" {
   )
   assert_eq(
     doc.to_html(pretty=false),
-    "<script><!--a--<<b</script><title>a &lt; b</title>",
+    "<script><!--a--<b</script><title>a &lt; b</title>",
   )
   assert_eq(doc.query("b").length(), 0)
-  assert_eq(doc.to_text(separator="|", strip=false), "<!--a--<<b|a < b")
+  assert_eq(doc.to_text(separator="|", strip=false), "<!--a--<b|a < b")
   let escaped_end = @html_parser.parse_fragment("<script><!--a--</script>")
-  assert_eq(escaped_end.to_html(pretty=false), "<script><!--a--<</script>")
+  assert_eq(escaped_end.to_html(pretty=false), "<script><!--a--</script>")
   let comment_end = @html_parser.parse_fragment("<script><!--a--></script>")
   assert_eq(comment_end.to_html(pretty=false), "<script><!--a--></script>")
   let raw_after_comment = @html_parser.parse_fragment(
@@ -55,7 +55,7 @@ test "parser treats script style title textarea content as text" {
   )
   assert_eq(
     dash_dash_less_than.to_html(pretty=false),
-    "<script><!----<<x</script>",
+    "<script><!----<x</script>",
   )
   let double_escaped_dash = @html_parser.parse_fragment(
     "<script><!--<script>---x</script>tail</script>",

@@ -26,7 +26,8 @@ test "script text scanner covers escaped and double escaped edge states" {
   assert_script_scan("<!---<x</script>", "<!---<x", Some(7))
   assert_script_scan("<!----x</script>", "<!----x", Some(7))
   assert_script_scan("<!-----x</script>", "<!-----x", Some(8))
-  assert_script_scan("<!----<x</script>", "<!----<<x", Some(8))
+  // A `<` after `--` is emitted once, by the less-than sign state.
+  assert_script_scan("<!----<x</script>", "<!----<x", Some(8))
   assert_script_scan("<!--</not</script>", "<!--</not", Some(9))
   assert_script_scan("<!--<!</script>", "<!--<!", Some(6))
   assert_script_scan("abc</script x", "abc", Some(3))
@@ -46,10 +47,12 @@ test "script text scanner covers escaped and double escaped edge states" {
     "<!--<script>---x</script>tail",
     Some(29),
   )
+  // In the double-escaped less-than sign state a letter is ordinary data; it
+  // does not start another double escape, so the script stays double escaped.
   assert_script_scan(
     "<!--<script>--<x</script>tail</script>",
-    "<!--<script>--<x",
-    Some(16),
+    "<!--<script>--<x</script>tail",
+    Some(29),
   )
   assert_script_scan(
     "<!--<script>--x</script>tail</script>",
@@ -73,8 +76,8 @@ test "script text scanner covers escaped and double escaped edge states" {
   )
   assert_script_scan(
     "<!--<script><x</script>z</script>",
-    "<!--<script><x",
-    Some(14),
+    "<!--<script><x</script>z",
+    Some(24),
   )
   assert_script_scan(
     "<!--<script x</script>tail</script>",

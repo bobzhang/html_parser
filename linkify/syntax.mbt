@@ -59,7 +59,12 @@ fn linkify_parse_uint(value : StringView) -> Int? {
     if !ch.is_digit(10) {
       return None
     }
-    out = out * 10 + ch.to_int() - ('0' : Int)
+    let digit = ch.to_int() - ('0' : Int)
+    // Reject rather than wrap: a port of 2^32 + 80 must not read as 80.
+    if out > (2147483647 - digit) / 10 {
+      return None
+    }
+    out = out * 10 + digit
   }
   Some(out)
 }

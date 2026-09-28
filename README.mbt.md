@@ -230,6 +230,28 @@ checked by mutation: reverting the serializer to an earlier, known-wrong rule
 must falsify it. A property that cannot fail looks exactly like one that
 passes.
 
+A second group of generators targets what the html5lib conformance suite does
+not cover:
+
+- `MarkupFuzz` (`quickcheck_fuzz_generators_test.mbt`) assembles tags,
+  attributes, references, comments and nesting bursts at random, one input in
+  eight being raw character noise (NUL, CR, C1 controls, astral characters).
+  It drives robustness across every entry point, option and fragment context,
+  source-location consistency, serialization settling after one reparse (the
+  shapes HTML cannot express, such as `plaintext` or an `a` inside an `a`, are
+  excluded and documented), agreement between the text extraction modes, and,
+  in `quickcheck_sanitizer_test.mbt`, the sanitizer against an independent
+  model of its documented policy: allowlists, URL schemes, dropped content,
+  invisible Unicode, idempotence, reparse stability, and random custom
+  policies. `SafeDoc` generates markup the default policy fully allows, which
+  the sanitizer must leave unchanged.
+- Smaller generators check decoding and encoding against spec models: numeric
+  and legacy named character references, text and attribute values drawn from
+  all of Unicode, `an+b` selector arguments, and link port numbers.
+
+The counterexamples these found are kept as named tests in
+`quickcheck_regressions_test.mbt`.
+
 Seeds are fixed, so failures reproduce exactly. Counterexamples are shrunk
 against the generator's structure and reported as HTML source.
 
