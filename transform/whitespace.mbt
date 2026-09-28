@@ -37,22 +37,31 @@ fn apply_collapse_whitespace_transform(
 }
 
 ///|
+/// Collapse whitespace in text below `root` (template contents first, then the
+/// regular children), skipping text inside skipped elements. Uses an explicit
+/// frame stack instead of recursion; each frame carries the inherited skip
+/// state of one activation of the former recursive walk.
 fn collapse_whitespace_children(
-  parent : @dom.Node,
+  root : @dom.Node,
   skip_tags : Set[String],
   skip : Bool,
   transform : TransformSpec,
 ) -> Unit {
-  match parent.template_contents {
-    Some(contents) =>
-      collapse_whitespace_children(contents, skip_tags, skip, transform)
-    None => ()
-  }
-  let mut index = 0
-  while index < parent.children.length() {
+  let stack : Array[WalkFrame] = [WalkFrame::new(root, skip~)]
+  while stack.last() is Some(frame) {
+    if frame.schedule_template_first(stack) {
+      continue
+    }
+    let parent = frame.node
+    let index = frame.index
+    if index >= parent.children.length() {
+      ignore(stack.pop())
+      continue
+    }
     let child = parent.children[index]
+    frame.index = index + 1
     match child.kind {
-      Text if !skip && child.data != "" => {
+      Text if !frame.skip && child.data != "" => {
         let collapsed = collapse_transform_html_space(child.data)
         if collapsed != child.data {
           transform_call_hook(child, transform)
@@ -70,15 +79,13 @@ fn collapse_whitespace_children(
           }
         }
       }
-      Document | Fragment =>
-        collapse_whitespace_children(child, skip_tags, skip, transform)
+      Document | Fragment => stack.push(WalkFrame::new(child, skip=frame.skip))
       Element => {
-        let child_skip = skip ||
+        let child_skip = frame.skip ||
           skip_tags.contains(@syn.lower_ascii(child.name))
-        collapse_whitespace_children(child, skip_tags, child_skip, transform)
+        stack.push(WalkFrame::new(child, skip=child_skip))
       }
       _ => ()
     }
-    index += 1
   }
 }
