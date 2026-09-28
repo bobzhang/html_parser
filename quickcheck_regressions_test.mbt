@@ -72,3 +72,22 @@ test "regression: a comment opener closed at once returns to script data" {
   )
   assert_eq(doc.to_text(separator="", strip=false), "<!--><script>xy")
 }
+
+///|
+test "regression: a letter after a double-escaped less-than sign stays double escaped" {
+  // In the script data double escaped less-than sign state anything but `/`
+  // is reconsumed as double-escaped data. The scanner started a new double
+  // escape on a letter instead, which fell back to the escaped state, so the
+  // next `</script>` ended the script early and the rest leaked into the page.
+  // Found while reviewing the scanner's pinned cases against browsers.
+  assert_eq(
+    script_text_of("<script><!--<script><x</script>z</script>"),
+    "<!--<script><x</script>z",
+  )
+  assert_eq(
+    script_text_of("<script><!--<script>--<x</script>tail</script>"),
+    "<!--<script>--<x</script>tail",
+  )
+  let doc = @html_parser.parse("<script><!--<script><x</script>z</script>after")
+  assert_eq(doc.root.text(), "<!--<script><x</script>zafter")
+}

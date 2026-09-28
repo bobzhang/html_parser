@@ -213,10 +213,10 @@ fn scan_escaped_script_text(
             temp = ""
             state = ScriptDoubleEscapeEnd
           }
-          Some(ch) if ch.is_ascii_alphabetic() => {
-            temp = ""
-            state = ScriptDoubleEscapeStart
-          }
+          // Anything else, letters included, is reconsumed as double-escaped
+          // data. Only the escaped (not double-escaped) less-than sign state
+          // starts a double escape; starting one here could fall back to the
+          // escaped state and let a later `</script>` end the script early.
           _ => state = ScriptDoubleEscaped
         }
       ScriptDoubleEscapeEnd =>
