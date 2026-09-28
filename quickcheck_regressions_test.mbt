@@ -91,3 +91,36 @@ test "regression: a letter after a double-escaped less-than sign stays double es
   let doc = @html_parser.parse("<script><!--<script><x</script>z</script>after")
   assert_eq(doc.root.text(), "<!--<script><x</script>zafter")
 }
+
+///|
+test "regression: escaped markup has invisible Unicode stripped like other text" {
+  // Found by "any policy's output conforms to that policy, before and after a
+  // reparse". With `Escape` handling, the text the sanitizer makes from a
+  // disallowed tag, and the source of a tag cut off by end of input, skipped
+  // the `strip_invisible_unicode` pass every other text node gets, so bidi
+  // overrides and zero-width characters survived a policy that removes them.
+  let policy = @html_parser.SanitizationPolicy(
+    ["p"],
+    disallowed_tag_handling=Escape,
+  )
+  let escaped_tag = @html_parser.parse_fragment(
+    "<p>a<x title=\"\u{202E}evil\">b\u{200B}c</x></p>",
+  )
+  let clean = @html_parser.sanitize_dom(escaped_tag.root, policy~)
+  assert_eq(
+    @html_parser.to_html(clean, pretty=false),
+    "<p>a&lt;x title=\"evil\"&gt;bc&lt;/x&gt;</p>",
+  )
+  let cut_off = @html_parser.parse_fragment("<p>a</p><x title=\"\u{202E}")
+  let clean = @html_parser.sanitize_dom(cut_off.root, policy~)
+  assert_eq(@html_parser.to_html(clean, pretty=false), "<p>a</p>&lt;x title=\"")
+  // Turning stripping off keeps them, as before.
+  let keep = @html_parser.SanitizationPolicy(
+    ["p"],
+    disallowed_tag_handling=Escape,
+    strip_invisible_unicode=false,
+  )
+  let cut_off = @html_parser.parse_fragment("<x title=\"\u{202E}")
+  let clean = @html_parser.sanitize_dom(cut_off.root, policy=keep)
+  assert_eq(@html_parser.to_html(clean, pretty=false), "&lt;x title=\"\u{202E}")
+}
