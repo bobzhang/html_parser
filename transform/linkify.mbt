@@ -29,28 +29,34 @@ fn apply_linkify_transform(
 }
 
 ///|
+/// Linkify text under `root` (template contents first, then the regular
+/// children), skipping text inside skipped elements. Uses an explicit frame
+/// stack instead of recursion; each frame carries the inherited skip state of
+/// one activation of the former recursive walk.
 fn linkify_transform_children(
-  parent : @dom.Node,
+  root : @dom.Node,
   config : @link.LinkifyConfig,
   skip_tags : Set[String],
   skip_linkify : Bool,
   transform : TransformSpec,
 ) -> Unit {
-  match parent.template_contents {
-    Some(contents) =>
-      linkify_transform_children(
-        contents, config, skip_tags, skip_linkify, transform,
-      )
-    None => ()
-  }
-  let mut index = 0
-  while index < parent.children.length() {
+  let stack : Array[WalkFrame] = [WalkFrame::new(root, skip=skip_linkify)]
+  while stack.last() is Some(frame) {
+    if frame.schedule_template_first(stack) {
+      continue
+    }
+    let parent = frame.node
+    if frame.index >= parent.children.length() {
+      ignore(stack.pop())
+      continue
+    }
+    let index = frame.index
     let child = parent.children[index]
     match child.kind {
-      Text if !skip_linkify && child.data != "" => {
+      Text if !frame.skip && child.data != "" => {
         let matches = @link.find_links_with_config(child.data, config)
         if matches.is_empty() {
-          index += 1
+          frame.index = index + 1
         } else {
           transform_call_hook(child, transform)
           transform_report(
@@ -61,24 +67,20 @@ fn linkify_transform_children(
           let inserted = linkify_transform_text_child_at_matches(
             parent, index, child, matches,
           )
-          index += inserted
+          frame.index = index + inserted
         }
       }
       Document | Fragment => {
-        linkify_transform_children(
-          child, config, skip_tags, skip_linkify, transform,
-        )
-        index += 1
+        frame.index = index + 1
+        stack.push(WalkFrame::new(child, skip=frame.skip))
       }
       Element => {
-        let child_skip = skip_linkify ||
+        let child_skip = frame.skip ||
           skip_tags.contains(@syn.lower_ascii(child.name))
-        linkify_transform_children(
-          child, config, skip_tags, child_skip, transform,
-        )
-        index += 1
+        frame.index = index + 1
+        stack.push(WalkFrame::new(child, skip=child_skip))
       }
-      _ => index += 1
+      _ => frame.index = index + 1
     }
   }
 }

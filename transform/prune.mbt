@@ -64,51 +64,73 @@ fn apply_prune_empty_transforms(
 }
 
 ///|
+/// Prune empty elements below `root` in post-order: template contents first,
+/// then each child's subtree before the child itself is checked. Uses an
+/// explicit frame stack instead of recursion; the element whose subtree is
+/// being walked is parked in its parent frame's `pending` slot and checked
+/// once that subtree walk has finished.
 fn prune_empty_children(
-  parent : @dom.Node,
+  root : @dom.Node,
   transforms : Array[TransformSpec],
   limits : @sel.SelectorLimits,
 ) -> Unit raise @core.HtmlError {
-  match parent.template_contents {
-    Some(contents) => prune_empty_children(contents, transforms, limits)
-    None => ()
-  }
-  let mut index = 0
-  while index < parent.children.length() {
+  let stack : Array[WalkFrame] = [WalkFrame::new(root)]
+  while stack.last() is Some(frame) {
+    if frame.schedule_template_first(stack) {
+      continue
+    }
+    let parent = frame.node
+    let index = frame.index
+    if frame.pending is Some(child) {
+      frame.pending = None
+      if !prune_empty_child_after_walk(parent, index, child, transforms, limits) {
+        frame.index = index + 1
+      }
+      continue
+    }
+    if index >= parent.children.length() {
+      ignore(stack.pop())
+      continue
+    }
     let child = parent.children[index]
     match child.kind {
       Document | Fragment => {
-        prune_empty_children(child, transforms, limits)
-        index += 1
+        frame.index = index + 1
+        stack.push(WalkFrame::new(child))
       }
       Element => {
-        prune_empty_children(child, transforms, limits)
-        let mut removed = false
-        for transform in transforms {
-          if transform_matches_element(child, transform, limits) &&
-            prune_empty_node_is_effectively_empty(
-              child,
-              transform.strip_whitespace,
-            ) {
-            transform_call_hook(child, transform)
-            let name = @syn.lower_ascii(child.name)
-            transform_report(
-              transform,
-              "Pruned empty <\{name}> (matched selector '\{transform.selector}')",
-              Some(child),
-            )
-            transform_remove_child_at(parent, index)
-            removed = true
-            break
-          }
-        }
-        if removed {
-          ()
-        } else {
-          index += 1
-        }
+        frame.pending = Some(child)
+        stack.push(WalkFrame::new(child))
       }
-      _ => index += 1
+      _ => frame.index = index + 1
     }
   }
+}
+
+///|
+/// Post-order step of `prune_empty_children`: remove `child` (at `index` in
+/// `parent`) when the first matching transform finds it effectively empty.
+/// Returns whether it was removed.
+fn prune_empty_child_after_walk(
+  parent : @dom.Node,
+  index : Int,
+  child : @dom.Node,
+  transforms : Array[TransformSpec],
+  limits : @sel.SelectorLimits,
+) -> Bool raise @core.HtmlError {
+  for transform in transforms {
+    if transform_matches_element(child, transform, limits) &&
+      prune_empty_node_is_effectively_empty(child, transform.strip_whitespace) {
+      transform_call_hook(child, transform)
+      let name = @syn.lower_ascii(child.name)
+      transform_report(
+        transform,
+        "Pruned empty <\{name}> (matched selector '\{transform.selector}')",
+        Some(child),
+      )
+      transform_remove_child_at(parent, index)
+      return true
+    }
+  }
+  false
 }
