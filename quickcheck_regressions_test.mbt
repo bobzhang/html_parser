@@ -33,3 +33,28 @@ test "regression: an overlong numeric character reference does not wrap around" 
     "\u{10FFFF}\u{FFFD}",
   )
 }
+
+///|
+/// Return the text of the first `script` element `html` parses to.
+fn script_text_of(html : String) -> String raise {
+  guard @html_parser.parse(html).query_one("script") is Some(script) else {
+    fail("expected a script element")
+  }
+  script.text()
+}
+
+///|
+test "regression: a less-than sign after an escaped dash dash is kept once" {
+  // Found by "reserializing arbitrary markup settles after one reparse" from
+  // `<script><!--a-><!--<--!>`, which gained a `<` on every round trip. In the
+  // script data escaped dash dash state the scanner emitted the `<` and then
+  // the less-than sign state emitted it again. The expected values match
+  // browsers (`DOMParser` in Chromium).
+  assert_eq(script_text_of("<script><!--a--<b</script>"), "<!--a--<b")
+  assert_eq(script_text_of("<script><!--<!--<x</script>"), "<!--<!--<x")
+  assert_eq(script_text_of("<script><!--a--<"), "<!--a--<")
+  // The same doubled `<` used to be left in front of the end tag that closes
+  // the script.
+  let doc = @html_parser.parse_fragment("<script><!--a--</script>x")
+  assert_eq(doc.to_html(pretty=false), "<script><!--a--</script>x")
+}

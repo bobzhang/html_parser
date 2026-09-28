@@ -116,18 +116,18 @@ test "tokenize matches rawtext and rcdata end tags before bad solidus" {
 test "tokenize preserves rawtext and rcdata element contents" {
   let script = @html_parser.tokenize("<script><!--a--<b</script>")
   assert_eq(script.tokens.length(), 4)
-  guard script.tokens[1] is Characters("<!--a--<<b") else {
+  guard script.tokens[1] is Characters("<!--a--<b") else {
     fail("expected raw script text")
   }
   guard script.tokens[2] is Tag(end_script) else { fail("expected script end") }
   assert_true(end_script.kind is EndTag)
   assert_eq(end_script.name, "script")
   let escaped_end = @html_parser.tokenize("<script><!--a--</script>")
-  guard escaped_end.tokens[1] is Characters("<!--a--<") else {
+  guard escaped_end.tokens[1] is Characters("<!--a--") else {
     fail("expected escaped script end-tag boundary text")
   }
   let escaped_eof = @html_parser.tokenize("<script><!--a--<")
-  guard escaped_eof.tokens[1] is Characters("<!--a--<<") else {
+  guard escaped_eof.tokens[1] is Characters("<!--a--<") else {
     fail("expected escaped EOF less-than text")
   }
   let comment_end = @html_parser.tokenize("<script><!--a--></script>")

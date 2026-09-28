@@ -10,8 +10,8 @@ pub fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
   let errors : Array[SpecialTextError] = []
   // Fast path: script text without a `<!--` escape opener is the input
   // verbatim, so this loop only locates the end tag and the data
-  // materializes as one slice copy. The escaped states are not verbatim
-  // (a `<` after `--` is kept twice), so they keep the writing machine.
+  // materializes as one slice copy. The escaped states decide where the
+  // script ends differently, so they keep the writing machine.
   let mut pos = start
   while pos < input.length() {
     if script_end_tag_at(input, pos) {
@@ -94,7 +94,8 @@ fn scan_escaped_script_text(
             pos += 1
           }
           '<' => {
-            out.write_char('<')
+            // The `<` is emitted by the less-than sign state once it knows
+            // what follows; emitting it here as well doubled it.
             pos += 1
             state = ScriptEscapedLessThan
           }

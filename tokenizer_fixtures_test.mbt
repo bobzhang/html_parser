@@ -508,9 +508,13 @@ fn tokenizer_edge_case_fixture_cases() -> Array[TokenizerFixtureCase] {
     {
       line: 155,
       input: "<script><!--a--<b</script>",
+      // Deliberately diverges from the vendored row, which expects
+      // "<!--a--<<b". In the script data escaped dash dash state a `<` only
+      // switches state and the less-than sign state emits it, once; browsers
+      // agree.
       tokens: [
         FStartTag("script", [], false),
-        FCharacters("<!--a--<<b"),
+        FCharacters("<!--a--<b"),
         FEndTag("script"),
       ],
       collect_errors: false,
