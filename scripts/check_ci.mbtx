@@ -616,7 +616,7 @@ async fn run_check_test_inventory() -> Int {
   // conflict here. The count stays an exact pin rather than a floor, because a
   // floor accumulates slack — once a PR raises the total, a later one can
   // delete the tests it added and still clear the old bound.
-  let expected_count = 895
+  let expected_count = 899
   let inventory : Array[String] = []
   for path in git_ls_files(["*.mbt", "*.mbt.md"]) {
     match read_text(path) {
@@ -1078,7 +1078,10 @@ async fn run_check_interfaces() -> Int {
 
 ///|
 async fn run_check_tests() -> Int {
-  let mut code = run_test_target("default", [])
+  // Run every backend explicitly. The default target is native (see
+  // `preferred_target` in moon.mod), and stack depth and other runtime
+  // limits differ per backend, so wasm-gc must be exercised on its own.
+  let mut code = run_test_target("wasm-gc", ["--target", "wasm-gc"])
   if code != 0 { return code }
   code = run_test_target("JS", ["--target", "js"])
   if code != 0 { return code }

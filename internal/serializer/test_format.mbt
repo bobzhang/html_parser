@@ -144,40 +144,46 @@ fn doctype_test_format(node : @dom.Node) -> String {
 
 ///|
 fn write_test_format(
-  node : @dom.Node,
+  root : @dom.Node,
   out : Array[String],
-  indent : Int,
+  root_indent : Int,
 ) -> Unit {
-  match node.kind {
-    Document | Fragment => out.push(test_format_line(indent, "<\{node.name}>"))
-    Element => {
-      out.push(
-        test_format_line(indent, "<\{test_format_qualified_name(node)}>"),
-      )
-      write_test_format_attributes(node, out, indent)
-    }
-    Text =>
-      if !node.sanitize_escape_only {
-        out.push(test_format_line(indent, "\"\{node.data}\""))
+  let stack = [(root, root_indent)]
+  while stack.pop() is Some((node, indent)) {
+    match node.kind {
+      Document | Fragment =>
+        out.push(test_format_line(indent, "<\{node.name}>"))
+      Element => {
+        out.push(
+          test_format_line(indent, "<\{test_format_qualified_name(node)}>"),
+        )
+        write_test_format_attributes(node, out, indent)
       }
-    Comment => out.push(test_format_line(indent, "<!-- \{node.data} -->"))
-    Doctype => out.push(doctype_test_format(node))
-  }
-  if node.kind == Element &&
-    node.name == "template" &&
-    (node.ns is None || node.ns is Some("html")) {
-    // An HTML template's children live in its contents document fragment,
-    // rendered as a "content" pseudo-node per the html5lib test format.
-    out.push(test_format_line(indent + 2, "content"))
-    match node.template_contents {
-      Some(contents) =>
-        for child in contents.children {
-          write_test_format(child, out, indent + 4)
+      Text =>
+        if !node.sanitize_escape_only {
+          out.push(test_format_line(indent, "\"\{node.data}\""))
         }
-      None => ()
+      Comment => out.push(test_format_line(indent, "<!-- \{node.data} -->"))
+      Doctype => out.push(doctype_test_format(node))
     }
-  }
-  for child in node.children {
-    write_test_format(child, out, indent + 2)
+    // Pushed in reverse so the template's contents pop first, in order,
+    // followed by the node's regular children.
+    for i = node.children.length() - 1; i >= 0; i = i - 1 {
+      stack.push((node.children[i], indent + 2))
+    }
+    if node.kind == Element &&
+      node.name == "template" &&
+      (node.ns is None || node.ns is Some("html")) {
+      // An HTML template's children live in its contents document fragment,
+      // rendered as a "content" pseudo-node per the html5lib test format.
+      out.push(test_format_line(indent + 2, "content"))
+      match node.template_contents {
+        Some(contents) =>
+          for i = contents.children.length() - 1; i >= 0; i = i - 1 {
+            stack.push((contents.children[i], indent + 4))
+          }
+        None => ()
+      }
+    }
   }
 }
