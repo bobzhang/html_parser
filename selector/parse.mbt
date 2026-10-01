@@ -80,6 +80,12 @@ priv enum SelectorCombinator {
 } derive(Eq)
 
 ///|
+priv struct PreparedComplexSelector {
+  parts : Array[StringView]
+  combinators : Array[SelectorCombinator]
+}
+
+///|
 fn push_complex_selector_part(
   parts : Array[StringView],
   combinators : Array[SelectorCombinator],
