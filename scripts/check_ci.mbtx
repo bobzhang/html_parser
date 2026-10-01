@@ -196,13 +196,13 @@ async fn check_ci(args : ArrayView[String]) -> Int {
   code = run_step("Check generated interfaces", run_check_interfaces)
   if code != 0 { return code }
   code = run_step("Type check default target", () =>
-    @process.run("moon", ["check", "--warn-list", "+73"]))
+    @process.run("moon", ["check", "--deny-warn", "--warn-list", "+73"]))
   if code != 0 { return code }
   code = run_step("Type check all targets", () =>
-    @process.run("moon", ["check", "--target", "all", "--warn-list", "+73"]))
+    @process.run("moon", ["check", "--target", "all", "--deny-warn", "--warn-list", "+73"]))
   if code != 0 { return code }
   code = run_step("Type check native CLI", () =>
-    @process.run("moon", ["check", "--target", "native", "cmd/justhtml", "--warn-list", "+73"]))
+    @process.run("moon", ["check", "--target", "native", "cmd/justhtml", "--deny-warn", "--warn-list", "+73"]))
   if code != 0 { return code }
   code = run_step("Run tests with count floor", run_check_tests)
   if code != 0 { return code }
