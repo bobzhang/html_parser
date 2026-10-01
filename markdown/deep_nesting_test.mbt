@@ -52,19 +52,15 @@ test "to_markdown handles deeply nested links and headings" {
 
 ///|
 test "to_markdown handles deeply nested mixed containers" {
-  let leaf = @dom.element("p", children=[
-    @dom.text("leaf "),
-    @dom.element("code", children=[@dom.text("c")]),
-  ])
-  let names = [
-    "span", "template", "section", "strong", "x-unknown", "i", "blockquote", "p",
-    "pre", "li", "ul",
-  ]
+  // `mixed_chain` (see walk_continuation_test.mbt) nests list items, strong,
+  // blockquote, emphasis and heading continuations inside transparent
+  // containers; every level renders on one line, so the exact output is
+  // known in closed form at any depth.
+  let periods = deep_nesting_depth / mixed_chain_unit.length()
   for passthrough in [false, true] {
-    let markdown = @markdown.to_markdown(
-      deep_chain(names, leaf),
-      html_passthrough=passthrough,
+    assert_eq(
+      @markdown.to_markdown(mixed_chain(periods), html_passthrough=passthrough),
+      mixed_chain_markdown(periods),
     )
-    assert_true(markdown.length() > 0)
   }
 }
