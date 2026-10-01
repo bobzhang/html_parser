@@ -13,6 +13,42 @@ fn remove_child_at(parent : @dom.Node, index : Int) -> Unit {
 }
 
 ///|
+/// Move every child of `from` into `parent` at `index`, keeping their order.
+///
+/// `before` and `after`, when present, are inserted immediately before and
+/// after the moved children. Moved children get `parent` as their parent
+/// pointer; `before`/`after` are inserted as-is. Runs in linear time, unlike a
+/// one-at-a-time `remove(0)`/`insert` loop. Returns the number of inserted
+/// nodes.
+fn move_children_into(
+  parent : @dom.Node,
+  index : Int,
+  from : @dom.Node,
+  before? : @dom.Node,
+  after? : @dom.Node,
+) -> Int {
+  let moved = from.children.copy()
+  from.children.clear()
+  let tail = parent.children.drain(index, parent.children.length())
+  let mut inserted = 0
+  if before is Some(node) {
+    parent.children.push(node)
+    inserted += 1
+  }
+  for grandchild in moved {
+    grandchild.parent = Some(parent)
+    parent.children.push(grandchild)
+    inserted += 1
+  }
+  if after is Some(node) {
+    parent.children.push(node)
+    inserted += 1
+  }
+  parent.children.append(tail)
+  inserted
+}
+
+///|
 /// Replace one child with its own children.
 ///
 /// The child at `index` is removed, detached from `parent`, and its children
@@ -25,15 +61,7 @@ fn unwrap_child_at(parent : @dom.Node, index : Int) -> Int {
     physical_equal(parent, current_parent) {
     child.parent = None
   }
-  let mut inserted = 0
-  while !child.children.is_empty() {
-    let grandchild = child.children[0]
-    ignore(child.children.remove(0))
-    grandchild.parent = Some(parent)
-    parent.children.insert(index + inserted, grandchild)
-    inserted += 1
-  }
-  inserted
+  move_children_into(parent, index, child)
 }
 
 ///|
@@ -57,12 +85,12 @@ fn sanitizer_escaped_start_tag_for(node : @dom.Node) -> String {
 }
 
 ///|
-fn insert_sanitized_escape_text(
+/// Build the text node that replaces an escaped start or end tag in `parent`.
+fn sanitized_escape_text(
   parent : @dom.Node,
-  index : Int,
   value : String,
   policy : SanitizationPolicy,
-) -> Unit {
+) -> @dom.Node {
   // The escaped tag becomes text the caller skips over, so it is stripped
   // here like every other text node the policy lets through.
   let value = if policy.strip_invisible_unicode {
@@ -72,41 +100,31 @@ fn insert_sanitized_escape_text(
   }
   let escaped = @dom.text(value)
   escaped.parent = Some(parent)
-  parent.children.insert(index, escaped)
+  escaped
 }
 
 ///|
-fn escape_child_at(
+/// Finish escaping a disallowed element after its children were sanitized.
+///
+/// The node at `index` is removed from `parent`; escaped start-tag text, the
+/// (already sanitized) children of `child`, and the optional escaped end-tag
+/// text are inserted in its place. `start_tag` and `end_tag` must have been
+/// computed from `child` before its children were sanitized. Returns the
+/// number of inserted nodes.
+fn finish_escape_child_at(
   parent : @dom.Node,
   index : Int,
+  child : @dom.Node,
+  start_tag : String,
+  end_tag : String?,
   policy : SanitizationPolicy,
-  observer : SanitizeTransformObserver?,
-) -> Int raise @core.HtmlError {
-  let child = parent.children[index]
-  let start_tag = sanitizer_escaped_start_tag_for(child)
-  let end_tag = sanitizer_escaped_end_tag_for(child)
-  sanitize_container_children(child, policy, observer)
+) -> Int {
   ignore(parent.children.remove(index))
   if child.parent is Some(current_parent) &&
     physical_equal(parent, current_parent) {
     child.parent = None
   }
-  let mut inserted = 0
-  insert_sanitized_escape_text(parent, index + inserted, start_tag, policy)
-  inserted += 1
-  while !child.children.is_empty() {
-    let grandchild = child.children[0]
-    ignore(child.children.remove(0))
-    grandchild.parent = Some(parent)
-    parent.children.insert(index + inserted, grandchild)
-    inserted += 1
-  }
-  match end_tag {
-    Some(value) => {
-      insert_sanitized_escape_text(parent, index + inserted, value, policy)
-      inserted += 1
-    }
-    None => ()
-  }
-  inserted
+  let before = sanitized_escape_text(parent, start_tag, policy)
+  let after = end_tag.map(value => sanitized_escape_text(parent, value, policy))
+  move_children_into(parent, index, child, before~, after?)
 }
