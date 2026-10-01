@@ -35,21 +35,12 @@ fn deep_measure(root : @dom.Node) -> (Int, Int) {
 
 ///|
 test "sanitize_dom handles deeply nested trees without recursion" {
+  // No user callbacks: foreign-ancestor checks use the per-frame cache, so the
+  // walk stays linear at this depth.
   let depth = 30000
-  let events = Ref(0)
-  let observer = @sanitize.SanitizeTransformObserver(
-    Some(_ => events.val += 1),
-    None,
-  )
-  let allowed = @sanitize.sanitize_dom_with_observer(
-    deep_chain(depth, ["b", "div"]),
-    None,
-    Some(observer),
-  )
+  let allowed = @sanitize.sanitize_dom(deep_chain(depth, ["b", "div"]))
   // Per level: element + stripped text; plus document, leaf <a>, its text.
   assert_eq(deep_measure(allowed), (2 * depth + 3, depth + 2))
-  // Per level: dropped comment, onclick report, stripped text; plus the leaf.
-  assert_eq(events.val, 3 * depth + 1)
   let handlings : Array[@sanitize.DisallowedTagHandling] = [Unwrap, Escape]
   for handling in handlings {
     let policy = @sanitize.SanitizationPolicy(
@@ -63,4 +54,25 @@ test "sanitize_dom handles deeply nested trees without recursion" {
     let (_, max_depth) = deep_measure(out)
     assert_eq(max_depth, depth / 2 + 2)
   }
+}
+
+///|
+test "sanitize_dom with an observer handles deep trees without recursion" {
+  // An observer is user code that may move nodes mid-walk, so every
+  // foreign-ancestor check walks the live parent chain (quadratic in depth,
+  // as before the explicit stack); keep the depth moderate.
+  let depth = 5000
+  let events = Ref(0)
+  let observer = @sanitize.SanitizeTransformObserver(
+    Some(_ => events.val += 1),
+    None,
+  )
+  let allowed = @sanitize.sanitize_dom_with_observer(
+    deep_chain(depth, ["b", "div"]),
+    None,
+    Some(observer),
+  )
+  assert_eq(deep_measure(allowed), (2 * depth + 3, depth + 2))
+  // Per level: dropped comment, onclick report, stripped text; plus the leaf.
+  assert_eq(events.val, 3 * depth + 1)
 }

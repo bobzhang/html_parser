@@ -61,11 +61,13 @@ fn sanitize_node_is_self_foreign(node : @dom.Node) -> Bool {
 /// answer equals `node`'s. This keeps the check amortized O(1) per element
 /// instead of O(depth), which made deep trees quadratic.
 ///
-/// The cache is sound because the sanitizer never changes the ancestor chain,
-/// names, namespaces, or kinds of active frame nodes: it only rewrites the
-/// children of the frame being scanned and the subtree below it. It assumes
-/// observer and URL-filter callbacks do not reparent or rename those
-/// ancestors mid-walk.
+/// The cache is sound only while no user code runs during the walk: the
+/// sanitizer itself never changes the ancestor chain, names, namespaces, or
+/// kinds of active frame nodes (it only rewrites the children of the frame
+/// being scanned and the subtree below it), but observer and URL-filter
+/// callbacks may reparent or rename those ancestors mid-walk. Callers must use
+/// `node_is_effectively_foreign` instead when
+/// `sanitize_walk_runs_user_callbacks` holds.
 fn sanitize_frames_effectively_foreign(
   stack : Array[SanitizeFrame],
   node : @dom.Node,
@@ -97,6 +99,20 @@ fn sanitize_frames_effectively_foreign(
     frame.foreign = Some(result)
   }
   result
+}
+
+///|
+/// Whether sanitizing with `policy` and `observer` can call back into user code
+/// (observer hook or report callback, URL filter) during the walk.
+fn sanitize_walk_runs_user_callbacks(
+  policy : SanitizationPolicy,
+  observer : SanitizeTransformObserver?,
+) -> Bool {
+  policy.url_policy.url_filter is Some(_) ||
+  (
+    observer is Some(observer) &&
+    (observer.hook is Some(_) || observer.report_callback is Some(_))
+  )
 }
 
 ///|
@@ -139,6 +155,18 @@ fn sanitize_container_children(
   observer : SanitizeTransformObserver?,
 ) -> Unit raise @core.HtmlError {
   let stack : Array[SanitizeFrame] = [SanitizeFrame::new(root, Advance)]
+  // User callbacks can reparent or rename active ancestors mid-walk, which
+  // would make cached foreign answers stale. With any callback present, check
+  // the live ancestor chain every time, exactly like the recursive walk did.
+  let cache_foreign = !sanitize_walk_runs_user_callbacks(policy, observer)
+  fn effectively_foreign(node : @dom.Node) -> Bool {
+    if cache_foreign {
+      sanitize_frames_effectively_foreign(stack, node)
+    } else {
+      node_is_effectively_foreign(node)
+    }
+  }
+
   while stack.last() is Some(frame) {
     let parent = frame.node
     let index = frame.index
@@ -205,8 +233,7 @@ fn sanitize_container_children(
         }
       Element => {
         let tag_name = sanitize_node_name(child)
-        if policy.drop_foreign_namespaces &&
-          sanitize_frames_effectively_foreign(stack, child) {
+        if policy.drop_foreign_namespaces && effectively_foreign(child) {
           sanitize_report_unsafe(
             policy,
             observer,
@@ -216,7 +243,7 @@ fn sanitize_container_children(
           remove_child_at(parent, index)
         } else if !policy.drop_foreign_namespaces &&
           is_active_foreign_mutation_tag(tag_name) &&
-          sanitize_frames_effectively_foreign(stack, child) {
+          effectively_foreign(child) {
           sanitize_report_unsafe(
             policy,
             observer,
@@ -243,6 +270,9 @@ fn sanitize_container_children(
             Drop => remove_child_at(parent, index)
             Escape => {
               child.flatten_template_contents()
+              // Re-read the slot like the recursive walk did, in case the
+              // report callback replaced the child.
+              let child = parent.children[index]
               let start_tag = sanitizer_escaped_start_tag_for(child)
               let end_tag = sanitizer_escaped_end_tag_for(child)
               stack.push(
@@ -259,7 +289,7 @@ fn sanitize_container_children(
             child,
             policy,
             observer,
-            sanitize_frames_effectively_foreign(stack, child),
+            effectively_foreign(child),
           )
           if sanitize_foreign_text_integration_children(child, policy, observer) {
             frame.index += 1
