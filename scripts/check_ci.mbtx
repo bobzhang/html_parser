@@ -1078,7 +1078,10 @@ async fn run_check_interfaces() -> Int {
 
 ///|
 async fn run_check_tests() -> Int {
-  let mut code = run_test_target("default", [])
+  // Run every backend explicitly. The default target is native (see
+  // `preferred_target` in moon.mod), and stack depth and other runtime
+  // limits differ per backend, so wasm-gc must be exercised on its own.
+  let mut code = run_test_target("wasm-gc", ["--target", "wasm-gc"])
   if code != 0 { return code }
   code = run_test_target("JS", ["--target", "js"])
   if code != 0 { return code }
