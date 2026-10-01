@@ -127,7 +127,7 @@ fn Parser::append_reconstructed_formatting_node(
     let table_index = self.last_open_table_index()
     if table_index >= 0 {
       if self.table_index_is_fragment_context_table(table_index) {
-        current.append_child(node)
+        append_new_node(current, node)
       } else {
         self.insert_node_before_open_table(node, table_index)
         self.forced_body_nodes.push(node)
@@ -135,5 +135,5 @@ fn Parser::append_reconstructed_formatting_node(
       return
     }
   }
-  current.append_child(node)
+  append_new_node(current, node)
 }

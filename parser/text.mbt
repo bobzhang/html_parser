@@ -27,7 +27,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
       } else {
         whitespace
       }
-      self.current_node().append_child(self.text_at(data, start))
+      append_new_node(self.current_node(), self.text_at(data, start))
     }
     if self.current_is_document_head() {
       ignore(self.pop_open_element())
@@ -43,7 +43,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
       } else {
         whitespace
       }
-      self.current_node().append_child(self.text_at(data, text_start))
+      append_new_node(self.current_node(), self.text_at(data, text_start))
     }
     ignore(self.pop_open_element())
     cleaned = cleaned[whitespace.length():]
@@ -61,7 +61,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
       self.error_at("unexpected-token-after-frameset", start + raw.length() - 1)
     }
     if !whitespace.is_empty() {
-      self.current_node().append_child(self.text_at(whitespace, text_start))
+      append_new_node(self.current_node(), self.text_at(whitespace, text_start))
     }
     return
   }
@@ -152,7 +152,7 @@ fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
     return
   }
   let text_node = self.text_at(data, text_start)
-  parent.append_child(text_node)
+  append_new_node(parent, text_node)
   self.mark_forced_body_node(text_node)
   if self.document_head_closed &&
     !self.is_fragment_parser() &&
@@ -353,14 +353,14 @@ fn Parser::insert_body_mode_node(self : Parser, node : @dom.Node) -> Unit {
     let current = self.current_node()
     if current.kind == Element && is_table_start_foster_target(current.name) {
       if self.table_index_is_fragment_context_table(table_index) {
-        current.append_child(node)
+        append_new_node(current, node)
         return
       }
       self.insert_node_before_open_table(node, table_index)
       return
     }
   }
-  self.current_node().append_child(node)
+  append_new_node(self.current_node(), node)
   self.mark_forced_body_node(node)
 }
 

@@ -77,7 +77,7 @@ fn Parser::append_start_tag_node(
         None => ()
       }
     }
-    self.current_node().append_child(node)
+    append_new_node(self.current_node(), node)
     self.mark_forced_body_node(node)
     return
   }
@@ -87,7 +87,7 @@ fn Parser::append_start_tag_node(
   }
   let table_index = self.last_open_table_index()
   if self.table_index_is_fragment_context_table(table_index) {
-    self.current_node().append_child(node)
+    append_new_node(self.current_node(), node)
     return
   }
   self.insert_node_before_open_table(node, self.last_open_table_index())
