@@ -148,3 +148,27 @@ test "nested html content checks handle deep chains" {
     assert_eq(html_fragment_child_is_before_body(top), !with_body_content)
   }
 }
+
+///|
+test "parse and parse_fragment handle deeply nested markup end to end" {
+  // Goes through the tokenizer, tree builder, open-element counts, the
+  // append_new_node shortcut and every post-parse pass.
+  let markup = "<div><table><td>".repeat(deep_nesting_levels / 3) + "x"
+  let doc = parse(markup)
+  guard doc.root.children is [html] && html.children is [_, body] else {
+    fail("expected html with head and body")
+  }
+  let (names, leaf) = deep_nesting_spine(body)
+  // Each table also gains an implied tbody and tr.
+  assert_eq(names.length(), 5 * (deep_nesting_levels / 3))
+  assert_eq(names[0:5].to_owned(), ["div", "table", "tbody", "tr", "td"])
+  guard leaf is Some(text) && text.data == "x" else {
+    fail("expected text leaf")
+  }
+  let fragment = parse_fragment("<span>".repeat(deep_nesting_levels) + "y")
+  let (names, leaf) = deep_nesting_spine(fragment.root)
+  assert_eq(names.length(), deep_nesting_levels)
+  guard leaf is Some(text) && text.data == "y" else {
+    fail("expected text leaf")
+  }
+}
