@@ -84,44 +84,51 @@ fn decide_escape_child_at(parent : @dom.Node, index : Int) -> Unit {
 }
 
 ///|
+/// Walk the children of `root` (template contents first, then the regular
+/// children) applying the decide callback. Uses an explicit frame stack
+/// instead of recursion so deeply nested trees cannot overflow the call stack;
+/// each frame mirrors one activation of the former recursive walk.
 fn decide_transform_children(
-  parent : @dom.Node,
+  root : @dom.Node,
   transform : TransformSpec,
   limits : @sel.SelectorLimits,
 ) -> Unit raise @core.HtmlError {
-  match parent.template_contents {
-    Some(contents) => decide_transform_children(contents, transform, limits)
-    None => ()
-  }
   let all_nodes = decide_transform_all_nodes(transform)
-  let mut index = 0
-  while index < parent.children.length() {
+  let stack : Array[WalkFrame] = [WalkFrame::new(root)]
+  while stack.last() is Some(frame) {
+    if frame.schedule_template_first(stack) {
+      continue
+    }
+    let parent = frame.node
+    if frame.index >= parent.children.length() {
+      ignore(stack.pop())
+      continue
+    }
+    let index = frame.index
     let child = parent.children[index]
     if decide_transform_matches_node(child, transform, all_nodes, limits) {
       match decide_transform_action(child, transform) {
         Keep => {
+          frame.index = index + 1
           match child.kind {
-            Document | Fragment | Element =>
-              decide_transform_children(child, transform, limits)
+            Document | Fragment | Element => stack.push(WalkFrame::new(child))
             _ => ()
           }
-          index += 1
         }
         Empty => {
           ignore(empty_transform_node(child))
-          index += 1
+          frame.index = index + 1
         }
         Drop => transform_remove_child_at(parent, index)
         Unwrap => ignore(transform_unwrap_child_at(parent, index))
         Escape => decide_escape_child_at(parent, index)
       }
     } else {
+      frame.index = index + 1
       match child.kind {
-        Document | Fragment | Element =>
-          decide_transform_children(child, transform, limits)
+        Document | Fragment | Element => stack.push(WalkFrame::new(child))
         _ => ()
       }
-      index += 1
     }
   }
 }

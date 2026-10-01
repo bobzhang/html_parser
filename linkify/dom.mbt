@@ -16,7 +16,13 @@ pub fn linkify_dom(
   match node.kind {
     Text => {
       let wrapper = @dom.fragment(children=[node])
-      linkify_dom_children(wrapper, config, skip_set, false)
+      linkify_dom_children(
+        wrapper,
+        config,
+        skip_set,
+        false,
+        then_template=false,
+      )
       if wrapper.children.length() == 1 {
         let only = wrapper.children[0]
         ignore(wrapper.children.remove(0))
@@ -29,11 +35,7 @@ pub fn linkify_dom(
     Document | Fragment | Element => {
       let skip = node.kind == Element &&
         skip_set.contains(@syn.lower_ascii(node.name))
-      linkify_dom_children(node, config, skip_set, skip)
-      match node.template_contents {
-        Some(contents) => linkify_dom_children(contents, config, skip_set, skip)
-        None => ()
-      }
+      linkify_dom_children(node, config, skip_set, skip, then_template=true)
       node
     }
     Comment | Doctype => node
@@ -62,40 +64,78 @@ fn linkify_dom_skip_tag_set(tags : Array[String]) -> Set[String] {
 }
 
 ///|
+/// Explicit-stack frame for `linkify_dom_children`: the children of `parent`
+/// are scanned from `index` with the inherited `skip` state. When
+/// `then_template` is set, `parent`'s template contents are walked (with the
+/// same skip state) after its regular children.
+priv struct LinkifyDomFrame {
+  parent : @dom.Node
+  skip : Bool
+  then_template : Bool
+  mut index : Int
+}
+
+///|
+/// Linkify text below `root`, then (when `then_template` is set) inside its
+/// template contents. Element children are walked children-first, then their
+/// template contents. Uses an explicit frame stack instead of recursion so
+/// deeply nested trees cannot overflow the call stack.
 fn linkify_dom_children(
-  parent : @dom.Node,
+  root : @dom.Node,
   config : LinkifyConfig,
   skip_tags : Set[String],
   skip_linkify : Bool,
+  then_template~ : Bool,
 ) -> Unit {
-  let mut index = 0
-  while index < parent.children.length() {
+  let stack : Array[LinkifyDomFrame] = [
+    { parent: root, skip: skip_linkify, then_template, index: 0, },
+  ]
+  while stack.last() is Some(frame) {
+    let parent = frame.parent
+    let index = frame.index
+    if index >= parent.children.length() {
+      ignore(stack.pop())
+      if frame.then_template && parent.template_contents is Some(contents) {
+        stack.push({
+          parent: contents,
+          skip: frame.skip,
+          then_template: false,
+          index: 0,
+        })
+      }
+      continue
+    }
     let child = parent.children[index]
     match child.kind {
-      Text if !skip_linkify && child.data != "" => {
+      Text if !frame.skip && child.data != "" => {
         let inserted = linkify_text_child_at(parent, index, child, config)
         if inserted > 0 {
-          index += inserted
+          frame.index = index + inserted
         } else {
-          index += 1
+          frame.index = index + 1
         }
       }
       Document | Fragment => {
-        linkify_dom_children(child, config, skip_tags, skip_linkify)
-        index += 1
+        frame.index = index + 1
+        stack.push({
+          parent: child,
+          skip: frame.skip,
+          then_template: false,
+          index: 0,
+        })
       }
       Element => {
-        let child_skip = skip_linkify ||
+        let child_skip = frame.skip ||
           skip_tags.contains(@syn.lower_ascii(child.name))
-        linkify_dom_children(child, config, skip_tags, child_skip)
-        match child.template_contents {
-          Some(contents) =>
-            linkify_dom_children(contents, config, skip_tags, child_skip)
-          None => ()
-        }
-        index += 1
+        frame.index = index + 1
+        stack.push({
+          parent: child,
+          skip: child_skip,
+          then_template: true,
+          index: 0,
+        })
       }
-      _ => index += 1
+      _ => frame.index = index + 1
     }
   }
 }
