@@ -27,6 +27,8 @@ priv struct Parser {
   mut open_template_count : Int
   mut open_table_count : Int
   mut open_select_count : Int
+  /// Open elements on `stack` counted by name, any namespace.
+  open_element_counts : Map[String, Int]
   mut fragment_context_colgroup : Bool
   mut fragment_context_html : Bool
   mut fragment_context_html_root : @dom.Node?
@@ -112,6 +114,11 @@ fn Parser::Parser(
     open_template_count: 0,
     open_table_count: 0,
     open_select_count: 0,
+    open_element_counts: if root.kind is Element {
+      Map([(root.name, 1)])
+    } else {
+      Map([])
+    },
     fragment_context_colgroup: false,
     fragment_context_html: false,
     fragment_context_html_root: None,

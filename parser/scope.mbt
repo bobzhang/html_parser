@@ -19,6 +19,13 @@ fn Parser::has_open_element_in_default_scope(
   self : Parser,
   name : String,
 ) -> Bool {
+  // The walk can only answer true by finding an element named `name`, so
+  // with none open at all it is false. Without this early-out every block
+  // start tag scans the whole stack for a `p`, which is quadratic in nesting
+  // depth.
+  if !self.has_open_element(name) {
+    return false
+  }
   let mut index = self.stack.length()
   while index > 0 {
     index -= 1
@@ -123,6 +130,13 @@ fn Parser::has_open_element_in_button_scope(
   self : Parser,
   name : String,
 ) -> Bool {
+  // The walk can only answer true by finding an element named `name`, so
+  // with none open at all it is false. Without this early-out every block
+  // start tag scans the whole stack for a `p`, which is quadratic in nesting
+  // depth.
+  if !self.has_open_element(name) {
+    return false
+  }
   let mut index = self.stack.length()
   while index > 0 {
     index -= 1
@@ -169,8 +183,11 @@ fn Parser::close_open_definition_item(self : Parser, name : String) -> Unit {
 }
 
 ///|
+/// Whether an element named `name`, in any namespace, is on the stack of open
+/// elements. Answered from `open_element_counts` rather than by scanning the
+/// stack, which several start-tag handlers do for every tag.
 fn Parser::has_open_element(self : Parser, name : String) -> Bool {
-  self.stack[:].any(node => node.kind == Element && node.name == name)
+  self.open_element_counts.get(name) is Some(count) && count > 0
 }
 
 ///|
