@@ -10,9 +10,13 @@ pub fn render_node_html(
   indent_size : Int,
   quote : Char,
 ) -> String raise @core.HtmlError {
-  if pretty {
-    node_to_html_pretty(node, 0, indent_size, quote)
-  } else {
-    node_to_html_compact(node, quote)
-  }
+  let writer = HtmlWriter::new(node, pretty, indent_size, quote)
+  writer.tasks.push(
+    if pretty {
+      Pretty(node, index=0, indent=0)
+    } else {
+      Compact(node)
+    },
+  )
+  writer.finish()
 }
