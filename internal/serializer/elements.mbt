@@ -179,27 +179,6 @@ fn namespace_contradicts_name(node : @dom.Node) -> Bool {
 }
 
 ///|
-/// Serialize a raw-text element's children as a single literal payload.
-///
-/// The end-tag guard runs over the joined content rather than over each child
-/// separately, so a closing sequence split across adjacent text nodes — say
-/// `"</x"` followed by `"mp><img src=x onerror=1>"` inside an `xmp` — cannot
-/// slip past it and break out of the element.
-fn raw_text_children_html(
-  node : @dom.Node,
-  quote : Char,
-) -> String raise @core.HtmlError {
-  let raw = StringBuilder()
-  for child in serialized_children(node) {
-    match child.kind {
-      Text => if !child.sanitize_escape_only { raw.write_string(child.data) }
-      _ => raw.write_string(node_to_html_compact(child, quote))
-    }
-  }
-  raw_text_payload(raw.to_string(), node.name)
-}
-
-///|
 /// Apply the end-tag guard appropriate to a raw-text element.
 ///
 /// `plaintext` is exempt: it consumes to end of file and never recognizes an
