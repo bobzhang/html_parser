@@ -63,6 +63,11 @@ fn push_query_frames(stack : Array[QueryFrame], node : @dom.Node) -> Unit {
 /// irregularly: a regular earlier visit would need an earlier trusted walk of
 /// `node.parent`'s list, and each owner has at most one trusted frame, so it
 /// would be this frame at an earlier index, which the last check excludes.
+///
+/// Cost: the first-occurrence check scans `frame.list[0..index)`, so walking
+/// a list of `w` children costs `O(w^2)` in total. Deep, narrow trees are
+/// walked in linear time; very wide child lists remain quadratic in their
+/// width (the former visited-list scan was quadratic in the whole tree).
 fn query_edge_is_regular(
   frame : QueryFrame,
   index : Int,

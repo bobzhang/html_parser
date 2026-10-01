@@ -106,6 +106,12 @@ fn selector_text_content(node : @dom.Node) -> String {
 /// reached twice before `y`), so they would be two occurrences in `children`
 /// or both a child and the contents, which the checks exclude. Without shared
 /// or cyclic nodes, `general_text_content` reduces to `regular_text_content`.
+///
+/// Cost: each node is checked once, but the duplicate-occurrence check scans
+/// the preceding siblings, so a node with `w` children costs `O(w^2)`. Deep,
+/// narrow trees are linear in their size; very wide child lists stay
+/// quadratic in their width (the general walk's identity cache is quadratic
+/// in the whole subtree, so this is never worse).
 fn text_walk_is_regular(start : @dom.Node) -> Bool {
   let stack : Array[@dom.Node] = [start]
   while stack.pop() is Some(node) {
@@ -141,49 +147,43 @@ fn text_walk_is_regular(start : @dom.Node) -> Bool {
 }
 
 ///|
-priv struct TextFrame {
-  node : @dom.Node
-  parts : Array[String]
-  /// Next part to collect: `-1` for template contents, then child indices.
-  mut next : Int
-}
-
-///|
-/// `general_text_content` for a walk that reaches every node exactly once, in
-/// time linear in the size of the subtree.
+/// `general_text_content` for a walk that reaches every node exactly once.
+///
+/// On such a tree the general walk computes, bottom up,
+/// `text(t) = trim(t.data)` for a text node and, for any other node,
+/// `text(n) = join(" ", nonempty text(c) for c in [contents?] ++ children)`.
+/// This equals `join(" ", leaves(n))`, where `leaves(n)` lists the nonempty
+/// trimmed data of the text nodes reached in pre-order (template contents
+/// before children, not descending below text nodes): by induction,
+/// `text(c) = join(" ", leaves(c))` with every leaf nonempty, so `text(c)` is
+/// empty exactly when `leaves(c)` is, and joining the nonempty `text(c)` with
+/// single spaces is joining the concatenated leaves. Trimming happens only at
+/// the leaves in both forms, never on joined text. So one shared builder
+/// replaces the per-node joins, and the time is linear in the size of the
+/// subtree plus the text it holds, without re-copying text once per level.
 fn regular_text_content(start : @dom.Node) -> String {
-  if start.kind == Text {
-    return start.data[:].trim().to_owned()
-  }
-  let stack : Array[TextFrame] = [{ node: start, parts: [], next: -1, }]
-  while stack.last() is Some(frame) {
-    let index = frame.next
-    frame.next = index + 1
-    let child = if index < 0 {
-      frame.node.template_contents
-    } else {
-      frame.node.children.get(index)
-    }
-    match child {
-      Some(child) if child.kind == Text => {
-        let text = child.data[:].trim().to_owned()
-        if text != "" {
-          frame.parts.push(text)
+  let out = StringBuilder()
+  let stack : Array[@dom.Node] = [start]
+  while stack.pop() is Some(node) {
+    if node.kind == Text {
+      let text = node.data[:].trim()
+      if !text.is_empty() {
+        if !out.is_empty() {
+          out.write_char(' ')
         }
+        out.write_view(text)
       }
-      Some(child) => stack.push({ node: child, parts: [], next: -1, })
-      None =>
-        if index >= 0 {
-          ignore(stack.pop())
-          let text = frame.parts.join(" ")
-          match stack.last() {
-            Some(parent) => if text != "" { parent.parts.push(text) }
-            None => return text
-          }
-        }
+      continue
+    }
+    for index = node.children.length() - 1; index >= 0; index = index - 1 {
+      stack.push(node.children[index])
+    }
+    match node.template_contents {
+      Some(contents) => stack.push(contents)
+      None => ()
     }
   }
-  ""
+  out.to_string()
 }
 
 ///|

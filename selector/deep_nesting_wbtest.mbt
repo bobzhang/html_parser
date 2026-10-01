@@ -50,6 +50,66 @@ fn reference_query(root : @dom.Node, selector : StringView) -> Array[@dom.Node] 
 }
 
 ///|
+/// `selector_text_content` as it was before the regular-tree fast path,
+/// copied verbatim from origin/main (only renamed).
+fn reference_text_content(node : @dom.Node) -> String {
+  let cache_nodes : Array[@dom.Node] = []
+  let cache_texts : Array[String] = []
+  let visiting : Array[@dom.Node] = []
+  let stack : Array[(@dom.Node, Bool)] = [(node, false)]
+  while !stack.is_empty() {
+    let (current, visited) = stack[stack.length() - 1]
+    ignore(stack.pop())
+    if node_text_cache_get(cache_nodes, cache_texts, current) is Some(_) {
+      continue
+    }
+    if visited {
+      remove_node_identity(visiting, current)
+      if current.kind == Text {
+        node_text_cache_set(
+          cache_nodes,
+          cache_texts,
+          current,
+          current.data[:].trim().to_owned(),
+        )
+      } else {
+        let parts : Array[String] = []
+        match current.template_contents {
+          Some(contents) =>
+            match node_text_cache_get(cache_nodes, cache_texts, contents) {
+              Some(text) if text != "" => parts.push(text)
+              _ => ()
+            }
+          None => ()
+        }
+        for child in current.children {
+          match node_text_cache_get(cache_nodes, cache_texts, child) {
+            Some(text) if text != "" => parts.push(text)
+            _ => ()
+          }
+        }
+        node_text_cache_set(cache_nodes, cache_texts, current, parts.join(" "))
+      }
+    } else if node_identity_seen(visiting, current) {
+      node_text_cache_set(cache_nodes, cache_texts, current, "")
+    } else {
+      visiting.push(current)
+      stack.push((current, true))
+      let mut index = current.children.length()
+      while index > 0 {
+        index -= 1
+        stack.push((current.children[index], false))
+      }
+      match current.template_contents {
+        Some(contents) => stack.push((contents, false))
+        None => ()
+      }
+    }
+  }
+  node_text_cache_get(cache_nodes, cache_texts, node).unwrap_or("")
+}
+
+///|
 priv struct DeepTestRng {
   mut state : UInt64
 }
@@ -169,14 +229,87 @@ test "ancestor repeat guard matches the visited-list scan" {
 }
 
 ///|
-test "selector text fast path matches the general walk" {
+/// A random tree in which every node is reached exactly once: children and
+/// template contents get matching `parent` links, text nodes may also carry
+/// children (which text collection must not descend into), and text data
+/// includes empty and whitespace-only strings.
+fn random_regular_text_tree(rng : DeepTestRng) -> Array[@dom.Node] {
+  let texts = ["", " ", "\n\t ", "a", " b c ", "  d", "e\n"]
+  let count = 1 + rng.below(40)
+  let nodes : Array[@dom.Node] = []
+  for i in 0..<count {
+    let node = match rng.below(6) {
+      0 | 1 => @dom.text(texts[rng.below(texts.length())])
+      2 => @dom.comment("c")
+      3 => @dom.fragment()
+      _ => @dom.element(if rng.below(4) == 0 { "template" } else { "div" })
+    }
+    if i > 0 {
+      let parent = nodes[rng.below(i)]
+      if rng.below(5) == 0 && parent.template_contents is None {
+        // Wrap `node` in a contents fragment owned by `parent`.
+        let contents = @dom.fragment()
+        contents.parent = Some(parent)
+        parent.template_contents = Some(contents)
+        contents.children.push(node)
+        node.parent = Some(contents)
+      } else {
+        parent.children.push(node)
+        node.parent = Some(parent)
+      }
+    }
+    nodes.push(node)
+  }
+  nodes
+}
+
+///|
+test "selector text fast path matches the original algorithm" {
   let rng = DeepTestRng::{ state: 99UL, }
   for _ in 0..<3000 {
     let nodes = random_selector_graph(rng)
     for node in nodes {
-      assert_eq(selector_text_content(node), general_text_content(node))
+      let expected = reference_text_content(node)
+      assert_eq(selector_text_content(node), expected)
+      assert_eq(general_text_content(node), expected)
     }
   }
+  for _ in 0..<2000 {
+    let nodes = random_regular_text_tree(rng)
+    for node in nodes {
+      assert_true(text_walk_is_regular(node))
+      let expected = reference_text_content(node)
+      assert_eq(regular_text_content(node), expected)
+      assert_eq(selector_text_content(node), expected)
+    }
+  }
+}
+
+///|
+test "selector text collects a deep branching chain in linear time" {
+  // Each element holds a text child and then the next element. Joining text
+  // per level would copy the growing suffix at every level (quadratic in the
+  // depth); at this depth that would be prohibitively slow.
+  let depth = 50000
+  let mut current = @dom.element("b", children=[@dom.text(" x ")])
+  for _ in 1..<depth {
+    current = @dom.element("b", children=[@dom.text(" x "), current])
+  }
+  let root = @dom.element("div", children=[@dom.text("  "), current])
+  let text = selector_text_content(root)
+  assert_eq(text.length(), 2 * depth - 1)
+  assert_true(text.has_prefix("x x "))
+  assert_true(text.has_suffix(" x x"))
+  assert_true(matches(root, "div:contains('x x x')"))
+  // A shallow prefix of the same shape still agrees with the original.
+  let mut shallow = @dom.element("b", children=[@dom.text(" x ")])
+  for i in 0..<200 {
+    shallow = @dom.element("b", children=[
+      @dom.text(if i % 3 == 0 { " " } else { " y\n" }),
+      shallow,
+    ])
+  }
+  assert_eq(selector_text_content(shallow), reference_text_content(shallow))
 }
 
 ///|
