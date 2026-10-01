@@ -22,37 +22,38 @@ test "pretty text helpers keep empty elements out of text-only path" {
   assert_eq(element_has_only_text_children(@dom.element("div")), false)
   let pre = @dom.element("pre", children=[@dom.text("  a\n<b>&c  ")])
   assert_true(element_has_only_text_children(pre))
-  assert_eq(compact_pretty_text_children(pre, '"'), "  a\n&lt;b&gt;&amp;c  ")
+  assert_eq(compact_pretty_text_children(pre), "  a\n&lt;b&gt;&amp;c  ")
   let paragraph = @dom.element("p", children=[
     @dom.text("  a\n"),
     @dom.text("  b  "),
   ])
   assert_true(element_has_only_text_children(paragraph))
-  assert_eq(compact_pretty_text_children(paragraph, '"'), "a b")
+  assert_eq(compact_pretty_text_children(paragraph), "a b")
 }
 
 ///|
 test "pretty serializer skips escape-only sentinels inside inline runs" {
   let hidden_text = @dom.text("hidden")
   hidden_text.sanitize_escape_only = true
-  assert_eq(node_to_html_pretty(hidden_text, 0, 2, '"'), "")
+  assert_eq(render_node_html(hidden_text, true, 2, '"'), "")
 
   let hidden_run = @dom.text("hidden")
   hidden_run.sanitize_escape_only = true
   let inline = @dom.element("div", children=[
     hidden_run,
     @dom.text("\n"),
-    @dom.text("shown"),
+    @dom.element("span", children=[@dom.text("shown")]),
   ])
-  guard node_to_html_pretty_inline_runs(inline, 0, 2, '"') is Some(rendered) else {
-    fail("expected inline run rendering")
-  }
-  assert_eq(rendered, "<div>\n  shown\n</div>")
+  assert_eq(
+    render_node_html(inline, true, 2, '"'),
+    "<div>\n  <span>shown</span>\n</div>",
+  )
 
   let hidden_only = @dom.text("hidden")
   hidden_only.sanitize_escape_only = true
   let empty_inline = @dom.element("div", children=[hidden_only, @dom.text("\n")])
-  assert_true(node_to_html_pretty_inline_runs(empty_inline, 0, 2, '"') is None)
+  // No run renders anything, so the element falls back to a single line.
+  assert_eq(render_node_html(empty_inline, true, 2, '"'), "<div></div>")
 }
 
 ///|
