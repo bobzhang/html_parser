@@ -4,13 +4,195 @@ fn node_is_sanitize_container(node : @dom.Node) -> Bool {
 }
 
 ///|
-fn sanitize_container_children(
+/// What to do in the enclosing frame once a frame's children are exhausted.
+///
+/// Each variant mirrors the code that ran after a recursive call returned in
+/// the former recursive formulation of `sanitize_container_children`, so the
+/// explicit stack replays exactly the same sequence of mutations, observer
+/// callbacks, and unsafe-input reports.
+priv enum SanitizeResume {
+  /// Advance the enclosing index by one.
+  Advance
+  /// The allowed element's children are done: sanitize its template contents
+  /// (read when this runs), then advance the enclosing index by one.
+  TemplateThenAdvance(@dom.Node)
+  /// Hoist the disallowed element's sanitized children into the enclosing
+  /// node and skip over them.
+  Unwrap
+  /// Replace the disallowed element with escaped tag text around its
+  /// sanitized children and skip over them. The tag text is computed before
+  /// the children are sanitized.
+  Escape(child~ : @dom.Node, start_tag~ : String, end_tag~ : String?)
+}
+
+///|
+/// One pending activation of the container-children walk.
+priv struct SanitizeFrame {
+  node : @dom.Node
+  mut index : Int
+  on_done : SanitizeResume
+  /// Cached `node_is_effectively_foreign(node)` once computed.
+  mut foreign : Bool?
+}
+
+///|
+fn SanitizeFrame::new(
+  node : @dom.Node,
+  on_done : SanitizeResume,
+) -> SanitizeFrame {
+  { node, index: 0, on_done, foreign: None, }
+}
+
+///|
+/// One step of `node_is_effectively_foreign`: whether `node` itself makes it
+/// and its descendants effectively foreign.
+fn sanitize_node_is_self_foreign(node : @dom.Node) -> Bool {
+  sanitize_namespace_is_foreign(node) ||
+  (node.kind is Element && sanitize_node_name(node) is ("math" | "svg"))
+}
+
+///|
+/// Compute `node_is_effectively_foreign(node)` using per-frame caches.
+///
+/// The walk follows `parent` pointers exactly like `node_is_effectively_foreign`
+/// but stops at the first ancestor that is an active frame node with a cached
+/// answer. Frame nodes passed on the way are cached with the result: all of
+/// them sit below the first self-foreign node (or the chain end), so their
+/// answer equals `node`'s. This keeps the check amortized O(1) per element
+/// instead of O(depth), which made deep trees quadratic.
+///
+/// The cache is sound only while no user code runs during the walk: the
+/// sanitizer itself never changes the ancestor chain, names, namespaces, or
+/// kinds of active frame nodes (it only rewrites the children of the frame
+/// being scanned and the subtree below it), but observer and URL-filter
+/// callbacks may reparent or rename those ancestors mid-walk. Callers must use
+/// `node_is_effectively_foreign` instead when
+/// `sanitize_walk_runs_user_callbacks` holds.
+fn sanitize_frames_effectively_foreign(
+  stack : Array[SanitizeFrame],
+  node : @dom.Node,
+) -> Bool {
+  let mut current = node
+  let mut candidate = stack.length() - 1
+  let passed : Array[SanitizeFrame] = []
+  let mut result = false
+  while true {
+    if candidate >= 0 && physical_equal(current, stack[candidate].node) {
+      let frame = stack[candidate]
+      if frame.foreign is Some(cached) {
+        result = cached
+        break
+      }
+      passed.push(frame)
+      candidate -= 1
+    }
+    if sanitize_node_is_self_foreign(current) {
+      result = true
+      break
+    }
+    match current.parent {
+      Some(parent) => current = parent
+      None => break
+    }
+  }
+  for frame in passed {
+    frame.foreign = Some(result)
+  }
+  result
+}
+
+///|
+/// Whether sanitizing with `policy` and `observer` can call back into user code
+/// (observer hook or report callback, URL filter) during the walk.
+fn sanitize_walk_runs_user_callbacks(
+  policy : SanitizationPolicy,
+  observer : SanitizeTransformObserver?,
+) -> Bool {
+  policy.url_policy.url_filter is Some(_) ||
+  (
+    observer is Some(observer) &&
+    (observer.hook is Some(_) || observer.report_callback is Some(_))
+  )
+}
+
+///|
+/// Replace `old_child` with the freshly created, detached node `fresh`.
+///
+/// Equivalent to `ignore(parent.replace_child(fresh, old_child))` for a fresh
+/// node, minus the ancestor-cycle walk (a fresh node is never an ancestor of
+/// `parent`), which costs O(depth) per call.
+fn replace_child_with_fresh_node(
   parent : @dom.Node,
+  fresh : @dom.Node,
+  old_child : @dom.Node,
+) -> Unit {
+  guard parent.kind is (Document | Fragment | Element) else { return }
+  for index, child in parent.children {
+    if physical_equal(child, old_child) {
+      parent.children[index] = fresh
+      fresh.parent = Some(parent)
+      if old_child.parent is Some(current_parent) &&
+        physical_equal(current_parent, parent) {
+        old_child.parent = None
+      }
+      return
+    }
+  }
+}
+
+///|
+/// Sanitize the children of `root` (and their subtrees) in place.
+///
+/// The walk uses an explicit heap-allocated stack of frames instead of
+/// recursion so arbitrarily deep trees cannot overflow the call stack. Each
+/// frame is one activation of the former recursive procedure: it scans its
+/// node's children by index, and when they are exhausted the frame's `on_done`
+/// action runs in the enclosing frame, exactly where the recursive call used
+/// to return.
+fn sanitize_container_children(
+  root : @dom.Node,
   policy : SanitizationPolicy,
   observer : SanitizeTransformObserver?,
 ) -> Unit raise @core.HtmlError {
-  let mut index = 0
-  while index < parent.children.length() {
+  let stack : Array[SanitizeFrame] = [SanitizeFrame::new(root, Advance)]
+  // User callbacks can reparent or rename active ancestors mid-walk, which
+  // would make cached foreign answers stale. With any callback present, check
+  // the live ancestor chain every time, exactly like the recursive walk did.
+  let cache_foreign = !sanitize_walk_runs_user_callbacks(policy, observer)
+  fn effectively_foreign(node : @dom.Node) -> Bool {
+    if cache_foreign {
+      sanitize_frames_effectively_foreign(stack, node)
+    } else {
+      node_is_effectively_foreign(node)
+    }
+  }
+
+  while stack.last() is Some(frame) {
+    let parent = frame.node
+    let index = frame.index
+    if index >= parent.children.length() {
+      ignore(stack.pop())
+      guard stack.last() is Some(outer) else { break }
+      match frame.on_done {
+        Advance => outer.index += 1
+        TemplateThenAdvance(element) =>
+          match element.template_contents {
+            Some(contents) => stack.push(SanitizeFrame::new(contents, Advance))
+            None => outer.index += 1
+          }
+        Unwrap => outer.index += unwrap_child_at(outer.node, outer.index)
+        Escape(child~, start_tag~, end_tag~) =>
+          outer.index += finish_escape_child_at(
+            outer.node,
+            outer.index,
+            child,
+            start_tag,
+            end_tag,
+            policy,
+          )
+      }
+      continue
+    }
     let child = parent.children[index]
     match child.kind {
       Text if child.sanitize_escape_only =>
@@ -29,29 +211,29 @@ fn sanitize_container_children(
               "Stripped invisible Unicode from text node",
               Some(child),
             )
-            ignore(parent.replace_child(@dom.text(stripped), child))
+            replace_child_with_fresh_node(parent, @dom.text(stripped), child)
           }
           None => ()
         }
-        index += 1
+        frame.index += 1
       }
       Comment =>
         if policy.drop_comments {
           sanitize_observer_event(observer, "Dropped comment", Some(child))
           remove_child_at(parent, index)
         } else {
-          index += 1
+          frame.index += 1
         }
       Doctype =>
         if policy.drop_doctype {
           sanitize_observer_event(observer, "Dropped doctype", Some(child))
           remove_child_at(parent, index)
         } else {
-          index += 1
+          frame.index += 1
         }
       Element => {
         let tag_name = sanitize_node_name(child)
-        if policy.drop_foreign_namespaces && node_is_effectively_foreign(child) {
+        if policy.drop_foreign_namespaces && effectively_foreign(child) {
           sanitize_report_unsafe(
             policy,
             observer,
@@ -60,7 +242,8 @@ fn sanitize_container_children(
           )
           remove_child_at(parent, index)
         } else if !policy.drop_foreign_namespaces &&
-          sanitize_node_is_active_foreign_content(child) {
+          is_active_foreign_mutation_tag(tag_name) &&
+          effectively_foreign(child) {
           sanitize_report_unsafe(
             policy,
             observer,
@@ -87,35 +270,37 @@ fn sanitize_container_children(
             Drop => remove_child_at(parent, index)
             Escape => {
               child.flatten_template_contents()
-              let inserted = escape_child_at(parent, index, policy, observer)
-              index += inserted
+              // Re-read the slot like the recursive walk did, in case the
+              // report callback replaced the child.
+              let child = parent.children[index]
+              let start_tag = sanitizer_escaped_start_tag_for(child)
+              let end_tag = sanitizer_escaped_end_tag_for(child)
+              stack.push(
+                SanitizeFrame::new(child, Escape(child~, start_tag~, end_tag~)),
+              )
             }
             Unwrap => {
               child.flatten_template_contents()
-              sanitize_container_children(child, policy, observer)
-              let inserted = unwrap_child_at(parent, index)
-              index += inserted
+              stack.push(SanitizeFrame::new(child, Unwrap))
             }
           }
         } else {
-          sanitize_element_attributes(child, policy, observer)
+          sanitize_element_attributes_with_foreign(
+            child,
+            policy,
+            observer,
+            effectively_foreign(child),
+          )
           if sanitize_foreign_text_integration_children(child, policy, observer) {
-            ()
-          } else if !sanitize_rawtext_element_children(child, policy, observer) {
-            sanitize_container_children(child, policy, observer)
-            match child.template_contents {
-              Some(contents) =>
-                sanitize_container_children(contents, policy, observer)
-              None => ()
-            }
+            frame.index += 1
+          } else if sanitize_rawtext_element_children(child, policy, observer) {
+            frame.index += 1
+          } else {
+            stack.push(SanitizeFrame::new(child, TemplateThenAdvance(child)))
           }
-          index += 1
         }
       }
-      Document | Fragment => {
-        sanitize_container_children(child, policy, observer)
-        index += 1
-      }
+      Document | Fragment => stack.push(SanitizeFrame::new(child, Advance))
     }
   }
 }
