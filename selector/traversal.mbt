@@ -54,24 +54,25 @@ fn matches_complex_selector(node : @dom.Node, selector : StringView) -> Bool {
     let wanted = parts[needed]
     match combinators[needed] {
       DescendantCombinator => {
-        let visited : Array[@dom.Node] = [current]
+        let repeats = AncestorRepeatGuard::new(current)
         let mut cursor = current.parent
         let mut found = false
+        let mut index = 1
         while !found {
           match cursor {
             Some(ancestor) => {
-              if node_identity_seen(visited, ancestor) {
+              if repeats.repeats_at(index) {
                 return false
               }
               if is_template_contents_fragment(ancestor) {
                 return false
               }
-              visited.push(ancestor)
               if matches_simple_selector(ancestor, wanted) {
                 current = ancestor
                 found = true
               } else {
                 cursor = ancestor.parent
+                index += 1
               }
             }
             None => return false
