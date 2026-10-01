@@ -64,3 +64,26 @@ test "to_markdown handles deeply nested mixed containers" {
     )
   }
 }
+
+///|
+/// `levels` nested `span`s, each holding a text node before the next level,
+/// inside a `name` element: code text collection walks the whole chain.
+fn deep_code_chain(name : String, levels : Int) -> @dom.Node {
+  let mut current = @dom.element("span", children=[@dom.text("a")])
+  for _ in 1..<levels {
+    current = @dom.element("span", children=[@dom.text("a"), current])
+  }
+  @dom.element(name, children=[current])
+}
+
+///|
+test "to_markdown collects deeply nested code text" {
+  let levels = 50000
+  let text = "a".repeat(levels)
+  assert_true(
+    @markdown.to_markdown(deep_code_chain("code", levels)) == "`\{text}`",
+  )
+  assert_true(
+    @markdown.to_markdown(deep_code_chain("pre", levels)) == "```\n\{text}\n```",
+  )
+}
