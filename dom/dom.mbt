@@ -469,16 +469,21 @@ pub fn Node::text(self : Node) -> String {
 }
 
 ///|
-fn append_node_text(node : Node, out : StringBuilder) -> Unit {
-  match node.kind {
-    Text if !node.sanitize_escape_only => out.write_string(node.data)
-    Text => ()
-    _ => {
-      if node.template_contents is Some(contents) {
-        append_node_text(contents, out)
-      }
-      for child in node.children {
-        append_node_text(child, out)
+fn append_node_text(root : Node, out : StringBuilder) -> Unit {
+  let stack = [root]
+  while stack.pop() is Some(node) {
+    match node.kind {
+      Text if !node.sanitize_escape_only => out.write_string(node.data)
+      Text => ()
+      _ => {
+        // Pushed in reverse so the template contents pop first, then the
+        // regular children in order.
+        for i = node.children.length() - 1; i >= 0; i = i - 1 {
+          stack.push(node.children[i])
+        }
+        if node.template_contents is Some(contents) {
+          stack.push(contents)
+        }
       }
     }
   }

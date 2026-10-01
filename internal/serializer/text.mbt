@@ -1,19 +1,35 @@
 ///|
-fn collect_text(node : @dom.Node, parts : Array[String], strip : Bool) -> Unit {
-  match node.kind {
-    Text => {
-      if node.sanitize_escape_only {
-        return
+fn collect_text(root : @dom.Node, parts : Array[String], strip : Bool) -> Unit {
+  let stack = [root]
+  while stack.pop() is Some(node) {
+    match node.kind {
+      Text => {
+        if node.sanitize_escape_only {
+          continue
+        }
+        let value = if strip {
+          node.data[:].trim().to_owned()
+        } else {
+          node.data
+        }
+        if value != "" {
+          parts.push(value)
+        }
       }
-      let value = if strip { node.data[:].trim().to_owned() } else { node.data }
-      if value != "" {
-        parts.push(value)
-      }
+      _ => push_serialized_children_reversed(stack, node)
     }
-    _ =>
-      for child in serialized_children(node) {
-        collect_text(child, parts, strip)
-      }
+  }
+}
+
+///|
+/// Push `node`'s serialized children so that popping visits them in order.
+fn push_serialized_children_reversed(
+  stack : Array[@dom.Node],
+  node : @dom.Node,
+) -> Unit {
+  let children = serialized_children(node)
+  for i = children.length() - 1; i >= 0; i = i - 1 {
+    stack.push(children[i])
   }
 }
 
@@ -39,33 +55,54 @@ fn current_text_chunk(chunks : Array[Array[String]]) -> Array[String] {
 }
 
 ///|
+/// One pending step of block-aware text extraction.
+priv enum TextBlockTask {
+  Visit(@dom.Node)
+  /// End the current chunk after a text block element's children.
+  Break
+}
+
+///|
 fn collect_text_block_chunks(
-  node : @dom.Node,
+  root : @dom.Node,
   chunks : Array[Array[String]],
   strip : Bool,
 ) -> Unit {
-  match node.kind {
-    Text => {
-      if node.sanitize_escape_only {
-        return
-      }
-      let value = if strip { node.data[:].trim().to_owned() } else { node.data }
-      if value != "" {
-        current_text_chunk(chunks).push(value)
-      }
+  let stack = [TextBlockTask::Visit(root)]
+  fn push_children(node) {
+    let children = serialized_children(node)
+    for i = children.length() - 1; i >= 0; i = i - 1 {
+      stack.push(Visit(children[i]))
     }
-    Element if node.name == "br" => text_chunk_break(chunks)
-    Element if is_text_block_element(node.name) => {
+  }
+
+  while stack.pop() is Some(task) {
+    guard task is Visit(node) else {
       text_chunk_break(chunks)
-      for child in serialized_children(node) {
-        collect_text_block_chunks(child, chunks, strip)
-      }
-      text_chunk_break(chunks)
+      continue
     }
-    _ =>
-      for child in serialized_children(node) {
-        collect_text_block_chunks(child, chunks, strip)
+    match node.kind {
+      Text => {
+        if node.sanitize_escape_only {
+          continue
+        }
+        let value = if strip {
+          node.data[:].trim().to_owned()
+        } else {
+          node.data
+        }
+        if value != "" {
+          current_text_chunk(chunks).push(value)
+        }
       }
+      Element if node.name == "br" => text_chunk_break(chunks)
+      Element if is_text_block_element(node.name) => {
+        text_chunk_break(chunks)
+        stack.push(Break)
+        push_children(node)
+      }
+      _ => push_children(node)
+    }
   }
 }
 
