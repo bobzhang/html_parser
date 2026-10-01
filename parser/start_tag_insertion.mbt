@@ -97,3 +97,30 @@ fn start_tag_uses_in_head_rules(name : StringView) -> Bool {
     _ => false
   }
 }
+
+///|
+/// Append `node`, which the parser has just created, to `parent`.
+///
+/// Equivalent to `parent.append_child(node)` for a node that has no parent,
+/// no children and no template contents, but without its O(depth) walk up
+/// `parent`'s ancestors, which made parsing deeply nested markup quadratic.
+/// The walk rejects appends that would create a cycle; every node in a tree
+/// the parser builds is reachable from its parent's child list or template
+/// contents, so a node with neither cannot be an ancestor of `parent`.
+/// Anything else, including an HTML `template` parent (whose children go to
+/// its contents), takes the `append_child` path.
+fn append_new_node(parent : @dom.Node, node : @dom.Node) -> Unit {
+  if node.parent is None &&
+    node.children.is_empty() &&
+    node.template_contents is None &&
+    !physical_equal(parent, node) &&
+    (
+      parent.kind is (Document | Fragment) ||
+      table_normalize_target_is_plain(parent)
+    ) {
+    node.parent = Some(parent)
+    parent.children.push(node)
+  } else {
+    parent.append_child(node)
+  }
+}

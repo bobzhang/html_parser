@@ -35,16 +35,33 @@ fn html_fragment_child_is_before_head(child : @dom.Node) -> Bool {
 }
 
 ///|
+/// True when `child` may precede the body of an html-context fragment:
+/// a comment, whitespace text, head content, or a nested `html` element
+/// whose children all qualify.
+///
+/// Nested `html` elements are checked with an explicit stack so deeply
+/// nested chains cannot overflow the call stack. The check is side-effect
+/// free, so the visiting order does not affect the answer.
 fn html_fragment_child_is_before_body(child : @dom.Node) -> Bool {
-  if child.kind == Comment || is_whitespace_text_node(child) {
-    return true
+  let pending : Array[@dom.Node] = [child]
+  while pending.pop() is Some(node) {
+    if node.kind == Comment || is_whitespace_text_node(node) {
+      continue
+    }
+    if node.kind != Element {
+      return false
+    }
+    if node.name == "head" || is_document_head_element_name(node.name) {
+      continue
+    }
+    if node.name != "html" {
+      return false
+    }
+    for grandchild in node.children {
+      pending.push(grandchild)
+    }
   }
-  if child.kind != Element {
-    return false
-  }
-  child.name == "head" ||
-  is_document_head_element_name(child.name) ||
-  (child.name == "html" && html_fragment_children_are_before_body(child))
+  true
 }
 
 ///|

@@ -40,9 +40,3 @@ pub fn node_is_effectively_foreign(node : @dom.Node) -> Bool {
 fn is_active_foreign_mutation_tag(name : String) -> Bool {
   name is ("animate" | "annotation-xml" | "foreignobject" | "set")
 }
-
-///|
-fn sanitize_node_is_active_foreign_content(node : @dom.Node) -> Bool {
-  is_active_foreign_mutation_tag(sanitize_node_name(node)) &&
-  node_is_effectively_foreign(node)
-}

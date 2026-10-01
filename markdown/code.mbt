@@ -27,22 +27,28 @@ fn markdown_code_span(value : StringView) -> String {
 }
 
 ///|
+/// Concatenate the text descendants of `node` in document order (template
+/// contents included), using an explicit stack so deep trees cannot
+/// overflow the call stack.
 fn markdown_collect_text(node : @dom.Node) -> String {
-  let parts : Array[String] = []
-  markdown_collect_text_into(node, parts)
-  parts.join("")
-}
-
-///|
-fn markdown_collect_text_into(node : @dom.Node, parts : Array[String]) -> Unit {
-  match node.kind {
-    Text => if !node.sanitize_escape_only { parts.push(node.data) }
-    Comment | Doctype => ()
-    _ =>
-      for child in markdown_children(node) {
-        markdown_collect_text_into(child, parts)
+  let out = StringBuilder()
+  let stack = [node]
+  while stack.pop() is Some(current) {
+    match current.kind {
+      Text =>
+        if !current.sanitize_escape_only {
+          out.write_string(current.data)
+        }
+      Comment | Doctype => ()
+      _ => {
+        let children = markdown_children(current)
+        for index = children.length() - 1; index >= 0; index = index - 1 {
+          stack.push(children[index])
+        }
       }
+    }
   }
+  out.to_string()
 }
 
 ///|

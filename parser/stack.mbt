@@ -9,6 +9,8 @@ fn Parser::track_open_element(
   if node.kind != Element {
     return
   }
+  let count = self.open_element_counts.get(node.name).unwrap_or(0) + delta
+  self.open_element_counts[node.name] = count
   let len = node.name.length()
   if len == 8 &&
     node.name == "template" &&
@@ -73,6 +75,7 @@ fn Parser::clear_open_elements(self : Parser) -> Unit {
   self.open_template_count = 0
   self.open_table_count = 0
   self.open_select_count = 0
+  self.open_element_counts.clear()
 }
 
 ///|
@@ -362,7 +365,7 @@ fn Parser::insert_element_without_push(
     Some(offset) => self.node_with_origin(@dom.element(name, attrs~), offset)
     None => @dom.element(name, attrs~)
   }
-  self.current_node().append_child(node)
+  append_new_node(self.current_node(), node)
 }
 
 ///|
@@ -377,7 +380,7 @@ fn Parser::insert_element_maybe_push(
     Some(offset) => self.node_with_origin(@dom.element(name, attrs~), offset)
     None => @dom.element(name, attrs~)
   }
-  self.current_node().append_child(node)
+  append_new_node(self.current_node(), node)
   if push {
     self.push_open_element(node)
   }

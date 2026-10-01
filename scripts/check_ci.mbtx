@@ -196,13 +196,13 @@ async fn check_ci(args : ArrayView[String]) -> Int {
   code = run_step("Check generated interfaces", run_check_interfaces)
   if code != 0 { return code }
   code = run_step("Type check default target", () =>
-    @process.run("moon", ["check", "--warn-list", "+73"]))
+    @process.run("moon", ["check", "--deny-warn", "--warn-list", "+73"]))
   if code != 0 { return code }
   code = run_step("Type check all targets", () =>
-    @process.run("moon", ["check", "--target", "all", "--warn-list", "+73"]))
+    @process.run("moon", ["check", "--target", "all", "--deny-warn", "--warn-list", "+73"]))
   if code != 0 { return code }
   code = run_step("Type check native CLI", () =>
-    @process.run("moon", ["check", "--target", "native", "cmd/justhtml", "--warn-list", "+73"]))
+    @process.run("moon", ["check", "--target", "native", "cmd/justhtml", "--deny-warn", "--warn-list", "+73"]))
   if code != 0 { return code }
   code = run_step("Run tests with count floor", run_check_tests)
   if code != 0 { return code }
@@ -616,7 +616,7 @@ async fn run_check_test_inventory() -> Int {
   // conflict here. The count stays an exact pin rather than a floor, because a
   // floor accumulates slack — once a PR raises the total, a later one can
   // delete the tests it added and still clear the old bound.
-  let expected_count = 902
+  let expected_count = 941
   let inventory : Array[String] = []
   for path in git_ls_files(["*.mbt", "*.mbt.md"]) {
     match read_text(path) {

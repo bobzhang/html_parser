@@ -25,64 +25,25 @@ fn markdown_walk_pre(node : @dom.Node, builder : MarkdownBuilder) -> Unit {
 }
 
 ///|
-fn markdown_walk_list(
+/// Start a Markdown list: separate it from preceding output and schedule one
+/// `ListItem` task per `<li>` child followed by the closing blank line.
+fn MarkdownWalker::start_list(
+  self : MarkdownWalker,
   node : @dom.Node,
   builder : MarkdownBuilder,
   ordered : Bool,
-  html_passthrough : Bool,
   list_depth : Int,
-) -> Unit raise @core.HtmlError {
-  if !builder.parts.is_empty() {
+) -> Unit {
+  if !builder.is_empty() {
     builder.ensure_newlines(2)
   }
-  let mut index = 1
-  let mut rendered = 0
-  for child in markdown_children(node) {
-    if child.kind == Element && child.name.to_lower() == "li" {
-      if rendered > 0 {
-        builder.newline(1)
-      }
-      builder.raw("  ".repeat(list_depth))
-      if ordered {
-        builder.raw(index.to_string())
-        builder.raw(". ")
-      } else {
-        builder.raw("- ")
-      }
-      markdown_render_children(child, builder, html_passthrough, list_depth + 1)
-      index += 1
-      rendered += 1
-    }
+  self.tasks.push(EnsureNewlines(2))
+  let items = markdown_children(node).filter(child => {
+    child.kind == Element && child.name.to_lower() == "li"
+  })
+  for index = items.length() - 1; index >= 0; index = index - 1 {
+    self.tasks.push(
+      ListItem(items[index], ordered, index + 1, index == 0, list_depth),
+    )
   }
-  builder.ensure_newlines(2)
-}
-
-///|
-fn markdown_walk_blockquote(
-  node : @dom.Node,
-  builder : MarkdownBuilder,
-  html_passthrough : Bool,
-  list_depth : Int,
-) -> Unit raise @core.HtmlError {
-  let inner = markdown_render_children_to_string(
-    node, html_passthrough, list_depth,
-  )
-  if inner == "" {
-    return
-  }
-  let quoted = StringBuilder(size_hint=inner.length() + 2)
-  let mut line_start = true
-  for ch in inner {
-    if line_start {
-      quoted.write_string("> ")
-      line_start = false
-    }
-    quoted.write_char(ch)
-    if ch == '\n' {
-      line_start = true
-    }
-  }
-  builder.ensure_newlines(2)
-  builder.raw(quoted.to_string())
-  builder.ensure_newlines(2)
 }
