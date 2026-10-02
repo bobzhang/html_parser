@@ -17,6 +17,11 @@ fn Parser::last_open_template_index(self : Parser) -> Int {
 }
 
 ///|
+fn Parser::has_open_template(self : Parser) -> Bool {
+  self.open_template_count > 0
+}
+
+///|
 fn Parser::in_template_content_without_inner_table(self : Parser) -> Bool {
   let template_index = self.last_open_template_index()
   template_index >= 0 && self.last_open_table_index() < template_index
