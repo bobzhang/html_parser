@@ -8,7 +8,8 @@ fn Parser::insert_normal_start_tag(
   tag_close_pos : Int,
 ) -> Unit {
   let node_ns = self.start_tag_namespace(name)
-  if node_ns == "html" {
+  let is_html_ns = node_ns == "html"
+  if is_html_ns {
     self.prepare_active_formatting_start(name, start)
   }
   if !start_tag_closes_p(name) &&
@@ -16,7 +17,7 @@ fn Parser::insert_normal_start_tag(
     !self.table_context_start_skips_active_reconstruction(name) {
     self.reconstruct_active_formatting_elements()
   }
-  let adjusted_name = if node_ns == "html" {
+  let adjusted_name = if is_html_ns {
     if name == "image" {
       self.error_at("image-start-tag", start)
       "img"
@@ -26,7 +27,7 @@ fn Parser::insert_normal_start_tag(
   } else {
     adjusted_start_tag_name_for_namespace(node_ns, name)
   }
-  let adjusted_attrs = if node_ns == "html" {
+  let adjusted_attrs = if is_html_ns {
     attrs
   } else {
     prepare_foreign_attrs(node_ns, attrs)
@@ -38,26 +39,25 @@ fn Parser::insert_normal_start_tag(
   )
   self.track_form_start_element(adjusted_name, node)
   self.append_start_tag_node(node, adjusted_name, start)
-  if node_ns == "html" && adjusted_name == "select" {
+  if is_html_ns && adjusted_name == "select" {
     self.select_insertion_mode = true
   }
-  let self_closes_tree = if node_ns == "html" {
-    self_closing && @ser.is_void_element(adjusted_name)
+  let is_void_element = @ser.is_void_element(adjusted_name)
+  let self_closes_tree = if is_html_ns {
+    self_closing && is_void_element
   } else {
     self_closing
   }
   let inserts_empty_nonvoid = self.start_tag_inserts_empty_nonvoid(
     adjusted_name,
   )
-  if node_ns == "html" &&
+  if is_html_ns &&
     !self_closes_tree &&
     self.is_special_text_element(adjusted_name) {
     self.consume_special_element_content(node, adjusted_name)
-  } else if !self_closes_tree &&
-    !@ser.is_void_element(adjusted_name) &&
-    !inserts_empty_nonvoid {
+  } else if !self_closes_tree && !is_void_element && !inserts_empty_nonvoid {
     self.push_open_element(node)
-    if node_ns == "html" && active_formatting_element_name(adjusted_name) {
+    if is_html_ns && active_formatting_element_name(adjusted_name) {
       let duplicate_index = self.active_formatting_duplicate_index(
         adjusted_name,
         node.attrs,
@@ -67,10 +67,10 @@ fn Parser::insert_normal_start_tag(
       }
       self.append_active_formatting_entry(node)
     }
-    if node_ns == "html" && active_formatting_marker_element_name(adjusted_name) {
+    if is_html_ns && active_formatting_marker_element_name(adjusted_name) {
       self.push_active_formatting_marker()
     }
-    if node_ns == "html" && start_tag_ignores_initial_lf(adjusted_name) {
+    if is_html_ns && start_tag_ignores_initial_lf(adjusted_name) {
       // A literal newline is skipped here; an entity-encoded one decodes
       // later, so the text path drops it via the pending flag.
       self.pending_initial_lf_skip = self.current() is Some('&')
