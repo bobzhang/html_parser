@@ -6,9 +6,9 @@ fn mark_node_parsed_from_source(node : @dom.Node) -> Unit {
 ///|
 fn set_node_origin(
   node : @dom.Node,
-  offset : Int,
-  line : Int,
-  col : Int,
+  offset : Int32,
+  line : Int32,
+  col : Int32,
 ) -> Unit {
   node.origin_offset = Some(offset)
   node.origin_line = Some(line)
@@ -45,7 +45,7 @@ fn copy_node_origin_from(node : @dom.Node, source : @dom.Node) -> Unit {
 fn Parser::node_with_origin(
   self : Parser,
   node : @dom.Node,
-  offset : Int,
+  offset : Int32,
 ) -> @dom.Node {
   mark_node_parsed_from_source(node)
   if self.track_node_locations {
@@ -58,8 +58,8 @@ fn Parser::node_with_origin(
 ///|
 fn Parser::source_tag_slice(
   self : Parser,
-  start : Int,
-  tag_close_pos : Int,
+  start : Int32,
+  tag_close_pos : Int32,
 ) -> String {
   self.input[start:tag_close_pos + 1].to_owned()
 }
@@ -68,8 +68,8 @@ fn Parser::source_tag_slice(
 fn Parser::node_with_start_tag_source(
   self : Parser,
   node : @dom.Node,
-  offset : Int,
-  tag_close_pos : Int,
+  offset : Int32,
+  tag_close_pos : Int32,
 ) -> @dom.Node {
   let node = self.node_with_origin(node, offset)
   set_node_source_start_tag(node, self.source_tag_slice(offset, tag_close_pos))
@@ -79,8 +79,8 @@ fn Parser::node_with_start_tag_source(
 ///|
 fn Parser::append_sanitize_escape_source_text(
   self : Parser,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> Unit {
   if self.root.kind != Fragment {
     return
@@ -92,7 +92,11 @@ fn Parser::append_sanitize_escape_source_text(
 }
 
 ///|
-fn Parser::text_at(self : Parser, data : StringView, offset : Int) -> @dom.Node {
+fn Parser::text_at(
+  self : Parser,
+  data : StringView,
+  offset : Int32,
+) -> @dom.Node {
   self.node_with_origin(@dom.text(data), offset)
 }
 
@@ -100,7 +104,7 @@ fn Parser::text_at(self : Parser, data : StringView, offset : Int) -> @dom.Node 
 fn Parser::comment_at(
   self : Parser,
   data : StringView,
-  offset : Int,
+  offset : Int32,
 ) -> @dom.Node {
   self.node_with_origin(@dom.comment(data), offset)
 }

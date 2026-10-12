@@ -43,8 +43,8 @@ fn Parser::decoded_special_text(
   self : Parser,
   name : StringView,
   raw : StringView,
-  start : Int,
-  error_pos : Int,
+  start : Int32,
+  error_pos : Int32,
 ) -> StringView {
   let (raw, offset) = if name == "textarea" {
     strip_one_initial_lf_with_offset(raw)
@@ -70,7 +70,7 @@ fn Parser::decoded_special_text(
 }
 
 ///|
-fn strip_one_initial_lf_with_offset(input : StringView) -> (StringView, Int) {
+fn strip_one_initial_lf_with_offset(input : StringView) -> (StringView, Int32) {
   match input.get_char(0) {
     Some('\r') =>
       if input.get_char(1) is Some('\n') {
@@ -166,7 +166,7 @@ fn Parser::append_special_text(
   self : Parser,
   parent : @dom.Node,
   data : StringView,
-  content_start : Int,
+  content_start : Int32,
 ) -> Unit {
   if !data.is_empty() {
     parent.append_child(self.text_at(data, content_start))

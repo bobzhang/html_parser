@@ -1,6 +1,6 @@
 ///|
 priv struct SanitizeFixtureCase {
-  index : Int
+  index : Int32
   name : String
   input_html : String
   expected_html : String

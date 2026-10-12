@@ -30,9 +30,9 @@ fn cli_read_failure(message : String) -> @html_parser.CliResult {
 ///|
 #coverage.skip
 fn cli_immediate(
-  code : Int,
-  stdout? : String = "",
-  stderr? : String = "",
+  code : Int32,
+  stdout~ : String = "",
+  stderr~ : String = "",
 ) -> @html_parser.CliResult {
   {
     exit_code: code,
@@ -73,4 +73,4 @@ async fn emit_cli_result(result : @html_parser.CliResult) -> Unit {
 
 ///|
 #coverage.skip
-extern "C" fn exit_process(code : Int) = "exit"
+extern "C" fn exit_process(code : Int32) = "exit"

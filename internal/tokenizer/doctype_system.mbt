@@ -1,7 +1,7 @@
 ///|
 fn doctype_after_system_identifier(
   input : StringView,
-  after_system : Int,
+  after_system : Int32,
   closed : Bool,
   errors : Array[DoctypeExternalError],
 ) -> Bool {
@@ -28,7 +28,7 @@ fn doctype_after_system_identifier(
 ///|
 fn parse_doctype_system_identifier_at(
   input : StringView,
-  quote_pos : Int,
+  quote_pos : Int32,
   closed : Bool,
   errors : Array[DoctypeExternalError],
 ) -> (String?, Bool) {
@@ -61,7 +61,7 @@ fn parse_doctype_system_identifier_at(
 ///|
 fn parse_doctype_system_after_keyword(
   input : StringView,
-  after_keyword : Int,
+  after_keyword : Int32,
   closed : Bool,
   errors : Array[DoctypeExternalError],
 ) -> (String?, Bool) {

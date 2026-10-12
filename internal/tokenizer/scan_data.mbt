@@ -8,7 +8,7 @@
 /// slice containing CR or NUL gets a single normalization pass. This
 /// replaces per-character builder writes behind a rest-of-the-document
 /// size hint, which preallocated far too much for every comment (#16).
-fn scanned_data_slice(input : StringView, start : Int, end : Int) -> String {
+fn scanned_data_slice(input : StringView, start : Int32, end : Int32) -> String {
   // Empty data never slices: the scanners fail closed on surrogate-split
   // offsets (get_char yields None there), where slicing would abort.
   if start >= end {

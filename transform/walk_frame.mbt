@@ -13,12 +13,12 @@ priv struct WalkFrame {
   node : @dom.Node
   skip : Bool
   mut entered : Bool
-  mut index : Int
+  mut index : Int32
   mut pending : @dom.Node?
 }
 
 ///|
-fn WalkFrame::new(node : @dom.Node, skip? : Bool = false) -> WalkFrame {
+fn WalkFrame::new(node : @dom.Node, skip~ : Bool = false) -> WalkFrame {
   { node, skip, entered: false, index: 0, pending: None, }
 }
 

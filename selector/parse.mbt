@@ -1,8 +1,8 @@
 ///|
 fn selector_list_part(
   selector : StringView,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> StringView? {
   let part = selector[start:end].trim()
   if part.is_empty() {
@@ -172,7 +172,7 @@ fn split_complex_selector(
 }
 
 ///|
-fn selector_identifier_end(selector : StringView, start : Int) -> Int {
+fn selector_identifier_end(selector : StringView, start : Int32) -> Int32 {
   guard selector.get_char(start) is Some(first) else { return start }
   if !selector_identifier_start(first) {
     return start

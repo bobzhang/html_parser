@@ -2,7 +2,7 @@
 fn linkify_validate_candidate(
   candidate : StringView,
   source : StringView,
-  start : Int,
+  start : Int32,
   config : LinkifyConfig,
 ) -> Bool {
   let is_scheme = linkify_is_scheme(candidate)
@@ -90,7 +90,7 @@ fn linkify_validate_email_address(
 }
 
 ///|
-fn linkify_broken_schema_context(source : StringView, start : Int) -> Bool {
+fn linkify_broken_schema_context(source : StringView, start : Int32) -> Bool {
   if start >= 3 {
     match source.get_view(start=start - 3, end=start) {
       Some("://") => return true
@@ -110,7 +110,7 @@ fn linkify_broken_schema_context(source : StringView, start : Int) -> Bool {
 fn linkify_validate_protocol_relative(
   candidate : StringView,
   source : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if start > 0 {
     match source.get_char(start - 1) {

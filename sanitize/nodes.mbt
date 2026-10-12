@@ -3,7 +3,7 @@
 ///
 /// `index` must be a valid child index. The removed node's `parent` field is
 /// cleared only when it still points at `parent`.
-fn remove_child_at(parent : @dom.Node, index : Int) -> Unit {
+fn remove_child_at(parent : @dom.Node, index : Int32) -> Unit {
   let child = parent.children[index]
   ignore(parent.children.remove(index))
   if child.parent is Some(current_parent) &&
@@ -22,11 +22,11 @@ fn remove_child_at(parent : @dom.Node, index : Int) -> Unit {
 /// nodes.
 fn move_children_into(
   parent : @dom.Node,
-  index : Int,
+  index : Int32,
   from : @dom.Node,
   before? : @dom.Node,
   after? : @dom.Node,
-) -> Int {
+) -> Int32 {
   let moved = from.children.copy()
   from.children.clear()
   let tail = parent.children.drain(index, parent.children.length())
@@ -54,7 +54,7 @@ fn move_children_into(
 /// The child at `index` is removed, detached from `parent`, and its children
 /// are inserted into `parent` at the same position with updated parent
 /// pointers. Returns the number of inserted children.
-fn unwrap_child_at(parent : @dom.Node, index : Int) -> Int {
+fn unwrap_child_at(parent : @dom.Node, index : Int32) -> Int32 {
   let child = parent.children[index]
   ignore(parent.children.remove(index))
   if child.parent is Some(current_parent) &&
@@ -113,12 +113,12 @@ fn sanitized_escape_text(
 /// number of inserted nodes.
 fn finish_escape_child_at(
   parent : @dom.Node,
-  index : Int,
+  index : Int32,
   child : @dom.Node,
   start_tag : String,
   end_tag : String?,
   policy : SanitizationPolicy,
-) -> Int {
+) -> Int32 {
   ignore(parent.children.remove(index))
   if child.parent is Some(current_parent) &&
     physical_equal(parent, current_parent) {

@@ -39,7 +39,7 @@ pub fn neutralize_rawtext_end_tag_sequences(
 ///|
 fn rawtext_end_tag_sequence_at(
   value : StringView,
-  pos : Int,
+  pos : Int32,
   needle : StringView,
 ) -> Bool {
   if @syn.starts_with_case_insensitive(value, pos, needle) {

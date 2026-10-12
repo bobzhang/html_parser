@@ -2,7 +2,7 @@
 fn Parser::handle_template_column_group_text(
   self : Parser,
   cleaned : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.template_column_group_mode_active() {
     return false
@@ -26,7 +26,7 @@ fn Parser::handle_template_column_group_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.template_column_group_mode_active() {
     return false
@@ -56,7 +56,7 @@ fn Parser::handle_template_column_group_start_tag(
 fn Parser::handle_template_column_group_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.template_column_group_mode_active() {
     return false
@@ -88,7 +88,7 @@ fn Parser::handle_template_column_group_end_tag(
 fn Parser::handle_template_detached_column_group_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.template_detached_column_group_mode {
     return false

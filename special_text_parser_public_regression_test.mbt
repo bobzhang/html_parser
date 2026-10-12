@@ -119,7 +119,7 @@ test "parser treats xmp and plaintext content as text" {
 fn assert_script_fragment_eof(
   source : StringView,
   expected_html : String,
-  expected_column : Int,
+  expected_column : Int32,
 ) -> Unit raise {
   let doc = @html_parser.parse_fragment(source, collect_errors=true)
   assert_eq(doc.to_html(pretty=false), expected_html)

@@ -75,7 +75,7 @@ fn decide_transform_action(
 }
 
 ///|
-fn decide_escape_child_at(parent : @dom.Node, index : Int) -> Unit {
+fn decide_escape_child_at(parent : @dom.Node, index : Int32) -> Unit {
   match parent.children[index].kind {
     Element => ignore(escape_transform_child_at(parent, index))
     Document | Fragment => ignore(transform_unwrap_child_at(parent, index))

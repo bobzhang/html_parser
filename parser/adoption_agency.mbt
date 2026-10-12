@@ -2,7 +2,7 @@
 fn Parser::active_formatting_index_by_node(
   self : Parser,
   target : @dom.Node,
-) -> Int {
+) -> Int32 {
   let mut index = self.active_formatting.length()
   while index > 0 {
     index -= 1
@@ -15,7 +15,7 @@ fn Parser::active_formatting_index_by_node(
 }
 
 ///|
-fn Parser::stack_index_by_node(self : Parser, target : @dom.Node) -> Int {
+fn Parser::stack_index_by_node(self : Parser, target : @dom.Node) -> Int32 {
   let mut index = 0
   while index < self.stack.length() {
     if physical_equal(self.stack[index], target) {
@@ -30,7 +30,7 @@ fn Parser::stack_index_by_node(self : Parser, target : @dom.Node) -> Int {
 fn Parser::adoption_agency(
   self : Parser,
   subject : StringView,
-  pos : Int,
+  pos : Int32,
 ) -> Unit {
   let subject_name = subject.to_owned()
   match self.stack.last() {

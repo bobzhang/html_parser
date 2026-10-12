@@ -4,7 +4,10 @@
 /// The fragment is parsed with the library's default fragment context and then
 /// serialized with pretty printing enabled. `indent_size` controls the number
 /// of spaces used for each nested element level.
-pub fn pretty_fragment(input : String, indent_size? : Int = 2) -> String raise {
+pub fn pretty_fragment(
+  input : String,
+  indent_size~ : Int32 = 2,
+) -> String raise {
   @html_parser.parse_fragment(input).to_html(pretty=true, indent_size~)
 }
 

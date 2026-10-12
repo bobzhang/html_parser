@@ -1,7 +1,7 @@
 ///|
 /// Index of the last open HTML-namespace table cell; foreign (SVG/MathML)
 /// elements named td/th never push cell markers and do not count.
-fn Parser::last_open_html_table_cell_index(self : Parser) -> Int {
+fn Parser::last_open_html_table_cell_index(self : Parser) -> Int32 {
   let mut index = self.stack.length()
   while index > 0 {
     index -= 1
@@ -16,7 +16,7 @@ fn Parser::last_open_html_table_cell_index(self : Parser) -> Int {
 }
 
 ///|
-fn Parser::last_open_table_cell_index(self : Parser) -> Int {
+fn Parser::last_open_table_cell_index(self : Parser) -> Int32 {
   let td_index = self.last_stack_index_of("td")
   let th_index = self.last_stack_index_of("th")
   if td_index > th_index {

@@ -7,7 +7,7 @@ fn Parser::uses_document_frameset_rules(self : Parser) -> Bool {
 fn Parser::handle_document_frameset_end_tag(
   self : Parser,
   name : String,
-  tag_close_pos : Int,
+  tag_close_pos : Int32,
 ) -> Bool {
   if self.is_fragment_parser() && !self.fragment_context_html {
     return false
@@ -139,8 +139,8 @@ fn Parser::handle_document_frameset_start_tag(
   name : String,
   attrs : Map[String, String?],
   _self_closing : Bool,
-  start : Int,
-  tag_close_pos : Int,
+  start : Int32,
+  tag_close_pos : Int32,
 ) -> Bool {
   if self.is_fragment_parser() && !self.fragment_context_html {
     if name == "frameset" {

@@ -4,7 +4,7 @@
 fn assert_script_scan(
   value : StringView,
   expected : String,
-  end_start : Int?,
+  end_start : Int32?,
 ) -> Unit raise {
   let scan = @tok.scan_script_text(value, 0)
   assert_eq(scan.data, expected)

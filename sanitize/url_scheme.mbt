@@ -83,7 +83,7 @@ fn extract_url_scheme(value : StringView) -> String? {
 }
 
 ///|
-fn url_scheme_prefix_is_valid(value : StringView, end : Int) -> Bool {
+fn url_scheme_prefix_is_valid(value : StringView, end : Int32) -> Bool {
   let mut pos = 0
   let mut saw_scheme_char = false
   while pos < end {

@@ -85,7 +85,7 @@ fn pseudo_selector_matches_with_context(
   node : @dom.Node,
   name : StringView,
   context : SelectorMatchContext,
-  depth : Int,
+  depth : Int32,
 ) -> Bool raise @core.HtmlError {
   let lower_name = @syn.lower_ascii(name)
   match lower_name[:] {

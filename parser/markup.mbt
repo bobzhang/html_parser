@@ -24,7 +24,7 @@ fn Parser::parse_comment(self : Parser) -> Unit {
 }
 
 ///|
-fn Parser::parse_bogus_comment(self : Parser, origin_start : Int) -> Unit {
+fn Parser::parse_bogus_comment(self : Parser, origin_start : Int32) -> Unit {
   let data_start = self.pos
   while self.current() is Some(ch) && ch != '>' {
     self.pos += ch.utf16_len()

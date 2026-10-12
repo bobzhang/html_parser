@@ -26,7 +26,7 @@ fn Parser::handle_select_reprocessed_foreign_cell_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
-  start : Int,
+  start : Int32,
   self_closing : Bool,
 ) -> Bool {
   if name != "td" && name != "th" {
@@ -49,7 +49,7 @@ fn Parser::handle_recovered_post_body_cell_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
-  start : Int,
+  start : Int32,
   self_closing : Bool,
 ) -> Bool {
   if name != "td" && name != "th" {
@@ -73,7 +73,7 @@ fn Parser::handle_foreign_table_row_recovery_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
-  start : Int,
+  start : Int32,
   self_closing : Bool,
 ) -> Bool {
   if name != "tr" {
@@ -96,7 +96,7 @@ fn Parser::handle_foreign_table_row_recovery_start_tag(
 fn Parser::report_foreign_table_row_recovery_text(
   self : Parser,
   value : StringView,
-  start : Int,
+  start : Int32,
 ) -> Unit {
   if !self.foreign_table_row_recovery_mode ||
     !text_has_non_ascii_whitespace(value) {

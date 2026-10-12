@@ -97,7 +97,7 @@ fn is_only_of_type(node : @dom.Node) -> Bool {
 }
 
 ///|
-fn element_child_index(node : @dom.Node) -> Int? {
+fn element_child_index(node : @dom.Node) -> Int32? {
   match node.parent {
     Some(parent) => {
       let mut index = 0
@@ -116,7 +116,7 @@ fn element_child_index(node : @dom.Node) -> Int? {
 }
 
 ///|
-fn element_type_index(node : @dom.Node) -> Int? {
+fn element_type_index(node : @dom.Node) -> Int32? {
   match node.parent {
     Some(parent) => {
       let mut index = 0
@@ -150,7 +150,7 @@ fn normalize_nth_expression(expr : StringView) -> String {
 }
 
 ///|
-fn parse_signed_int_view(expr : StringView) -> Int? {
+fn parse_signed_int_view(expr : StringView) -> Int32? {
   if expr.is_empty() {
     return None
   }
@@ -175,7 +175,7 @@ fn parse_signed_int_view(expr : StringView) -> Int? {
   while pos < expr.length() {
     match expr.get_char(pos) {
       Some(ch) if ch.is_digit(10) => {
-        let digit = (ch.to_int() - ('0' : Int)).to_int64()
+        let digit = (ch.to_int() - ('0' : Int32)).to_int64()
         if value > (limit - digit) / 10L {
           return None
         }
@@ -189,7 +189,7 @@ fn parse_signed_int_view(expr : StringView) -> Int? {
 }
 
 ///|
-fn parse_nth_expression(expr : StringView) -> (Int, Int)? {
+fn parse_nth_expression(expr : StringView) -> (Int32, Int32)? {
   let normalized = normalize_nth_expression(expr)
   let expr = normalized[:]
   if expr.is_empty() {
@@ -227,7 +227,7 @@ fn parse_nth_expression(expr : StringView) -> (Int, Int)? {
 }
 
 ///|
-fn nth_formula_matches(index : Int, a : Int, b : Int) -> Bool {
+fn nth_formula_matches(index : Int32, a : Int32, b : Int32) -> Bool {
   if a == 0 {
     index == b
   } else {

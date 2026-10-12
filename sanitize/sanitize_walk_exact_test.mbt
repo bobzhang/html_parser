@@ -19,7 +19,7 @@ fn walk_dump_into(
   sb : StringBuilder,
   node : @dom.Node,
   expected_parent : @dom.Node?,
-  depth : Int,
+  depth : Int32,
 ) -> Unit {
   for _ in 0..<depth {
     sb.write_string("  ")

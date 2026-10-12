@@ -17,7 +17,7 @@ fn Parser::append_active_formatting_entry(
 }
 
 ///|
-fn Parser::active_formatting_index(self : Parser, name : StringView) -> Int {
+fn Parser::active_formatting_index(self : Parser, name : StringView) -> Int32 {
   let target = name.to_owned()
   let mut index = self.active_formatting.length()
   while index > 0 {
@@ -57,7 +57,7 @@ fn Parser::active_formatting_duplicate_index(
   self : Parser,
   name : StringView,
   attrs : Map[String, String?],
-) -> Int {
+) -> Int32 {
   let target = name.to_owned()
   let mut first_match = -1
   let mut match_count = 0
@@ -120,7 +120,7 @@ fn Parser::remove_last_open_element_by_name(
 }
 
 ///|
-fn Parser::active_formatting_orphan_anchor_index(self : Parser) -> Int {
+fn Parser::active_formatting_orphan_anchor_index(self : Parser) -> Int32 {
   let mut index = self.active_formatting.length()
   while index > 0 {
     index -= 1
@@ -157,7 +157,7 @@ fn element_from_formatting_entry(entry : FormattingEntry) -> @dom.Node {
 }
 
 ///|
-fn Parser::remove_active_formatting_index(self : Parser, index : Int) -> Unit {
+fn Parser::remove_active_formatting_index(self : Parser, index : Int32) -> Unit {
   ignore(self.active_formatting.remove(index))
 }
 

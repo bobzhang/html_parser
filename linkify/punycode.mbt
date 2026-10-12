@@ -114,7 +114,7 @@ fn linkify_punycode_label(label : StringView) -> String {
 }
 
 ///|
-fn linkify_codepoints_all_basic(input : Array[Int]) -> Bool {
+fn linkify_codepoints_all_basic(input : Array[Int32]) -> Bool {
   for code in input {
     if code >= 0x80 {
       return false
@@ -134,8 +134,8 @@ fn linkify_has_non_ascii(value : StringView) -> Bool {
 }
 
 ///|
-fn linkify_idna_codepoints(label : StringView) -> Array[Int] {
-  let out : Array[Int] = []
+fn linkify_idna_codepoints(label : StringView) -> Array[Int32] {
+  let out : Array[Int32] = []
   for ch in label {
     let code = ch.to_int()
     if code >= 0x41 && code <= 0x5A {
@@ -150,7 +150,7 @@ fn linkify_idna_codepoints(label : StringView) -> Array[Int] {
 }
 
 ///|
-fn linkify_push_idna_mapped_codepoint(out : Array[Int], code : Int) -> Unit {
+fn linkify_push_idna_mapped_codepoint(out : Array[Int32], code : Int32) -> Unit {
   match code {
     0x00DF => {
       out.push(0x73)
@@ -175,7 +175,7 @@ fn linkify_push_idna_mapped_codepoint(out : Array[Int], code : Int) -> Unit {
 }
 
 ///|
-fn linkify_punycode_encode(input : Array[Int]) -> String {
+fn linkify_punycode_encode(input : Array[Int32]) -> String {
   let out = StringBuilder()
   let input_len = input.length()
   let mut basic_count = 0
@@ -243,7 +243,7 @@ fn linkify_punycode_encode(input : Array[Int]) -> String {
 }
 
 ///|
-fn linkify_punycode_digit(value : Int) -> Char {
+fn linkify_punycode_digit(value : Int32) -> Char {
   if value < 26 {
     (0x61 + value).unsafe_to_char()
   } else {
@@ -252,7 +252,11 @@ fn linkify_punycode_digit(value : Int) -> Char {
 }
 
 ///|
-fn linkify_punycode_adapt(delta : Int, numpoints : Int, first : Bool) -> Int {
+fn linkify_punycode_adapt(
+  delta : Int32,
+  numpoints : Int32,
+  first : Bool,
+) -> Int32 {
   let mut delta = if first { delta / linkify_punycode_damp } else { delta / 2 }
   delta += delta / numpoints
   let mut k = 0

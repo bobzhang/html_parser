@@ -136,7 +136,7 @@ fn[T] pick(values : Array[T], state : @splitmix.RandomState) -> T {
 
 ///|
 /// Generate inline content: text, comments, or nested inline elements.
-fn generate_inline(budget : Int, state : @splitmix.RandomState) -> HtmlNode {
+fn generate_inline(budget : Int32, state : @splitmix.RandomState) -> HtmlNode {
   if budget <= 0 || state.next_positive_int() % 3 == 0 {
     return DocText(pick(doc_text_runs, state))
   }
@@ -160,7 +160,7 @@ fn generate_inline(budget : Int, state : @splitmix.RandomState) -> HtmlNode {
 ///|
 /// Generate flow content: a block container, a raw-text element, or inline
 /// content.
-fn generate_flow(budget : Int, state : @splitmix.RandomState) -> HtmlNode {
+fn generate_flow(budget : Int32, state : @splitmix.RandomState) -> HtmlNode {
   if budget <= 0 {
     return generate_inline(0, state)
   }

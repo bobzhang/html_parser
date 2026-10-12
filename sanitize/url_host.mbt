@@ -1,5 +1,5 @@
 ///|
-fn url_authority_end(value : StringView, start : Int) -> Int {
+fn url_authority_end(value : StringView, start : Int32) -> Int32 {
   let mut pos = start
   while pos < value.length() {
     match value.get_char(pos) {
@@ -12,7 +12,11 @@ fn url_authority_end(value : StringView, start : Int) -> Int {
 }
 
 ///|
-fn authority_host_start(value : StringView, start : Int, end : Int) -> Int {
+fn authority_host_start(
+  value : StringView,
+  start : Int32,
+  end : Int32,
+) -> Int32 {
   let mut host_start = start
   let mut pos = start
   while pos < end {
@@ -31,8 +35,8 @@ fn authority_host_start(value : StringView, start : Int, end : Int) -> Int {
 ///|
 fn extract_authority_host(
   value : StringView,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> String? {
   let host_start = authority_host_start(value, start, end)
   if host_start >= end {
@@ -48,8 +52,8 @@ fn extract_authority_host(
 ///|
 fn extract_bracketed_authority_host(
   value : StringView,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> String? {
   let mut pos = start + 1
   while pos < end {
@@ -75,8 +79,8 @@ fn extract_bracketed_authority_host(
 ///|
 fn extract_named_authority_host(
   value : StringView,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> String? {
   let mut pos = start
   while pos < end {

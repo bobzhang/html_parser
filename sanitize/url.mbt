@@ -27,7 +27,7 @@ fn sanitize_url_attribute_value_with_rule(
   tag_name : String,
   attr_name : String,
   value : String,
-  apply_filter? : Bool = true,
+  apply_filter~ : Bool = true,
 ) -> String? {
   let value = if apply_filter {
     match policy.apply_url_filter(tag_name, attr_name, value) {

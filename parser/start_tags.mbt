@@ -94,7 +94,7 @@ fn Parser::parse_start_tag_or_text(self : Parser) -> Unit {
 }
 
 ///|
-fn Parser::parse_invalid_tag_open_as_text(self : Parser, start : Int) -> Unit {
+fn Parser::parse_invalid_tag_open_as_text(self : Parser, start : Int32) -> Unit {
   self.error_at("invalid-first-character-of-tag-name", self.pos)
   while !self.is_eof() && !self.starts_with("<") {
     self.report_current_noncharacter()

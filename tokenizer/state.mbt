@@ -3,7 +3,7 @@ priv struct SourceTokenizer {
   input : StringView
   collect_errors : Bool
   xml_coercion : Bool
-  mut pos : Int
+  mut pos : Int32
   tokens : Array[HtmlToken]
   errors : Array[@core.ParseError]
 }
@@ -65,7 +65,7 @@ fn SourceTokenizer::skip_ascii_whitespace(self : SourceTokenizer) -> Unit {
 fn SourceTokenizer::error_at(
   self : SourceTokenizer,
   code : String,
-  pos : Int,
+  pos : Int32,
 ) -> Unit {
   if self.collect_errors {
     let (line, column) = @syn.line_col_at(self.input, pos)

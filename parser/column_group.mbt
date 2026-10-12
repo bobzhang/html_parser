@@ -2,7 +2,7 @@
 fn Parser::handle_column_group_text(
   self : Parser,
   cleaned : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   let has_non_whitespace = text_has_non_ascii_whitespace(cleaned)
   let current = self.current_node()
@@ -72,7 +72,7 @@ fn leading_ascii_whitespace(value : StringView) -> StringView {
 fn Parser::handle_fragment_context_colgroup_text(
   self : Parser,
   cleaned : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.fragment_context_colgroup {
     return false
@@ -92,7 +92,7 @@ fn Parser::handle_fragment_context_colgroup_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.fragment_context_colgroup {
     return false
@@ -115,7 +115,7 @@ fn Parser::handle_fragment_context_colgroup_start_tag(
 fn Parser::handle_fragment_context_colgroup_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.fragment_context_colgroup {
     return false
@@ -134,7 +134,7 @@ fn Parser::handle_fragment_context_colgroup_end_tag(
 fn Parser::close_current_column_group_for_start(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Unit {
   if name == "col" || name == "template" {
     // The in-column-group mode handles template with the in-head rules:

@@ -1,6 +1,6 @@
 ///|
 priv struct EncodingFixtureCase {
-  line : Int
+  line : Int32
   input : Bytes
   transport_encoding : String?
   expected_text : String?

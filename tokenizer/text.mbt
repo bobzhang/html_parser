@@ -1,5 +1,8 @@
 ///|
-fn SourceTokenizer::emit_text_run(self : SourceTokenizer, start : Int) -> Unit {
+fn SourceTokenizer::emit_text_run(
+  self : SourceTokenizer,
+  start : Int32,
+) -> Unit {
   while !self.is_eof() && !self.starts_with("<") {
     match self.current() {
       Some('\u{0000}') => self.error_at("unexpected-null-character", self.pos)
@@ -32,7 +35,7 @@ fn SourceTokenizer::parse_characters(self : SourceTokenizer) -> Unit {
 ///|
 fn SourceTokenizer::parse_invalid_tag_open_as_text(
   self : SourceTokenizer,
-  start : Int,
+  start : Int32,
 ) -> Unit {
   self.error_at("invalid-first-character-of-tag-name", self.pos)
   self.emit_text_run(start)

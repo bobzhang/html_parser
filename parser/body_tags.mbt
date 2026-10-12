@@ -54,7 +54,7 @@ fn Parser::close_current_heading_element(self : Parser) -> Unit {
 fn Parser::close_open_heading_element(
   self : Parser,
   name : String,
-  pos : Int,
+  pos : Int32,
 ) -> Unit {
   let found = self.stack.any(node => {
     node.kind == Element && is_heading_element_name(node.name)

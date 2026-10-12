@@ -56,7 +56,7 @@ pub fn UrlFilter::UrlFilter(
 /// Construct a URL proxy descriptor.
 pub fn UrlProxy::UrlProxy(
   url : StringView,
-  param? : String = "url",
+  param~ : String = "url",
 ) -> UrlProxy {
   { url: url.to_owned(), param, }
 }
@@ -67,10 +67,10 @@ pub fn UrlProxy::UrlProxy(
 /// Schemes and hosts are normalized to lowercase. `resolve_protocol_relative`
 /// rewrites protocol-relative URLs such as `//example.com` before validation.
 pub fn UrlRule::UrlRule(
-  allowed_schemes? : Array[String] = [],
-  allowed_hosts? : Array[String] = [],
-  allow_fragment? : Bool = true,
-  resolve_protocol_relative? : String? = Some("https"),
+  allowed_schemes~ : Array[String] = [],
+  allowed_hosts~ : Array[String] = [],
+  allow_fragment~ : Bool = true,
+  resolve_protocol_relative~ : String? = Some("https"),
   handling? : UrlHandling,
   allow_relative? : Bool,
   proxy? : UrlProxy,
@@ -126,9 +126,9 @@ fn sanitize_url_policy_rules(
 /// `allow_rules` are exact tag/attribute bindings. `url_filter` runs before
 /// rule validation and can rewrite or drop the URL value.
 pub fn UrlPolicy::UrlPolicy(
-  default_handling? : UrlHandling = UrlAllow,
-  default_allow_relative? : Bool = true,
-  allow_rules? : Array[UrlPolicyRule] = [],
+  default_handling~ : UrlHandling = UrlAllow,
+  default_allow_relative~ : Bool = true,
+  allow_rules~ : Array[UrlPolicyRule] = [],
   proxy? : UrlProxy,
   url_filter? : UrlFilter,
 ) -> UrlPolicy {
@@ -173,18 +173,18 @@ fn default_url_policy() -> UrlPolicy {
 /// is set to `Raise` or `Collect`.
 pub fn SanitizationPolicy::SanitizationPolicy(
   allowed_tags : Array[String],
-  allowed_attributes? : Map[String, Array[String]] = Map([]),
+  allowed_attributes~ : Map[String, Array[String]] = Map([]),
   url_policy? : UrlPolicy,
-  drop_comments? : Bool = true,
-  drop_doctype? : Bool = true,
-  drop_foreign_namespaces? : Bool = true,
-  drop_content_tags? : Array[String] = ["script", "style"],
-  disallowed_tag_handling? : DisallowedTagHandling = Unwrap,
-  force_link_rel? : Array[String] = [],
-  allowed_css_properties? : Array[String] = [],
-  strip_invisible_unicode? : Bool = true,
+  drop_comments~ : Bool = true,
+  drop_doctype~ : Bool = true,
+  drop_foreign_namespaces~ : Bool = true,
+  drop_content_tags~ : Array[String] = ["script", "style"],
+  disallowed_tag_handling~ : DisallowedTagHandling = Unwrap,
+  force_link_rel~ : Array[String] = [],
+  allowed_css_properties~ : Array[String] = [],
+  strip_invisible_unicode~ : Bool = true,
   selector_limits? : @sel.SelectorLimits,
-  unsafe_handling? : UnsafeHandling = Strip,
+  unsafe_handling~ : UnsafeHandling = Strip,
 ) -> SanitizationPolicy {
   {
     allowed_tags: sanitized_string_set(allowed_tags),

@@ -29,7 +29,7 @@ priv enum SanitizeResume {
 /// One pending activation of the container-children walk.
 priv struct SanitizeFrame {
   node : @dom.Node
-  mut index : Int
+  mut index : Int32
   on_done : SanitizeResume
   /// Cached `node_is_effectively_foreign(node)` once computed.
   mut foreign : Bool?

@@ -54,9 +54,9 @@ pub fn is_special_text_element(name : StringView) -> Bool {
 /// or ASCII whitespace. The returned offset points at the `<` of the end tag.
 pub fn find_matching_end_tag(
   input : StringView,
-  start : Int,
+  start : Int32,
   name : StringView,
-) -> Int? {
+) -> Int32? {
   let needle = "</" + name.to_owned()
   let mut pos = start
   while pos < input.length() {
@@ -85,7 +85,7 @@ pub fn find_matching_end_tag(
 ///
 /// Starting at the end tag's `<`, this returns the offset of the closing `>` if
 /// present; otherwise it returns the EOF diagnostic offset for `input`.
-pub fn matching_end_tag_error_pos(input : StringView, start : Int) -> Int {
+pub fn matching_end_tag_error_pos(input : StringView, start : Int32) -> Int32 {
   let mut pos = start
   while pos < input.length() {
     match input.get_char(pos) {

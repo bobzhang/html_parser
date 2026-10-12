@@ -13,7 +13,7 @@ pub fn to_test_format(node : @dom.Node) -> String {
 }
 
 ///|
-fn test_format_line(indent : Int, content : StringView) -> String {
+fn test_format_line(indent : Int32, content : StringView) -> String {
   "| " + " ".repeat(indent) + content.to_owned()
 }
 
@@ -114,7 +114,7 @@ fn sort_test_format_attrs(attrs : Array[(String, String)]) -> Unit {
 fn write_test_format_attributes(
   node : @dom.Node,
   out : Array[String],
-  indent : Int,
+  indent : Int32,
 ) -> Unit {
   let attrs : Array[(String, String)] = []
   for name, value in node.attrs {
@@ -146,7 +146,7 @@ fn doctype_test_format(node : @dom.Node) -> String {
 fn write_test_format(
   root : @dom.Node,
   out : Array[String],
-  root_indent : Int,
+  root_indent : Int32,
 ) -> Unit {
   let stack = [(root, root_indent)]
   while stack.pop() is Some((node, indent)) {

@@ -23,7 +23,7 @@ fn active_formatting_element_name(name : StringView) -> Bool {
 fn Parser::prepare_active_formatting_start(
   self : Parser,
   name : StringView,
-  start : Int,
+  start : Int32,
 ) -> Unit {
   if name == "a" && self.active_formatting_index(name) >= 0 {
     self.error_at("unexpected-start-tag-implies-end-tag", start)
@@ -60,7 +60,7 @@ fn active_formatting_marker_element_name(name : StringView) -> Bool {
 fn Parser::handle_applet_like_end_tag(
   self : Parser,
   name : String,
-  pos : Int,
+  pos : Int32,
 ) -> Bool {
   if !applet_like_element_name(name) {
     return false

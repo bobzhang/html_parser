@@ -1,6 +1,6 @@
 ///|
 priv struct TreeFixtureCase {
-  line : Int
+  line : Int32
   input : String
   scripting_enabled : Bool
   xml_coercion : Bool
@@ -22,7 +22,7 @@ fn tree_fixture_error_codes(
 ///|
 fn assert_tree_fixture(
   case : TreeFixtureCase,
-  iframe_srcdoc? : Bool = false,
+  iframe_srcdoc~ : Bool = false,
 ) -> Unit raise {
   let parsed = @html_parser.parse(
     case.input,

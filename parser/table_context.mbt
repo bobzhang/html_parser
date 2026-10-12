@@ -21,7 +21,7 @@ fn is_table_internal_start_name(name : StringView) -> Bool {
 }
 
 ///|
-fn Parser::last_open_table_index(self : Parser) -> Int {
+fn Parser::last_open_table_index(self : Parser) -> Int32 {
   if self.open_table_count == 0 {
     return -1
   }
@@ -47,7 +47,7 @@ fn Parser::last_open_table_index(self : Parser) -> Int {
 ///|
 fn Parser::table_text_is_inside_cell_or_caption(
   self : Parser,
-  table_index : Int,
+  table_index : Int32,
 ) -> Bool {
   let mut index = table_index + 1
   while index < self.stack.length() {
@@ -84,8 +84,8 @@ fn Parser::handle_table_context_hidden_input_or_form_start(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
-  start : Int,
-  error_pos : Int,
+  start : Int32,
+  error_pos : Int32,
 ) -> Bool {
   if !self.current_is_table_or_section_context() {
     return false
@@ -113,7 +113,7 @@ fn Parser::handle_table_context_hidden_input_or_form_start(
 fn Parser::handle_nested_table_start_tag(
   self : Parser,
   name : String,
-  tag_close_pos : Int,
+  tag_close_pos : Int32,
 ) -> Bool {
   if name != "table" {
     return false
@@ -135,7 +135,7 @@ fn Parser::handle_nested_table_start_tag(
 fn Parser::report_unexpected_table_body_cell_start(
   self : Parser,
   name : String,
-  tag_close_pos : Int,
+  tag_close_pos : Int32,
 ) -> Unit {
   let current = self.current_node()
   if (name == "td" || name == "th") &&
@@ -152,7 +152,7 @@ fn Parser::report_unexpected_table_body_cell_start(
 }
 
 ///|
-fn Parser::table_context_without_cell_or_caption(self : Parser) -> Int {
+fn Parser::table_context_without_cell_or_caption(self : Parser) -> Int32 {
   let table_index = self.last_open_table_index()
   if table_index < 0 || self.table_text_is_inside_cell_or_caption(table_index) {
     -1
@@ -164,8 +164,8 @@ fn Parser::table_context_without_cell_or_caption(self : Parser) -> Int {
 ///|
 fn Parser::last_table_section_index_after(
   self : Parser,
-  table_index : Int,
-) -> Int {
+  table_index : Int32,
+) -> Int32 {
   let mut index = self.stack.length()
   while index > table_index + 1 {
     index -= 1
@@ -181,8 +181,8 @@ fn Parser::last_table_section_index_after(
 fn Parser::table_context_keep_index_for_start(
   self : Parser,
   name : StringView,
-  table_index : Int,
-) -> Int {
+  table_index : Int32,
+) -> Int32 {
   match name {
     "col" => {
       let colgroup_index = self.last_stack_index_of("colgroup")

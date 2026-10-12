@@ -1,7 +1,7 @@
 ///|
 /// Build `depth` nested elements (cycling through `names`) around a leaf with
 /// an unsafe link, each level carrying an event-producing attribute and text.
-fn deep_chain(depth : Int, names : Array[String]) -> @dom.Node {
+fn deep_chain(depth : Int32, names : Array[String]) -> @dom.Node {
   let mut cur = @dom.element("a", attrs={ "href": Some("javascript:x") }, children=[
     @dom.text("leaf"),
   ])
@@ -17,8 +17,8 @@ fn deep_chain(depth : Int, names : Array[String]) -> @dom.Node {
 
 ///|
 /// Count nodes and the maximum depth without recursion.
-fn deep_measure(root : @dom.Node) -> (Int, Int) {
-  let stack : Array[(@dom.Node, Int)] = [(root, 0)]
+fn deep_measure(root : @dom.Node) -> (Int32, Int32) {
+  let stack : Array[(@dom.Node, Int32)] = [(root, 0)]
   let mut count = 0
   let mut max_depth = 0
   while stack.pop() is Some((node, depth)) {

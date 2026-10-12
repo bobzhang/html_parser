@@ -2,10 +2,10 @@
 /// Serialize a node as HTML.
 pub fn to_html(
   node : @dom.Node,
-  pretty? : Bool = true,
-  indent_size? : Int = 2,
-  context? : HtmlContext = Html,
-  quote? : Char = '"',
+  pretty~ : Bool = true,
+  indent_size~ : Int32 = 2,
+  context~ : HtmlContext = Html,
+  quote~ : Char = '"',
 ) -> String raise @core.HtmlError {
   match context {
     Html => {

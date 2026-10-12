@@ -52,9 +52,9 @@ fn transform_glob_match(pattern : StringView, value : StringView) -> Bool {
 ///|
 fn transform_glob_match_at(
   pattern : StringView,
-  pattern_pos : Int,
+  pattern_pos : Int32,
   value : StringView,
-  value_pos : Int,
+  value_pos : Int32,
 ) -> Bool {
   if pattern_pos >= pattern.length() {
     return value_pos >= value.length()

@@ -12,7 +12,7 @@ fn is_fragment_plain_text_context(name : StringView) -> Bool {
 fn Parser::append_fragment_context_text(
   self : Parser,
   raw : StringView,
-  start : Int,
+  start : Int32,
 ) -> Unit {
   if raw.is_empty() {
     return

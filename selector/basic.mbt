@@ -22,8 +22,8 @@ fn class_contains(value : StringView, needle : StringView) -> Bool {
 ///|
 fn class_token_matches(
   value : StringView,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
   needle : StringView,
 ) -> Bool {
   if end <= start {

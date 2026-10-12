@@ -2,7 +2,7 @@
 // deeper than the native call stack allows must not overflow it.
 
 ///|
-let deep_nesting_depth : Int = 50000
+let deep_nesting_depth : Int32 = 50000
 
 ///|
 /// `<b><div><b>...<p>www.example.com <i></i><!--c--></p>...</b></div></b>`
@@ -33,7 +33,7 @@ fn deep_nesting_summary(root : @dom.Node) -> String {
   let mut a = 0
   let mut comments = 0
   let mut texts = 0
-  let stack : Array[(@dom.Node, Int)] = [(root, 0)]
+  let stack : Array[(@dom.Node, Int32)] = [(root, 0)]
   while stack.pop() is Some((node, depth)) {
     if depth > max_depth {
       max_depth = depth

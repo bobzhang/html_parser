@@ -4,7 +4,7 @@
 /// Offsets are UTF-16 code-unit positions in the original source input.
 pub(all) struct SpecialTextError {
   code : String
-  offset : Int
+  offset : Int32
 }
 
 ///|
@@ -15,7 +15,7 @@ pub(all) struct SpecialTextError {
 /// contains non-fatal parse diagnostics collected during the scan.
 pub(all) struct ScriptTextScan {
   data : String
-  end_start : Int?
+  end_start : Int32?
   errors : Array[SpecialTextError]
 }
 

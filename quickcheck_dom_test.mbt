@@ -90,7 +90,7 @@ let dom_text_payloads : Array[String] = [
 
 ///|
 /// Build the generated tree through the public DOM constructors.
-fn DomNode::build(self : DomNode, next_id : Ref[Int]) -> @dom.Node {
+fn DomNode::build(self : DomNode, next_id : Ref[Int32]) -> @dom.Node {
   match self {
     DomText(value) =>
       // Number each payload as it is placed, so one going inert cannot cancel
@@ -148,7 +148,7 @@ impl Debug for HandBuiltDom with fn to_repr(self) {
 
 ///|
 /// Generate a node, spending `budget` on nesting depth.
-fn generate_dom_node(budget : Int, state : @splitmix.RandomState) -> DomNode {
+fn generate_dom_node(budget : Int32, state : @splitmix.RandomState) -> DomNode {
   if budget <= 0 || state.next_positive_int() % 3 == 0 {
     return DomText(pick(dom_text_payloads, state))
   }

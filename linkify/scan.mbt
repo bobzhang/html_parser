@@ -1,5 +1,5 @@
 ///|
-fn linkify_left_boundary(text : StringView, pos : Int) -> Bool {
+fn linkify_left_boundary(text : StringView, pos : Int32) -> Bool {
   if pos <= 0 {
     return true
   }
@@ -10,13 +10,13 @@ fn linkify_left_boundary(text : StringView, pos : Int) -> Bool {
 }
 
 ///|
-fn linkify_candidate_can_start(text : StringView, pos : Int) -> Bool {
+fn linkify_candidate_can_start(text : StringView, pos : Int32) -> Bool {
   linkify_broad_candidate_start(text, pos) ||
   linkify_fuzzy_start_char(text.get_char(pos).unwrap())
 }
 
 ///|
-fn linkify_broad_candidate_start(text : StringView, pos : Int) -> Bool {
+fn linkify_broad_candidate_start(text : StringView, pos : Int32) -> Bool {
   @syn.starts_with_case_insensitive(text, pos, "http://") ||
   @syn.starts_with_case_insensitive(text, pos, "https://") ||
   @syn.starts_with_case_insensitive(text, pos, "ftp://") ||
@@ -26,7 +26,7 @@ fn linkify_broad_candidate_start(text : StringView, pos : Int) -> Bool {
 }
 
 ///|
-fn linkify_candidate_end(text : StringView, start : Int) -> Int {
+fn linkify_candidate_end(text : StringView, start : Int32) -> Int32 {
   let mut pos = start
   for ch in text[start:text.length()] {
     if linkify_candidate_delimiter(ch) {
@@ -38,7 +38,7 @@ fn linkify_candidate_end(text : StringView, start : Int) -> Int {
 }
 
 ///|
-fn linkify_fuzzy_candidate_end(text : StringView, start : Int) -> Int {
+fn linkify_fuzzy_candidate_end(text : StringView, start : Int32) -> Int32 {
   let mut pos = start
   for ch in text[start:text.length()] {
     if linkify_candidate_delimiter(ch) ||
@@ -61,8 +61,8 @@ fn linkify_candidate_delimiter(ch : Char) -> Bool {
 ///|
 fn linkify_match_candidate(
   text : StringView,
-  start : Int,
-  raw_end : Int,
+  start : Int32,
+  raw_end : Int32,
   config : LinkifyConfig,
 ) -> LinkMatch? {
   let mut end = linkify_trim_trailing_end(text, start, raw_end)
@@ -87,7 +87,11 @@ fn linkify_match_candidate(
 }
 
 ///|
-fn linkify_trim_trailing_end(text : StringView, start : Int, end : Int) -> Int {
+fn linkify_trim_trailing_end(
+  text : StringView,
+  start : Int32,
+  end : Int32,
+) -> Int32 {
   let mut end = end
   while end > start {
     match text.get_char(end - 1) {
@@ -128,9 +132,9 @@ fn linkify_trim_trailing_end(text : StringView, start : Int, end : Int) -> Int {
 ///|
 fn linkify_embedded_scheme_start(
   text : StringView,
-  start : Int,
-  end : Int,
-) -> Int? {
+  start : Int32,
+  end : Int32,
+) -> Int32? {
   let mut pos = start
   for ch in text[start:end] {
     let next = pos + ch.utf16_len()

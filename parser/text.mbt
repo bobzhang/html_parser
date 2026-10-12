@@ -1,5 +1,5 @@
 ///|
-fn Parser::append_text(self : Parser, raw : StringView, start : Int) -> Unit {
+fn Parser::append_text(self : Parser, raw : StringView, start : Int32) -> Unit {
   if raw.is_empty() {
     return
   }
@@ -434,7 +434,7 @@ fn decode_entities_for_tree_text(value : StringView) -> StringView {
 fn Parser::remove_null_characters(
   self : Parser,
   raw : StringView,
-  start : Int,
+  start : Int32,
 ) -> StringView {
   // The common case has no nulls: the input view passes through
   // unchanged.
@@ -463,7 +463,7 @@ fn Parser::remove_null_characters(
 fn Parser::replace_null_characters(
   self : Parser,
   raw : StringView,
-  start : Int,
+  start : Int32,
 ) -> StringView {
   // The common case has no nulls: the input view passes through
   // unchanged.
@@ -493,7 +493,7 @@ fn Parser::replace_null_characters(
 /// Length of the leading character reference that decoded to the skipped
 /// newline: '&' then either '#' digits / '#x' hex digits (numeric) or
 /// letters (named), with an optional terminating semicolon.
-fn initial_newline_reference_length(text : StringView) -> Int {
+fn initial_newline_reference_length(text : StringView) -> Int32 {
   let mut length = 0
   let mut numeric = false
   let mut hex = false

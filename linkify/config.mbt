@@ -4,8 +4,8 @@
 /// `start` and `end` are UTF-16 offsets into the input `StringView`.
 /// `kind` is `"url"` or `"email"`.
 pub(all) struct LinkMatch {
-  start : Int
-  end : Int
+  start : Int32
+  end : Int32
   text : String
   href : String
   kind : String
@@ -24,8 +24,8 @@ pub struct LinkifyConfig {
 /// `fuzzy_ip` enables bare IPv4 address matches such as `192.168.0.1`.
 /// `extra_tlds` extends the default fuzzy domain and email TLD allowlist.
 pub fn LinkifyConfig::LinkifyConfig(
-  fuzzy_ip? : Bool = false,
-  extra_tlds? : Array[String] = [],
+  fuzzy_ip~ : Bool = false,
+  extra_tlds~ : Array[String] = [],
 ) -> LinkifyConfig {
   { fuzzy_ip, extra_tlds: linkify_tld_set(extra_tlds), }
 }

@@ -6,8 +6,8 @@
 /// comment characters during tokenization.
 pub fn tokenize(
   html : StringView,
-  collect_errors? : Bool = false,
-  xml_coercion? : Bool = false,
+  collect_errors~ : Bool = false,
+  xml_coercion~ : Bool = false,
 ) -> TokenizedHtml {
   let tokenizer = SourceTokenizer(html, collect_errors~, xml_coercion~)
   tokenizer.run()
@@ -23,7 +23,7 @@ pub fn tokenize(
 pub fn tokenize_each(
   html : StringView,
   emit : (HtmlToken) -> Unit,
-  xml_coercion? : Bool = false,
+  xml_coercion~ : Bool = false,
 ) -> Unit {
   let tokenizer = SourceTokenizer(html, collect_errors=false, xml_coercion~)
   while !tokenizer.is_eof() {

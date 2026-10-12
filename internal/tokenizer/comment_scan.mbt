@@ -9,7 +9,7 @@
 /// The scan writes nothing while running: kept characters are the input
 /// verbatim (trailing closer dashes excluded), so each exit materializes the
 /// data from its source slice via scanned_data_slice.
-pub fn scan_comment_data(input : StringView, start : Int) -> CommentScan {
+pub fn scan_comment_data(input : StringView, start : Int32) -> CommentScan {
   let errors : Array[CommentScanError] = []
   if start >= input.length() {
     push_comment_scan_error(errors, "eof-in-comment", @syn.eof_error_pos(input))

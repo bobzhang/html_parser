@@ -2,7 +2,7 @@
 fn assert_markdown_line_start_escape(
   value : StringView,
   replacement : String,
-  consumed : Int,
+  consumed : Int32,
 ) -> Unit raise {
   guard markdown_escape_line_start(value) is Some((actual, actual_consumed)) else {
     fail("expected markdown line-start escape")

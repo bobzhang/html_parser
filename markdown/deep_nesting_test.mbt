@@ -3,7 +3,7 @@
 // deep enough to overflow a recursive walk on every backend.
 
 ///|
-let deep_nesting_depth : Int = 30000
+let deep_nesting_depth : Int32 = 30000
 
 ///|
 fn deep_chain(names : Array[String], leaf : @dom.Node) -> @dom.Node {
@@ -68,7 +68,7 @@ test "to_markdown handles deeply nested mixed containers" {
 ///|
 /// `levels` nested `span`s, each holding a text node before the next level,
 /// inside a `name` element: code text collection walks the whole chain.
-fn deep_code_chain(name : String, levels : Int) -> @dom.Node {
+fn deep_code_chain(name : String, levels : Int32) -> @dom.Node {
   let mut current = @dom.element("span", children=[@dom.text("a")])
   for _ in 1..<levels {
     current = @dom.element("span", children=[@dom.text("a"), current])

@@ -8,7 +8,7 @@ fn Parser::handle_repeated_document_html_start_tag(
   self : Parser,
   name : StringView,
   attrs : Map[String, String?],
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if self.is_fragment_parser() ||
     self.in_select_insertion_mode() ||
@@ -33,7 +33,7 @@ fn Parser::handle_repeated_document_html_start_tag(
 fn Parser::report_body_start_after_repeated_document_html(
   self : Parser,
   name : StringView,
-  start : Int,
+  start : Int32,
 ) -> Unit {
   if !self.repeated_document_html_shell || name != "body" {
     return
@@ -51,7 +51,7 @@ fn Parser::is_fragment_parser(self : Parser) -> Bool {
 fn Parser::handle_document_after_body_html_end_tag(
   self : Parser,
   name : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if self.is_fragment_parser() ||
     !self.document_after_body ||
@@ -68,7 +68,7 @@ fn Parser::handle_document_after_body_html_end_tag(
 fn Parser::handle_document_body_or_html_end_tag(
   self : Parser,
   name : String,
-  pos : Int,
+  pos : Int32,
 ) -> Bool {
   if self.is_fragment_parser() || (name != "body" && name != "html") {
     return false
@@ -138,7 +138,7 @@ fn Parser::handle_document_body_or_html_end_tag(
 ///|
 fn Parser::report_unclosed_elements_at_body_end(
   self : Parser,
-  pos : Int,
+  pos : Int32,
 ) -> Unit {
   if self.document_after_body || self.document_after_html {
     // Already reported when the body first closed.
@@ -184,8 +184,8 @@ fn Parser::document_has_element_child(self : Parser) -> Bool {
 fn Parser::handle_before_html_end_tag(
   self : Parser,
   name : StringView,
-  start : Int,
-  error_pos : Int,
+  start : Int32,
+  error_pos : Int32,
 ) -> Bool {
   if !self.before_html_phase ||
     self.is_fragment_parser() ||

@@ -1,5 +1,5 @@
 ///|
-fn selector_simple_component_count(selector : StringView) -> Int? {
+fn selector_simple_component_count(selector : StringView) -> Int32? {
   let selector = selector.trim()
   if !simple_selector_is_valid(selector) {
     return None
@@ -38,7 +38,7 @@ fn selector_simple_component_count(selector : StringView) -> Int? {
 fn selector_validate_simple_parse_depth(
   selector : StringView,
   limits : SelectorLimits,
-  depth : Int,
+  depth : Int32,
 ) -> Unit raise @core.HtmlError {
   let selector = selector.trim()
   if selector.is_empty() {
@@ -86,7 +86,7 @@ fn selector_validate_simple_parse_depth(
 fn selector_validate_limits_at_depth(
   selector : StringView,
   limits : SelectorLimits,
-  depth : Int,
+  depth : Int32,
 ) -> Unit raise @core.HtmlError {
   if depth > limits.max_parse_depth {
     raise SelectorError("Selector nesting is too deep")

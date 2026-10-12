@@ -88,10 +88,10 @@ fn linkify_transform_children(
 ///|
 fn linkify_transform_text_child_at_matches(
   parent : @dom.Node,
-  index : Int,
+  index : Int32,
   child : @dom.Node,
   matches : Array[@link.LinkMatch],
-) -> Int {
+) -> Int32 {
   if matches.is_empty() {
     return 0
   }

@@ -2,14 +2,14 @@
 /// Nesting depth for these regressions. Serialization and text extraction
 /// used to recurse once per level and overflowed the stack at around 2,000
 /// levels on js and wasm-gc (about 20,000 on native).
-let deep_levels : Int = 50000
+let deep_levels : Int32 = 50000
 
 ///|
 /// `levels` nested `name` elements around `leaf`, built directly so the test
 /// does not depend on the parser.
 fn deep_chain(
   name : String,
-  levels : Int,
+  levels : Int32,
   leaf : Array[@dom.Node],
 ) -> @dom.Node {
   let mut node = @dom.element(name, children=leaf)

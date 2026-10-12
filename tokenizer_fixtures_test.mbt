@@ -9,7 +9,7 @@ priv enum TokenizerFixtureToken {
 
 ///|
 priv struct TokenizerFixtureCase {
-  line : Int
+  line : Int32
   input : String
   tokens : Array[TokenizerFixtureToken]
   collect_errors : Bool

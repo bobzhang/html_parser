@@ -72,7 +72,7 @@ pub fn decode_attribute_value_with_errors(
 ///|
 fn consume_entity_with_errors(
   input : StringView,
-  start : Int,
+  start : Int32,
   in_attribute~ : Bool,
 ) -> EntityConsumeResult? {
   let rest = input[start:]

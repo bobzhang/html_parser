@@ -5,8 +5,8 @@
 /// `treebuilder`. `message` defaults to `code` when no custom message is given.
 pub(all) struct ParseError {
   code : String
-  line : Int?
-  column : Int?
+  line : Int32?
+  column : Int32?
   category : String
   message : String
 } derive(Debug, Eq)
@@ -15,9 +15,9 @@ pub(all) struct ParseError {
 /// Construct a parse diagnostic.
 pub fn ParseError::ParseError(
   code : String,
-  line? : Int,
-  column? : Int,
-  category? : String = "parse",
+  line? : Int32,
+  column? : Int32,
+  category~ : String = "parse",
   message? : String,
 ) -> ParseError {
   { code, line, column, category, message: message.unwrap_or(code), }

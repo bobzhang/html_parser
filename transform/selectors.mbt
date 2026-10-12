@@ -15,9 +15,9 @@ fn apply_selector_transform(
 /// the `count` children hoisted into `parent` at `start`, one per step.
 priv struct AfterUnwrapFrame {
   parent : @dom.Node
-  start : Int
-  count : Int
-  mut offset : Int
+  start : Int32
+  count : Int32
+  mut offset : Int32
 }
 
 ///|

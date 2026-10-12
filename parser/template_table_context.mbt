@@ -3,7 +3,7 @@ fn Parser::handle_template_table_context_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.template_table_context_mode_active() {
     return false
@@ -140,7 +140,7 @@ fn Parser::handle_template_table_context_start_tag(
 fn Parser::report_template_table_context_fostered_start(
   self : Parser,
   name : StringView,
-  start : Int,
+  start : Int32,
 ) -> Unit {
   if !self.template_table_context_mode_active() {
     return
@@ -167,7 +167,7 @@ fn template_table_context_section_end_tag_reports_unexpected(
 fn Parser::handle_template_table_context_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.in_template_content_without_inner_table() {
     return false

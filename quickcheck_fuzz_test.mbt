@@ -22,7 +22,7 @@ fn fuzz_contexts() -> Array[@html_parser.FragmentContext?] {
 /// Serialize, treating the serializer's name guard (issue #113) as out of
 /// scope: it raises rather than emitting something wrong, and is tracked
 /// separately.
-fn fuzz_to_html(node : @dom.Node, pretty? : Bool = false) -> String? raise {
+fn fuzz_to_html(node : @dom.Node, pretty~ : Bool = false) -> String? raise {
   Some(@html_parser.to_html(node, pretty~)) catch {
     InvalidSerialization(_) => None
     error => raise error
@@ -34,8 +34,8 @@ fn fuzz_to_html(node : @dom.Node, pretty? : Bool = false) -> String? raise {
 fn fuzz_parse_fragment(
   src : String,
   context : @html_parser.FragmentContext?,
-  sanitize? : Bool = false,
-  scripting_enabled? : Bool = true,
+  sanitize~ : Bool = false,
+  scripting_enabled~ : Bool = true,
 ) -> @html_parser.ParsedHtml raise {
   match context {
     None => @html_parser.parse_fragment(src, sanitize~, scripting_enabled~)
@@ -390,7 +390,7 @@ fn numeric_reference_model(code : Int64) -> Char {
   if code == 0L || code > 0x10FFFFL || (code >= 0xD800L && code <= 0xDFFFL) {
     return '\u{FFFD}'
   }
-  let c1 : Map[Int64, Int] = {
+  let c1 : Map[Int64, Int32] = {
     0x80: 0x20AC,
     0x82: 0x201A,
     0x83: 0x0192,
@@ -583,7 +583,7 @@ test "property: legacy references follow the attribute-value special case" {
 struct NthCase {
   a : Int64
   b : Int64
-  count : Int
+  count : Int32
 }
 
 ///|

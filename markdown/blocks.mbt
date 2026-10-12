@@ -32,7 +32,7 @@ fn MarkdownWalker::start_list(
   node : @dom.Node,
   builder : MarkdownBuilder,
   ordered : Bool,
-  list_depth : Int,
+  list_depth : Int32,
 ) -> Unit {
   if !builder.is_empty() {
     builder.ensure_newlines(2)

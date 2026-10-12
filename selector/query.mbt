@@ -9,7 +9,7 @@ priv struct QueryFrame {
   owner : @dom.Node
   list : Array[@dom.Node]
   trusted : Bool
-  mut index : Int
+  mut index : Int32
 }
 
 ///|
@@ -70,7 +70,7 @@ fn push_query_frames(stack : Array[QueryFrame], node : @dom.Node) -> Unit {
 /// width (the former visited-list scan was quadratic in the whole tree).
 fn query_edge_is_regular(
   frame : QueryFrame,
-  index : Int,
+  index : Int32,
   node : @dom.Node,
   root : @dom.Node,
 ) -> Bool {

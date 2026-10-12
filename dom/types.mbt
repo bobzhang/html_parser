@@ -28,9 +28,9 @@ pub(all) struct Node {
   mut source_start_tag : String?
   mut source_end_tag : String?
   mut sanitize_escape_only : Bool
-  mut origin_offset : Int?
-  mut origin_line : Int?
-  mut origin_col : Int?
+  mut origin_offset : Int32?
+  mut origin_line : Int32?
+  mut origin_col : Int32?
   mut parent : Node?
   children : Array[Node]
   mut template_contents : Node?

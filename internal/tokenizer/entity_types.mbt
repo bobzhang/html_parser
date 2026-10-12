@@ -5,7 +5,7 @@
 /// entity decoder.
 pub(all) struct EntityDecodeError {
   code : String
-  offset : Int
+  offset : Int32
 } derive(Debug, Eq)
 
 ///|
@@ -28,6 +28,6 @@ pub(all) struct EntityDecodeResult {
 /// reference.
 pub(all) struct EntityConsumeResult {
   value : String
-  next : Int
+  next : Int32
   errors : Array[EntityDecodeError]
 } derive(Debug, Eq)

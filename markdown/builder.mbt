@@ -23,8 +23,8 @@ priv enum MarkdownPart {
 /// re-copying the inner output at every nesting level.
 priv struct MarkdownBuilder {
   parts : Array[MarkdownPart]
-  start : Int
-  mut newline_count : Int
+  start : Int32
+  mut newline_count : Int32
   mut pending_space : Bool
 }
 
@@ -53,9 +53,9 @@ fn MarkdownBuilder::is_empty(self : MarkdownBuilder) -> Bool {
 ///|
 /// The builder state a speculative write can be rolled back to.
 priv struct MarkdownSnapshot {
-  length : Int
+  length : Int32
   last_part : MarkdownPart?
-  newline_count : Int
+  newline_count : Int32
   pending_space : Bool
 }
 
@@ -185,7 +185,7 @@ fn markdown_trim_trailing_spaces_tabs(value : StringView) -> String {
 }
 
 ///|
-fn MarkdownBuilder::newline(self : MarkdownBuilder, count : Int) -> Unit {
+fn MarkdownBuilder::newline(self : MarkdownBuilder, count : Int32) -> Unit {
   for _ in 0..<count {
     self.pending_space = false
     // A `QuoteClose` last part stands for a blockquote body, which ends with
@@ -205,7 +205,7 @@ fn MarkdownBuilder::newline(self : MarkdownBuilder, count : Int) -> Unit {
 ///|
 fn MarkdownBuilder::ensure_newlines(
   self : MarkdownBuilder,
-  count : Int,
+  count : Int32,
 ) -> Unit {
   while self.newline_count < count {
     self.newline(1)
@@ -316,7 +316,7 @@ fn markdown_escape_text(value : StringView) -> String {
 }
 
 ///|
-fn markdown_escape_line_start(value : StringView) -> (String, Int)? {
+fn markdown_escape_line_start(value : StringView) -> (String, Int32)? {
   guard value.get_char(0) is Some(first) else { return None }
   match first {
     '#' =>
@@ -353,7 +353,7 @@ fn markdown_escape_line_start(value : StringView) -> (String, Int)? {
 }
 
 ///|
-fn markdown_next_char_is_space(value : StringView, pos : Int) -> Bool {
+fn markdown_next_char_is_space(value : StringView, pos : Int32) -> Bool {
   value.get_char(pos) is Some(' ' | '\t')
 }
 
@@ -363,7 +363,7 @@ fn markdown_ascii_digit(ch : Char) -> Bool {
 }
 
 ///|
-fn markdown_escape_ordered_line_start(value : StringView) -> (String, Int)? {
+fn markdown_escape_ordered_line_start(value : StringView) -> (String, Int32)? {
   let mut pos = 0
   while pos < value.length() {
     match value.get_char(pos) {
@@ -384,7 +384,7 @@ fn markdown_escape_ordered_line_start(value : StringView) -> (String, Int)? {
 fn markdown_thematic_or_setext_line(
   value : StringView,
   marker : Char,
-  minimum_markers~ : Int,
+  minimum_markers~ : Int32,
 ) -> Bool {
   let mut count = 0
   let mut saw_non_space = false

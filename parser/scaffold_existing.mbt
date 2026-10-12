@@ -29,7 +29,7 @@ fn flatten_same_named_node_contents(
   name : String,
   out : Array[@dom.Node],
 ) -> Unit {
-  let frames : Array[(Array[@dom.Node], Ref[Int])] = []
+  let frames : Array[(Array[@dom.Node], Ref[Int32])] = []
   fn enter(node : @dom.Node) {
     merge_missing_attrs(target, node)
     let existing = node.children.copy()
@@ -76,7 +76,7 @@ fn absorb_root_html_siblings(
   root : @dom.Node,
   html : @dom.Node,
   forced_body_nodes : Array[@dom.Node],
-  after_head_whitespace? : Array[@dom.Node] = [],
+  after_head_whitespace~ : Array[@dom.Node] = [],
 ) -> Unit {
   let original = root.children.copy()
   root.children.clear()
@@ -119,7 +119,7 @@ fn scaffold_existing_html_element(
   html : @dom.Node,
   foster_parented_texts : Array[@dom.Node],
   forced_body_nodes : Array[@dom.Node],
-  after_head_whitespace? : Array[@dom.Node] = [],
+  after_head_whitespace~ : Array[@dom.Node] = [],
 ) -> Unit {
   let raw_original = html.children.copy()
   html.children.clear()

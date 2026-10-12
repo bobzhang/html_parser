@@ -64,7 +64,7 @@ fn usage_text() -> String {
 priv struct DatCase {
   id : String
   data : String
-  expected_error_count : Int
+  expected_error_count : Int32
   document : String
   fragment_tag : String?
   fragment_ns : String?
@@ -84,7 +84,7 @@ async fn run_suite(
   corpus_dir : String,
   expected_path : String,
   update_expected : Bool,
-) -> Int {
+) -> Int32 {
   let files = collect_dat_files(corpus_dir, "")
   if files.is_empty() {
     eprintln("no .dat files found under \{corpus_dir}")
@@ -266,7 +266,7 @@ fn has_nonblank_line(lines : Array[String]) -> Bool {
 #coverage.skip
 fn parse_single_case(
   file_label : String,
-  index : Int,
+  index : Int32,
   lines : Array[String],
 ) -> DatCase? {
   let data : Array[String] = []
@@ -371,13 +371,17 @@ fn decode_escapes(text : String) -> String {
 /// hex or code points (such as lone surrogates) that cannot form a Char, in
 /// which case the literal escape text is preserved.
 #coverage.skip
-fn decoded_escape_char(chars : Array[Char], start : Int, length : Int) -> Char? {
+fn decoded_escape_char(
+  chars : Array[Char],
+  start : Int32,
+  length : Int32,
+) -> Char? {
   let mut value = 0
   for offset in 0..<length {
     let digit = match chars[start + offset] {
-      '0'..='9' as c => c.to_int() - '0'
-      'a'..='f' as c => c.to_int() - 'a' + 10
-      'A'..='F' as c => c.to_int() - 'A' + 10
+      '0'..<='9' as c => c.to_int() - '0'
+      'a'..<='f' as c => c.to_int() - 'a' + 10
+      'A'..<='F' as c => c.to_int() - 'A' + 10
       _ => return None
     }
     value = value * 16 + digit
@@ -490,4 +494,4 @@ async fn eprintln(message : String) -> Unit noraise {
 
 ///|
 #coverage.skip
-extern "C" fn exit_process(code : Int) = "exit"
+extern "C" fn exit_process(code : Int32) = "exit"

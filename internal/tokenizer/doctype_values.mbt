@@ -7,9 +7,9 @@
 /// are appended to `errors`.
 pub fn parse_quoted_doctype_value_at(
   input : StringView,
-  start : Int,
+  start : Int32,
   errors : Array[DoctypeExternalError],
-) -> (String?, Int, Bool) {
+) -> (String?, Int32, Bool) {
   match input.get_char(start) {
     Some('"' | '\'' as quote) => {
       let mut pos = start + quote.utf16_len()
@@ -37,8 +37,8 @@ pub fn parse_quoted_doctype_value_at(
 /// bare CR are normalized to LF; all other characters are copied unchanged.
 pub fn normalize_doctype_value(
   input : StringView,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
   errors : Array[DoctypeExternalError],
 ) -> String {
   let out = StringBuilder(size_hint=end - start)
@@ -75,8 +75,8 @@ pub fn normalize_doctype_value(
 /// those errors refer to the original `input`.
 pub fn parse_lower_name_value_replacing_nulls(
   input : StringView,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> (String, Array[DoctypeExternalError]) {
   let errors : Array[DoctypeExternalError] = []
   if start >= end {
@@ -89,7 +89,7 @@ pub fn parse_lower_name_value_replacing_nulls(
   let mut scan = start
   while scan < end {
     match input[scan] {
-      '\u{0000}' | 'A'..='Z' => break
+      '\u{0000}' | 'A'..<='Z' => break
       // Surrogate-range units take the slow path, which fails closed on
       // split pairs where slicing would abort.
       unit if unit >= 0xD800 => break
@@ -128,7 +128,7 @@ pub fn parse_lower_name_value_replacing_nulls(
 /// EOF after a final newline reports `input.length()`. Other non-empty inputs
 /// report the offset of the last character, matching tokenizer diagnostic
 /// positions.
-pub fn doctype_eof_error_offset(input : StringView) -> Int {
+pub fn doctype_eof_error_offset(input : StringView) -> Int32 {
   if @syn.input_ends_with_newline(input) {
     input.length()
   } else {

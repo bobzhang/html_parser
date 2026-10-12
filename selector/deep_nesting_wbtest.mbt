@@ -115,7 +115,7 @@ priv struct DeepTestRng {
 }
 
 ///|
-fn DeepTestRng::below(self : DeepTestRng, bound : Int) -> Int {
+fn DeepTestRng::below(self : DeepTestRng, bound : Int32) -> Int32 {
   self.state = self.state * 6364136223846793005UL + 1442695040888963407UL
   ((self.state >> 33).to_int() & 0x7fffffff) % bound
 }

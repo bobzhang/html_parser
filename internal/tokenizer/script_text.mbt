@@ -6,7 +6,7 @@
 /// double-escaped script states, normalizes CRLF and bare CR to LF, and replaces
 /// null characters with U+FFFD while collecting diagnostics. `end_start` points
 /// at the `<` of the matching end tag when one is found.
-pub fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
+pub fn scan_script_text(input : StringView, start : Int32) -> ScriptTextScan {
   let errors : Array[SpecialTextError] = []
   // Fast path: script text without a `<!--` escape opener is the input
   // verbatim, so this loop only locates the end tag and the data
@@ -36,8 +36,8 @@ pub fn scan_script_text(input : StringView, start : Int) -> ScriptTextScan {
 /// as needed instead of preallocating the rest of the document.
 fn scan_escaped_script_text(
   input : StringView,
-  start : Int,
-  escape_start : Int,
+  start : Int32,
+  escape_start : Int32,
   errors : Array[SpecialTextError],
 ) -> ScriptTextScan {
   let out = StringBuilder()

@@ -19,7 +19,7 @@ fn caption_start_closes_current_caption(name : StringView) -> Bool {
 fn Parser::close_current_caption_for_start(
   self : Parser,
   name : String,
-  tag_close_pos : Int,
+  tag_close_pos : Int32,
 ) -> Bool {
   if !caption_start_closes_current_caption(name) {
     return false
@@ -49,7 +49,7 @@ fn Parser::close_current_caption_for_start(
 fn Parser::handle_caption_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   let table_index = self.last_open_table_index()
   let caption_index = self.last_stack_index_of("caption")
@@ -113,7 +113,7 @@ fn fragment_context_caption_structural_start(name : StringView) -> Bool {
 fn Parser::handle_fragment_context_caption_start_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.fragment_context_caption ||
     !fragment_context_caption_structural_start(name) {

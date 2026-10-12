@@ -13,7 +13,7 @@
 /// incrementally maintained counters. Zero entries in `open_element_counts`
 /// are allowed (names whose elements have all been popped).
 fn Parser::open_element_counts_match_stack(self : Parser) -> Bool {
-  let expected : Map[String, Int] = Map([])
+  let expected : Map[String, Int32] = Map([])
   let mut templates = 0
   let mut tables = 0
   let mut selects = 0
@@ -229,9 +229,9 @@ let open_element_count_tokens : Array[String] = [
 
 ///|
 /// Deterministic tag soup built from `open_element_count_tokens`.
-fn generated_tag_soup(count : Int) -> Array[String] {
+fn generated_tag_soup(count : Int32) -> Array[String] {
   let inputs : Array[String] = []
-  let mut state : UInt = 0x9E3779B9
+  let mut state : UInt32 = 0x9E3779B9
   let alphabet = open_element_count_tokens.length().reinterpret_as_uint()
   for _ in 0..<count {
     state = state * 1664525 + 1013904223

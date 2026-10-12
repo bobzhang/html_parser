@@ -1,5 +1,5 @@
 ///|
-fn Parser::error_at(self : Parser, code : String, pos : Int) -> Unit {
+fn Parser::error_at(self : Parser, code : String, pos : Int32) -> Unit {
   self.errors.push(self.make_error_at(code, pos))
 }
 
@@ -7,7 +7,7 @@ fn Parser::error_at(self : Parser, code : String, pos : Int) -> Unit {
 fn Parser::make_error_at(
   self : Parser,
   code : String,
-  pos : Int,
+  pos : Int32,
 ) -> @core.ParseError {
   let (line, column) = line_col_at(self.input, pos)
   ParseError(code, line~, column~, category=@core.parser_error_category(code))
@@ -25,14 +25,14 @@ fn Parser::report_current_noncharacter(self : Parser) -> Unit {
 ///|
 fn view_starts_with_at(
   input : StringView,
-  pos : Int,
+  pos : Int32,
   prefix : StringView,
 ) -> Bool {
   @syn.view_starts_with_at(input, pos, prefix)
 }
 
 ///|
-fn find_markup_close(input : StringView, start : Int) -> Int? {
+fn find_markup_close(input : StringView, start : Int32) -> Int32? {
   let mut pos = start
   while pos < input.length() {
     match input.get_char(pos) {
@@ -45,7 +45,7 @@ fn find_markup_close(input : StringView, start : Int) -> Int? {
 }
 
 ///|
-fn find_comment_close(input : StringView, start : Int) -> Int? {
+fn find_comment_close(input : StringView, start : Int32) -> Int32? {
   let scan = @tok.scan_comment_data(input, start + "<!--".length())
   if scan.eof {
     None
@@ -167,12 +167,12 @@ fn Parser::flush_deferred_initial_doctype_error(self : Parser) -> Unit {
 }
 
 ///|
-fn Parser::eof_error_pos(self : Parser) -> Int {
+fn Parser::eof_error_pos(self : Parser) -> Int32 {
   eof_error_pos(self.input)
 }
 
 ///|
-fn eof_error_pos(input : StringView) -> Int {
+fn eof_error_pos(input : StringView) -> Int32 {
   @syn.eof_error_pos(input)
 }
 

@@ -2,7 +2,7 @@
 /// Build a transform that removes elements matching `selector`.
 pub fn TransformSpec::drop(
   selector : StringView,
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -17,7 +17,7 @@ pub fn TransformSpec::drop(
 /// Build a transform that replaces matching elements with their children.
 pub fn TransformSpec::unwrap(
   selector : StringView,
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -32,7 +32,7 @@ pub fn TransformSpec::unwrap(
 /// Build a transform that emits matching element tags as text and keeps children.
 pub fn TransformSpec::escape(
   selector : StringView,
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -47,7 +47,7 @@ pub fn TransformSpec::escape(
 /// Build a transform that removes all children from matching elements.
 pub fn TransformSpec::empty(
   selector : StringView,
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -63,7 +63,7 @@ pub fn TransformSpec::empty(
 pub fn TransformSpec::edit(
   selector : StringView,
   callback : (@dom.Node) -> Unit,
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -81,7 +81,7 @@ pub fn TransformSpec::edit(
 pub fn TransformSpec::decide(
   selector : StringView,
   callback : (@dom.Node) -> DecideAction,
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -98,7 +98,7 @@ pub fn TransformSpec::decide(
 /// Build a transform that invokes `callback` once on the supplied root.
 pub fn TransformSpec::edit_document(
   callback : (@dom.Node) -> Unit,
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -114,7 +114,7 @@ pub fn TransformSpec::edit_document(
 pub fn TransformSpec::set_attrs(
   selector : StringView,
   attrs : Map[String, String?],
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -135,7 +135,7 @@ pub fn TransformSpec::set_attrs(
 pub fn TransformSpec::drop_attrs(
   selector : StringView,
   patterns : Array[String],
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -156,7 +156,7 @@ pub fn TransformSpec::drop_attrs(
 pub fn TransformSpec::allowlist_attrs(
   selector : StringView,
   allowed_attributes : Map[String, Array[String]],
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -178,7 +178,7 @@ pub fn TransformSpec::allowlist_attrs(
 pub fn TransformSpec::edit_attrs(
   selector : StringView,
   callback : (@dom.Node) -> Map[String, String?]?,
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -200,7 +200,7 @@ pub fn TransformSpec::merge_attrs(
   tag : StringView,
   attr~ : StringView,
   tokens~ : Array[String],
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -225,7 +225,7 @@ pub fn TransformSpec::merge_attrs(
 pub fn TransformSpec::drop_url_attrs(
   selector : StringView,
   url_policy~ : @san.UrlPolicy,
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -246,7 +246,7 @@ pub fn TransformSpec::drop_url_attrs(
 pub fn TransformSpec::allow_style_attrs(
   selector : StringView,
   allowed_css_properties~ : Array[String],
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -271,7 +271,7 @@ pub fn TransformSpec::allow_style_attrs(
 /// Build a transform that sanitizes the DOM tree with an optional policy.
 pub fn TransformSpec::sanitize(
   policy? : @san.SanitizationPolicy,
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -288,7 +288,7 @@ pub fn TransformSpec::sanitize(
 /// separate passes and may report against the current root before the pass.
 pub fn TransformSpec::stage(
   transforms : Array[TransformSpec],
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -302,7 +302,7 @@ pub fn TransformSpec::stage(
 ///|
 /// Build a transform that removes comment nodes.
 pub fn TransformSpec::drop_comments(
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -316,7 +316,7 @@ pub fn TransformSpec::drop_comments(
 ///|
 /// Build a transform that removes doctype nodes.
 pub fn TransformSpec::drop_doctype(
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -330,7 +330,7 @@ pub fn TransformSpec::drop_doctype(
 ///|
 /// Build a transform that removes elements outside the HTML namespace.
 pub fn TransformSpec::drop_foreign_namespaces(
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -350,7 +350,7 @@ fn default_collapse_whitespace_skip_tags() -> Array[String] {
 /// Build a transform that collapses runs of HTML whitespace in text nodes.
 pub fn TransformSpec::collapse_whitespace(
   skip_tags? : Array[String],
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -369,8 +369,8 @@ pub fn TransformSpec::collapse_whitespace(
 /// Build a transform that recursively removes empty matching elements.
 pub fn TransformSpec::prune_empty(
   selector : StringView,
-  strip_whitespace? : Bool = true,
-  enabled? : Bool = true,
+  strip_whitespace~ : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {
@@ -391,7 +391,7 @@ pub fn TransformSpec::prune_empty(
 pub fn TransformSpec::linkify(
   config? : @link.LinkifyConfig,
   skip_tags? : Array[String],
-  enabled? : Bool = true,
+  enabled~ : Bool = true,
   hook? : (@dom.Node) -> Unit,
   report? : (String, @dom.Node?) -> Unit,
 ) -> TransformSpec {

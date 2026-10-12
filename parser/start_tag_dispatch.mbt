@@ -4,8 +4,8 @@ fn Parser::handle_parsed_start_tag(
   name : String,
   attrs : Map[String, String?],
   self_closing : Bool,
-  start : Int,
-  tag_close_pos : Int,
+  start : Int32,
+  tag_close_pos : Int32,
 ) -> Unit {
   self.flush_deferred_initial_doctype_error()
   self.before_html_phase = false

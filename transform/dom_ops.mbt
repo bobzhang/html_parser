@@ -1,5 +1,5 @@
 ///|
-fn transform_remove_child_at(parent : @dom.Node, index : Int) -> Unit {
+fn transform_remove_child_at(parent : @dom.Node, index : Int32) -> Unit {
   let child = parent.children[index]
   ignore(parent.children.remove(index))
   if child.parent is Some(current_parent) &&
@@ -9,7 +9,7 @@ fn transform_remove_child_at(parent : @dom.Node, index : Int) -> Unit {
 }
 
 ///|
-fn transform_unwrap_child_at(parent : @dom.Node, index : Int) -> Int {
+fn transform_unwrap_child_at(parent : @dom.Node, index : Int32) -> Int32 {
   let child = parent.children[index]
   child.flatten_template_contents()
   ignore(parent.children.remove(index))
