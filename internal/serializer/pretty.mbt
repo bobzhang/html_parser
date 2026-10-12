@@ -7,7 +7,7 @@
 /// sibling's subtree (`sizes`).
 priv struct PrettyIndex {
   /// Number of nodes in each subtree, the node included.
-  sizes : Array[Int]
+  sizes : Array[Int32]
   /// Whether the subtree holds a layout-block element (the node included).
   contains_layout_block : Array[Bool]
   /// For documents and fragments: whether pretty printing emits any line.
@@ -18,8 +18,8 @@ priv struct PrettyIndex {
 ///|
 fn PrettyIndex::new(root : @dom.Node) -> PrettyIndex {
   let nodes : Array[@dom.Node] = []
-  let parents : Array[Int] = []
-  let stack : Array[(@dom.Node, Int)] = [(root, -1)]
+  let parents : Array[Int32] = []
+  let stack : Array[(@dom.Node, Int32)] = [(root, -1)]
   while stack.pop() is Some((node, parent)) {
     let index = nodes.length()
     nodes.push(node)
@@ -65,9 +65,9 @@ fn PrettyIndex::new(root : @dom.Node) -> PrettyIndex {
 fn PrettyIndex::child_indices(
   self : PrettyIndex,
   node : @dom.Node,
-  index : Int,
-) -> Array[Int] {
-  let indices : Array[Int] = []
+  index : Int32,
+) -> Array[Int32] {
+  let indices : Array[Int32] = []
   let mut child_index = index + 1
   for _ in serialized_children(node) {
     indices.push(child_index)
@@ -82,7 +82,7 @@ fn PrettyIndex::child_indices(
 fn PrettyIndex::child_has_line(
   self : PrettyIndex,
   node : @dom.Node,
-  index : Int,
+  index : Int32,
 ) -> Bool {
   match node.kind {
     Text => pretty_text_line(node, 0) is Some(_)
@@ -94,7 +94,7 @@ fn PrettyIndex::child_has_line(
 ///|
 /// A text node's pretty-printed line: formatting whitespace normalized and
 /// trimmed, escaped, and indented. `None` when nothing visible remains.
-fn pretty_text_line(node : @dom.Node, indent : Int) -> String? {
+fn pretty_text_line(node : @dom.Node, indent : Int32) -> String? {
   if node.sanitize_escape_only {
     return None
   }
@@ -152,7 +152,7 @@ fn compact_pretty_text_children(node : @dom.Node) -> String {
 fn PrettyIndex::element_has_compact_inline_children(
   self : PrettyIndex,
   node : @dom.Node,
-  index : Int,
+  index : Int32,
 ) -> Bool {
   let mut has_visible_text = false
   let mut has_inline_element = false
@@ -216,7 +216,7 @@ fn HtmlWriter::pretty_inline_runs(
   self : HtmlWriter,
   node : @dom.Node,
   compact_inline : Bool,
-  indent : Int,
+  indent : Int32,
 ) -> Bool raise @core.HtmlError {
   if !layout_block_element_name(node.name) || !compact_inline {
     return false
@@ -287,7 +287,7 @@ fn HtmlWriter::pretty_compact_children(
   self : HtmlWriter,
   pretty_index : PrettyIndex,
   node : @dom.Node,
-  index : Int,
+  index : Int32,
 ) -> Unit raise @core.HtmlError {
   self.write(serialize_start_tag(node, self.quote))
   let children = serialized_children(node)
@@ -325,8 +325,8 @@ fn HtmlWriter::pretty_compact_children(
 fn HtmlWriter::pretty(
   self : HtmlWriter,
   node : @dom.Node,
-  index : Int,
-  indent : Int,
+  index : Int32,
+  indent : Int32,
 ) -> Unit raise @core.HtmlError {
   // `Pretty` tasks are only scheduled by a writer built with `pretty=true`.
   let pretty_index = self.pretty_index.unwrap()

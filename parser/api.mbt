@@ -7,13 +7,13 @@
 /// `strict=true` to raise `@core.HtmlError::StrictMode` on the first parse error.
 pub fn parse(
   html : StringView,
-  sanitize? : Bool = false,
-  collect_errors? : Bool = false,
-  strict? : Bool = false,
-  scripting_enabled? : Bool = true,
-  xml_coercion? : Bool = false,
-  track_node_locations? : Bool = false,
-  iframe_srcdoc? : Bool = false,
+  sanitize~ : Bool = false,
+  collect_errors~ : Bool = false,
+  strict~ : Bool = false,
+  scripting_enabled~ : Bool = true,
+  xml_coercion~ : Bool = false,
+  track_node_locations~ : Bool = false,
+  iframe_srcdoc~ : Bool = false,
 ) -> ParsedHtml raise @core.HtmlError {
   let root = @dom.document()
   let parser = Parser(
@@ -61,13 +61,13 @@ pub fn parse(
 pub fn parse_fragment(
   html : StringView,
   context? : FragmentContext,
-  sanitize? : Bool = false,
-  collect_errors? : Bool = false,
-  strict? : Bool = false,
-  scripting_enabled? : Bool = true,
-  xml_coercion? : Bool = false,
-  track_node_locations? : Bool = false,
-  iframe_srcdoc? : Bool = false,
+  sanitize~ : Bool = false,
+  collect_errors~ : Bool = false,
+  strict~ : Bool = false,
+  scripting_enabled~ : Bool = true,
+  xml_coercion~ : Bool = false,
+  track_node_locations~ : Bool = false,
+  iframe_srcdoc~ : Bool = false,
 ) -> ParsedHtml raise @core.HtmlError {
   let root = @dom.fragment()
   let parser = Parser(
@@ -107,13 +107,13 @@ pub fn parse_fragment(
 pub fn parse_bytes(
   input : BytesView,
   encoding? : String,
-  sanitize? : Bool = false,
-  collect_errors? : Bool = false,
-  strict? : Bool = false,
-  scripting_enabled? : Bool = true,
-  xml_coercion? : Bool = false,
-  track_node_locations? : Bool = false,
-  iframe_srcdoc? : Bool = false,
+  sanitize~ : Bool = false,
+  collect_errors~ : Bool = false,
+  strict~ : Bool = false,
+  scripting_enabled~ : Bool = true,
+  xml_coercion~ : Bool = false,
+  track_node_locations~ : Bool = false,
+  iframe_srcdoc~ : Bool = false,
 ) -> ParsedHtml raise @core.HtmlError {
   let (decoded, detected_encoding) = @enc.decode_html_bytes(input, encoding)
   let parsed = parse(
@@ -139,10 +139,10 @@ pub fn parse_bytes(
 /// This forwards to `to_html` on `self.root`.
 pub fn ParsedHtml::to_html(
   self : ParsedHtml,
-  pretty? : Bool = true,
-  indent_size? : Int = 2,
-  context? : @ser.HtmlContext = Html,
-  quote? : Char = '"',
+  pretty~ : Bool = true,
+  indent_size~ : Int32 = 2,
+  context~ : @ser.HtmlContext = Html,
+  quote~ : Char = '"',
 ) -> String raise @core.HtmlError {
   @ser.to_html(self.root, pretty~, indent_size~, context~, quote~)
 }
@@ -153,9 +153,9 @@ pub fn ParsedHtml::to_html(
 /// This forwards to `to_text` on `self.root`.
 pub fn ParsedHtml::to_text(
   self : ParsedHtml,
-  separator? : String = " ",
-  strip? : Bool = true,
-  separator_blocks_only? : Bool = false,
+  separator~ : String = " ",
+  strip~ : Bool = true,
+  separator_blocks_only~ : Bool = false,
 ) -> String {
   @ser.to_text(self.root, separator~, strip~, separator_blocks_only~)
 }
@@ -166,7 +166,7 @@ pub fn ParsedHtml::to_text(
 /// This is equivalent to calling `to_markdown` on `self.root`.
 pub fn ParsedHtml::to_markdown(
   self : ParsedHtml,
-  html_passthrough? : Bool = false,
+  html_passthrough~ : Bool = false,
 ) -> String raise @core.HtmlError {
   @md.to_markdown(self.root, html_passthrough~)
 }

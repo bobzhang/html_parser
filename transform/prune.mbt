@@ -113,7 +113,7 @@ fn prune_empty_children(
 /// Returns whether it was removed.
 fn prune_empty_child_after_walk(
   parent : @dom.Node,
-  index : Int,
+  index : Int32,
   child : @dom.Node,
   transforms : Array[TransformSpec],
   limits : @sel.SelectorLimits,

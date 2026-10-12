@@ -90,7 +90,7 @@ let fuzz_entity_names : Array[String] = [
 /// Code points for numeric character references: every range the spec treats
 /// specially (NUL, C1 controls remapped through windows-1252, surrogates,
 /// noncharacters, out-of-range values) plus ordinary ones.
-let fuzz_code_points : Array[Int] = [
+let fuzz_code_points : Array[Int32] = [
   0, 1, 9, 10, 13, 32, 38, 60, 62, 65, 127, 128, 129, 130, 141, 143, 144, 150, 157,
   159, 160, 173, 0x2028, 0xD7FF, 0xD800, 0xDBFF, 0xDC00, 0xDFFF, 0xE000, 0xFDD0,
   0xFFFE, 0xFFFF, 0x1F600, 0x10FFFF, 0x110000, 0x7FFFFFFF,
@@ -185,7 +185,7 @@ fn fuzz_reference(state : @splitmix.RandomState) -> String {
 
 ///|
 /// Generate a short run of raw noise characters.
-fn fuzz_noise(length : Int, state : @splitmix.RandomState) -> String {
+fn fuzz_noise(length : Int32, state : @splitmix.RandomState) -> String {
   let out = StringBuilder()
   for _ in 0..<length {
     out.write_char(pick(fuzz_noise_chars, state))

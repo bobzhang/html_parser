@@ -1,5 +1,5 @@
 ///|
-fn Parser::last_open_template_index(self : Parser) -> Int {
+fn Parser::last_open_template_index(self : Parser) -> Int32 {
   if self.open_template_count == 0 {
     return -1
   }
@@ -167,7 +167,7 @@ fn Parser::clear_detached_template_table_context_for_template_start(
 fn Parser::handle_template_end_tag(
   self : Parser,
   name : String,
-  error_pos : Int,
+  error_pos : Int32,
   source_end_tag? : String,
 ) -> Bool {
   if name != "template" {

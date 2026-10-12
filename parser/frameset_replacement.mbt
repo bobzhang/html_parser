@@ -3,7 +3,7 @@ fn Parser::insert_empty_frameset_child(
   self : Parser,
   name : StringView,
   attrs : Map[String, String?],
-  start : Int,
+  start : Int32,
 ) -> Unit {
   self
   .current_node()

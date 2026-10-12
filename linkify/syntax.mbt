@@ -17,10 +17,10 @@ fn string_view_contains(haystack : StringView, needle : StringView) -> Bool {
 ///|
 fn linkify_count_char(
   text : StringView,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
   needle : Char,
-) -> Int {
+) -> Int32 {
   let mut count = 0
   for ch in text[start:end] {
     if ch == needle {
@@ -31,7 +31,7 @@ fn linkify_count_char(
 }
 
 ///|
-fn linkify_find_substring(haystack : StringView, needle : StringView) -> Int? {
+fn linkify_find_substring(haystack : StringView, needle : StringView) -> Int32? {
   if needle.is_empty() || needle.length() > haystack.length() {
     return None
   }
@@ -50,7 +50,7 @@ fn linkify_find_substring(haystack : StringView, needle : StringView) -> Int? {
 }
 
 ///|
-fn linkify_parse_uint(value : StringView) -> Int? {
+fn linkify_parse_uint(value : StringView) -> Int32? {
   if value.is_empty() {
     return None
   }
@@ -59,7 +59,7 @@ fn linkify_parse_uint(value : StringView) -> Int? {
     if !ch.is_digit(10) {
       return None
     }
-    let digit = ch.to_int() - ('0' : Int)
+    let digit = ch.to_int() - ('0' : Int32)
     // Reject rather than wrap: a port of 2^32 + 80 must not read as 80.
     if out > (2147483647 - digit) / 10 {
       return None
@@ -70,9 +70,9 @@ fn linkify_parse_uint(value : StringView) -> Int? {
 }
 
 ///|
-fn linkify_last_char_index(value : StringView, needle : Char) -> Int? {
+fn linkify_last_char_index(value : StringView, needle : Char) -> Int32? {
   let mut pos = 0
-  let mut last : Int? = None
+  let mut last : Int32? = None
   for ch in value {
     if ch == needle {
       last = Some(pos)
@@ -84,7 +84,7 @@ fn linkify_last_char_index(value : StringView, needle : Char) -> Int? {
 
 ///|
 fn linkify_starts_with_digit(value : StringView) -> Bool {
-  value.get_char(0) is Some('0'..='9')
+  value.get_char(0) is Some('0'..<='9')
 }
 
 ///|

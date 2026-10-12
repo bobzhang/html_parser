@@ -4,7 +4,7 @@ priv struct Parser {
   scripting_enabled : Bool
   xml_coercion : Bool
   track_node_locations : Bool
-  mut pos : Int
+  mut pos : Int32
   errors : Array[@core.ParseError]
   root : @dom.Node
   stack : Array[@dom.Node]
@@ -24,11 +24,11 @@ priv struct Parser {
   mut fragment_context_table_cell : @dom.Node?
   mut fragment_context_caption : Bool
   mut fragment_context_select : Bool
-  mut open_template_count : Int
-  mut open_table_count : Int
-  mut open_select_count : Int
+  mut open_template_count : Int32
+  mut open_table_count : Int32
+  mut open_select_count : Int32
   /// Open elements on `stack` counted by name, any namespace.
-  open_element_counts : Map[String, Int]
+  open_element_counts : Map[String, Int32]
   mut fragment_context_colgroup : Bool
   mut fragment_context_html : Bool
   mut fragment_context_html_root : @dom.Node?
@@ -81,8 +81,8 @@ fn Parser::Parser(
   root : @dom.Node,
   scripting_enabled~ : Bool,
   xml_coercion~ : Bool,
-  track_node_locations? : Bool = false,
-  iframe_srcdoc? : Bool = false,
+  track_node_locations~ : Bool = false,
+  iframe_srcdoc~ : Bool = false,
 ) -> Parser {
   let input = strip_leading_bom(input)
   {

@@ -17,7 +17,7 @@ fn Parser::current_is_document_head(self : Parser) -> Bool {
 fn Parser::close_current_document_head_for_start(
   self : Parser,
   name : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.current_is_document_head() {
     return false
@@ -69,7 +69,7 @@ fn Parser::document_head_start_is_late(self : Parser) -> Bool {
 fn Parser::handle_late_document_head_start_tag(
   self : Parser,
   name : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if self.is_fragment_parser() || name != "head" {
     return false
@@ -100,7 +100,7 @@ fn Parser::handle_late_document_head_start_tag(
 fn Parser::handle_duplicate_head_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if name != "head" {
     return false

@@ -1,7 +1,7 @@
 ///|
 fn parse_doctype_after_public_identifier(
   input : StringView,
-  after_public : Int,
+  after_public : Int32,
   closed : Bool,
   errors : Array[DoctypeExternalError],
 ) -> (String?, Bool) {
@@ -64,7 +64,7 @@ fn parse_doctype_after_public_identifier(
 ///|
 fn parse_doctype_public_after_keyword(
   input : StringView,
-  after_keyword : Int,
+  after_keyword : Int32,
   closed : Bool,
   errors : Array[DoctypeExternalError],
 ) -> (String?, String?, Bool) {

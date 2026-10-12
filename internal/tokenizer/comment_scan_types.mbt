@@ -5,7 +5,7 @@
 /// in the original scanned input.
 pub(all) struct CommentScanError {
   code : String
-  offset : Int
+  offset : Int32
 }
 
 ///|
@@ -16,7 +16,7 @@ pub(all) struct CommentScanError {
 /// contains non-fatal parse diagnostics discovered during the scan.
 pub(all) struct CommentScan {
   data : String
-  end : Int
+  end : Int32
   eof : Bool
   errors : Array[CommentScanError]
 }

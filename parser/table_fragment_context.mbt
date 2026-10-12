@@ -30,7 +30,7 @@ fn Parser::stack_at_fragment_boundary(
 fn Parser::handle_fragment_context_table_start_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if name != "table" {
     return false
@@ -61,7 +61,7 @@ fn fragment_context_table_section_ignores_start(name : StringView) -> Bool {
 fn Parser::handle_fragment_context_table_section_start_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !fragment_context_table_section_ignores_start(name) {
     return false
@@ -97,7 +97,7 @@ fn fragment_context_table_row_ignores_start(name : StringView) -> Bool {
 fn Parser::handle_fragment_context_table_row_start_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !fragment_context_table_row_ignores_start(name) {
     return false
@@ -134,7 +134,7 @@ fn fragment_context_table_cell_ignores_start(name : StringView) -> Bool {
 fn Parser::handle_fragment_context_table_cell_start_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !fragment_context_table_cell_ignores_start(name) {
     return false
@@ -155,7 +155,7 @@ fn Parser::handle_fragment_context_table_cell_start_tag(
 fn Parser::handle_fragment_context_table_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if name != "table" {
     return false
@@ -172,7 +172,7 @@ fn Parser::handle_fragment_context_table_end_tag(
 fn Parser::handle_fragment_context_table_wrapper_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if name == "td" || name == "th" {
     match self.fragment_context_table_cell {

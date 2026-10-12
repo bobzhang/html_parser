@@ -1,13 +1,13 @@
 ///|
 priv struct LinkifyFixtureCase {
-  line : Int
+  line : Int32
   text : String
   expected : String
 }
 
 ///|
 priv struct LinkifyNoLinkFixtureCase {
-  line : Int
+  line : Int32
   text : String
 }
 

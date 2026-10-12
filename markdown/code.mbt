@@ -1,5 +1,5 @@
 ///|
-fn markdown_backtick_fence(value : StringView, minimum : Int) -> String {
+fn markdown_backtick_fence(value : StringView, minimum : Int32) -> String {
   let mut longest = 0
   let mut run = 0
   for ch in value {

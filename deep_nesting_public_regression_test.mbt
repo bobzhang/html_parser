@@ -3,7 +3,7 @@
 /// level and overflowed the stack at around 2,000 levels on js and wasm-gc
 /// (about 20,000 on native), so hostile input could crash even
 /// `parse(..., sanitize=true)`.
-let deep_levels : Int = 50000
+let deep_levels : Int32 = 50000
 
 ///|
 fn deep_markup(open : String, inner : String, close : String) -> String {

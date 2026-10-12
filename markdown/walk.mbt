@@ -9,17 +9,17 @@
 /// `MarkdownBuilder` and post-process the rendered inner output.
 priv enum MarkdownTask {
   /// Render a node in normal Markdown mode at the given list depth.
-  Walk(@dom.Node, Int)
+  Walk(@dom.Node, Int32)
   /// Render a node inside link text (`[...]`).
   LinkText(@dom.Node)
   /// Render one `<li>` of a Markdown list: the list item node, whether the
   /// list is ordered, its 1-based index, whether it is the first rendered
   /// item, and the list depth of the enclosing list.
-  ListItem(@dom.Node, Bool, Int, Bool, Int)
+  ListItem(@dom.Node, Bool, Int32, Bool, Int32)
   /// Render one `<li>` of a list flattened into link text.
   LinkListItem(@dom.Node)
   /// `ensure_newlines(count)` on the current builder.
-  EnsureNewlines(Int)
+  EnsureNewlines(Int32)
   /// Emit a collapsible space (`text(" ")`) on the current builder.
   SpaceText
   /// Close the nested builder of an emphasis/strong element. The opening
@@ -123,7 +123,7 @@ fn MarkdownWalker::open_blockquote(self : MarkdownWalker) -> Unit {
 fn MarkdownWalker::push_children(
   self : MarkdownWalker,
   children : Array[@dom.Node],
-  list_depth : Int,
+  list_depth : Int32,
 ) -> Unit {
   for index = children.length() - 1; index >= 0; index = index - 1 {
     self.tasks.push(Walk(children[index], list_depth))
@@ -207,7 +207,7 @@ fn MarkdownWalker::step(
 }
 
 ///|
-fn markdown_heading_level(name : StringView) -> Int {
+fn markdown_heading_level(name : StringView) -> Int32 {
   match name {
     "h1" => 1
     "h2" => 2
@@ -241,7 +241,7 @@ fn markdown_block_container_name(name : StringView) -> Bool {
 fn MarkdownWalker::walk(
   self : MarkdownWalker,
   node : @dom.Node,
-  list_depth : Int,
+  list_depth : Int32,
 ) -> Unit raise @core.HtmlError {
   let builder = self.current()
   match node.kind {

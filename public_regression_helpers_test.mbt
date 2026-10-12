@@ -1,9 +1,9 @@
 ///|
 fn assert_node_origin(
   node : @html_parser.Node,
-  offset : Int,
-  line : Int,
-  col : Int,
+  offset : Int32,
+  line : Int32,
+  col : Int32,
 ) -> Unit raise {
   guard node.origin_offset() is Some(actual_offset) && actual_offset == offset else {
     fail("unexpected origin offset")
@@ -22,7 +22,7 @@ fn assert_node_origin(
 }
 
 ///|
-fn repeat_for_test(value : String, count : Int) -> String {
+fn repeat_for_test(value : String, count : Int32) -> String {
   let out = StringBuilder(size_hint=value.length() * count)
   for _ in 0..<count {
     out.write_string(value)

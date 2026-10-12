@@ -34,7 +34,7 @@ fn sanitize_attribute_value(
   tag_name : String,
   attr_name : String,
   value : String,
-  effectively_foreign? : Bool = false,
+  effectively_foreign~ : Bool = false,
 ) -> String? {
   if effectively_foreign &&
     is_foreign_url_function_like_attr(attr_name) &&
@@ -69,7 +69,7 @@ pub fn SanitizationPolicy::sanitize_attribute_value(
   tag_name : String,
   attr_name : String,
   value : String,
-  effectively_foreign? : Bool = false,
+  effectively_foreign~ : Bool = false,
 ) -> String? {
   sanitize_attribute_value(
     self,

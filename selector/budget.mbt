@@ -5,7 +5,7 @@ fn selector_uses_byte_scanned_match(selector : StringView) -> Bool {
 }
 
 ///|
-fn selector_match_byte_cost(node : @dom.Node, include_text : Bool) -> Int {
+fn selector_match_byte_cost(node : @dom.Node, include_text : Bool) -> Int32 {
   let mut cost = 0
   for _, value in node.attrs {
     match value {
@@ -42,7 +42,7 @@ fn selector_check_match_budget(
 ///|
 priv struct SelectorMatchContext {
   limits : SelectorLimits
-  mut remaining_steps : Int
+  mut remaining_steps : Int32
 }
 
 ///|
@@ -55,7 +55,7 @@ fn SelectorMatchContext::SelectorMatchContext(
 ///|
 fn SelectorMatchContext::tick(
   self : SelectorMatchContext,
-  steps? : Int = 1,
+  steps~ : Int32 = 1,
 ) -> Unit raise @core.HtmlError {
   if steps <= 0 {
     return

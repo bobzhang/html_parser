@@ -2,7 +2,7 @@
 fn Parser::report_form_end_tag_table_voodoo(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Unit {
   if name == "form" && self.current_is_table_or_section_context() {
     self.error_at("unexpected-end-tag-implies-table-voodoo", start)
@@ -10,7 +10,7 @@ fn Parser::report_form_end_tag_table_voodoo(
 }
 
 ///|
-fn Parser::handle_form_end_tag(self : Parser, start : Int) -> Unit {
+fn Parser::handle_form_end_tag(self : Parser, start : Int32) -> Unit {
   match self.form_element {
     Some(node) => {
       let removed = self.remove_open_node(node)
@@ -27,7 +27,7 @@ fn Parser::handle_form_end_tag(self : Parser, start : Int) -> Unit {
 fn Parser::handle_duplicate_form_start_tag(
   self : Parser,
   name : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if name == "form" && self.form_element is Some(_) {
     self.error_at("unexpected-start-tag", start)

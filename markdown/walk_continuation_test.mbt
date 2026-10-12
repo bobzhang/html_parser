@@ -27,7 +27,7 @@ fn mx_link(href : String?, children : Array[@dom.Node]) -> @dom.Node {
 ///|
 fn mx_render(
   nodes : Array[@dom.Node],
-  html_passthrough? : Bool = false,
+  html_passthrough~ : Bool = false,
 ) -> Array[String] raise {
   nodes.map(node => @markdown.to_markdown(node, html_passthrough~))
 }
@@ -419,7 +419,7 @@ let mixed_chain_unit : Array[String] = [
 ]
 
 ///|
-fn mixed_chain(periods : Int) -> @dom.Node {
+fn mixed_chain(periods : Int32) -> @dom.Node {
   let mut current = mx_el("p", [mx_t("leaf "), mx_el("code", [mx_t("c")])])
   for _ in 0..<periods {
     for index = mixed_chain_unit.length() - 1; index >= 0; index = index - 1 {
@@ -430,7 +430,7 @@ fn mixed_chain(periods : Int) -> @dom.Node {
 }
 
 ///|
-fn mixed_chain_markdown(periods : Int) -> String {
+fn mixed_chain_markdown(periods : Int32) -> String {
   "- **> *### ".repeat(periods) + "leaf `c`" + "***".repeat(periods)
 }
 

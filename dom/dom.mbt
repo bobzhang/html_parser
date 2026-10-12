@@ -38,7 +38,7 @@ fn make_node(
 
 ///|
 /// Create a document node with optional children.
-pub fn document(children? : Array[Node] = []) -> Node {
+pub fn document(children~ : Array[Node] = []) -> Node {
   make_node(
     Document,
     "#document",
@@ -54,7 +54,7 @@ pub fn document(children? : Array[Node] = []) -> Node {
 
 ///|
 /// Create a document-fragment node with optional children.
-pub fn fragment(children? : Array[Node] = []) -> Node {
+pub fn fragment(children~ : Array[Node] = []) -> Node {
   make_node(
     Fragment,
     "#document-fragment",
@@ -86,9 +86,9 @@ fn normalize_element_namespace(ns : StringView) -> String {
 /// and sanitizer behavior. Child nodes are attached in order.
 pub fn element(
   name : StringView,
-  attrs? : Map[String, String?] = Map([]),
-  children? : Array[Node] = [],
-  ns? : String = "html",
+  attrs~ : Map[String, String?] = Map([]),
+  children~ : Array[Node] = [],
+  ns~ : String = "html",
 ) -> Node {
   let ns = normalize_element_namespace(ns)
   make_node(
@@ -129,10 +129,10 @@ pub fn comment(data : StringView) -> Node {
 ///|
 /// Create a doctype node.
 pub fn doctype(
-  name? : String = "html",
+  name~ : String = "html",
   public_id? : String,
   system_id? : String,
-  force_quirks? : Bool = false,
+  force_quirks~ : Bool = false,
 ) -> Node {
   make_node(
     Doctype,
@@ -377,25 +377,25 @@ pub fn Node::children(self : Node) -> Array[Node] {
 
 ///|
 /// Return this node's original source offset, if known.
-pub fn Node::origin_offset(self : Node) -> Int? {
+pub fn Node::origin_offset(self : Node) -> Int32? {
   self.origin_offset
 }
 
 ///|
 /// Return this node's original 1-based source line, if known.
-pub fn Node::origin_line(self : Node) -> Int? {
+pub fn Node::origin_line(self : Node) -> Int32? {
   self.origin_line
 }
 
 ///|
 /// Return this node's original 1-based source column, if known.
-pub fn Node::origin_col(self : Node) -> Int? {
+pub fn Node::origin_col(self : Node) -> Int32? {
   self.origin_col
 }
 
 ///|
 /// Return this node's original `(line, column)` source location, if known.
-pub fn Node::origin_location(self : Node) -> (Int, Int)? {
+pub fn Node::origin_location(self : Node) -> (Int32, Int32)? {
   match (self.origin_line, self.origin_col) {
     (Some(line), Some(col)) => Some((line, col))
     _ => None
@@ -420,7 +420,7 @@ fn Node::copy_origin_from(self : Node, source : Node) -> Unit {
 /// cloned node's attributes, which is useful for transform operations.
 pub fn Node::clone_node(
   self : Node,
-  deep? : Bool = false,
+  deep~ : Bool = false,
   override_attrs? : Map[String, String?],
 ) -> Node {
   let attrs = match override_attrs {

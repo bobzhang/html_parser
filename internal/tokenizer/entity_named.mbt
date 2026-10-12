@@ -1,7 +1,7 @@
 ///|
 fn entity_without_semicolon_error(
   input : StringView,
-  start : Int,
+  start : Int32,
 ) -> EntityDecodeError {
   {
     code: "missing-semicolon-after-character-reference",
@@ -12,8 +12,8 @@ fn entity_without_semicolon_error(
 ///|
 fn named_entity_missing_semicolon_error_offset(
   input : StringView,
-  start : Int,
-) -> Int {
+  start : Int32,
+) -> Int32 {
   let mut pos = start + 1
   let mut last = start
   while pos < input.length() {
@@ -30,7 +30,7 @@ fn named_entity_missing_semicolon_error_offset(
 }
 
 ///|
-fn named_entity_name_end(input : StringView, start : Int) -> Int {
+fn named_entity_name_end(input : StringView, start : Int32) -> Int32 {
   let mut pos = start + 1
   while pos < input.length() {
     match input.get_char(pos) {
@@ -45,9 +45,9 @@ fn named_entity_name_end(input : StringView, start : Int) -> Int {
 ///|
 fn longest_legacy_named_entity(
   input : StringView,
-  name_start : Int,
-  name_end : Int,
-) -> (String, Int)? {
+  name_start : Int32,
+  name_end : Int32,
+) -> (String, Int32)? {
   let mut end = name_end
   while end > name_start {
     let name = input[name_start:end]
@@ -70,7 +70,7 @@ fn longest_legacy_named_entity(
 /// an ASCII alphanumeric character or `=`.
 pub fn consume_named_entity_with_errors(
   input : StringView,
-  start : Int,
+  start : Int32,
   in_attribute~ : Bool,
 ) -> EntityConsumeResult? {
   let name_start = start + 1
@@ -134,7 +134,7 @@ pub fn consume_named_entity_with_errors(
 /// legacy entity name that would otherwise be consumed.
 pub fn legacy_entity_blocked_in_attribute(
   input : StringView,
-  next : Int,
+  next : Int32,
   in_attribute~ : Bool,
 ) -> Bool {
   if !in_attribute {

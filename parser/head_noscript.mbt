@@ -46,7 +46,7 @@ fn Parser::pop_disabled_head_noscript_for_reprocess(self : Parser) -> Unit {
 fn Parser::handle_disabled_head_noscript_start_tag(
   self : Parser,
   name : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.current_is_disabled_head_noscript() {
     return false
@@ -72,7 +72,7 @@ fn Parser::handle_disabled_head_noscript_start_tag(
 fn Parser::handle_disabled_head_noscript_end_tag(
   self : Parser,
   name : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.current_is_disabled_head_noscript() {
     return false

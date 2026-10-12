@@ -3,7 +3,7 @@
 // append_child, whose cycle check walks every ancestor) to keep setup linear.
 
 ///|
-let deep_nesting_levels : Int = 50000
+let deep_nesting_levels : Int32 = 50000
 
 ///|
 fn deep_nesting_attach(parent : @dom.Node, child : @dom.Node) -> Unit {

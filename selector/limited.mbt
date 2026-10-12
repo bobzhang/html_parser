@@ -3,7 +3,7 @@ fn previous_matching_sibling_with_context(
   node : @dom.Node,
   selector : StringView,
   context : SelectorMatchContext,
-  depth : Int,
+  depth : Int32,
 ) -> @dom.Node? raise @core.HtmlError {
   match node.parent {
     Some(parent) => {
@@ -52,7 +52,7 @@ fn matches_complex_selector_with_context(
   node : @dom.Node,
   selector : StringView,
   context : SelectorMatchContext,
-  depth : Int,
+  depth : Int32,
 ) -> Bool raise @core.HtmlError {
   context.tick()
   if depth > context.limits.max_match_depth {
@@ -153,7 +153,7 @@ fn matches_selector_list_with_context(
   node : @dom.Node,
   selector : StringView,
   context : SelectorMatchContext,
-  depth : Int,
+  depth : Int32,
 ) -> Bool raise @core.HtmlError {
   context.tick()
   if depth > context.limits.max_match_depth {

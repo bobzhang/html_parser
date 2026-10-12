@@ -99,7 +99,7 @@ fn apply_staged_transforms(
 fn apply_explicit_stage(
   node : @dom.Node,
   stage : TransformSpec,
-  index : Int,
+  index : Int32,
   limits : @sel.SelectorLimits,
 ) -> @dom.Node raise @core.HtmlError {
   transform_call_hook(node, stage)

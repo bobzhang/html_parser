@@ -72,7 +72,7 @@ priv struct LinkifyDomFrame {
   parent : @dom.Node
   skip : Bool
   then_template : Bool
-  mut index : Int
+  mut index : Int32
 }
 
 ///|
@@ -143,10 +143,10 @@ fn linkify_dom_children(
 ///|
 fn linkify_text_child_at(
   parent : @dom.Node,
-  index : Int,
+  index : Int32,
   child : @dom.Node,
   config : LinkifyConfig,
-) -> Int {
+) -> Int32 {
   let matches = find_links_with_config(child.data, config)
   if matches.is_empty() {
     return 0
@@ -162,10 +162,10 @@ fn linkify_text_child_at(
 /// namespace for generated anchors, and returns the number of inserted nodes.
 fn linkify_text_child_at_matches(
   parent : @dom.Node,
-  index : Int,
+  index : Int32,
   child : @dom.Node,
   matches : Array[LinkMatch],
-) -> Int {
+) -> Int32 {
   if matches.is_empty() {
     return 0
   }

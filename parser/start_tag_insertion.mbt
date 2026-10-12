@@ -4,8 +4,8 @@ fn Parser::insert_normal_start_tag(
   name : String,
   attrs : Map[String, String?],
   self_closing : Bool,
-  start : Int,
-  tag_close_pos : Int,
+  start : Int32,
+  tag_close_pos : Int32,
 ) -> Unit {
   let node_ns = self.start_tag_namespace(name)
   if node_ns == "html" {

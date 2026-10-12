@@ -4,7 +4,7 @@
 fn Parser::track_open_element(
   self : Parser,
   node : @dom.Node,
-  delta : Int,
+  delta : Int32,
 ) -> Unit {
   if node.kind != Element {
     return
@@ -42,7 +42,7 @@ fn Parser::pop_open_element(self : Parser) -> @dom.Node? {
 }
 
 ///|
-fn Parser::remove_open_element_at(self : Parser, index : Int) -> @dom.Node {
+fn Parser::remove_open_element_at(self : Parser, index : Int32) -> @dom.Node {
   let node = self.stack.remove(index)
   self.track_open_element(node, -1)
   node
@@ -51,7 +51,7 @@ fn Parser::remove_open_element_at(self : Parser, index : Int) -> @dom.Node {
 ///|
 fn Parser::insert_open_element_at(
   self : Parser,
-  index : Int,
+  index : Int32,
   node : @dom.Node,
 ) -> Unit {
   self.track_open_element(node, 1)
@@ -61,7 +61,7 @@ fn Parser::insert_open_element_at(
 ///|
 fn Parser::replace_open_element_at(
   self : Parser,
-  index : Int,
+  index : Int32,
   node : @dom.Node,
 ) -> Unit {
   self.track_open_element(self.stack[index], -1)
@@ -82,7 +82,7 @@ fn Parser::clear_open_elements(self : Parser) -> Unit {
 fn Parser::pop_until(
   self : Parser,
   name : String,
-  pos : Int,
+  pos : Int32,
   source_end_tag? : String,
 ) -> Unit {
   if !self.end_tag_target_visible_for_pop(name) {
@@ -302,7 +302,7 @@ fn Parser::close_current_element_if_name(self : Parser, name : String) -> Unit {
 }
 
 ///|
-fn Parser::last_stack_index_of(self : Parser, name : String) -> Int {
+fn Parser::last_stack_index_of(self : Parser, name : String) -> Int32 {
   let mut index = self.stack.length()
   while index > 0 {
     index -= 1
@@ -315,7 +315,7 @@ fn Parser::last_stack_index_of(self : Parser, name : String) -> Int {
 }
 
 ///|
-fn Parser::last_stack_index_of_node(self : Parser, target : @dom.Node) -> Int {
+fn Parser::last_stack_index_of_node(self : Parser, target : @dom.Node) -> Int32 {
   let mut index = self.stack.length()
   while index > 0 {
     index -= 1
@@ -359,7 +359,7 @@ fn Parser::insert_element_without_push(
   self : Parser,
   name : StringView,
   attrs : Map[String, String?],
-  start? : Int,
+  start? : Int32,
 ) -> Unit {
   let node = match start {
     Some(offset) => self.node_with_origin(@dom.element(name, attrs~), offset)
@@ -374,7 +374,7 @@ fn Parser::insert_element_maybe_push(
   name : StringView,
   attrs : Map[String, String?],
   push : Bool,
-  start? : Int,
+  start? : Int32,
 ) -> Unit {
   let node = match start {
     Some(offset) => self.node_with_origin(@dom.element(name, attrs~), offset)

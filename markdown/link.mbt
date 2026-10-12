@@ -47,9 +47,9 @@ fn markdown_percent_encode_link_destination(value : StringView) -> String {
 ///|
 fn markdown_link_destination_byte_is_safe(byte : Byte) -> Bool {
   match byte {
-    b'A'..=b'Z'
-    | b'a'..=b'z'
-    | b'0'..=b'9'
+    b'A'..<=b'Z'
+    | b'a'..<=b'z'
+    | b'0'..<=b'9'
     | b':'
     | b'/'
     | b'?'

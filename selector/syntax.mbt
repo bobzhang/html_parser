@@ -7,7 +7,7 @@ fn is_html_whitespace_char(ch : Char) -> Bool {
 }
 
 ///|
-fn next_simple_selector_marker(selector : StringView, start : Int) -> Int {
+fn next_simple_selector_marker(selector : StringView, start : Int32) -> Int32 {
   let mut pos = start
   let mut paren_depth = 0
   while pos < selector.length() {
@@ -26,7 +26,7 @@ fn next_simple_selector_marker(selector : StringView, start : Int) -> Int {
 }
 
 ///|
-fn find_attribute_selector_end(selector : StringView, start : Int) -> Int? {
+fn find_attribute_selector_end(selector : StringView, start : Int32) -> Int32? {
   let mut pos = start + 1
   let mut quote : Char? = None
   let mut escaped = false

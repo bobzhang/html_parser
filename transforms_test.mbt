@@ -1,5 +1,5 @@
 ///|
-fn transform_repeat_for_test(value : String, count : Int) -> String {
+fn transform_repeat_for_test(value : String, count : Int32) -> String {
   let out = StringBuilder(size_hint=value.length() * count)
   for _ in 0..<count {
     out.write_string(value)

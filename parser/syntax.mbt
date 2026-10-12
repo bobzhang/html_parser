@@ -1,5 +1,5 @@
 ///|
-fn line_col_at(input : StringView, target : Int) -> (Int, Int) {
+fn line_col_at(input : StringView, target : Int32) -> (Int32, Int32) {
   @syn.line_col_at(input, target)
 }
 
@@ -26,7 +26,7 @@ fn normalize_bogus_comment_data(input : StringView) -> String {
 ///|
 fn starts_with_case_insensitive(
   input : StringView,
-  pos : Int,
+  pos : Int32,
   prefix : StringView,
 ) -> Bool {
   @syn.starts_with_case_insensitive(input, pos, prefix)

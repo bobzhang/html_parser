@@ -7,7 +7,7 @@
 pub fn render_node_html(
   node : @dom.Node,
   pretty : Bool,
-  indent_size : Int,
+  indent_size : Int32,
   quote : Char,
 ) -> String raise @core.HtmlError {
   let writer = HtmlWriter::new(node, pretty, indent_size, quote)

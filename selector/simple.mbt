@@ -162,7 +162,7 @@ fn non_element_simple_selector_matches_with_context(
   node : @dom.Node,
   selector : StringView,
   context : SelectorMatchContext,
-  depth : Int,
+  depth : Int32,
 ) -> Bool raise @core.HtmlError {
   let mut pos = 0
   while pos < selector.length() {
@@ -185,7 +185,7 @@ fn matches_simple_selector_with_context(
   node : @dom.Node,
   selector : StringView,
   context : SelectorMatchContext,
-  depth : Int,
+  depth : Int32,
 ) -> Bool raise @core.HtmlError {
   context.tick()
   let selector = selector.trim()

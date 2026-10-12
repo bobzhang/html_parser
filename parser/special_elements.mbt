@@ -90,7 +90,7 @@ fn is_special_element_for_any_other_end_tag(name : StringView) -> Bool {
 }
 
 ///|
-fn Parser::close_ruby_end_tag(self : Parser, start : Int) -> Unit {
+fn Parser::close_ruby_end_tag(self : Parser, start : Int32) -> Unit {
   let mut index = self.stack.length()
   while index > 1 {
     index -= 1

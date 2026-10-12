@@ -10,8 +10,8 @@ fn is_table_text_foster_target(name : StringView) -> Bool {
 fn Parser::report_foster_parenting_character_errors(
   self : Parser,
   value : StringView,
-  start : Int,
-) -> Int {
+  start : Int32,
+) -> Int32 {
   let mut count = 0
   let mut pos = 0
   while pos < value.length() {
@@ -29,9 +29,9 @@ fn Parser::report_foster_parenting_character_errors(
 fn Parser::foster_parent_table_text_with_formatting(
   self : Parser,
   cleaned : StringView,
-  start : Int,
-  table_index : Int,
-  formatting_index : Int,
+  start : Int32,
+  table_index : Int32,
+  formatting_index : Int32,
 ) -> Bool {
   let entry = self.active_formatting[formatting_index]
   let node = element_from_formatting_entry(entry)
@@ -54,7 +54,7 @@ fn Parser::foster_parent_table_text_with_formatting(
 fn Parser::foster_parent_table_text(
   self : Parser,
   cleaned : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !text_has_non_ascii_whitespace(cleaned) {
     return false
@@ -150,7 +150,7 @@ fn Parser::foster_parent_table_text(
 fn Parser::foster_parent_template_table_text(
   self : Parser,
   cleaned : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.in_template_content_without_inner_table() ||
     !text_has_non_ascii_whitespace(cleaned) {
@@ -172,7 +172,7 @@ fn Parser::foster_parent_template_table_text(
 fn Parser::report_foster_parented_table_context_text(
   self : Parser,
   cleaned : StringView,
-  start : Int,
+  start : Int32,
 ) -> Unit {
   if !text_has_non_ascii_whitespace(cleaned) {
     return

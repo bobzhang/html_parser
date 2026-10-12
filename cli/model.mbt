@@ -16,7 +16,7 @@ pub(all) enum CliReadPlan {
 /// present, `file_output_content` contains the bytes that a shell wrapper should
 /// write to that path instead of printing to standard output.
 pub(all) struct CliResult {
-  exit_code : Int
+  exit_code : Int32
   stdout : String
   stderr : String
   file_output_path : String?
@@ -83,7 +83,7 @@ pub fn cli_help() -> String {
 
 ///|
 fn cli_success(
-  stdout? : String = "",
+  stdout~ : String = "",
   file_output_path? : String,
   file_output_content? : String,
 ) -> CliResult {
@@ -92,9 +92,9 @@ fn cli_success(
 
 ///|
 fn cli_exit(
-  code : Int,
-  stdout? : String = "",
-  stderr? : String = "",
+  code : Int32,
+  stdout~ : String = "",
+  stderr~ : String = "",
 ) -> CliResult {
   {
     exit_code: code,

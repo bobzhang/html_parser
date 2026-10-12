@@ -102,7 +102,7 @@ fn UrlPolicy::lookup_css_rule(
 }
 
 ///|
-fn css_url_skip_whitespace(value : StringView, start : Int) -> Int {
+fn css_url_skip_whitespace(value : StringView, start : Int32) -> Int32 {
   let mut pos = start
   while pos < value.length() {
     match value.get_char(pos) {
@@ -114,7 +114,7 @@ fn css_url_skip_whitespace(value : StringView, start : Int) -> Int {
 }
 
 ///|
-fn css_find_char(value : StringView, start : Int, needle : Char) -> Int? {
+fn css_find_char(value : StringView, start : Int32, needle : Char) -> Int32? {
   let mut pos = start
   while pos < value.length() {
     let ch = value.get_char(pos).unwrap()
@@ -128,7 +128,7 @@ fn css_find_char(value : StringView, start : Int, needle : Char) -> Int? {
 }
 
 ///|
-fn css_next_url_function(value : StringView, start : Int) -> Int? {
+fn css_next_url_function(value : StringView, start : Int32) -> Int32? {
   let mut pos = start
   while pos < value.length() {
     if @syn.starts_with_case_insensitive(value, pos, "url(") {
@@ -284,7 +284,7 @@ fn sanitize_foreign_url_function_attribute_value(
 }
 
 ///|
-fn style_declaration_colon(declaration : StringView) -> Int? {
+fn style_declaration_colon(declaration : StringView) -> Int32? {
   let mut pos = 0
   while pos < declaration.length() {
     let ch = declaration.get_char(pos).unwrap()

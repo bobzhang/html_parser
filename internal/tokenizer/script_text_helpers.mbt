@@ -1,9 +1,9 @@
 ///|
 fn skip_script_text_char(
   input : StringView,
-  pos : Int,
+  pos : Int32,
   errors : Array[SpecialTextError],
-) -> Int {
+) -> Int32 {
   match input.get_char(pos) {
     Some('\u{0000}') => {
       errors.push({ code: "unexpected-null-character", offset: pos, })
@@ -17,10 +17,10 @@ fn skip_script_text_char(
 ///|
 fn write_script_text_char(
   input : StringView,
-  pos : Int,
+  pos : Int32,
   out : StringBuilder,
   errors : Array[SpecialTextError],
-) -> Int {
+) -> Int32 {
   match input.get_char(pos) {
     Some('\u{0000}') => {
       errors.push({ code: "unexpected-null-character", offset: pos, })
@@ -33,7 +33,7 @@ fn write_script_text_char(
 }
 
 ///|
-fn script_end_tag_at(input : StringView, pos : Int) -> Bool {
+fn script_end_tag_at(input : StringView, pos : Int32) -> Bool {
   // This runs for every character of script text: peeking for '<' first
   // skips the view allocation and case-insensitive compare on the vast
   // majority of positions; the explicit bounds check lets direct

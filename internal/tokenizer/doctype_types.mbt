@@ -6,7 +6,7 @@
 /// to lower-level helper functions.
 pub(all) struct DoctypeExternalError {
   code : String
-  offset : Int
+  offset : Int32
 }
 
 ///|

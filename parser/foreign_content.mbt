@@ -67,7 +67,7 @@ fn foreign_start_breaks_out(
 fn Parser::clean_foreign_content_text(
   self : Parser,
   raw : StringView,
-  start : Int,
+  start : Int32,
 ) -> StringView {
   if !raw.contains_char('\u{0000}') {
     return raw
@@ -112,8 +112,8 @@ fn Parser::handle_foreign_content_start_tag(
   name : String,
   attrs : Map[String, String?],
   self_closing : Bool,
-  start : Int,
-  tag_close_pos : Int,
+  start : Int32,
+  tag_close_pos : Int32,
 ) -> Bool {
   if !self.current_node_uses_foreign_content_for_start(name) {
     return false
@@ -142,7 +142,7 @@ fn Parser::handle_foreign_content_start_tag(
 fn Parser::handle_foreign_content_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   let current = self.current_node()
   match current.ns {

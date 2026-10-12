@@ -19,7 +19,7 @@ priv enum HtmlTask {
   Compact(@dom.Node)
   /// Pretty-print a node whose preorder position in the `PrettyIndex` is
   /// `index`, at `indent` spaces.
-  Pretty(@dom.Node, index~ : Int, indent~ : Int)
+  Pretty(@dom.Node, index~ : Int32, indent~ : Int32)
   /// Append literal output.
   Write(String)
   /// Close a raw-text capture opened for the element named `name`: guard the
@@ -35,7 +35,7 @@ priv enum HtmlTask {
 /// guarded at once when the matching `EndRawText` runs.
 priv struct HtmlWriter {
   quote : Char
-  indent_size : Int
+  indent_size : Int32
   tasks : Array[HtmlTask]
   outputs : Array[StringBuilder]
   pretty_index : PrettyIndex?
@@ -45,7 +45,7 @@ priv struct HtmlWriter {
 fn HtmlWriter::new(
   root : @dom.Node,
   pretty : Bool,
-  indent_size : Int,
+  indent_size : Int32,
   quote : Char,
 ) -> HtmlWriter {
   {

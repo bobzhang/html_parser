@@ -50,7 +50,7 @@ fn Parser::in_table_body_mode_context(self : Parser) -> Bool {
 fn Parser::report_table_context_end_tag_voodoo(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Unit {
   if self.template_table_context_mode_active() &&
     table_context_end_tag_uses_table_voodoo(name) {
@@ -67,7 +67,7 @@ fn Parser::report_table_context_end_tag_voodoo(
 fn Parser::handle_table_context_ignored_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.in_table_body_mode_context() ||
     !table_context_end_tag_is_ignored(name) {
@@ -145,7 +145,7 @@ fn Parser::close_virtual_table_section(self : Parser) -> Bool {
 fn Parser::handle_table_end_tag(
   self : Parser,
   name : String,
-  tag_close_pos : Int,
+  tag_close_pos : Int32,
 ) -> Bool {
   if name != "table" {
     return false

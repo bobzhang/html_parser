@@ -8,7 +8,7 @@ import {
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/env",
   "moonbitlang/core/json",
-  "moonbitlang/x@0.4.43/crypto",
+  "moonbitlang/x@0.5.5/crypto",
 }
 
 ///|
@@ -2411,7 +2411,7 @@ async fn check_native_cli_metadata(name : String?) -> Bool {
         "@fs.write_file(path, content, create_mode=CreateOrTruncate)",
         "@stdio.stdout.write(result.stdout)",
         "@stdio.stderr.write(result.stderr)",
-        "extern \"C\" fn exit_process(code : Int) = \"exit\"",
+        "extern \"C\" fn exit_process(code : Int32) = \"exit\"",
       ] {
         ok = require_text(main_text, needle, "cmd/justhtml/main.mbt") && ok
       }

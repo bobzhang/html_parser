@@ -61,7 +61,7 @@ fn usage_text() -> String {
 ///|
 priv struct Workload {
   name : String
-  input_bytes : Int
+  input_bytes : Int32
   run : () -> Unit
 }
 
@@ -195,7 +195,7 @@ fn format_double(value : Double) -> String {
 
 ///|
 #coverage.skip
-fn pad(text : String, width : Int) -> String {
+fn pad(text : String, width : Int32) -> String {
   let out = StringBuilder()
   out <+ "\{text}"
   let mut remaining = width - text.length()
@@ -216,4 +216,4 @@ async fn eprintln(message : String) -> Unit noraise {
 
 ///|
 #coverage.skip
-extern "C" fn exit_process(code : Int) = "exit"
+extern "C" fn exit_process(code : Int32) = "exit"

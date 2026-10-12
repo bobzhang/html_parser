@@ -3,8 +3,8 @@ fn SourceTokenizer::decoded_special_text(
   self : SourceTokenizer,
   name : StringView,
   raw : StringView,
-  start : Int,
-  error_pos : Int,
+  start : Int32,
+  error_pos : Int32,
 ) -> String {
   let raw = self.replace_special_text_nulls(raw, start)
   let data = if @impl.special_text_decodes_entities(name) {
@@ -27,7 +27,7 @@ fn SourceTokenizer::decoded_special_text(
 fn SourceTokenizer::replace_special_text_nulls(
   self : SourceTokenizer,
   raw : StringView,
-  start : Int,
+  start : Int32,
 ) -> StringView {
   // The common case has no nulls: the input view passes through
   // unchanged.

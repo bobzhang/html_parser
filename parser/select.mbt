@@ -38,7 +38,7 @@ fn select_start_tag_reprocesses_in_body(name : StringView) -> Bool {
 fn Parser::close_select_for_reprocessed_start_tag(
   self : Parser,
   name : StringView,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.in_select_insertion_mode() ||
     !select_start_tag_reprocesses_in_body(name) {
@@ -72,7 +72,7 @@ fn Parser::close_open_select_item(self : Parser, name : String) -> Unit {
 fn Parser::handle_select_end_tag(
   self : Parser,
   name : String,
-  tag_close_pos : Int,
+  tag_close_pos : Int32,
 ) -> Bool {
   match name {
     "optgroup" =>
@@ -199,8 +199,8 @@ fn Parser::handle_select_special_start_tag(
   name : String,
   attrs : Map[String, String?],
   self_closing : Bool,
-  start : Int,
-  tag_close_pos : Int,
+  start : Int32,
+  tag_close_pos : Int32,
 ) -> Bool {
   if !self.in_select_insertion_mode() {
     return false

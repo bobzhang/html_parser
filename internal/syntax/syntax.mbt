@@ -24,7 +24,7 @@ pub fn lower_ascii(input : StringView) -> String {
 /// cannot form a valid `StringView`.
 pub fn starts_with_case_insensitive(
   input : StringView,
-  pos : Int,
+  pos : Int32,
   prefix : StringView,
 ) -> Bool {
   let end = pos + prefix.length()
@@ -41,7 +41,7 @@ pub fn starts_with_case_insensitive(
 /// outside `input` or starts or ends inside an invalid UTF-16 boundary.
 pub fn view_starts_with_at(
   input : StringView,
-  pos : Int,
+  pos : Int32,
   prefix : StringView,
 ) -> Bool {
   let end = pos + prefix.length()
@@ -58,7 +58,7 @@ pub fn view_starts_with_at(
 /// Offsets point at source positions: offset `0` is line 1, column 1. When the
 /// offset is exactly EOF after a final newline, this returns the EOF diagnostic
 /// position from `eof_line_col`.
-pub fn line_col_at(input : StringView, target : Int) -> (Int, Int) {
+pub fn line_col_at(input : StringView, target : Int32) -> (Int32, Int32) {
   if target == input.length() && input_ends_with_newline(input) {
     return eof_line_col(input)
   }
@@ -112,7 +112,7 @@ pub fn input_ends_with_newline(input : StringView) -> Bool {
 /// Lines are 1-based. The returned column is the number of characters after the
 /// most recent newline, so EOF immediately after a newline is column `0` on the
 /// following line. CRLF is treated as a single newline.
-pub fn eof_line_col(input : StringView) -> (Int, Int) {
+pub fn eof_line_col(input : StringView) -> (Int32, Int32) {
   let mut offset = 0
   let mut line = 1
   let mut col = 0
@@ -148,7 +148,7 @@ pub fn eof_line_col(input : StringView) -> (Int, Int) {
 /// `input.length()`, placing the diagnostic after the final line break. Other
 /// input reports the offset of the final character, preserving MoonBit string
 /// offsets for non-BMP characters.
-pub fn eof_error_pos(input : StringView) -> Int {
+pub fn eof_error_pos(input : StringView) -> Int32 {
   let mut pos = 0
   let mut last = 0
   let mut last_char : Char? = None
@@ -255,9 +255,9 @@ pub fn normalize_bogus_comment_data(input : StringView) -> String {
 /// character boundary, nothing is written and `pos` is returned.
 pub fn write_normalized_char(
   input : StringView,
-  pos : Int,
+  pos : Int32,
   out : StringBuilder,
-) -> Int {
+) -> Int32 {
   match input.get_char(pos) {
     Some('\r') => {
       out.write_char('\n')
@@ -282,7 +282,7 @@ pub fn write_normalized_char(
 /// This covers U+FDD0..U+FDEF and every code point whose low 16 bits are
 /// U+FFFE or U+FFFF, matching the range this parser replaces when XML coercion
 /// is enabled.
-pub fn is_xml_noncharacter_code(code : Int) -> Bool {
+pub fn is_xml_noncharacter_code(code : Int32) -> Bool {
   if code >= 0xFDD0 && code <= 0xFDEF {
     return true
   }

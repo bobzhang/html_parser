@@ -1,7 +1,7 @@
 ///|
 fn consume_numeric_entity(
   input : StringView,
-  start : Int,
+  start : Int32,
 ) -> EntityConsumeResult? {
   let mut pos = start + 2
   let mut base = 10
@@ -62,12 +62,12 @@ fn consume_numeric_entity(
 }
 
 ///|
-fn numeric_reference_can_report_character_error(value : Int) -> Bool {
+fn numeric_reference_can_report_character_error(value : Int32) -> Bool {
   value >= 0 && value <= 0x10FFFF && !(value >= 0xD800 && value <= 0xDFFF)
 }
 
 ///|
-fn is_character_reference_control(value : Int) -> Bool {
+fn is_character_reference_control(value : Int32) -> Bool {
   (value >= 0x00 && value <= 0x1F) || (value >= 0x7F && value <= 0x9F)
 }
 
@@ -77,7 +77,7 @@ fn is_character_reference_control(value : Int) -> Bool {
 /// This maps NUL to U+FFFD and the legacy Windows-1252 control range entries
 /// used by HTML. Values not listed in the table are returned unchanged; callers
 /// remain responsible for range validation and diagnostic reporting.
-pub fn html_numeric_entity_replacement(value : Int) -> Int {
+pub fn html_numeric_entity_replacement(value : Int32) -> Int32 {
   match value {
     0 => 0xFFFD
     0x80 => 0x20AC
@@ -112,11 +112,11 @@ pub fn html_numeric_entity_replacement(value : Int) -> Int {
 }
 
 ///|
-fn digit_value(ch : Char) -> Int {
+fn digit_value(ch : Char) -> Int32 {
   match ch {
-    '0'..='9' => ch.to_int() - ('0' : Int)
-    'a'..='f' => ch.to_int() - ('a' : Int) + 10
-    'A'..='F' => ch.to_int() - ('A' : Int) + 10
+    '0'..<='9' => ch.to_int() - ('0' : Int32)
+    'a'..<='f' => ch.to_int() - ('a' : Int32) + 10
+    'A'..<='F' => ch.to_int() - ('A' : Int32) + 10
     _ => -1
   }
 }

@@ -1,5 +1,5 @@
 ///|
-fn skip_ascii_whitespace_in_view(input : StringView, start : Int) -> Int {
+fn skip_ascii_whitespace_in_view(input : StringView, start : Int32) -> Int32 {
   let mut pos = start
   while pos < input.length() {
     match input.get_char(pos) {
@@ -13,7 +13,7 @@ fn skip_ascii_whitespace_in_view(input : StringView, start : Int) -> Int {
 ///|
 fn view_has_prefix_case_insensitive_at(
   input : StringView,
-  start : Int,
+  start : Int32,
   prefix : StringView,
 ) -> Bool {
   let end = start + prefix.length()
@@ -25,7 +25,7 @@ fn view_has_prefix_case_insensitive_at(
 }
 
 ///|
-fn view_last_char_offset(input : StringView) -> Int {
+fn view_last_char_offset(input : StringView) -> Int32 {
   let mut last = 0
   let mut pos = 0
   while pos < input.length() {
@@ -40,7 +40,7 @@ fn view_last_char_offset(input : StringView) -> Int {
 fn push_doctype_external_error(
   errors : Array[DoctypeExternalError],
   code : String,
-  offset : Int,
+  offset : Int32,
 ) -> Unit {
   errors.push({ code, offset, })
 }

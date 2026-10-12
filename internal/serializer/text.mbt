@@ -126,9 +126,9 @@ fn text_chunks_to_string(
 /// Extract descendant text from a node.
 pub fn to_text(
   node : @dom.Node,
-  separator? : String = " ",
-  strip? : Bool = true,
-  separator_blocks_only? : Bool = false,
+  separator~ : String = " ",
+  strip~ : Bool = true,
+  separator_blocks_only~ : Bool = false,
 ) -> String {
   if separator_blocks_only {
     let chunks : Array[Array[String]] = [[]]

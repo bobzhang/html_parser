@@ -94,7 +94,7 @@ fn Parser::current_node_allows_html_fragment_body(self : Parser) -> Bool {
 fn Parser::insert_html_fragment_body_marker(
   self : Parser,
   attrs : Map[String, String?],
-  start : Int?,
+  start : Int32?,
 ) -> Unit {
   match self.fragment_context_html_root {
     Some(html) => {
@@ -126,7 +126,7 @@ fn Parser::handle_html_fragment_shell_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if name == "html" &&
     (
@@ -186,7 +186,7 @@ fn Parser::handle_fragment_shell_start_tag(
   self : Parser,
   name : String,
   attrs : Map[String, String?],
-  start : Int,
+  start : Int32,
 ) -> Bool {
   if !self.is_fragment_parser() || !fragment_shell_start_is_ignored(name) {
     return false

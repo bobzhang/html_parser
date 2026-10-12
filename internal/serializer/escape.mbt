@@ -84,9 +84,9 @@ pub fn percent_encode_url(value : StringView) -> String {
 ///|
 fn is_url_safe_byte(byte : Byte) -> Bool {
   match byte {
-    b'A'..=b'Z'
-    | b'a'..=b'z'
-    | b'0'..=b'9'
+    b'A'..<=b'Z'
+    | b'a'..<=b'z'
+    | b'0'..<=b'9'
     | b'/'
     | b':'
     | b'@'
@@ -115,7 +115,7 @@ pub fn write_percent_encoded_byte(out : StringBuilder, byte : Byte) -> Unit {
 }
 
 ///|
-fn hex_digit_upper(value : Int) -> Char {
+fn hex_digit_upper(value : Int32) -> Char {
   match value {
     0 => '0'
     1 => '1'

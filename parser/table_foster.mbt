@@ -7,7 +7,7 @@ fn is_table_start_foster_target(name : StringView) -> Bool {
 }
 
 ///|
-fn Parser::table_start_foster_mode(self : Parser, name : StringView) -> Int {
+fn Parser::table_start_foster_mode(self : Parser, name : StringView) -> Int32 {
   if name == "style" || name == "script" || name == "template" {
     return 0
   }
@@ -32,7 +32,7 @@ fn Parser::table_start_foster_mode(self : Parser, name : StringView) -> Int {
 ///|
 fn Parser::table_index_is_fragment_context_table(
   self : Parser,
-  table_index : Int,
+  table_index : Int32,
 ) -> Bool {
   if table_index < 0 {
     return false
@@ -47,7 +47,7 @@ fn Parser::table_index_is_fragment_context_table(
 fn Parser::insert_node_before_open_table(
   self : Parser,
   node : @dom.Node,
-  table_index : Int,
+  table_index : Int32,
 ) -> Unit {
   let table = self.stack[table_index]
   match table.parent {
@@ -61,7 +61,7 @@ fn Parser::append_start_tag_node(
   self : Parser,
   node : @dom.Node,
   name : StringView,
-  start : Int,
+  start : Int32,
 ) -> Unit {
   let foster_mode = self.table_start_foster_mode(name)
   if foster_mode == 0 {
@@ -117,7 +117,7 @@ fn Parser::remove_foster_parented_start_error_node(
 fn Parser::handle_foster_parented_end_tag(
   self : Parser,
   name : String,
-  start : Int,
+  start : Int32,
 ) -> Bool {
   let table_index = self.table_context_without_cell_or_caption()
   if table_index < 0 {

@@ -48,7 +48,7 @@ fn decode_windows1252_lossy(input : BytesView) -> String {
 }
 
 ///|
-fn iso88592_code_point(value : Int) -> Int {
+fn iso88592_code_point(value : Int32) -> Int32 {
   match value {
     0xA0 => 0x00A0
     0xA1 => 0x0104
@@ -170,7 +170,7 @@ fn is_ascii_whitespace_byte(byte : Byte) -> Bool {
 }
 
 ///|
-fn ascii_lower_value(value : Int) -> Int {
+fn ascii_lower_value(value : Int32) -> Int32 {
   if value >= 0x41 && value <= 0x5A {
     value + 0x20
   } else {
@@ -185,7 +185,7 @@ fn is_ascii_alpha_byte(byte : Byte) -> Bool {
 }
 
 ///|
-fn skip_ascii_whitespace_bytes(input : BytesView, pos : Int) -> Int {
+fn skip_ascii_whitespace_bytes(input : BytesView, pos : Int32) -> Int32 {
   let mut pos = pos
   while pos < input.length() && is_ascii_whitespace_byte(input[pos]) {
     pos += 1
@@ -194,7 +194,7 @@ fn skip_ascii_whitespace_bytes(input : BytesView, pos : Int) -> Int {
 }
 
 ///|
-fn ascii_lower_bytes(input : BytesView, start : Int, end : Int) -> String {
+fn ascii_lower_bytes(input : BytesView, start : Int32, end : Int32) -> String {
   let out = StringBuilder(size_hint=end - start)
   for index in start..<end {
     let value = input[index].to_int()
@@ -208,9 +208,9 @@ fn ascii_lower_bytes(input : BytesView, start : Int, end : Int) -> String {
 ///|
 fn strip_ascii_whitespace_bytes(
   input : BytesView,
-  start : Int,
-  end : Int,
-) -> (Int, Int) {
+  start : Int32,
+  end : Int32,
+) -> (Int32, Int32) {
   let mut start = start
   let mut end = end
   while start < end && is_ascii_whitespace_byte(input[start]) {
@@ -225,8 +225,8 @@ fn strip_ascii_whitespace_bytes(
 ///|
 fn ascii_lower_content_bytes(
   input : BytesView,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> String {
   let out = StringBuilder(size_hint=end - start)
   for index in start..<end {
@@ -245,8 +245,8 @@ fn ascii_lower_content_bytes(
 ///|
 fn byte_range_ascii_lower_eq(
   input : BytesView,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
   expected : StringView,
 ) -> Bool {
   ascii_lower_bytes(input, start, end)[:] == expected
@@ -289,8 +289,8 @@ fn normalize_meta_html_encoding_label(label : StringView) -> String? {
 ///|
 fn extract_charset_from_content_bytes(
   input : BytesView,
-  start : Int,
-  end : Int,
+  start : Int32,
+  end : Int32,
 ) -> String? {
   let content = ascii_lower_content_bytes(input, start, end)
   guard content.find("charset") is Some(found) else { return None }
@@ -369,12 +369,16 @@ fn decode_supported_html_encoding(
 }
 
 ///|
-fn starts_html_comment_at(input : BytesView, pos : Int) -> Bool {
+fn starts_html_comment_at(input : BytesView, pos : Int32) -> Bool {
   pos + 3 < input.length() && input[pos:] is [.. b"<!--", ..]
 }
 
 ///|
-fn find_html_comment_end(input : BytesView, pos : Int, limit : Int) -> Int? {
+fn find_html_comment_end(
+  input : BytesView,
+  pos : Int32,
+  limit : Int32,
+) -> Int32? {
   let mut pos = pos
   while pos + 2 < limit {
     if input[pos:] is [.. b"-->", ..] {
@@ -386,7 +390,7 @@ fn find_html_comment_end(input : BytesView, pos : Int, limit : Int) -> Int? {
 }
 
 ///|
-fn skip_byte_tag(input : BytesView, pos : Int, limit : Int) -> Int {
+fn skip_byte_tag(input : BytesView, pos : Int32, limit : Int32) -> Int32 {
   let mut pos = pos
   let mut quote : Byte? = None
   while pos < limit {
@@ -408,14 +412,14 @@ fn skip_byte_tag(input : BytesView, pos : Int, limit : Int) -> Int {
 ///|
 fn parse_meta_tag_declared_encoding(
   input : BytesView,
-  tag_start : Int,
-  pos : Int,
-  limit : Int,
-) -> (String?, Int) {
+  tag_start : Int32,
+  pos : Int32,
+  limit : Int32,
+) -> (String?, Int32) {
   let mut pos = pos
-  let mut charset : (Int, Int)? = None
-  let mut http_equiv : (Int, Int)? = None
-  let mut content : (Int, Int)? = None
+  let mut charset : (Int32, Int32)? = None
+  let mut http_equiv : (Int32, Int32)? = None
+  let mut content : (Int32, Int32)? = None
   while pos < limit {
     let byte = input[pos]
     if byte == b'>' {
@@ -463,7 +467,7 @@ fn parse_meta_tag_declared_encoding(
     }
     let attr_name = ascii_lower_bytes(input, name_start, pos)
     pos = skip_ascii_whitespace_bytes(input, pos)
-    let mut value_range : (Int, Int)? = None
+    let mut value_range : (Int32, Int32)? = None
     if pos < limit && input[pos] == b'=' {
       pos += 1
       pos = skip_ascii_whitespace_bytes(input, pos)

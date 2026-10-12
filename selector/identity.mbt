@@ -17,15 +17,15 @@ priv struct AncestorRepeatGuard {
   start : @dom.Node
   mut tortoise : @dom.Node
   mut hare : @dom.Node?
-  mut hare_index : Int
-  mut power : Int
-  mut lambda : Int
+  mut hare_index : Int32
+  mut power : Int32
+  mut lambda : Int32
   /// `-1` while unknown, `ancestor_chain_acyclic` when the chain ends.
-  mut first_repeat : Int
+  mut first_repeat : Int32
 }
 
 ///|
-let ancestor_chain_acyclic : Int = 2147483647
+let ancestor_chain_acyclic : Int32 = 2147483647
 
 ///|
 fn AncestorRepeatGuard::new(start : @dom.Node) -> AncestorRepeatGuard {
@@ -46,7 +46,7 @@ fn AncestorRepeatGuard::new(start : @dom.Node) -> AncestorRepeatGuard {
 
 ///|
 /// Index of the first node of the cycle, once its length is `self.lambda`.
-fn AncestorRepeatGuard::cycle_start(self : AncestorRepeatGuard) -> Int {
+fn AncestorRepeatGuard::cycle_start(self : AncestorRepeatGuard) -> Int32 {
   let mut behind = self.start
   let mut ahead = self.start
   for _ in 0..<self.lambda {
@@ -98,7 +98,7 @@ fn AncestorRepeatGuard::step(self : AncestorRepeatGuard) -> Unit {
 /// one. Callers ask for consecutive indices while walking the chain.
 fn AncestorRepeatGuard::repeats_at(
   self : AncestorRepeatGuard,
-  index : Int,
+  index : Int32,
 ) -> Bool {
   let horizon = if index > ancestor_chain_acyclic / 3 {
     ancestor_chain_acyclic

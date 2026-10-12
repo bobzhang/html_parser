@@ -5,7 +5,7 @@
 /// `2` for argument parsing errors. `stdout` carries formatted HTML on success;
 /// `stderr` carries parser help or diagnostics when argument parsing fails.
 pub(all) struct HtmlFmtResult {
-  exit_code : Int
+  exit_code : Int32
   stdout : String
   stderr : String
 } derive(Debug, Eq)

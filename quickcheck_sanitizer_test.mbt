@@ -519,7 +519,7 @@ impl Debug for RandomPolicy with fn to_repr(self) {
 /// Pick a random subset of `values`, each kept with probability 1/`one_in`.
 fn random_subset(
   values : Array[String],
-  one_in : Int,
+  one_in : Int32,
   state : @splitmix.RandomState,
 ) -> Array[String] {
   let out = []
@@ -689,7 +689,7 @@ fn safe_global_attrs(state : @splitmix.RandomState) -> Array[(String, String)] {
 
 ///|
 fn safe_inline(
-  budget : Int,
+  budget : Int32,
   in_anchor : Bool,
   state : @splitmix.RandomState,
 ) -> SafeNode {
@@ -733,7 +733,7 @@ fn safe_inline(
 
 ///|
 fn safe_inline_children(
-  budget : Int,
+  budget : Int32,
   in_anchor : Bool,
   state : @splitmix.RandomState,
 ) -> Array[SafeNode] {
@@ -746,7 +746,7 @@ fn safe_inline_children(
 }
 
 ///|
-fn safe_flow(budget : Int, state : @splitmix.RandomState) -> SafeNode {
+fn safe_flow(budget : Int32, state : @splitmix.RandomState) -> SafeNode {
   if budget <= 0 {
     return safe_inline(0, false, state)
   }
@@ -815,7 +815,7 @@ fn safe_flow(budget : Int, state : @splitmix.RandomState) -> SafeNode {
 
 ///|
 fn safe_flow_children(
-  budget : Int,
+  budget : Int32,
   state : @splitmix.RandomState,
 ) -> Array[SafeNode] {
   let count = state.next_positive_int() % 3 + 1
