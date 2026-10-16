@@ -419,7 +419,7 @@ async fn run_check_release_version() -> Int {
 
 ///|
 async fn run_check_validation_inventory() -> Int {
-  let expected_scripts = ["scripts/check_ci.mbtx"]
+  let expected_scripts = ["scripts/check_ci.mbtx", "scripts/generate_named_entities.mbtx"]
   let actual_scripts = git_ls_files(["scripts/*"])
   let mut ok = true
   ok = require_all_tracked(expected_scripts, actual_scripts, "expected MoonBit script is not tracked: ") && ok
@@ -616,7 +616,7 @@ async fn run_check_test_inventory() -> Int {
   // conflict here. The count stays an exact pin rather than a floor, because a
   // floor accumulates slack — once a PR raises the total, a later one can
   // delete the tests it added and still clear the old bound.
-  let expected_count = 950
+  let expected_count = 953
   let inventory : Array[String] = []
   for path in git_ls_files(["*.mbt", "*.mbt.md"]) {
     match read_text(path) {
@@ -1048,6 +1048,13 @@ async fn run_check_scripts() -> Int {
       eprintln("tracked script has unsupported extension: \{script}")
       return 1
     }
+  }
+  let entity_data_code = @process.run(
+    "moon",
+    ["run", "--target", "native", "scripts/generate_named_entities.mbtx", "--check"],
+  )
+  if entity_data_code != 0 {
+    return entity_data_code
   }
   if !check_bad_option(
     "scripts/check_ci.mbtx",

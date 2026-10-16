@@ -181,94 +181,35 @@ fn Parser::end_tag_target_visible(self : Parser, name : String) -> Bool {
 /// The spec's "special" element category (HTML namespace), used by the
 /// any-other-end-tag rule: walking the open-elements stack, a special
 /// element encountered before the target means the end tag is ignored.
+let special_element_names : ReadOnlyArray[String] = [
+  "address", "applet", "area", "article", "aside", "base", "basefont", "bgsound",
+  "blockquote", "body", "br", "button", "caption", "center", "col", "colgroup", "dd",
+  "details", "dialog", "dir", "div", "dl", "dt", "embed", "fieldset", "figcaption",
+  "figure", "footer", "form", "frame", "frameset", "h1", "h2", "h3", "h4", "h5",
+  "h6", "head", "header", "hgroup", "hr", "html", "iframe", "img", "input", "keygen",
+  "li", "link", "listing", "main", "marquee", "menu", "menuitem", "meta", "nav",
+  "noembed", "noframes", "noscript", "object", "ol", "p", "param", "plaintext", "pre",
+  "script", "search", "section", "select", "source", "style", "summary", "table",
+  "tbody", "td", "template", "textarea", "tfoot", "th", "thead", "title", "tr", "track",
+  "ul", "wbr",
+]
+
+///|
 fn is_special_element_name(name : StringView) -> Bool {
-  match name {
-    "address"
-    | "applet"
-    | "area"
-    | "article"
-    | "aside"
-    | "base"
-    | "basefont"
-    | "bgsound"
-    | "blockquote"
-    | "body"
-    | "br"
-    | "button"
-    | "caption"
-    | "center"
-    | "col"
-    | "colgroup"
-    | "dd"
-    | "details"
-    | "dialog"
-    | "dir"
-    | "div"
-    | "dl"
-    | "dt"
-    | "embed"
-    | "fieldset"
-    | "figcaption"
-    | "figure"
-    | "footer"
-    | "form"
-    | "frame"
-    | "frameset"
-    | "h1"
-    | "h2"
-    | "h3"
-    | "h4"
-    | "h5"
-    | "h6"
-    | "head"
-    | "header"
-    | "hgroup"
-    | "hr"
-    | "html"
-    | "iframe"
-    | "img"
-    | "input"
-    | "keygen"
-    | "li"
-    | "link"
-    | "listing"
-    | "main"
-    | "marquee"
-    | "menu"
-    | "menuitem"
-    | "meta"
-    | "nav"
-    | "noembed"
-    | "noframes"
-    | "noscript"
-    | "object"
-    | "ol"
-    | "p"
-    | "param"
-    | "plaintext"
-    | "pre"
-    | "script"
-    | "search"
-    | "section"
-    | "select"
-    | "source"
-    | "style"
-    | "summary"
-    | "table"
-    | "tbody"
-    | "td"
-    | "template"
-    | "textarea"
-    | "tfoot"
-    | "th"
-    | "thead"
-    | "title"
-    | "tr"
-    | "track"
-    | "ul"
-    | "wbr" => true
-    _ => false
+  let mut low = 0
+  let mut high = special_element_names.length()
+  while low < high {
+    let mid = low + (high - low) / 2
+    let order = name.lexical_compare(special_element_names[mid][:])
+    if order < 0 {
+      high = mid
+    } else if order > 0 {
+      low = mid + 1
+    } else {
+      return true
+    }
   }
+  false
 }
 
 ///|
