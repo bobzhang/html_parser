@@ -48,7 +48,10 @@ fn longest_legacy_named_entity(
   name_start : Int,
   name_end : Int,
 ) -> (String, Int)? {
-  let mut end = name_end
+  // No legacy name exceeds six ASCII characters. Longer suffixes cannot
+  // match, so skip them rather than retrying every prefix of an unknown name.
+  let max_end = name_start + 6
+  let mut end = if name_end < max_end { name_end } else { max_end }
   while end > name_start {
     let name = input[name_start:end]
     match legacy_named_entity_value(name) {

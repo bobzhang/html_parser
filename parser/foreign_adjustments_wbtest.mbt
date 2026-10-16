@@ -1,6 +1,32 @@
 // Whitebox coverage for parser foreign-name adjustment tables.
 
 ///|
+test "compact name tables retain case and prefix boundaries" {
+  for name in special_element_names {
+    assert_true(is_special_element_name(name))
+    assert_true(is_special_element_for_any_other_end_tag(name))
+    assert_true(!is_special_element_name(name + "x"))
+  }
+  for canonical in svg_tag_names {
+    assert_svg_tag_adjustment(@syn.lower_ascii(canonical), canonical)
+  }
+  for canonical in svg_attribute_names {
+    assert_svg_attr_adjustment(@syn.lower_ascii(canonical), canonical)
+  }
+  assert_true(is_special_element_name("p"))
+  assert_true(is_special_element_name("table"))
+  assert_true(is_special_element_name("body"))
+  assert_true(!is_special_element_name("span"))
+  assert_true(!is_special_element_name("P"))
+  assert_svg_tag_adjustment("feComponentTransfer", "feComponentTransfer")
+  assert_svg_tag_adjustment("FECOMPONENTTRANSFER", "FECOMPONENTTRANSFER")
+  assert_svg_tag_adjustment("fecomponenttransferx", "fecomponenttransferx")
+  assert_svg_attr_adjustment("viewbox", "viewBox")
+  assert_svg_attr_adjustment("VIEWBOX", "VIEWBOX")
+  assert_svg_attr_adjustment("viewboxx", "viewboxx")
+}
+
+///|
 fn assert_svg_tag_adjustment(
   input : StringView,
   expected : String,

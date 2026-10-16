@@ -1,109 +1,63 @@
 ///|
+let svg_tag_names : ReadOnlyArray[String] = [
+  "altGlyph", "altGlyphDef", "altGlyphItem", "animateColor", "animateMotion", "animateTransform",
+  "clipPath", "feBlend", "feColorMatrix", "feComponentTransfer", "feComposite", "feConvolveMatrix",
+  "feDiffuseLighting", "feDisplacementMap", "feDistantLight", "feFlood", "feFuncA",
+  "feFuncB", "feFuncG", "feFuncR", "feGaussianBlur", "feImage", "feMerge", "feMergeNode",
+  "feMorphology", "feOffset", "fePointLight", "feSpecularLighting", "feSpotLight",
+  "feTile", "feTurbulence", "foreignObject", "glyphRef", "linearGradient", "radialGradient",
+  "textPath",
+]
+
+///|
 fn adjusted_svg_tag_name(name : StringView) -> String {
-  match name {
-    "altglyph" => "altGlyph"
-    "altglyphdef" => "altGlyphDef"
-    "altglyphitem" => "altGlyphItem"
-    "animatecolor" => "animateColor"
-    "animatemotion" => "animateMotion"
-    "animatetransform" => "animateTransform"
-    "clippath" => "clipPath"
-    "feblend" => "feBlend"
-    "fecolormatrix" => "feColorMatrix"
-    "fecomponenttransfer" => "feComponentTransfer"
-    "fecomposite" => "feComposite"
-    "feconvolvematrix" => "feConvolveMatrix"
-    "fediffuselighting" => "feDiffuseLighting"
-    "fedisplacementmap" => "feDisplacementMap"
-    "fedistantlight" => "feDistantLight"
-    "feflood" => "feFlood"
-    "fefunca" => "feFuncA"
-    "fefuncb" => "feFuncB"
-    "fefuncg" => "feFuncG"
-    "fefuncr" => "feFuncR"
-    "fegaussianblur" => "feGaussianBlur"
-    "feimage" => "feImage"
-    "femerge" => "feMerge"
-    "femergenode" => "feMergeNode"
-    "femorphology" => "feMorphology"
-    "feoffset" => "feOffset"
-    "fepointlight" => "fePointLight"
-    "fespecularlighting" => "feSpecularLighting"
-    "fespotlight" => "feSpotLight"
-    "fetile" => "feTile"
-    "feturbulence" => "feTurbulence"
-    "foreignobject" => "foreignObject"
-    "glyphref" => "glyphRef"
-    "lineargradient" => "linearGradient"
-    "radialgradient" => "radialGradient"
-    "textpath" => "textPath"
-    _ => name.to_owned()
-  }
+  adjusted_svg_name(name, svg_tag_names)
 }
 
 ///|
+let svg_attribute_names : ReadOnlyArray[String] = [
+  "attributeName", "attributeType", "baseFrequency", "baseProfile", "calcMode", "clipPathUnits",
+  "diffuseConstant", "edgeMode", "filterUnits", "glyphRef", "gradientTransform",
+  "gradientUnits", "kernelMatrix", "kernelUnitLength", "keyPoints", "keySplines",
+  "keyTimes", "lengthAdjust", "limitingConeAngle", "markerHeight", "markerUnits",
+  "markerWidth", "maskContentUnits", "maskUnits", "numOctaves", "pathLength", "patternContentUnits",
+  "patternTransform", "patternUnits", "pointsAtX", "pointsAtY", "pointsAtZ", "preserveAlpha",
+  "preserveAspectRatio", "primitiveUnits", "refX", "refY", "repeatCount", "repeatDur",
+  "requiredExtensions", "requiredFeatures", "specularConstant", "specularExponent",
+  "spreadMethod", "startOffset", "stdDeviation", "stitchTiles", "surfaceScale", "systemLanguage",
+  "tableValues", "targetX", "targetY", "textLength", "viewBox", "viewTarget", "xChannelSelector",
+  "yChannelSelector", "zoomAndPan",
+]
+
+///|
 fn adjusted_svg_attribute_name(name : StringView) -> String {
-  match name {
-    "attributename" => "attributeName"
-    "attributetype" => "attributeType"
-    "basefrequency" => "baseFrequency"
-    "baseprofile" => "baseProfile"
-    "calcmode" => "calcMode"
-    "clippathunits" => "clipPathUnits"
-    "diffuseconstant" => "diffuseConstant"
-    "edgemode" => "edgeMode"
-    "filterunits" => "filterUnits"
-    "glyphref" => "glyphRef"
-    "gradienttransform" => "gradientTransform"
-    "gradientunits" => "gradientUnits"
-    "kernelmatrix" => "kernelMatrix"
-    "kernelunitlength" => "kernelUnitLength"
-    "keypoints" => "keyPoints"
-    "keysplines" => "keySplines"
-    "keytimes" => "keyTimes"
-    "lengthadjust" => "lengthAdjust"
-    "limitingconeangle" => "limitingConeAngle"
-    "markerheight" => "markerHeight"
-    "markerunits" => "markerUnits"
-    "markerwidth" => "markerWidth"
-    "maskcontentunits" => "maskContentUnits"
-    "maskunits" => "maskUnits"
-    "numoctaves" => "numOctaves"
-    "pathlength" => "pathLength"
-    "patterncontentunits" => "patternContentUnits"
-    "patterntransform" => "patternTransform"
-    "patternunits" => "patternUnits"
-    "pointsatx" => "pointsAtX"
-    "pointsaty" => "pointsAtY"
-    "pointsatz" => "pointsAtZ"
-    "preservealpha" => "preserveAlpha"
-    "preserveaspectratio" => "preserveAspectRatio"
-    "primitiveunits" => "primitiveUnits"
-    "refx" => "refX"
-    "refy" => "refY"
-    "repeatcount" => "repeatCount"
-    "repeatdur" => "repeatDur"
-    "requiredextensions" => "requiredExtensions"
-    "requiredfeatures" => "requiredFeatures"
-    "specularconstant" => "specularConstant"
-    "specularexponent" => "specularExponent"
-    "spreadmethod" => "spreadMethod"
-    "startoffset" => "startOffset"
-    "stddeviation" => "stdDeviation"
-    "stitchtiles" => "stitchTiles"
-    "surfacescale" => "surfaceScale"
-    "systemlanguage" => "systemLanguage"
-    "tablevalues" => "tableValues"
-    "targetx" => "targetX"
-    "targety" => "targetY"
-    "textlength" => "textLength"
-    "viewbox" => "viewBox"
-    "viewtarget" => "viewTarget"
-    "xchannelselector" => "xChannelSelector"
-    "ychannelselector" => "yChannelSelector"
-    "zoomandpan" => "zoomAndPan"
-    _ => name.to_owned()
+  adjusted_svg_name(name, svg_attribute_names)
+}
+
+///|
+// The table contains canonical SVG spellings, sorted by their lowercase keys.
+// Only lowercase input keys are adjusted; mixed-case/unknown input is preserved.
+fn adjusted_svg_name(
+  name : StringView,
+  canonical : ReadOnlyArray[String],
+) -> String {
+  if name.any(ch => ch.is_ascii_uppercase()) {
+    return name.to_owned()
   }
+  let mut low = 0
+  let mut high = canonical.length()
+  while low < high {
+    let mid = low + (high - low) / 2
+    let order = name.compare_ignore_ascii_case(canonical[mid][:])
+    if order < 0 {
+      high = mid
+    } else if order > 0 {
+      low = mid + 1
+    } else {
+      return canonical[mid]
+    }
+  }
+  name.to_owned()
 }
 
 ///|
@@ -116,20 +70,7 @@ fn adjusted_mathml_attribute_name(name : StringView) -> String {
 
 ///|
 fn adjusted_foreign_attribute_name(name : StringView) -> String {
-  match name {
-    "xlink:actuate" => "xlink:actuate"
-    "xlink:arcrole" => "xlink:arcrole"
-    "xlink:href" => "xlink:href"
-    "xlink:role" => "xlink:role"
-    "xlink:show" => "xlink:show"
-    "xlink:title" => "xlink:title"
-    "xlink:type" => "xlink:type"
-    "xml:lang" => "xml:lang"
-    "xml:space" => "xml:space"
-    "xmlns" => "xmlns"
-    "xmlns:xlink" => "xmlns:xlink"
-    _ => name.to_owned()
-  }
+  name.to_owned()
 }
 
 ///|
