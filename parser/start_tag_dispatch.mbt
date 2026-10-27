@@ -39,7 +39,7 @@ fn Parser::handle_parsed_start_tag(
   if name == "html" &&
     !self.is_fragment_parser() &&
     !self.in_frameset_document() &&
-    !self.has_open_element("template") &&
+    !self.has_open_template() &&
     self.open_html_element() is None &&
     document_has_any_content(self.root) {
     // A non-first <html> start tag merges its attributes into the
@@ -49,13 +49,13 @@ fn Parser::handle_parsed_start_tag(
     return
   }
   if name == "body" &&
-    (self.has_open_element("template") || self.in_select_insertion_mode()) {
+    (self.has_open_template() || self.in_select_insertion_mode()) {
     // The in-template and in-select rules ignore body start tags
     // entirely; their attributes never reach the document body.
     self.error_at("unexpected-start-tag", start)
     return
   }
-  if name == "html" && self.has_open_element("template") {
+  if name == "html" && self.has_open_template() {
     // The in-template rules ignore html start tags; in select mode they
     // use the in-body attribute merge below.
     self.error_at("unexpected-start-tag", start)
@@ -107,7 +107,7 @@ fn Parser::handle_parsed_start_tag(
   }
   if self.in_select_insertion_mode() &&
     !self.has_open_element("select") &&
-    !self.has_open_element("template") &&
+    !self.has_open_template() &&
     name == "input" {
     // The fragment case: with no select element to close, the
     // acts-as-</select> recovery has nothing to do and the input token
