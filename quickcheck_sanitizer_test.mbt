@@ -493,6 +493,103 @@ fn is_subsequence(small : String, large : String) -> Bool {
 }
 
 ///|
+/// Match removal-only text starting at `start`, returning the earliest next
+/// source position. An earlier endpoint always leaves at least as much text
+/// available for the remaining output.
+fn subsequence_cursor(
+  wanted : ArrayView[Char],
+  original : Array[Char],
+  start : Int32,
+) -> Int32? {
+  let mut cursor = start
+  for ch in wanted {
+    while cursor < original.length() && original[cursor] != ch {
+      cursor += 1
+    }
+    if cursor == original.length() {
+      return None
+    }
+    cursor += 1
+  }
+  Some(cursor)
+}
+
+///|
+/// Only the documented raw-text closing-tag opening can expand `<` to `&lt;`.
+/// Entity spelling is exact; tag matching and boundaries follow HTML syntax.
+fn rawtext_escape_at(chars : Array[Char], index : Int32, tag : String) -> Bool {
+  let suffix = ("/" + tag).to_array()
+  let end = index + 4 + suffix.length()
+  if end > chars.length() ||
+    chars[index] != '&' ||
+    chars[index + 1] != 'l' ||
+    chars[index + 2] != 't' ||
+    chars[index + 3] != ';' {
+    return false
+  }
+  for offset, ch in suffix {
+    if chars[index + 4 + offset].to_ascii_lowercase() != ch {
+      return false
+    }
+  }
+  end == chars.length() ||
+  chars[end] is ('>' | '/' | ' ' | '\t' | '\n' | '\r' | '\u{000C}')
+}
+
+///|
+/// Removal modes preserve text order, except that surviving script/style text
+/// may expand closing-tag `<` characters to `&lt;`. Keep the literal matching
+/// alternative too: an existing entity in raw text is not decoded by HTML.
+fn text_preserved_with_rawtext_hardening(
+  clean : @dom.Node,
+  original_text : String,
+) -> Bool {
+  let original = original_text.to_array()
+  let mut cursor = 0
+  let stack = [clean]
+  while stack.pop() is Some(node) {
+    if node.kind() is Text {
+      let tag = match node.parent() {
+        Some(parent) if parent.kind() is Element => parent.name().to_lower()
+        _ => ""
+      }
+      let chars = node.text().to_array()
+      let mut index = 0
+      while index < chars.length() {
+        let escaped = tag is ("script" | "style") &&
+          rawtext_escape_at(chars, index, tag)
+        let width = if escaped { 4 } else { 1 }
+        let literal_end = subsequence_cursor(
+          chars[index:index + width],
+          original,
+          cursor,
+        )
+        let escaped_end = if escaped {
+          subsequence_cursor(['<'], original, cursor)
+        } else {
+          None
+        }
+        cursor = match (literal_end, escaped_end) {
+          (Some(a), Some(b)) => Int32::min(a, b)
+          (Some(a), None) | (None, Some(a)) => a
+          (None, None) => return false
+        }
+        index += width
+      }
+    } else {
+      let children = node.children()
+      for i = children.length() - 1; i >= 0; i = i - 1 {
+        stack.push(children[i])
+      }
+      if node.template_content() is Some(content) {
+        stack.push(content)
+      }
+    }
+  }
+  true
+}
+
+///|
 /// A random sanitization policy.
 struct RandomPolicy {
   model : PolicyModel
@@ -591,9 +688,9 @@ test "property: any policy's output conforms to that policy, before and after a 
       if policy_violation(clean, model) is Some(_) {
         return false
       }
-      // Removal modes only ever take text away.
+      // Removal modes take text away or harden script/style closing tags.
       if model.handling is (Unwrap | Drop) &&
-        !is_subsequence(clean.text(), parsed.text()) {
+        !text_preserved_with_rawtext_hardening(clean, parsed.text()) {
         return false
       }
       guard fuzz_to_html(clean) is Some(html) else { return true }
@@ -628,7 +725,7 @@ test "property: any policy's output conforms to that policy, before and after a 
         let clean = sanitized_copy(parsed, policy.model)
         let violation = policy_violation(clean, policy.model)
         let html = fuzz_to_html(clean).unwrap_or("(not serializable)")
-        "violation: \{describe_violation(violation)}, html: \{html}"
+        "violation: \{describe_violation(violation)}, text preserved: \{text_preserved_with_rawtext_hardening(clean, parsed.text())}, original text: \{repr(parsed.text())}, clean text: \{repr(clean.text())}, html: \{html}"
       } catch {
         _ => "raised"
       }
@@ -1015,4 +1112,52 @@ test "property: inline styles keep only allowed declarations that load nothing" 
       [@qc.classify(has_style, "some declaration kept")]
     },
   )
+}
+
+///|
+test "oracle regression: script hardening preserves text through escaping" {
+  let model = {
+    ..default_policy_model(),
+    tags: ["script"],
+    attrs: { "*": [] },
+    handling: Drop,
+    drop_content: [],
+  }
+  let parsed = @html_parser.parse_fragment(
+      "<script><!--<script></script>--></script>",
+    ).root
+  let clean = sanitized_copy(parsed, model)
+  assert_eq(parsed.text(), "<!--<script></script>-->")
+  assert_eq(clean.text(), "<!--<script>&lt;/script>-->")
+  assert_true(policy_violation(clean, model) is None)
+  assert_false(is_subsequence(clean.text(), parsed.text()))
+  assert_true(text_preserved_with_rawtext_hardening(clean, parsed.text()))
+  let reparsed = @html_parser.parse_fragment(clean.to_html(pretty=false)).root
+  assert_eq(reparsed.query("script").length(), 1)
+}
+
+///|
+test "oracle regression: rawtext escaping is narrow and never decodes entities" {
+  for
+    case in [
+      ("script", "&lt;/script>", "</script>", true),
+      ("style", "&lt;/style>", "</style>", true),
+      ("script", "&lt;/ScRiPt\t>", "</ScRiPt\t>", true),
+      ("script", "&lt;/script", "</script", true),
+      ("script", "&lt;/script/>", "</script/>", true),
+      ("script", "&lt;/script>", "&lt;/script>", true),
+      ("script", "plain text", "plain extra text", true),
+      ("script", "&lt;/script>x", "</script>x&lt;/script>", true),
+      ("script", "&lt;/script>x", "&lt;/script>x</script>", true),
+      ("p", "&lt;/script>", "</script>", false),
+      ("script", "&lt;/style>", "</style>", false),
+      ("script", "&lt;/scriptx>", "</scriptx>", false),
+      ("script", "&LT;/script>", "</script>", false),
+      ("script", "</script>", "&lt;/script>", false),
+      ("script", "&lt;/script>injected", "</script>", false),
+    ] {
+    let (tag, output, original, expected) = case
+    let clean = @html_parser.element(tag, children=[@html_parser.text(output)])
+    assert_eq(text_preserved_with_rawtext_hardening(clean, original), expected)
+  }
 }

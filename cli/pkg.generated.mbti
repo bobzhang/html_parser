@@ -29,7 +29,7 @@ pub fn CliReadPlan::not_equal(Self, Self) -> Bool
 pub fn CliReadPlan::to_repr(Self) -> @debug.Repr
 
 pub(all) struct CliResult {
-  exit_code : Int
+  exit_code : Int32
   stdout : String
   stderr : String
   file_output_path : String?

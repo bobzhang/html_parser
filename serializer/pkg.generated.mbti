@@ -10,7 +10,7 @@ import {
 // Values
 pub fn is_void_element(StringView) -> Bool
 
-pub fn to_html(@dom.Node, pretty? : Bool, indent_size? : Int, context? : HtmlContext, quote? : Char) -> String raise @core.HtmlError
+pub fn to_html(@dom.Node, pretty? : Bool, indent_size? : Int32, context? : HtmlContext, quote? : Char) -> String raise @core.HtmlError
 
 pub fn to_test_format(@dom.Node) -> String
 
