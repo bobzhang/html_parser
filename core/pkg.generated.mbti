@@ -25,12 +25,12 @@ pub fn HtmlError::to_repr(Self) -> @debug.Repr
 // Types and methods
 pub(all) struct ParseError {
   code : String
-  line : Int?
-  column : Int?
+  line : Int32?
+  column : Int32?
   category : String
   message : String
 } derive(Eq, @debug.Debug)
-pub fn ParseError::ParseError(String, line? : Int, column? : Int, category? : String, message? : String) -> Self
+pub fn ParseError::ParseError(String, line? : Int32, column? : Int32, category? : String, message? : String) -> Self
 #deprecated
 pub fn ParseError::equal(Self, Self) -> Bool
 #deprecated

@@ -37,7 +37,7 @@ pub struct ParsedHtml {
 } derive(@debug.Debug)
 pub fn ParsedHtml::query(Self, StringView) -> Array[@dom.Node]
 pub fn ParsedHtml::query_one(Self, StringView) -> @dom.Node?
-pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int, context? : @serializer.HtmlContext, quote? : Char) -> String raise @core.HtmlError
+pub fn ParsedHtml::to_html(Self, pretty? : Bool, indent_size? : Int32, context? : @serializer.HtmlContext, quote? : Char) -> String raise @core.HtmlError
 pub fn ParsedHtml::to_markdown(Self, html_passthrough? : Bool) -> String raise @core.HtmlError
 #deprecated
 pub fn ParsedHtml::to_repr(Self) -> @debug.Repr

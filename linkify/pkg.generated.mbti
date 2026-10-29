@@ -19,8 +19,8 @@ pub fn linkify_dom(@dom.Node, config? : LinkifyConfig, skip_tags? : Array[String
 
 // Types and methods
 pub(all) struct LinkMatch {
-  start : Int
-  end : Int
+  start : Int32
+  end : Int32
   text : String
   href : String
   kind : String

@@ -72,7 +72,7 @@ pub fn stream_each(StringView, (@stream.StreamEvent) -> Unit) -> Unit
 
 pub fn text(StringView) -> @dom.Node
 
-pub fn to_html(@dom.Node, pretty? : Bool, indent_size? : Int, context? : @serializer.HtmlContext, quote? : Char) -> String raise @core.HtmlError
+pub fn to_html(@dom.Node, pretty? : Bool, indent_size? : Int32, context? : @serializer.HtmlContext, quote? : Char) -> String raise @core.HtmlError
 
 pub fn to_markdown(@dom.Node, html_passthrough? : Bool) -> String raise @core.HtmlError
 

@@ -8,7 +8,7 @@ import {
 // Values
 pub fn compact_fragment(String) -> String raise
 
-pub fn pretty_fragment(String, indent_size? : Int) -> String raise
+pub fn pretty_fragment(String, indent_size? : Int32) -> String raise
 
 pub fn run_htmlfmt(ArrayView[String]) -> HtmlFmtResult raise
 
@@ -16,7 +16,7 @@ pub fn run_htmlfmt(ArrayView[String]) -> HtmlFmtResult raise
 
 // Types and methods
 pub(all) struct HtmlFmtResult {
-  exit_code : Int
+  exit_code : Int32
   stdout : String
   stderr : String
 } derive(Eq, @debug.Debug)

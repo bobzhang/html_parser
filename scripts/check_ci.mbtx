@@ -1,15 +1,16 @@
+----
 import {
   "moonbitlang/async@0.22.4",
   "moonbitlang/async@0.22.4/fs",
   "moonbitlang/async@0.22.4/process",
   "moonbitlang/async@0.22.4/stdio",
   "moonbitlang/core/argparse",
-  "moonbitlang/core/buffer",
   "moonbitlang/core/encoding/utf8",
   "moonbitlang/core/env",
   "moonbitlang/core/json",
   "moonbitlang/x@0.5.5/crypto",
 }
+----
 
 ///|
 async fn main {
@@ -381,7 +382,7 @@ async fn run_check_release_version() -> Int {
     }
   }
   let cli_files = git_ls_files(["cli/*.mbt"])
-  let cli_sources = @buffer.new()
+  let cli_sources = StringBuilder()
   for path in cli_files {
     match read_text(path) {
       Some(text) => cli_sources.write_string("\{text}\n")
@@ -616,7 +617,7 @@ async fn run_check_test_inventory() -> Int {
   // conflict here. The count stays an exact pin rather than a floor, because a
   // floor accumulates slack — once a PR raises the total, a later one can
   // delete the tests it added and still clear the old bound.
-  let expected_count = 950
+  let expected_count = 952
   let inventory : Array[String] = []
   for path in git_ls_files(["*.mbt", "*.mbt.md"]) {
     match read_text(path) {
@@ -1693,7 +1694,7 @@ fn non_empty_string(value : String) -> String? {
 
 ///|
 fn moon_mod_string_array(text : String, key : String) -> Array[String]? {
-  let out = @buffer.new()
+  let out = StringBuilder()
   let mut found = false
   let mut done = false
   for line_view in text.split("\n") {
@@ -1798,7 +1799,7 @@ fn count_occurrences(text : String, needle : String) -> Int {
 
 ///|
 fn collapse_whitespace(text : String) -> String {
-  let out = @buffer.new()
+  let out = StringBuilder()
   let mut in_space = false
   for ch in text.iter() {
     if is_space(ch) {
@@ -1853,7 +1854,7 @@ fn quoted_name(text : String) -> String? {
     Some((_, rest)) => rest
     None => return None
   }
-  let out = @buffer.new()
+  let out = StringBuilder()
   let mut escaped = false
   for ch in rest.iter() {
     if escaped {
@@ -2558,7 +2559,7 @@ async fn read_zip_entries(archive : String) -> Array[ZipEntry]? {
       eprintln("Mooncakes archive has a truncated ZIP central directory entry")
       return None
     }
-    let name = @utf8.decode_lossy(data.view(start=name_start, end=name_start + name_len))
+    let name = @utf8.decode_lossy(data.exact_view(start=name_start, end=name_start + name_len))
     entries.push(ZipEntry::{ name, crc32, uncompressed_size })
     pos = next
   }

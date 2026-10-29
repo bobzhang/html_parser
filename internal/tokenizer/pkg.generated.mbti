@@ -6,7 +6,7 @@ import {
 }
 
 // Values
-pub fn consume_named_entity_with_errors(StringView, Int, in_attribute~ : Bool) -> EntityConsumeResult?
+pub fn consume_named_entity_with_errors(StringView, Int32, in_attribute~ : Bool) -> EntityConsumeResult?
 
 pub fn decode_attribute_value_with_errors(StringView) -> EntityDecodeResult
 
@@ -14,11 +14,11 @@ pub fn decode_entities(StringView, in_attribute~ : Bool) -> StringView
 
 pub fn decode_entities_with_errors(StringView, in_attribute~ : Bool) -> EntityDecodeResult
 
-pub fn doctype_eof_error_offset(StringView) -> Int
+pub fn doctype_eof_error_offset(StringView) -> Int32
 
-pub fn find_matching_end_tag(StringView, Int, StringView) -> Int?
+pub fn find_matching_end_tag(StringView, Int32, StringView) -> Int32?
 
-pub fn html_numeric_entity_replacement(Int) -> Int
+pub fn html_numeric_entity_replacement(Int32) -> Int32
 
 pub fn is_special_text_element(StringView) -> Bool
 
@@ -26,21 +26,21 @@ pub fn is_tag_name_end(Char) -> Bool
 
 pub fn is_tag_name_start(Char) -> Bool
 
-pub fn legacy_entity_blocked_in_attribute(StringView, Int, in_attribute~ : Bool) -> Bool
+pub fn legacy_entity_blocked_in_attribute(StringView, Int32, in_attribute~ : Bool) -> Bool
 
-pub fn matching_end_tag_error_pos(StringView, Int) -> Int
+pub fn matching_end_tag_error_pos(StringView, Int32) -> Int32
 
-pub fn normalize_doctype_value(StringView, Int, Int, Array[DoctypeExternalError]) -> String
+pub fn normalize_doctype_value(StringView, Int32, Int32, Array[DoctypeExternalError]) -> String
 
 pub fn parse_doctype_external(StringView, Bool) -> DoctypeExternalParse
 
-pub fn parse_lower_name_value_replacing_nulls(StringView, Int, Int) -> (String, Array[DoctypeExternalError])
+pub fn parse_lower_name_value_replacing_nulls(StringView, Int32, Int32) -> (String, Array[DoctypeExternalError])
 
-pub fn parse_quoted_doctype_value_at(StringView, Int, Array[DoctypeExternalError]) -> (String?, Int, Bool)
+pub fn parse_quoted_doctype_value_at(StringView, Int32, Array[DoctypeExternalError]) -> (String?, Int32, Bool)
 
-pub fn scan_comment_data(StringView, Int) -> CommentScan
+pub fn scan_comment_data(StringView, Int32) -> CommentScan
 
-pub fn scan_script_text(StringView, Int) -> ScriptTextScan
+pub fn scan_script_text(StringView, Int32) -> ScriptTextScan
 
 pub fn special_text_decodes_entities(StringView) -> Bool
 
@@ -49,19 +49,19 @@ pub fn special_text_decodes_entities(StringView) -> Bool
 // Types and methods
 pub(all) struct CommentScan {
   data : String
-  end : Int
+  end : Int32
   eof : Bool
   errors : Array[CommentScanError]
 }
 
 pub(all) struct CommentScanError {
   code : String
-  offset : Int
+  offset : Int32
 }
 
 pub(all) struct DoctypeExternalError {
   code : String
-  offset : Int
+  offset : Int32
 }
 
 pub(all) struct DoctypeExternalParse {
@@ -73,7 +73,7 @@ pub(all) struct DoctypeExternalParse {
 
 pub(all) struct EntityConsumeResult {
   value : String
-  next : Int
+  next : Int32
   errors : Array[EntityDecodeError]
 } derive(Eq, @debug.Debug)
 #deprecated
@@ -85,7 +85,7 @@ pub fn EntityConsumeResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct EntityDecodeError {
   code : String
-  offset : Int
+  offset : Int32
 } derive(Eq, @debug.Debug)
 #deprecated
 pub fn EntityDecodeError::equal(Self, Self) -> Bool
@@ -107,13 +107,13 @@ pub fn EntityDecodeResult::to_repr(Self) -> @debug.Repr
 
 pub(all) struct ScriptTextScan {
   data : String
-  end_start : Int?
+  end_start : Int32?
   errors : Array[SpecialTextError]
 }
 
 pub(all) struct SpecialTextError {
   code : String
-  offset : Int
+  offset : Int32
 }
 
 // Type aliases
