@@ -136,5 +136,5 @@ fn cli_default_options() -> CliOptions {
 
 ///|
 fn cli_version() -> String {
-  "0.2.0"
+  "0.2.1"
 }

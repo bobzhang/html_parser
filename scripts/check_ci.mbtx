@@ -1092,7 +1092,9 @@ async fn run_check_tests() -> Int {
 ///|
 async fn run_check_coverage() -> Int {
   let minimum_coverage_percent = 90
-  let (code, output) = @process.collect_output_merged("moon", ["coverage", "analyze"])
+  // The caret reporter reads instrumentation directly; the simplified reporter
+  // uses a separate parser that may lag behind the active compiler syntax.
+  let (code, output) = @process.collect_output_merged("moon", ["coverage", "analyze", "--", "-f", "caret"])
   let text = output.text()
   write_stdout(text)
   if code != 0 {
@@ -1128,6 +1130,11 @@ async fn run_check_coverage() -> Int {
 fn parse_uncovered_line_count(text : String) -> Int? {
   if text.contains("All source files are fully covered") {
     return Some(0)
+  }
+  // Caret emits exactly one diagnostic for each uncovered source line.
+  let caret_lines = count_occurrences(text, "warning: this line has no test coverage\n")
+  if caret_lines > 0 {
+    return Some(caret_lines)
   }
   let prefix = "Total: "
   for raw_line in text.split("\n") {
