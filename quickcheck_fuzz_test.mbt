@@ -145,8 +145,7 @@ fn origin_is_consistent(src : String, node : @dom.Node) -> Bool {
       line_start = index + 1
     }
   }
-  let col = src.view(start_offset=line_start, end_offset=offset).char_length() +
-    1
+  let col = src[line_start:offset].char_length() + 1
   if node.origin_line() != Some(line) || node.origin_col() != Some(col) {
     return false
   }
@@ -169,7 +168,7 @@ test "property: tracked node origins are in bounds and self-consistent" {
       // counting, so offsets are relative to the input without it.
       let src = input.source().replace_all(old="\r", new="")
       let src = if src.has_prefix("\u{FEFF}") {
-        src.view(start_offset=1).to_owned()
+        src[1:].to_owned()
       } else {
         src
       }
@@ -253,8 +252,7 @@ fn reserialization_can_settle(tree : @dom.Node, html : String) -> Bool {
     }
     if element.name() == "script" {
       let text = element.text().to_lower()
-      if text.find("<!--") is Some(open) &&
-        text.view(start_offset=open).contains("<script") {
+      if text.find("<!--") is Some(open) && text[open:].contains("<script") {
         return false
       }
     }
