@@ -229,11 +229,7 @@ fn style_violation(model : PolicyModel, value : String) -> String? {
     guard declaration.find(":") is Some(colon) else {
       return Some("style declaration without a colon: \{value}")
     }
-    let property = declaration
-      .view(end_offset=colon)
-      .trim()
-      .to_owned()
-      .to_lower()
+    let property = declaration[:colon].trim().to_owned().to_lower()
     if !model.css.contains(property) {
       return Some("style keeps property \{property}: \{value}")
     }
