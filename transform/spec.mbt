@@ -1,4 +1,5 @@
 ///|
+#derive(Debug)
 priv enum TransformKind {
   DropElements
   UnwrapElements
@@ -22,20 +23,21 @@ priv enum TransformKind {
   PruneEmptyElements
   LinkifyTextNodes
   StageGroup
-} derive(Debug)
+}
 
 ///|
 /// Action returned by a `TransformSpec::decide` callback.
 ///
 /// `Keep` leaves the matched node unchanged. The other variants apply the same
 /// structural operations as the corresponding selector transforms.
+#derive(Eq, Debug)
 pub(all) enum DecideAction {
   Keep
   Drop
   Unwrap
   Empty
   Escape
-} derive(Eq, Debug)
+}
 
 ///|
 fn default_selector_limits() -> @sel.SelectorLimits {
@@ -88,6 +90,7 @@ impl Debug for TransformReportCallback with fn to_repr(_) {
 /// The current port covers deterministic structural, attribute, callback,
 /// URL/style, utility, and sanitizer transforms. Most selector and node-kind
 /// transforms also support hook/report callbacks.
+#derive(Debug)
 pub struct TransformSpec {
   priv kind : TransformKind
   priv enabled : Bool
@@ -109,7 +112,7 @@ pub struct TransformSpec {
   priv linkify_config : @link.LinkifyConfig?
   priv linkify_skip_tags : Array[String]
   priv stage_transforms : Array[TransformSpec]
-} derive(Debug)
+}
 
 ///|
 fn make_transform_spec(

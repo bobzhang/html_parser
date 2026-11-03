@@ -3,6 +3,7 @@
 ///
 /// Limits are defensive bounds for selector length, nesting, list size, and
 /// match cost. Negative match budgets are treated as exhausted.
+#derive(Debug, Eq)
 pub(all) struct SelectorLimits {
   max_match_depth : Int32
   max_length : Int32
@@ -12,7 +13,7 @@ pub(all) struct SelectorLimits {
   max_parse_depth : Int32
   max_match_steps : Int32
   max_match_bytes : Int32
-} derive(Debug, Eq)
+}
 
 ///|
 /// Construct selector limits, using conservative defaults for omitted values.

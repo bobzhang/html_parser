@@ -21,6 +21,7 @@ pub fn text(StringView) -> Node
 // Errors
 
 // Types and methods
+#derive(@debug.Debug)
 pub(all) struct Node {
   kind : NodeKind
   name : String
@@ -40,7 +41,7 @@ pub(all) struct Node {
   mut parent : Node?
   children : Array[Node]
   mut template_contents : Node?
-} derive(@debug.Debug)
+}
 pub fn Node::append_child(Self, Self) -> Unit
 pub fn Node::attrs(Self) -> Map[String, String?]
 pub fn Node::children(Self) -> Array[Self]
@@ -64,6 +65,7 @@ pub fn Node::text(Self) -> String
 #deprecated
 pub fn Node::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum NodeKind {
   Document
   Fragment
@@ -71,7 +73,7 @@ pub(all) enum NodeKind {
   Text
   Comment
   Doctype
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn NodeKind::equal(Self, Self) -> Bool
 #deprecated

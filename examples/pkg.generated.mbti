@@ -15,11 +15,12 @@ pub fn run_htmlfmt(ArrayView[String]) -> HtmlFmtResult raise
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct HtmlFmtResult {
   exit_code : Int32
   stdout : String
   stderr : String
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn HtmlFmtResult::equal(Self, Self) -> Bool
 #deprecated

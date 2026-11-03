@@ -3,13 +3,14 @@
 ///
 /// `category` identifies the source of the error, such as `tokenizer` or
 /// `treebuilder`. `message` defaults to `code` when no custom message is given.
+#derive(Debug, Eq)
 pub(all) struct ParseError {
   code : String
   line : Int32?
   column : Int32?
   category : String
   message : String
-} derive(Debug, Eq)
+}
 
 ///|
 /// Construct a parse diagnostic.
@@ -89,9 +90,10 @@ pub fn parser_error_category(code : StringView) -> String {
 ///|
 /// Error type raised by strict parsing, serialization, sanitizer, and selector
 /// operations.
+#derive(Debug, Eq)
 pub(all) suberror HtmlError {
   StrictMode(ParseError)
   InvalidSerialization(String)
   UnsafeHtml(String)
   SelectorError(String)
-} derive(Debug, Eq)
+}

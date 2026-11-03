@@ -4,11 +4,12 @@
 /// `exit_code` follows command-line conventions: `0` for formatted output and
 /// `2` for argument parsing errors. `stdout` carries formatted HTML on success;
 /// `stderr` carries parser help or diagnostics when argument parsing fails.
+#derive(Debug, Eq)
 pub(all) struct HtmlFmtResult {
   exit_code : Int32
   stdout : String
   stderr : String
-} derive(Debug, Eq)
+}
 
 ///|
 /// Run the example `htmlfmt` command with an argument vector.

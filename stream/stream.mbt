@@ -3,31 +3,34 @@
 ///
 /// `name` is the normalized tag name and `attrs` contains the decoded
 /// attributes for the tag.
+#derive(Debug, Eq)
 pub(all) struct StreamStartEvent {
   name : String
   attrs : Map[String, String?]
-} derive(Debug, Eq)
+}
 
 ///|
 /// Doctype event emitted by the streaming tokenizer facade.
+#derive(Debug, Eq)
 pub(all) struct StreamDoctypeEvent {
   name : String
   public_id : String?
   system_id : String?
-} derive(Debug, Eq)
+}
 
 ///|
 /// Token-level streaming event.
 ///
 /// The stream API does not build a DOM tree. It forwards start tags, end tags,
 /// text, comments, and doctypes in tokenizer order, coalescing adjacent text.
+#derive(Debug, Eq)
 pub(all) enum StreamEvent {
   StreamStart(StreamStartEvent)
   StreamText(String)
   StreamEnd(String)
   StreamComment(String)
   StreamDoctype(StreamDoctypeEvent)
-} derive(Debug, Eq)
+}
 
 ///|
 /// Parse an HTML string into streaming events.
@@ -79,10 +82,11 @@ pub fn stream_bytes_each(
 
 ///|
 /// Mutable sink that converts tokenizer tokens into coalesced stream events.
+#derive(Debug)
 struct StreamSink {
   events : Array[StreamEvent]
   text_parts : Array[String]
-} derive(Debug)
+}
 
 ///|
 /// Create an empty stream sink.

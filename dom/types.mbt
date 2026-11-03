@@ -1,5 +1,6 @@
 ///|
 /// Kind of DOM node represented by `Node`.
+#derive(Debug, Eq)
 pub(all) enum NodeKind {
   Document
   Fragment
@@ -7,7 +8,7 @@ pub(all) enum NodeKind {
   Text
   Comment
   Doctype
-} derive(Debug, Eq)
+}
 
 ///|
 /// DOM node used for documents, fragments, elements, text, comments, and
@@ -15,6 +16,7 @@ pub(all) enum NodeKind {
 ///
 /// Nodes are created with helpers such as `document`, `fragment`, `element`,
 /// `text`, `comment`, and `doctype`.
+#derive(Debug)
 pub(all) struct Node {
   kind : NodeKind
   name : String
@@ -34,4 +36,4 @@ pub(all) struct Node {
   mut parent : Node?
   children : Array[Node]
   mut template_contents : Node?
-} derive(Debug)
+}

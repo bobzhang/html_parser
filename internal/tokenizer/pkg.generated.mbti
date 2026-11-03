@@ -71,11 +71,12 @@ pub(all) struct DoctypeExternalParse {
   force_quirks : Bool
 }
 
+#derive(Eq, @debug.Debug)
 pub(all) struct EntityConsumeResult {
   value : String
   next : Int32
   errors : Array[EntityDecodeError]
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn EntityConsumeResult::equal(Self, Self) -> Bool
 #deprecated
@@ -83,10 +84,11 @@ pub fn EntityConsumeResult::not_equal(Self, Self) -> Bool
 #deprecated
 pub fn EntityConsumeResult::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct EntityDecodeError {
   code : String
   offset : Int32
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn EntityDecodeError::equal(Self, Self) -> Bool
 #deprecated
@@ -94,10 +96,11 @@ pub fn EntityDecodeError::not_equal(Self, Self) -> Bool
 #deprecated
 pub fn EntityDecodeError::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct EntityDecodeResult {
   data : StringView
   errors : Array[EntityDecodeError]
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn EntityDecodeResult::equal(Self, Self) -> Bool
 #deprecated

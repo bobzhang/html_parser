@@ -1,11 +1,12 @@
 ///|
+#derive(Eq)
 priv enum TokenizerFixtureToken {
   FStartTag(String, Array[String], Bool)
   FEndTag(String)
   FCharacters(String)
   FComment(String)
   FDoctype(String, String, String, Bool)
-} derive(Eq)
+}
 
 ///|
 priv struct TokenizerFixtureCase {
