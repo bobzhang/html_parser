@@ -17,10 +17,11 @@ pub fn run_cli_with_reader(ArrayView[String], (String) -> Bytes) -> CliResult
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) enum CliReadPlan {
   CliImmediate(CliResult)
   CliReadPath(String)
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn CliReadPlan::equal(Self, Self) -> Bool
 #deprecated
@@ -28,13 +29,14 @@ pub fn CliReadPlan::not_equal(Self, Self) -> Bool
 #deprecated
 pub fn CliReadPlan::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct CliResult {
   exit_code : Int32
   stdout : String
   stderr : String
   file_output_path : String?
   file_output_content : String?
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn CliResult::equal(Self, Self) -> Bool
 #deprecated

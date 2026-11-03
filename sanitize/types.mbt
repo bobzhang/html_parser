@@ -1,26 +1,29 @@
 ///|
 /// How sanitizer handles elements whose tag names are not allowlisted.
+#derive(Debug, Eq)
 pub(all) enum DisallowedTagHandling {
   Unwrap
   Escape
   Drop
-} derive(Debug, Eq)
+}
 
 ///|
 /// How sanitizer reports unsafe input that it strips or rewrites.
+#derive(Debug, Eq)
 pub(all) enum UnsafeHandling {
   Strip
   Raise
   Collect
-} derive(Debug, Eq)
+}
 
 ///|
 /// Action used after a URL value passes the configured URL checks.
+#derive(Debug, Eq)
 pub(all) enum UrlHandling {
   UrlAllow
   UrlStrip
   UrlProxy
-} derive(Debug, Eq)
+}
 
 ///|
 /// Callback wrapper used to rewrite or reject URL values before validation.
@@ -42,10 +45,11 @@ pub impl Debug for UrlFilter with fn to_repr(_) {
 /// Sanitized URLs are emitted as `url?param=<encoded-url>` or
 /// `url&param=<encoded-url>` depending on whether the proxy URL already has a
 /// query string.
+#derive(Debug)
 pub struct UrlProxy {
   priv url : String
   priv param : String
-} derive(Debug)
+}
 
 ///|
 /// Per-attribute URL validation rule.
@@ -53,6 +57,7 @@ pub struct UrlProxy {
 /// Rules can restrict schemes and hosts, disallow fragments, normalize
 /// protocol-relative URLs, override relative-URL handling, or route accepted
 /// URLs through a proxy.
+#derive(Debug)
 pub struct UrlRule {
   priv allow_fragment : Bool
   priv resolve_protocol_relative : String?
@@ -61,28 +66,30 @@ pub struct UrlRule {
   priv handling : UrlHandling?
   priv allow_relative : Bool?
   priv proxy : UrlProxy?
-} derive(Debug)
+}
 
 ///|
 /// URL rule bound to a tag and attribute name.
+#derive(Debug)
 pub struct UrlPolicyRule {
   priv tag : String
   priv attr : String
   priv rule : UrlRule
-} derive(Debug)
+}
 
 ///|
 /// URL sanitization policy shared by URL-bearing attributes.
 ///
 /// Exact `(tag, attr)` rules take precedence. Unmatched URL-like attributes use
 /// the default handling and relative-URL behavior.
+#derive(Debug)
 pub struct UrlPolicy {
   priv default_handling : UrlHandling
   priv default_allow_relative : Bool
   priv allow_rules : Map[String, UrlRule]
   priv proxy : UrlProxy?
   priv url_filter : UrlFilter?
-} derive(Debug)
+}
 
 ///|
 /// DOM sanitization policy.
@@ -90,6 +97,7 @@ pub struct UrlPolicy {
 /// A policy controls allowed tags and attributes, URL filtering, comment and
 /// doctype handling, foreign-content hardening, CSS style allowlists, selector
 /// limits used by transform hooks, and unsafe-input reporting.
+#derive(Debug)
 pub struct SanitizationPolicy {
   priv allowed_tags : Set[String]
   priv allowed_attributes : Map[String, Set[String]]
@@ -105,4 +113,4 @@ pub struct SanitizationPolicy {
   priv selector_limits : @sel.SelectorLimits
   priv unsafe_handling : UnsafeHandling
   priv security_errors : Array[@core.ParseError]
-} derive(Debug)
+}

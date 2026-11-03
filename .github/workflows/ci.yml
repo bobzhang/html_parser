@@ -9,7 +9,11 @@ on:
 
 jobs:
   test:
-    name: MoonBit checks
+    name: MoonBit checks (${{ matrix.moonbit }})
+    strategy:
+      fail-fast: false
+      matrix:
+        moonbit: [latest, pre-release]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -20,7 +24,7 @@ jobs:
 
       - name: Set up MoonBit
         run: |
-          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash -s -- "${{ matrix.moonbit }}"
           echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
 
       - name: Show MoonBit version

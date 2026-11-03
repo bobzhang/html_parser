@@ -17,11 +17,12 @@ pub fn stream_each(StringView, (StreamEvent) -> Unit) -> Unit
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct StreamDoctypeEvent {
   name : String
   public_id : String?
   system_id : String?
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn StreamDoctypeEvent::equal(Self, Self) -> Bool
 #deprecated
@@ -29,13 +30,14 @@ pub fn StreamDoctypeEvent::not_equal(Self, Self) -> Bool
 #deprecated
 pub fn StreamDoctypeEvent::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum StreamEvent {
   StreamStart(StreamStartEvent)
   StreamText(String)
   StreamEnd(String)
   StreamComment(String)
   StreamDoctype(StreamDoctypeEvent)
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn StreamEvent::equal(Self, Self) -> Bool
 #deprecated
@@ -43,14 +45,16 @@ pub fn StreamEvent::not_equal(Self, Self) -> Bool
 #deprecated
 pub fn StreamEvent::to_repr(Self) -> @debug.Repr
 
-type StreamSink derive(@debug.Debug)
+#derive(@debug.Debug)
+type StreamSink
 #deprecated
 pub fn StreamSink::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct StreamStartEvent {
   name : String
   attrs : Map[String, String?]
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn StreamStartEvent::equal(Self, Self) -> Bool
 #deprecated

@@ -4,10 +4,11 @@
 /// `CliImmediate` means parsing already produced a complete result, such as
 /// help, version output, or an argument error. `CliReadPath` asks the caller to
 /// read the given path, where `"-"` conventionally means standard input.
+#derive(Debug, Eq)
 pub(all) enum CliReadPlan {
   CliImmediate(CliResult)
   CliReadPath(String)
-} derive(Debug, Eq)
+}
 
 ///|
 /// Result produced by the embeddable CLI runner.
@@ -15,13 +16,14 @@ pub(all) enum CliReadPlan {
 /// `stdout` and `stderr` contain terminal output. When `file_output_path` is
 /// present, `file_output_content` contains the bytes that a shell wrapper should
 /// write to that path instead of printing to standard output.
+#derive(Debug, Eq)
 pub(all) struct CliResult {
   exit_code : Int32
   stdout : String
   stderr : String
   file_output_path : String?
   file_output_content : String?
-} derive(Debug, Eq)
+}
 
 ///|
 priv enum CliFormat {

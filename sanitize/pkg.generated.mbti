@@ -34,11 +34,12 @@ pub fn sanitize_dom_with_observer(@dom.Node, SanitizationPolicy?, SanitizeTransf
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) enum DisallowedTagHandling {
   Unwrap
   Escape
   Drop
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn DisallowedTagHandling::equal(Self, Self) -> Bool
 #deprecated
@@ -46,9 +47,10 @@ pub fn DisallowedTagHandling::not_equal(Self, Self) -> Bool
 #deprecated
 pub fn DisallowedTagHandling::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub struct SanitizationPolicy {
   // private fields
-} derive(@debug.Debug)
+}
 pub fn SanitizationPolicy::SanitizationPolicy(Array[String], allowed_attributes? : Map[String, Array[String]], url_policy? : UrlPolicy, drop_comments? : Bool, drop_doctype? : Bool, drop_foreign_namespaces? : Bool, drop_content_tags? : Array[String], disallowed_tag_handling? : DisallowedTagHandling, force_link_rel? : Array[String], allowed_css_properties? : Array[String], strip_invisible_unicode? : Bool, selector_limits? : @selector.SelectorLimits, unsafe_handling? : UnsafeHandling) -> Self
 pub fn SanitizationPolicy::collected_security_errors(Self) -> Array[@core.ParseError]
 pub fn SanitizationPolicy::has_url_rule(Self, String, String) -> Bool
@@ -65,11 +67,12 @@ pub struct SanitizeTransformObserver {
 }
 pub fn SanitizeTransformObserver::SanitizeTransformObserver(((@dom.Node) -> Unit)?, ((String, @dom.Node?) -> Unit)?) -> Self
 
+#derive(Eq, @debug.Debug)
 pub(all) enum UnsafeHandling {
   Strip
   Raise
   Collect
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn UnsafeHandling::equal(Self, Self) -> Bool
 #deprecated
@@ -84,11 +87,12 @@ pub fn UrlFilter::UrlFilter((String, String, String) -> String?) -> Self
 pub fn UrlFilter::to_repr(Self) -> @debug.Repr
 pub impl @debug.Debug for UrlFilter
 
+#derive(Eq, @debug.Debug)
 pub(all) enum UrlHandling {
   UrlAllow
   UrlStrip
   UrlProxy
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn UrlHandling::equal(Self, Self) -> Bool
 #deprecated
@@ -96,30 +100,34 @@ pub fn UrlHandling::not_equal(Self, Self) -> Bool
 #deprecated
 pub fn UrlHandling::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub struct UrlPolicy {
   // private fields
-} derive(@debug.Debug)
+}
 pub fn UrlPolicy::UrlPolicy(default_handling? : UrlHandling, default_allow_relative? : Bool, allow_rules? : Array[UrlPolicyRule], proxy? : UrlProxy, url_filter? : UrlFilter) -> Self
 #deprecated
 pub fn UrlPolicy::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub struct UrlPolicyRule {
   // private fields
-} derive(@debug.Debug)
+}
 pub fn UrlPolicyRule::UrlPolicyRule(StringView, StringView, UrlRule) -> Self
 #deprecated
 pub fn UrlPolicyRule::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub struct UrlProxy {
   // private fields
-} derive(@debug.Debug)
+}
 pub fn UrlProxy::UrlProxy(StringView, param? : String) -> Self
 #deprecated
 pub fn UrlProxy::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub struct UrlRule {
   // private fields
-} derive(@debug.Debug)
+}
 pub fn UrlRule::UrlRule(allowed_schemes? : Array[String], allowed_hosts? : Array[String], allow_fragment? : Bool, resolve_protocol_relative? : String?, handling? : UrlHandling, allow_relative? : Bool, proxy? : UrlProxy) -> Self
 #deprecated
 pub fn UrlRule::to_repr(Self) -> @debug.Repr

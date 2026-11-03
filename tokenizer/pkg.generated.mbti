@@ -16,12 +16,13 @@ pub fn tokenize_each(StringView, (HtmlToken) -> Unit, xml_coercion? : Bool) -> U
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct DoctypeInfo {
   name : String
   public_id : String?
   system_id : String?
   force_quirks : Bool
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn DoctypeInfo::equal(Self, Self) -> Bool
 #deprecated
@@ -29,13 +30,14 @@ pub fn DoctypeInfo::not_equal(Self, Self) -> Bool
 #deprecated
 pub fn DoctypeInfo::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum HtmlToken {
   Tag(TagToken)
   Characters(String)
   CommentToken(String)
   DoctypeToken(DoctypeInfo)
   Eof
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn HtmlToken::equal(Self, Self) -> Bool
 #deprecated
@@ -43,10 +45,11 @@ pub fn HtmlToken::not_equal(Self, Self) -> Bool
 #deprecated
 pub fn HtmlToken::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) enum TagKind {
   StartTag
   EndTag
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn TagKind::equal(Self, Self) -> Bool
 #deprecated
@@ -54,12 +57,13 @@ pub fn TagKind::not_equal(Self, Self) -> Bool
 #deprecated
 pub fn TagKind::to_repr(Self) -> @debug.Repr
 
+#derive(Eq, @debug.Debug)
 pub(all) struct TagToken {
   kind : TagKind
   name : String
   attrs : Map[String, String?]
   self_closing : Bool
-} derive(Eq, @debug.Debug)
+}
 #deprecated
 pub fn TagToken::equal(Self, Self) -> Bool
 #deprecated
@@ -67,10 +71,11 @@ pub fn TagToken::not_equal(Self, Self) -> Bool
 #deprecated
 pub fn TagToken::to_repr(Self) -> @debug.Repr
 
+#derive(@debug.Debug)
 pub(all) struct TokenizedHtml {
   tokens : Array[HtmlToken]
   errors : Array[@core.ParseError]
-} derive(@debug.Debug)
+}
 #deprecated
 pub fn TokenizedHtml::to_repr(Self) -> @debug.Repr
 

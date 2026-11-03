@@ -3,20 +3,22 @@
 ///
 /// `start` and `end` are UTF-16 offsets into the input `StringView`.
 /// `kind` is `"url"` or `"email"`.
+#derive(Debug, Eq)
 pub(all) struct LinkMatch {
   start : Int32
   end : Int32
   text : String
   href : String
   kind : String
-} derive(Debug, Eq)
+}
 
 ///|
 /// Options for the plain-text link scanner.
+#derive(Debug)
 pub struct LinkifyConfig {
   priv fuzzy_ip : Bool
   priv extra_tlds : Set[String]
-} derive(Debug)
+}
 
 ///|
 /// Create a linkify scanner configuration.

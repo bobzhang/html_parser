@@ -72,12 +72,13 @@ fn selector_list_parts(selector : StringView) -> Array[StringView]? {
 }
 
 ///|
+#derive(Eq)
 priv enum SelectorCombinator {
   DescendantCombinator
   ChildCombinator
   AdjacentSiblingCombinator
   GeneralSiblingCombinator
-} derive(Eq)
+}
 
 ///|
 fn push_complex_selector_part(

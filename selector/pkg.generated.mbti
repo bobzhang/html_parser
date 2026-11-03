@@ -21,6 +21,7 @@ pub fn query_one(@dom.Node, StringView) -> @dom.Node?
 // Errors
 
 // Types and methods
+#derive(Eq, @debug.Debug)
 pub(all) struct SelectorLimits {
   max_match_depth : Int32
   max_length : Int32
@@ -30,7 +31,7 @@ pub(all) struct SelectorLimits {
   max_parse_depth : Int32
   max_match_steps : Int32
   max_match_bytes : Int32
-} derive(Eq, @debug.Debug)
+}
 pub fn SelectorLimits::SelectorLimits(max_match_depth? : Int32, max_length? : Int32, max_list_items? : Int32, max_compound_simple_selectors? : Int32, max_complex_selector_parts? : Int32, max_parse_depth? : Int32, max_match_steps? : Int32, max_match_bytes? : Int32) -> Self
 #deprecated
 pub fn SelectorLimits::equal(Self, Self) -> Bool
