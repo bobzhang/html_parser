@@ -1,6 +1,6 @@
 name = "bobzhang/html_parser"
 
-version = "0.2.3"
+version = "0.2.4"
 
 import {
   "moonbitlang/async@0.22.4",
