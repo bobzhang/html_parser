@@ -84,7 +84,7 @@ fn Parser::parse_foreign_cdata_section(self : Parser) -> Unit {
     null_offset += ch.utf16_len()
   }
   let normalized = normalize_raw_newlines(view)
-  let out = StringBuilder(size_hint=normalized.length())
+  let out = StringBuilder(capacity=normalized.length())
   for ch in normalized {
     if ch == '\u{0000}' {
       if foreign {

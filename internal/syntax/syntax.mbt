@@ -5,7 +5,7 @@
 /// names, sanitizer policy keys, and protocol-like values where the grammar
 /// defines ASCII case-insensitivity, not for locale-sensitive text.
 pub fn lower_ascii(input : StringView) -> String {
-  let out = StringBuilder(size_hint=input.length())
+  let out = StringBuilder(capacity=input.length())
   for ch in input {
     if ch.is_ascii_uppercase() {
       out.write_char(ch.to_ascii_lowercase())
@@ -189,7 +189,7 @@ pub fn normalize_newlines(input : StringView) -> String {
   if !input.contains_char('\r') {
     return input.to_owned()
   }
-  let out = StringBuilder(size_hint=input.length())
+  let out = StringBuilder(capacity=input.length())
   let mut pos = 0
   while pos < input.length() {
     let ch = input.get_char(pos).unwrap()
@@ -221,7 +221,7 @@ pub fn normalize_bogus_comment_data(input : StringView) -> String {
   if !input.contains_char('\u{0000}') && !input.contains_char('\r') {
     return input.to_owned()
   }
-  let out = StringBuilder(size_hint=input.length())
+  let out = StringBuilder(capacity=input.length())
   let mut pos = 0
   while pos < input.length() {
     let ch = input.get_char(pos).unwrap()
@@ -303,7 +303,7 @@ pub fn is_xml_noncharacter(ch : Char) -> Bool {
 /// U+FFFD. It does not escape markup; callers still serialize text through the
 /// normal escaping path.
 pub fn coerce_text_for_xml(input : StringView) -> String {
-  let out = StringBuilder(size_hint=input.length())
+  let out = StringBuilder(capacity=input.length())
   for ch in input {
     if ch == '\u{000C}' {
       out.write_char(' ')

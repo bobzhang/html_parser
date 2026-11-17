@@ -24,7 +24,7 @@ pub fn decode_entities_with_errors(
   if !input.any(ch => ch is ('&' | '\r')) {
     return { data: input, errors: [], }
   }
-  let out = StringBuilder(size_hint=input.length())
+  let out = StringBuilder(capacity=input.length())
   let errors : Array[EntityDecodeError] = []
   let mut pos = 0
   while pos < input.length() {

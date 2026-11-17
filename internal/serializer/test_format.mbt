@@ -45,7 +45,7 @@ fn is_foreign_attribute_for_test_format(name : StringView) -> Bool {
 
 ///|
 fn replace_colons_for_test_format(name : StringView) -> String {
-  let out = StringBuilder(size_hint=name.length())
+  let out = StringBuilder(capacity=name.length())
   for ch in name {
     if ch == ':' {
       out.write_char(' ')
