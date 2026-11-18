@@ -371,7 +371,7 @@ fn text_has_non_ascii_whitespace(value : StringView) -> Bool {
 
 ///|
 fn ascii_whitespace_chars_only(value : StringView) -> String {
-  let out = StringBuilder(size_hint=value.length())
+  let out = StringBuilder(capacity=value.length())
   for ch in value {
     if ch.is_ascii_whitespace() {
       out.write_char(ch)
@@ -387,7 +387,7 @@ fn normalize_tree_builder_text(value : StringView) -> StringView {
   if !value.contains_char('\u{000C}') {
     return value
   }
-  let out = StringBuilder(size_hint=value.length())
+  let out = StringBuilder(capacity=value.length())
   for ch in value {
     if ch == '\u{000C}' {
       out.write_char(' ')
@@ -408,7 +408,7 @@ fn normalize_raw_newlines(value : StringView) -> StringView {
   if !value.contains_char('\r') {
     return value
   }
-  let out = StringBuilder(size_hint=value.length())
+  let out = StringBuilder(capacity=value.length())
   let mut last_was_cr = false
   for ch in value {
     if ch == '\r' {
@@ -441,7 +441,7 @@ fn Parser::remove_null_characters(
   if !raw.contains_char('\u{0000}') {
     return raw
   }
-  let out = StringBuilder(size_hint=raw.length())
+  let out = StringBuilder(capacity=raw.length())
   let mut pos = 0
   while pos < raw.length() {
     let ch = raw.get_char(pos).unwrap()
@@ -470,7 +470,7 @@ fn Parser::replace_null_characters(
   if !raw.contains_char('\u{0000}') {
     return raw
   }
-  let out = StringBuilder(size_hint=raw.length())
+  let out = StringBuilder(capacity=raw.length())
   let mut pos = 0
   while pos < raw.length() {
     let ch = raw.get_char(pos).unwrap()

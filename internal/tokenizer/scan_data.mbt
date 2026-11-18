@@ -18,7 +18,7 @@ fn scanned_data_slice(input : StringView, start : Int32, end : Int32) -> String 
   if !raw.contains_char('\r') && !raw.contains_char('\u{0000}') {
     return raw.to_owned()
   }
-  let out = StringBuilder(size_hint=raw.length())
+  let out = StringBuilder(capacity=raw.length())
   let mut last_was_cr = false
   for ch in raw {
     match ch {

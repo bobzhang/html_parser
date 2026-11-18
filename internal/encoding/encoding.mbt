@@ -34,7 +34,7 @@ fn decode_utf16_lossy(input : BytesView) -> String {
 
 ///|
 fn decode_windows1252_lossy(input : BytesView) -> String {
-  let out = StringBuilder(size_hint=input.length())
+  let out = StringBuilder(capacity=input.length())
   for index in 0..<input.length() {
     let value = input[index].to_int()
     let code = if value >= 0x80 && value <= 0x9F {
@@ -152,7 +152,7 @@ fn iso88592_code_point(value : Int32) -> Int32 {
 
 ///|
 fn decode_iso88592_lossy(input : BytesView) -> String {
-  let out = StringBuilder(size_hint=input.length())
+  let out = StringBuilder(capacity=input.length())
   for index in 0..<input.length() {
     out.write_char(
       iso88592_code_point(input[index].to_int()).to_char().unwrap(),
@@ -195,7 +195,7 @@ fn skip_ascii_whitespace_bytes(input : BytesView, pos : Int32) -> Int32 {
 
 ///|
 fn ascii_lower_bytes(input : BytesView, start : Int32, end : Int32) -> String {
-  let out = StringBuilder(size_hint=end - start)
+  let out = StringBuilder(capacity=end - start)
   for index in start..<end {
     let value = input[index].to_int()
     if value < 0x80 {
@@ -228,7 +228,7 @@ fn ascii_lower_content_bytes(
   start : Int32,
   end : Int32,
 ) -> String {
-  let out = StringBuilder(size_hint=end - start)
+  let out = StringBuilder(capacity=end - start)
   for index in start..<end {
     let value = if is_ascii_whitespace_byte(input[index]) {
       0x20

@@ -1,6 +1,6 @@
 ///|
 fn escape_text(value : StringView) -> String {
-  let out = StringBuilder(size_hint=value.length())
+  let out = StringBuilder(capacity=value.length())
   for ch in value {
     match ch {
       '&' => out.write_string("&amp;")
@@ -19,7 +19,7 @@ fn escape_text(value : StringView) -> String {
 /// selected by `quote`, so callers can choose the shorter safe quote style when
 /// serializing attributes.
 pub fn escape_attr_value(value : StringView, quote : Char) -> String {
-  let out = StringBuilder(size_hint=value.length())
+  let out = StringBuilder(capacity=value.length())
   for ch in value {
     match ch {
       '&' => out.write_string("&amp;")
@@ -40,7 +40,7 @@ pub fn escape_attr_value(value : StringView, quote : Char) -> String {
 /// the selected quote character, `<`/`>`, and Unicode line separators so HTML
 /// embedded in script contexts cannot terminate the string or the script tag.
 pub fn escape_js_string(value : StringView, quote : Char) -> String {
-  let out = StringBuilder(size_hint=value.length())
+  let out = StringBuilder(capacity=value.length())
   for ch in value {
     match ch {
       '\\' => out.write_string("\\\\")
@@ -69,7 +69,7 @@ pub fn escape_js_string(value : StringView, quote : Char) -> String {
 /// triplet.
 pub fn percent_encode_url(value : StringView) -> String {
   let bytes = @utf8.encode(value)
-  let out = StringBuilder(size_hint=bytes.length())
+  let out = StringBuilder(capacity=bytes.length())
   for index in 0..<bytes.length() {
     let byte = bytes[index]
     if is_url_safe_byte(byte) {

@@ -72,7 +72,7 @@ fn Parser::clean_foreign_content_text(
   if !raw.contains_char('\u{0000}') {
     return raw
   }
-  let out = StringBuilder(size_hint=raw.length())
+  let out = StringBuilder(capacity=raw.length())
   let mut offset = 0
   for ch in raw {
     if ch == '\u{0000}' {

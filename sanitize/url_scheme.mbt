@@ -36,7 +36,7 @@ fn string_contains_forbidden_url_char(value : StringView) -> Bool {
 
 ///|
 fn normalize_url_for_checking(value : StringView) -> String {
-  let out = StringBuilder(size_hint=value.length())
+  let out = StringBuilder(capacity=value.length())
   for ch in value {
     if !is_url_ignored_scheme_char(ch) {
       out.write_char(ch)

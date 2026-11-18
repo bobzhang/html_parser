@@ -34,7 +34,7 @@ fn SourceTokenizer::replace_special_text_nulls(
   if !raw.contains_char('\u{0000}') {
     return raw
   }
-  let out = StringBuilder(size_hint=raw.length())
+  let out = StringBuilder(capacity=raw.length())
   let mut pos = 0
   for ch in raw {
     if ch == '\u{0000}' {

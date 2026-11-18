@@ -53,7 +53,7 @@ fn linkify_punycode_href(href : StringView) -> String {
   }
   let (host, port) = linkify_split_host_port(hostport_without_userinfo)
   let host = linkify_punycode_host(host)
-  let out = StringBuilder(size_hint=href.length() + 16)
+  let out = StringBuilder(capacity=href.length() + 16)
   out.write_string(prefix)
   if userinfo != "" {
     out <+ "\{userinfo}@"
