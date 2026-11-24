@@ -4,7 +4,7 @@
 /// document plus small synthetic inputs, and reports per-operation latency
 /// and input throughput.
 #coverage.skip
-async fn main {
+async fn main_async() -> Unit {
   let all_args = @env.args()
   let args = if all_args.is_empty() { all_args[:] } else { all_args[1:] }
   let mut json_output = false
@@ -217,3 +217,8 @@ async fn eprintln(message : String) -> Unit noraise {
 ///|
 #coverage.skip
 extern "C" fn exit_process(code : Int32) = "exit"
+
+///|
+fn main {
+  @async.run_async_main(main_async)
+}

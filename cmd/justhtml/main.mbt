@@ -1,6 +1,6 @@
 ///|
 #coverage.skip
-async fn main {
+async fn main_async() -> Unit {
   let all_args = @env.args()
   let args = if all_args.is_empty() { all_args[:] } else { all_args[1:] }
   let result = run_native_cli(args)
@@ -74,3 +74,8 @@ async fn emit_cli_result(result : @html_parser.CliResult) -> Unit {
 ///|
 #coverage.skip
 extern "C" fn exit_process(code : Int32) = "exit"
+
+///|
+fn main {
+  @async.run_async_main(main_async)
+}
