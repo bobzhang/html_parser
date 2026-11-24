@@ -1,6 +1,6 @@
 import {
-  "bobzhang/html_parser",
   "moonbitlang/async",
+  "bobzhang/html_parser",
   "moonbitlang/async/fs",
   "moonbitlang/async/stdio",
   "moonbitlang/core/bench",

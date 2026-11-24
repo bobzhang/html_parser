@@ -5,7 +5,7 @@
 /// (tests/harness/tree.py): tree comparison only, script-on cases that embed
 /// a <script> tag are skipped because scripts never execute.
 #coverage.skip
-async fn main {
+async fn main_async() -> Unit {
   let all_args = @env.args()
   let args = if all_args.is_empty() { all_args[:] } else { all_args[1:] }
   let mut corpus_dir = "tests/fixtures/html5lib-tests/tree-construction"
@@ -495,3 +495,8 @@ async fn eprintln(message : String) -> Unit noraise {
 ///|
 #coverage.skip
 extern "C" fn exit_process(code : Int32) = "exit"
+
+///|
+fn main {
+  @async.run_async_main(main_async)
+}
