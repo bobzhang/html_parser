@@ -57,7 +57,7 @@ fn linkify_dom_skip_tag_set(tags : Array[String]) -> Set[String] {
   for tag in tags {
     let normalized = @syn.lower_ascii(tag.trim())
     if normalized != "" {
-      out.add(normalized)
+      out.insert(normalized)
     }
   }
   out

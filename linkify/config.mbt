@@ -46,7 +46,7 @@ fn linkify_tld_set(values : Array[String]) -> Set[String] {
   for value in values {
     let tld = value[:].trim().to_lower().to_owned()
     if tld != "" {
-      out.add(tld)
+      out.insert(tld)
     }
   }
   out
