@@ -4,7 +4,7 @@ fn sanitized_string_set(values : Array[String]) -> Set[String] {
   for value in values {
     let normalized = @syn.lower_ascii(value[:].trim())
     if normalized != "" {
-      set.add(normalized)
+      set.insert(normalized)
     }
   }
   set
