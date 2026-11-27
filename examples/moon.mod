@@ -1,6 +1,6 @@
 name = "bobzhang/html_parser_examples"
 
-version = "0.1.1"
+version = "0.1.2"
 
 readme = "README.mbt.md"
 
@@ -13,7 +13,7 @@ keywords = [ "html", "parser", "formatter", "examples" ]
 description = "Runnable examples and documentation for bobzhang/html_parser."
 
 import {
-  "bobzhang/html_parser@0.2.5",
+  "bobzhang/html_parser@0.2.6",
 }
 
 warnings = "+test_unqualified_package+unnecessary_annotation+missing_doc"
